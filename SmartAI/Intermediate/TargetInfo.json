@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "SmartAI",
+			"Path": "..\\Source\\SmartAI.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "SmartAIEditor",
+			"Path": "..\\Source\\SmartAIEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}
