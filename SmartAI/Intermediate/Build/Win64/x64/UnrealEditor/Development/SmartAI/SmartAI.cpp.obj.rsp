@@ -1,0 +1,50 @@
+"C:\Users\K-B\Desktop\K-B Folder\Unreal\UnitedPlanetsOnline\SmartAI\Source\SmartAI\SmartAI.cpp"
+/FI"C:\Users\K-B\Desktop\K-B Folder\Unreal\UnitedPlanetsOnline\SmartAI\Intermediate\Build\Win64\x64\SmartAIEditor\Development\Engine\SharedPCH.Engine.Cpp20.InclOrderUnreal5_0.h"
+/FI"C:\Users\K-B\Desktop\K-B Folder\Unreal\UnitedPlanetsOnline\SmartAI\Intermediate\Build\Win64\x64\UnrealEditor\Development\SmartAI\Definitions.SmartAI.h"
+/Yu"C:\Users\K-B\Desktop\K-B Folder\Unreal\UnitedPlanetsOnline\SmartAI\Intermediate\Build\Win64\x64\SmartAIEditor\Development\Engine\SharedPCH.Engine.Cpp20.InclOrderUnreal5_0.h"
+/Fp"C:\Users\K-B\Desktop\K-B Folder\Unreal\UnitedPlanetsOnline\SmartAI\Intermediate\Build\Win64\x64\SmartAIEditor\Development\Engine\SharedPCH.Engine.Cpp20.InclOrderUnreal5_0.h.pch"
+/Fo"C:\Users\K-B\Desktop\K-B Folder\Unreal\UnitedPlanetsOnline\SmartAI\Intermediate\Build\Win64\x64\UnrealEditor\Development\SmartAI\SmartAI.cpp.obj"
+/sourceDependencies "C:\Users\K-B\Desktop\K-B Folder\Unreal\UnitedPlanetsOnline\SmartAI\Intermediate\Build\Win64\x64\UnrealEditor\Development\SmartAI\SmartAI.cpp.dep.json"
+@"C:\Users\K-B\Desktop\K-B Folder\Unreal\UnitedPlanetsOnline\SmartAI\Intermediate\Build\Win64\x64\UnrealEditor\Development\SmartAI\SmartAI.Shared.rsp"
+/Zc:inline
+/nologo
+/Oi
+/FC
+/c
+/Gw
+/Gy
+/utf-8
+/wd4819
+/DSAL_NO_ATTRIBUTE_DECLARATIONS=1
+/permissive-
+/Zc:strictStrings-
+/Zc:__cplusplus
+/D_CRT_STDIO_LEGACY_WIDE_SPECIFIERS=1
+/D_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS=1
+/D_WINDLL
+/D_DISABLE_EXTENDED_ALIGNED_STORAGE
+/Ob2
+/Ox
+/Ot
+/GF
+/errorReport:prompt
+/EHsc
+/DPLATFORM_EXCEPTIONS_DISABLED=0
+/Z7
+/MD
+/bigobj
+/fp:fast
+/Zo
+/Zp8
+/we4456
+/we4458
+/we4459
+/we4668
+/wd4244
+/wd4838
+/TP
+/GR-
+/W4
+/std:c++20
+/Zc:preprocessor
+/wd5054
