@@ -5,31 +5,7 @@
 			"guid": "00000000000000000000000000000000",
 			"description": "Default Uncontrolled Changelist",
 			"files": [
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/StarterContent/HDRI/HDRI_Epic_Courtyard_Daylight.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Player/BP_Player.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/ThirdPerson/Blueprints/BP_ThirdPersonGameMode.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/BP_Enemy_Base.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/6/MU/YVYGLKAY9FNRGR6OVGHAH1.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/A/BK/3QZLXR27SES6D9EFO4XBJR.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/2/EX/1HFOFETREX0346XN3KAFIZ.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Characters/Mannequins/Animations/ABP_Manny.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Animations/Melee/Montage_Sword_Slash.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/BT_Enemy_Base.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/AIC_Enemy_Base.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/BTT_DefaultAttack.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/BTT_FocusTarget.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/BB_Enemy_Base.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/BTT_ClearFocus.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Characters/Mannequins/Meshes/SK_Mannequin.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Weapons/BP_Sword.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/BTT_WieldSword.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/Decorators/BTD_IsWieldingSword.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/Tasks/BTT_ClearFocus.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/Tasks/BTT_DefaultAttack.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/Tasks/BTT_FocusTarget.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/Enemies/AI/Tasks/BTT_WieldSword.uasset",
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/AI/SmartAI/Content/ThirdPerson/Blueprints/BP_Player.uasset"
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/StarterContent/Audio/Collapse01.uasset"
 			]
 		}
 	]
