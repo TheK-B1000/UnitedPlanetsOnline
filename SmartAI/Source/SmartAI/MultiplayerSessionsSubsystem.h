@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// White Tiger Studios 2023
 
 #pragma once
 
@@ -14,4 +14,9 @@ class SMARTAI_API UMultiplayerSessionsSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 	
-};
+public:
+	UMultiplayerSessionsSubsystem();
+	// Begin USubsystem
+	void Initialize(FSubsystemCollectionBase& Collection) override;
+	void Deinitialize() override;
+	// End USubsystem
