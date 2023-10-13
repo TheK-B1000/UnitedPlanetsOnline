@@ -5,7 +5,26 @@
 			"guid": "00000000000000000000000000000000",
 			"description": "Default Uncontrolled Changelist",
 			"files": [
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/StarterContent/Audio/Collapse01.uasset"
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/StarterContent/Audio/Collapse01.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BP_PatrolRoute.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/6/MU/YVYGLKAY9FNRGR6OVGHAH1.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/E/QK/JFJB71XNIVTQRTJG9FY8B6.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BT_Enemy_Base.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Tasks/BTT_MoveAlongPatrolRoute.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Enums/E_MovementSpeed.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BTT_SetMovementSpeed.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BTD_HasPatrolRoute.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Enums/E_AIState.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BB_Enemy_Base.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/AIC_Enemy_Base.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Player/BP_Player.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BTT_SheathSword.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_HasPatrolRoute.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Tasks/BTT_SheathSword.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Tasks/BTT_SetMovementSpeed.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Animations/Melee/Montage_Sheath_Sword.uasset"
 			]
 		}
 	]
