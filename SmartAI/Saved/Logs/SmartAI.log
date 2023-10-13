@@ -1168,3 +1168,103 @@ LogConfig: Set CVar [[r.Shadow.DetectVertexShaderLayerAtRuntime:1]]
 [2023.10.13-21.06.19:339][ 39]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
 [2023.10.13-21.06.19:563][ 39]LogSlate: Took 0.000469 seconds to synchronously load lazily loaded font '../../../Engine/Content/Slate/Fonts/Roboto-Bold.ttf' (160K)
 [2023.10.13-21.07.51:521][428]LogDerivedDataCache: C:/Users/K-B/AppData/Local/UnrealEngine/Common/DerivedDataCache: Maintenance finished in +00:00:00.125 and deleted 0 files with total size 0 MiB and 0 empty folders. Scanned 665 files in 1134 folders with total size 25 MiB.
+[2023.10.13-21.28.11:639][228]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.10.13-21.28.11:660][228]LogSlate: Took 0.000391 seconds to synchronously load lazily loaded font '../../../Engine/Content/Slate/Fonts/Roboto-BoldCondensed.ttf' (158K)
+[2023.10.13-21.28.11:798][229]LogWorld: UWorld::CleanupWorld for World_0, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.11:798][229]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.28.12:606][284]LogWorld: UWorld::CleanupWorld for World_1, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.12:606][284]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.28.12:905][303]LogWorld: UWorld::CleanupWorld for World_2, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.12:905][303]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.28.13:191][323]LogActorComponent: UnregisterComponent: (/Engine/Transient.EditorFloorComp) Not registered. Aborting.
+[2023.10.13-21.28.13:191][323]LogWorld: UWorld::CleanupWorld for World_3, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.13:191][323]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.28.13:483][341]LogActorComponent: UnregisterComponent: (/Engine/Transient.EditorFloorComp) Not registered. Aborting.
+[2023.10.13-21.28.13:483][341]LogWorld: UWorld::CleanupWorld for World_4, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.13:483][341]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.28.13:770][362]LogWorld: UWorld::CleanupWorld for World_5, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.13:770][362]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.28.14:032][379]LogWorld: UWorld::CleanupWorld for World_6, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.14:032][379]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.28.14:265][397]LogWorld: UWorld::CleanupWorld for World_7, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.14:265][397]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.28.14:629][420]LogWorld: UWorld::CleanupWorld for World_8, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.28.14:629][420]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.30.30:920][795]LogSlate: Took 0.233196 seconds to synchronously load lazily loaded font '../../../Engine/Content/Slate/Fonts/Roboto-Light.ttf' (167K)
+[2023.10.13-21.31.19:961][639]LogSlate: Window 'Add C++ Class' being destroyed
+[2023.10.13-21.31.34:222][201]LogVSAccessor: Warning: Visual Studio is open but could not be queried - it may be blocked by a modal operation
+[2023.10.13-21.31.34:231][201]LogVSAccessor: Warning: Visual Studio is open but could not be queried - it may be blocked by a modal operation
+[2023.10.13-21.31.34:239][202]LogVSAccessor: Warning: Visual Studio is open but could not be queried - it may be blocked by a modal operation
+[2023.10.13-21.31.34:247][202]LogVSAccessor: Warning: Visual Studio is open but could not be queried - it may be blocked by a modal operation
+[2023.10.13-21.31.34:573][203]LogVSAccessor: Warning: Visual Studio is open but could not be queried - it may be blocked by a modal operation
+[2023.10.13-21.31.34:582][203]LogVSAccessor: Warning: Visual Studio is open but could not be queried - it may be blocked by a modal operation
+[2023.10.13-21.31.34:906][204]LogVSAccessor: Warning: Visual Studio is open but could not be queried - it may be blocked by a modal operation
+[2023.10.13-21.31.34:914][204]LogVSAccessor: Warning: Visual Studio is open but could not be queried - it may be blocked by a modal operation
+[2023.10.13-21.32.28:998][331]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.10.13-21.41.52:063][825]LogDebuggerCommands: Repeating last play command: Selected Viewport
+[2023.10.13-21.41.52:071][825]LogContentBundle: [ThirdPersonMap(Standalone)] Generating Streaming for 0 Content Bundles.
+[2023.10.13-21.41.52:071][825]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' started...
+[2023.10.13-21.41.52:074][825]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' took 3 ms
+[2023.10.13-21.41.52:074][825]LogPlayLevel: PlayLevel: No blueprints needed recompiling
+[2023.10.13-21.41.52:075][825]PIE: New page: PIE session: ThirdPersonMap (Oct 13, 2023, 1:41:52 PM)
+[2023.10.13-21.41.52:077][825]LogOnline: Display: STEAM: OnlineSubsystemSteam::Shutdown()
+[2023.10.13-21.41.52:080][825]LogOnline: OSS: Created online subsystem instance for: NULL
+[2023.10.13-21.41.52:080][825]LogOnline: OSS: TryLoadSubsystemAndSetDefault: Loaded subsystem for type [NULL]
+[2023.10.13-21.41.52:080][825]LogPlayLevel: Creating play world package: /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.10.13-21.41.52:088][825]LogPlayLevel: PIE: StaticDuplicateObject took: (0.007920s)
+[2023.10.13-21.41.52:088][825]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap to /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap (0.007996s)
+[2023.10.13-21.41.52:115][825]LogUObjectHash: Compacting FUObjectHashTables data took   1.46ms
+[2023.10.13-21.41.52:120][825]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.10.13-21.41.52:120][825]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.10.13-21.41.52:121][825]LogAIModule: Creating AISystem for world ThirdPersonMap
+[2023.10.13-21.41.52:122][825]LogWorldPartition: ULevel::OnLevelLoaded(ThirdPersonMap)(bIsOwningWorldGameWorld=1, bIsOwningWorldPartitioned=1, InitializeForMainWorld=1, InitializeForEditor=0, InitializeForGame=1)
+[2023.10.13-21.41.52:122][825]LogWorldPartition: Display: WorldPartition initialize started...
+[2023.10.13-21.41.52:122][825]LogWorldPartition: UWorldPartition::Initialize : World = ThirdPersonMap, World Type = PIE, IsMainWorldPartition = 1, Location = V(0), Rotation = R(0), IsEditor = 0, IsGame = 0, IsPIEWorldTravel = 0, IsCooking = 0
+[2023.10.13-21.41.52:122][825]LogWorldPartition: UWorldPartition::Initialize Context : World NetMode = Standalone, IsServer = 0, IsDedicatedServer = 0, IsServerStreamingEnabled = 0, IsServerStreamingOutEnabled = 0, IsUsingMakingVisibleTransaction = 0, IsUsingMakingInvisibleTransaction = 0
+[2023.10.13-21.41.52:123][825]LogContentBundle: [ThirdPersonMap(Standalone)] Creating new contrainer.
+[2023.10.13-21.41.52:123][825]LogWorldPartition: Display: WorldPartition initialize took 1 ms (total: 633 ms)
+[2023.10.13-21.41.52:123][825]LogPlayLevel: PIE: World Init took: (0.003322s)
+[2023.10.13-21.41.52:123][825]LogAudio: Display: Creating Audio Device:                 Id: 2, Scope: Unique, Realtime: True
+[2023.10.13-21.41.52:123][825]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2023.10.13-21.41.52:123][825]LogAudioMixer: Display: 	Sample Rate:						  48000
+[2023.10.13-21.41.52:123][825]LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+[2023.10.13-21.41.52:123][825]LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+[2023.10.13-21.41.52:123][825]LogAudioMixer: Display: 	Number of buffers to queue:			  1
+[2023.10.13-21.41.52:123][825]LogAudioMixer: Display: 	Max Channels (voices):				  32
+[2023.10.13-21.41.52:123][825]LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+[2023.10.13-21.41.52:123][825]LogAudio: Display: AudioDevice MaxSources: 32
+[2023.10.13-21.41.52:124][825]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2023.10.13-21.41.52:124][825]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2023.10.13-21.41.52:124][825]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2023.10.13-21.41.52:126][825]LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+[2023.10.13-21.41.52:172][825]LogAudioMixer: Display: Using Audio Hardware Device Speakers (Wireless Stereo Headset)
+[2023.10.13-21.41.52:172][825]LogAudioMixer: Display: Initializing Sound Submixes...
+[2023.10.13-21.41.52:172][825]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2023.10.13-21.41.52:172][825]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2023.10.13-21.41.52:173][825]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called. InstanceID=2
+[2023.10.13-21.41.52:173][825]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048, InstanceID=2
+[2023.10.13-21.41.52:175][825]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=2
+[2023.10.13-21.41.52:175][825]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=2
+[2023.10.13-21.41.52:175][825]LogInit: FAudioDevice initialized with ID 2.
+[2023.10.13-21.41.52:175][825]LogAudio: Display: Audio Device (ID: 2) registered with world 'ThirdPersonMap'.
+[2023.10.13-21.41.52:175][825]LogAudioMixer: Initializing Audio Bus Subsystem for audio device with ID 2
+[2023.10.13-21.41.52:179][825]LogLoad: Game class is 'BP_ThirdPersonGameMode_C'
+[2023.10.13-21.41.52:184][825]LogWorld: Bringing World /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap up for play (max tick rate 0) at 2023.10.13-17.41.52
+[2023.10.13-21.41.52:187][825]LogWorld: Bringing up level for play took: 0.006998
+[2023.10.13-21.41.52:190][825]LogOnline: OSS: Created online subsystem instance for: :Context_12
+[2023.10.13-21.41.52:200][825]PIE: Server logged in
+[2023.10.13-21.41.52:201][825]PIE: Play in editor total start time 0.13 seconds.
+[2023.10.13-21.41.54:376][969]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.10.13-21.41.54:376][969]LogWorld: BeginTearingDown for /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.10.13-21.41.54:377][969]LogWorld: UWorld::CleanupWorld for ThirdPersonMap, bSessionEnded=true, bCleanupResources=true
+[2023.10.13-21.41.54:378][969]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.41.54:378][969]LogContentBundle: [ThirdPersonMap(Standalone)] Deleting container.
+[2023.10.13-21.41.54:384][969]LogPlayLevel: Display: Shutting down PIE online subsystems
+[2023.10.13-21.41.54:389][969]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.10.13-21.41.54:406][969]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2023.10.13-21.41.54:407][969]LogAudioMixer: Deinitializing Audio Bus Subsystem for audio device with ID 2
+[2023.10.13-21.41.54:407][969]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=2
+[2023.10.13-21.41.54:409][969]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=2
+[2023.10.13-21.41.54:414][969]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.10.13-21.41.54:418][969]LogUObjectHash: Compacting FUObjectHashTables data took   1.36ms
+[2023.10.13-21.41.54:508][970]LogPlayLevel: Display: Destroying online subsystem :Context_12
