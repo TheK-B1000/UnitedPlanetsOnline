@@ -66,6 +66,8 @@
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_CanSeeTarget.uasset",
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.uasset",
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Tasks/BTT_Heal.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/DamageSystem/W_HealthBar.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_IsWieldingSword.uasset",
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BTD_IsWithinIdealRange.uasset",
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/E/QK/JFJB71XNIVTQRTJG9FY8B6.uasset",
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BTT_SetMovementSpeed.uasset",
