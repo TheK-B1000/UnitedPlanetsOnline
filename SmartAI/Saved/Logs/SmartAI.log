@@ -2778,3 +2778,1192 @@ Make sure 'BP_Enemy_Base_C' has been compiled for  Sheath Sword
 [2023.11.10-19.05.40:204][967]LogFileHelpers: InternalPromptForCheckoutAndSave took 85 ms (total: 10.6 sec)
 [2023.11.10-19.05.40:206][967]AssetCheck: New page: Asset Save: AIC_Enemy_Base
 [2023.11.10-19.05.40:207][967]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/AIC_Enemy_Base.AIC_Enemy_Base
+[2023.11.10-19.12.39:187][ 78]LogUObjectHash: Compacting FUObjectHashTables data took   1.37ms
+[2023.11.10-19.12.39:195][ 78]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/1/LL/OQFRHWC6D2QU7IVOQXH4QJ_Auto6
+[2023.11.10-19.12.39:195][ 78]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/OQFRHWC6D2QU7IVOQXH4QJ_Auto679E7555A46F2682563B11C98DBBFC668.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/1/LL/OQFRHWC6D2QU7IVOQXH4QJ_Auto6.uasset'
+[2023.11.10-19.12.39:196][ 78]LogFileHelpers: Editor autosave (incl. external actors) for '/Game/ThirdPerson/Maps/ThirdPersonMap' took 0.027
+[2023.11.10-19.12.39:196][ 78]LogFileHelpers: Editor autosave (incl. sublevels & external actors) for all levels took 0.027
+[2023.11.10-19.12.39:197][ 78]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Characters/Mannequins/Meshes/SK_Mannequin] ([1] browsable assets)...
+[2023.11.10-19.12.39:197][ 78]OBJ SavePackage: Finished generating thumbnails for package [/Game/Characters/Mannequins/Meshes/SK_Mannequin]
+[2023.11.10-19.12.39:212][ 78]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Characters/Mannequins/Meshes/SK_Mannequin_Auto6
+[2023.11.10-19.12.39:212][ 78]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/SK_Mannequin_Auto652270D9240A304FA729B81BAA7B9BE9A.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Characters/Mannequins/Meshes/SK_Mannequin_Auto6.uasset'
+[2023.11.10-19.12.39:215][ 78]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword] ([2] browsable assets)...
+[2023.11.10-19.12.39:215][ 78]OBJ SavePackage: Finished generating thumbnails for package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword]
+[2023.11.10-19.12.39:218][ 78]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto6
+[2023.11.10-19.12.39:218][ 78]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_IsWieldingSword_Auto652CE4AA649FFFECE825655AD40FAC605.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto6.uasset'
+[2023.11.10-19.12.39:219][ 78]LogFileHelpers: Auto-saving content packages took 0.023
+[2023.11.10-19.30.42:173][327]LogDerivedDataCache: C:/Users/K-B/AppData/Local/UnrealEngine/Common/DerivedDataCache: Maintenance finished in +00:00:01.083 and deleted 0 files with total size 0 MiB and 0 empty folders. Scanned 685 files in 1245 folders with total size 62 MiB.
+[2023.11.10-20.20.55:067][360]LogAutomationController: Ignoring very large delta of 2.31 seconds in calls to FAutomationControllerManager::Tick() and not penalizing unresponsive tests
+[2023.11.10-20.22.05:298][800]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.22.05:344][800]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.22.05:346][800]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range2017F4EC4F6679A1E3C706B53C0D782D.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.22.05:357][800]LogFileHelpers: InternalPromptForCheckoutAndSave took 59 ms (total: 10.7 sec)
+[2023.11.10-20.22.05:359][800]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.22.05:359][800]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.22.19:177][318]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.22.19:221][318]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.22.19:223][318]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_RangeD5C2D8A049D470BE02E9CB81E16492EC.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.22.19:232][318]LogFileHelpers: InternalPromptForCheckoutAndSave took 55 ms (total: 10.7 sec)
+[2023.11.10-20.22.19:233][318]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.22.19:233][318]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.22.24:944][687]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.22.24:987][687]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.22.24:989][687]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range348F675B47FA347ED9992BBED4E1F856.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.22.24:997][687]LogFileHelpers: InternalPromptForCheckoutAndSave took 52 ms (total: 10.8 sec)
+[2023.11.10-20.22.24:999][687]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.22.24:999][687]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.22.30:488][ 96]Cmd: TRANSACTION UNDO
+[2023.11.10-20.22.30:488][ 96]LogEditorTransaction: Undo Add Node
+[2023.11.10-20.22.50:062][188]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.22.50:105][188]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.22.50:106][188]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range70D0E7BD46269E541450F7B9FD0EB5D1.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.22.50:114][188]LogFileHelpers: InternalPromptForCheckoutAndSave took 51 ms (total: 10.8 sec)
+[2023.11.10-20.22.50:115][188]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.22.50:116][188]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.23.06:898][182]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.23.06:939][182]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.23.06:941][182]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_RangeA1C6C2244BC844A4BC65D08F509C07D6.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.23.06:949][182]LogFileHelpers: InternalPromptForCheckoutAndSave took 51 ms (total: 10.9 sec)
+[2023.11.10-20.23.06:950][182]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.23.06:950][182]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.23.32:596][366]LogUObjectHash: Compacting FUObjectHashTables data took   1.33ms
+[2023.11.10-20.23.32:607][366]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/1/LL/OQFRHWC6D2QU7IVOQXH4QJ_Auto7
+[2023.11.10-20.23.32:607][366]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/OQFRHWC6D2QU7IVOQXH4QJ_Auto714DD485B4FB1010602D116AE23817F02.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/1/LL/OQFRHWC6D2QU7IVOQXH4QJ_Auto7.uasset'
+[2023.11.10-20.23.32:610][366]LogFileHelpers: Editor autosave (incl. external actors) for '/Game/ThirdPerson/Maps/ThirdPersonMap' took 0.032
+[2023.11.10-20.23.32:610][366]LogFileHelpers: Editor autosave (incl. sublevels & external actors) for all levels took 0.032
+[2023.11.10-20.23.32:610][366]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Characters/Mannequins/Meshes/SK_Mannequin] ([1] browsable assets)...
+[2023.11.10-20.23.32:610][366]OBJ SavePackage: Finished generating thumbnails for package [/Game/Characters/Mannequins/Meshes/SK_Mannequin]
+[2023.11.10-20.23.32:627][366]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Characters/Mannequins/Meshes/SK_Mannequin_Auto7
+[2023.11.10-20.23.32:627][366]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/SK_Mannequin_Auto7E26F18B94B538FA32422039B6FA74C4C.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Characters/Mannequins/Meshes/SK_Mannequin_Auto7.uasset'
+[2023.11.10-20.23.32:630][366]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword] ([2] browsable assets)...
+[2023.11.10-20.23.32:630][366]OBJ SavePackage: Finished generating thumbnails for package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword]
+[2023.11.10-20.23.32:633][366]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto7
+[2023.11.10-20.23.32:633][366]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_IsWieldingSword_Auto7FE9FF2D64EC54C2BF0AF6284A14F3C64.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto7.uasset'
+[2023.11.10-20.23.32:635][366]LogFileHelpers: Auto-saving content packages took 0.026
+[2023.11.10-20.25.57:635][170]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.25.57:757][170]LogUObjectHash: Compacting FUObjectHashTables data took   1.32ms
+[2023.11.10-20.25.58:054][184]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.25.58:203][184]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.25.58:214][184]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.25.58:215][184]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Ranged0C0C74214F4AE6F3FA33C39E3A49A1C9.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.25.58:226][184]LogFileHelpers: InternalPromptForCheckoutAndSave took 171 ms (total: 11.1 sec)
+[2023.11.10-20.25.58:227][184]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.25.58:227][184]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.26.08:696][123]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.26.08:834][123]LogUObjectHash: Compacting FUObjectHashTables data took   1.35ms
+[2023.11.10-20.26.09:241][147]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.26.09:390][147]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.26.09:401][147]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.26.09:403][147]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Ranged3E14CE934B854CA9EAE56EAACEE39E41.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.26.09:413][147]LogFileHelpers: InternalPromptForCheckoutAndSave took 172 ms (total: 11.2 sec)
+[2023.11.10-20.26.09:416][147]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.26.09:416][147]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.26.48:218][774]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.26.48:377][774]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.26.48:387][774]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.26.48:389][774]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Ranged3A9AED2143B9199ABF2B6BAB405C936D.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.26.48:398][774]LogFileHelpers: InternalPromptForCheckoutAndSave took 180 ms (total: 11.4 sec)
+[2023.11.10-20.26.48:399][774]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.26.48:399][774]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.26.51:938][195]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.26.52:065][195]LogUObjectHash: Compacting FUObjectHashTables data took   1.36ms
+[2023.11.10-20.26.52:448][220]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.26.52:594][220]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.26.52:605][220]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.26.52:606][220]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_RangedA7A4EFC5471779B1423CC0AAFBF95A4F.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.26.52:615][220]LogFileHelpers: InternalPromptForCheckoutAndSave took 167 ms (total: 11.6 sec)
+[2023.11.10-20.26.52:617][220]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.26.52:617][220]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.27.17:978][685]LogContentBrowser: Deferred new asset file creation: NewEnvQuery
+[2023.11.10-20.27.17:988][685]LogContentBrowser: Creating deferred item: NewEnvQuery
+[2023.11.10-20.27.18:001][686]LogContentBrowser: Renaming the item being created (Deferred Item: NewEnvQuery).
+[2023.11.10-20.27.43:912][901]LogContentBrowser: Attempting asset rename: NewEnvQuery -> EQS_FindIdealRanged
+[2023.11.10-20.27.43:913][901]LogContentBrowser: End creating deferred item NewEnvQuery
+[2023.11.10-20.27.47:791][268]LogContentBrowser: Attempting asset rename: EQS_FindIdealRanged -> EQS_FindIdealRanged
+[2023.11.10-20.28.11:824][ 10]LogContentBrowser: Attempting asset rename: EQS_FindIdealRanged -> EQ_FindIdealRangedLocation
+[2023.11.10-20.28.11:864][ 10]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.28.11:911][ 10]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.28.11:911][ 10]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocation05D6EEEB476F1CAD1CB72FA5AE2B4B74.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.28.11:926][ 10]LogFileHelpers: InternalPromptForCheckoutAndSave took 61 ms (total: 11.6 sec)
+[2023.11.10-20.28.11:958][ 10]LogUObjectHash: Compacting FUObjectHashTables data took   1.52ms
+[2023.11.10-20.28.11:983][ 10]LogUObjectHash: Compacting FUObjectHashTables data took   1.46ms
+[2023.11.10-20.28.12:003][ 10]LogUObjectHash: Compacting FUObjectHashTables data took   0.79ms
+[2023.11.10-20.28.12:006][ 10]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.28.12:006][ 10]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.28.13:040][121]LogAssetEditorSubsystem: Opening Asset editor for EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.28.50:434][ 22]Cmd: CAMERA ALIGN ACTIVEVIEWPORTONLY
+[2023.11.10-20.28.56:863][576]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.28.57:173][607]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 4
+[2023.11.10-20.29.43:416][571]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.29.44:869][689]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.29.46:823][841]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.29.48:219][956]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.29.48:628][990]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.29.48:941][ 16]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.29.49:109][ 30]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.29.52:412][285]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.30.27:398][514]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.30.28:168][569]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.30.28:475][592]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.30.28:750][613]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.30.29:001][632]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.30.29:981][706]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.30.30:259][727]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.30.41:264][ 24]LogDerivedDataCache: C:/Users/K-B/AppData/Local/UnrealEngine/Common/DerivedDataCache: Maintenance finished in +00:00:00.173 and deleted 0 files with total size 0 MiB and 0 empty folders. Scanned 685 files in 1245 folders with total size 62 MiB.
+[2023.11.10-20.31.27:204][916]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.31.27:246][916]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.31.27:247][916]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocationFA6671884986827792E1288BBF5ED6EC.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.31.27:259][916]LogFileHelpers: InternalPromptForCheckoutAndSave took 55 ms (total: 11.7 sec)
+[2023.11.10-20.31.27:260][916]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.31.27:260][916]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.31.32:065][310]LogSlate: Window 'EQ_FindIdealRangedLocation' being destroyed
+[2023.11.10-20.32.10:454][489]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.32.10:500][489]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.32.10:501][489]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range16A83C064696DDAF7497BA91E59DB0E1.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.32.10:512][489]LogFileHelpers: InternalPromptForCheckoutAndSave took 57 ms (total: 11.8 sec)
+[2023.11.10-20.32.10:512][489]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.32.10:512][489]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.32.27:455][593]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.32.27:502][593]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.32.27:503][593]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range87B3B5164E998FB4E61AA387F08111F2.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.32.27:514][593]LogFileHelpers: InternalPromptForCheckoutAndSave took 59 ms (total: 11.8 sec)
+[2023.11.10-20.32.27:516][593]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.32.27:516][593]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.33.00:804][451]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.33.01:232][487]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.33.05:502][839]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.33.43:905][712]LogUObjectHash: Compacting FUObjectHashTables data took   1.68ms
+[2023.11.10-20.33.43:915][712]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto8
+[2023.11.10-20.33.43:915][712]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/ThirdPersonMap_Auto8651FF20C45FFD16E674830ABD5D98F15.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto8.umap'
+[2023.11.10-20.33.43:918][712]LogAssetRegistry: Warning: ScanPathsSynchronous: C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto8.umap is in the /Temp path, will not scan.
+[2023.11.10-20.33.43:918][712]LogAssetRegistry: Warning: ScanPathsSynchronous: /Temp/__ExternalActors__/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto8 is in the /Temp path, will not scan.
+[2023.11.10-20.33.43:918][712]LogAssetRegistry: Warning: ScanPathsSynchronous: /Temp/__ExternalObjects__/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto8 is in the /Temp path, will not scan.
+[2023.11.10-20.33.43:922][712]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/4/6L/44J4O5YVROHPLSPIYW4XV3_Auto8
+[2023.11.10-20.33.43:922][712]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/44J4O5YVROHPLSPIYW4XV3_Auto82F625A3649FF3EB2A6632DBA438AAE3F.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/4/6L/44J4O5YVROHPLSPIYW4XV3_Auto8.uasset'
+[2023.11.10-20.33.43:926][712]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/1/LL/OQFRHWC6D2QU7IVOQXH4QJ_Auto8
+[2023.11.10-20.33.43:926][712]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/OQFRHWC6D2QU7IVOQXH4QJ_Auto8695D10DF499E3C933B871384BA5C9D0E.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/1/LL/OQFRHWC6D2QU7IVOQXH4QJ_Auto8.uasset'
+[2023.11.10-20.33.43:930][712]LogFileHelpers: Editor autosave (incl. external actors) for '/Game/ThirdPerson/Maps/ThirdPersonMap' took 0.046
+[2023.11.10-20.33.43:930][712]LogFileHelpers: Editor autosave (incl. sublevels & external actors) for all levels took 0.046
+[2023.11.10-20.33.43:930][712]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword] ([2] browsable assets)...
+[2023.11.10-20.33.43:930][712]OBJ SavePackage: Finished generating thumbnails for package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword]
+[2023.11.10-20.33.43:933][712]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto8
+[2023.11.10-20.33.43:933][712]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_IsWieldingSword_Auto8F24AF492432D58E775F1CDAE94687FB3.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto8.uasset'
+[2023.11.10-20.33.43:936][712]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation] ([1] browsable assets)...
+[2023.11.10-20.33.43:936][712]OBJ SavePackage: Finished generating thumbnails for package [/Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation]
+[2023.11.10-20.33.43:939][712]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation_Auto8
+[2023.11.10-20.33.43:939][712]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocation_Auto8C80E28614FF1DDF704D4ECBE3DD3531B.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation_Auto8.uasset'
+[2023.11.10-20.33.43:943][712]LogFileHelpers: Auto-saving content packages took 0.013
+[2023.11.10-20.34.31:076][556]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.34.31:190][556]LogUObjectHash: Compacting FUObjectHashTables data took   1.60ms
+[2023.11.10-20.34.31:198][556]LogSavePackage: Moving output files for package: /Game/ThirdPerson/Maps/ThirdPersonMap
+[2023.11.10-20.34.31:199][556]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/ThirdPersonMapEE29A6FE43ABE0E192C0C4AE0A8781CA.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/ThirdPerson/Maps/ThirdPersonMap.umap'
+[2023.11.10-20.34.31:209][556]LogFileHelpers: Saving map 'ThirdPersonMap' took 0.067
+[2023.11.10-20.34.31:212][556]LogSavePackage: Moving output files for package: /Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/4/6L/44J4O5YVROHPLSPIYW4XV3
+[2023.11.10-20.34.31:214][556]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/44J4O5YVROHPLSPIYW4XV3BB06BC51414E2DE320839A89CD23D1F3.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/4/6L/44J4O5YVROHPLSPIYW4XV3.uasset'
+[2023.11.10-20.34.31:220][556]LogSavePackage: Moving output files for package: /Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/1/LL/OQFRHWC6D2QU7IVOQXH4QJ
+[2023.11.10-20.34.31:221][556]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/OQFRHWC6D2QU7IVOQXH4QJ3A25C2E14FA68E7FB12FB19227BEE1E7.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/1/LL/OQFRHWC6D2QU7IVOQXH4QJ.uasset'
+[2023.11.10-20.34.31:243][556]LogFileHelpers: InternalPromptForCheckoutAndSave took 167 ms (total: 12.0 sec)
+[2023.11.10-20.34.31:247][556]AssetCheck: New page: Asset Save: multiple assets
+[2023.11.10-20.34.31:247][556]LogContentValidation: Display: Validating /Script/Engine.World /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap
+[2023.11.10-20.34.31:247][556]LogContentValidation: Display: Validating /Game/Enemies/AI/EQS/EQS_TestingPawn.EQS_TestingPawn_C /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap:PersistentLevel.EQS_TestingPawn_C_UAID_24418C3676CF87B501_1741822055
+[2023.11.10-20.34.31:247][556]LogContentValidation: Display: Validating /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged_C /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap:PersistentLevel.BP_Enemy_Ranged_C_UAID_24418C3676CF0FBB01_1131837271
+[2023.11.10-20.34.33:265][724]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.34.35:822][936]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.34.36:001][950]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.35.15:915][229]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.35.17:388][365]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.35.20:988][695]Cmd: SELECT NONE
+[2023.11.10-20.35.21:876][785]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.35.22:080][807]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 4
+[2023.11.10-20.35.22:294][830]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 5
+[2023.11.10-20.35.22:731][877]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 6
+[2023.11.10-20.35.22:981][904]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 7
+[2023.11.10-20.35.44:637][ 28]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.35.46:146][170]LogEditorBookmarks: Warning: FBookmarkTypeToolsImpl::JumpToBookmark - Null Bookmark at index 3
+[2023.11.10-20.36.04:447][243]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.36.04:540][243]LogUObjectHash: Compacting FUObjectHashTables data took   0.62ms
+[2023.11.10-20.36.04:547][243]LogSavePackage: Moving output files for package: /Game/ThirdPerson/Maps/ThirdPersonMap
+[2023.11.10-20.36.04:549][243]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/ThirdPersonMap53FFE9DC44A0F837D07B459FF48D83CD.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/ThirdPerson/Maps/ThirdPersonMap.umap'
+[2023.11.10-20.36.04:556][243]LogFileHelpers: Saving map 'ThirdPersonMap' took 0.059
+[2023.11.10-20.36.04:559][243]LogSavePackage: Moving output files for package: /Game/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/4/6L/44J4O5YVROHPLSPIYW4XV3
+[2023.11.10-20.36.04:561][243]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/44J4O5YVROHPLSPIYW4XV353AB9C5C42C195329B9AD684A655197C.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/__ExternalActors__/ThirdPerson/Maps/ThirdPersonMap/4/6L/44J4O5YVROHPLSPIYW4XV3.uasset'
+[2023.11.10-20.36.04:572][243]LogFileHelpers: InternalPromptForCheckoutAndSave took 125 ms (total: 12.1 sec)
+[2023.11.10-20.36.04:575][243]AssetCheck: New page: Asset Save: multiple assets
+[2023.11.10-20.36.04:575][243]LogContentValidation: Display: Validating /Script/Engine.World /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap
+[2023.11.10-20.36.04:575][243]LogContentValidation: Display: Validating /Game/Enemies/AI/EQS/EQS_TestingPawn.EQS_TestingPawn_C /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap:PersistentLevel.EQS_TestingPawn_C_UAID_24418C3676CF87B501_1741822055
+[2023.11.10-20.36.30:481][380]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.36.30:525][380]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.36.30:526][380]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocationF3CC724947A9DB7F469263B47A83F444.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.36.30:536][380]LogFileHelpers: InternalPromptForCheckoutAndSave took 54 ms (total: 12.2 sec)
+[2023.11.10-20.36.30:537][380]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.36.30:537][380]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.36.37:739][767]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.36.37:780][767]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.36.37:782][767]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocationA2640A9C4BA09B247E06A890E4CD8B9C.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.36.37:794][767]LogFileHelpers: InternalPromptForCheckoutAndSave took 55 ms (total: 12.2 sec)
+[2023.11.10-20.36.37:795][767]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.36.37:795][767]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.36.48:042][988]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.36.48:085][988]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.36.48:087][988]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocation30C163934016FB79DCC6AAB4D8FD8385.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.36.48:095][988]LogFileHelpers: InternalPromptForCheckoutAndSave took 53 ms (total: 12.3 sec)
+[2023.11.10-20.36.48:096][988]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.36.48:096][988]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.36.49:248][ 96]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.36.49:352][ 96]LogUObjectHash: Compacting FUObjectHashTables data took   1.39ms
+[2023.11.10-20.36.49:360][ 96]LogSavePackage: Moving output files for package: /Game/ThirdPerson/Maps/ThirdPersonMap
+[2023.11.10-20.36.49:362][ 96]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/ThirdPersonMapCFA233484ECA66C0127612972FD460A6.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/ThirdPerson/Maps/ThirdPersonMap.umap'
+[2023.11.10-20.36.49:370][ 96]LogFileHelpers: Saving map 'ThirdPersonMap' took 0.068
+[2023.11.10-20.36.49:380][ 96]LogFileHelpers: InternalPromptForCheckoutAndSave took 132 ms (total: 12.4 sec)
+[2023.11.10-20.36.49:382][ 96]AssetCheck: New page: Asset Save: ThirdPersonMap
+[2023.11.10-20.36.49:382][ 96]LogContentValidation: Display: Validating /Script/Engine.World /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap
+[2023.11.10-20.37.15:998][703]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.37.16:046][703]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.37.16:047][703]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocationA5D5C1144A9E166DC053A391A4950B69.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.37.16:056][703]LogFileHelpers: InternalPromptForCheckoutAndSave took 58 ms (total: 12.5 sec)
+[2023.11.10-20.37.16:058][703]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.37.16:058][703]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.38.16:278][311]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.38.16:322][311]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.38.16:324][311]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocationE9DB27B94275C036F4A201850DDB778F.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.38.16:333][311]LogFileHelpers: InternalPromptForCheckoutAndSave took 54 ms (total: 12.5 sec)
+[2023.11.10-20.38.16:334][311]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.38.16:334][311]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.38.23:337][143]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.38.23:380][143]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.38.23:382][143]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocationFA329CFF49C16E39B0A641BAA1378F05.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.38.23:392][143]LogFileHelpers: InternalPromptForCheckoutAndSave took 54 ms (total: 12.6 sec)
+[2023.11.10-20.38.23:393][143]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.38.23:393][143]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.38.32:607][246]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.38.32:657][246]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.38.32:658][246]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocation1CB4AE2E440A59AD0DBBB9A32EC4FC76.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.38.32:674][246]LogFileHelpers: InternalPromptForCheckoutAndSave took 67 ms (total: 12.6 sec)
+[2023.11.10-20.38.32:675][246]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.38.32:675][246]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.38.47:139][948]Cmd: TRANSACTION UNDO
+[2023.11.10-20.38.47:139][948]LogEditorTransaction: Undo Delete current selection
+[2023.11.10-20.39.07:022][238]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.39.07:069][238]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.39.07:071][238]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range031A973D4C1D25970F9E5DA61B202205.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.39.07:081][238]LogFileHelpers: InternalPromptForCheckoutAndSave took 59 ms (total: 12.7 sec)
+[2023.11.10-20.39.07:082][238]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.39.07:082][238]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.39.17:703][455]LogDebuggerCommands: Repeating last play command: Selected Viewport
+[2023.11.10-20.39.17:713][455]LogContentBundle: [ThirdPersonMap(Standalone)] Generating Streaming for 0 Content Bundles.
+[2023.11.10-20.39.17:713][455]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' started...
+[2023.11.10-20.39.17:716][455]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' took 2 ms (total: 12 ms)
+[2023.11.10-20.39.17:722][455]BlueprintLog: New page: Pre-Play auto-recompile
+[2023.11.10-20.39.17:722][455]LogPlayLevel: [PlayLevel] Compiling BTD_IsWieldingSword before play...
+[2023.11.10-20.39.17:758][455]LogUObjectHash: Compacting FUObjectHashTables data took   1.54ms
+[2023.11.10-20.39.17:763][455]LogPlayLevel: PlayLevel: Blueprint regeneration took 40 ms (1 blueprints)
+[2023.11.10-20.39.17:763][455]PIE: New page: PIE session: ThirdPersonMap (Nov 10, 2023, 10:39:17 AM)
+[2023.11.10-20.39.17:807][455]LogPlayLevel: Creating play world package: /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.39.17:815][455]LogPlayLevel: PIE: StaticDuplicateObject took: (0.007299s)
+[2023.11.10-20.39.17:815][455]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap to /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap (0.007351s)
+[2023.11.10-20.39.17:832][455]LogUObjectHash: Compacting FUObjectHashTables data took   1.36ms
+[2023.11.10-20.39.17:834][455]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.39.17:834][455]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.39.17:835][455]LogAIModule: Creating AISystem for world ThirdPersonMap
+[2023.11.10-20.39.17:836][455]LogWorldPartition: ULevel::OnLevelLoaded(ThirdPersonMap)(bIsOwningWorldGameWorld=1, bIsOwningWorldPartitioned=1, InitializeForMainWorld=1, InitializeForEditor=0, InitializeForGame=1)
+[2023.11.10-20.39.17:836][455]LogWorldPartition: Display: WorldPartition initialize started...
+[2023.11.10-20.39.17:836][455]LogWorldPartition: UWorldPartition::Initialize : World = ThirdPersonMap, World Type = PIE, IsMainWorldPartition = 1, Location = V(0), Rotation = R(0), IsEditor = 0, IsGame = 0, IsPIEWorldTravel = 0, IsCooking = 0
+[2023.11.10-20.39.17:836][455]LogWorldPartition: UWorldPartition::Initialize Context : World NetMode = Standalone, IsServer = 0, IsDedicatedServer = 0, IsServerStreamingEnabled = 0, IsServerStreamingOutEnabled = 0, IsUsingMakingVisibleTransaction = 0, IsUsingMakingInvisibleTransaction = 0
+[2023.11.10-20.39.17:838][455]LogContentBundle: [ThirdPersonMap(Standalone)] Creating new contrainer.
+[2023.11.10-20.39.17:838][455]LogWorldPartition: Display: WorldPartition initialize took 2 ms (total: 95 ms)
+[2023.11.10-20.39.17:838][455]LogPlayLevel: PIE: World Init took: (0.003839s)
+[2023.11.10-20.39.17:838][455]LogAudio: Display: Creating Audio Device:                 Id: 6, Scope: Unique, Realtime: True
+[2023.11.10-20.39.17:838][455]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2023.11.10-20.39.17:838][455]LogAudioMixer: Display: 	Sample Rate:						  48000
+[2023.11.10-20.39.17:838][455]LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+[2023.11.10-20.39.17:838][455]LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+[2023.11.10-20.39.17:838][455]LogAudioMixer: Display: 	Number of buffers to queue:			  1
+[2023.11.10-20.39.17:838][455]LogAudioMixer: Display: 	Max Channels (voices):				  32
+[2023.11.10-20.39.17:838][455]LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+[2023.11.10-20.39.17:838][455]LogAudio: Display: AudioDevice MaxSources: 32
+[2023.11.10-20.39.17:839][455]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2023.11.10-20.39.17:839][455]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2023.11.10-20.39.17:839][455]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2023.11.10-20.39.17:843][455]LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+[2023.11.10-20.39.17:883][455]LogAudioMixer: Display: Using Audio Hardware Device Speakers (Wireless Stereo Headset)
+[2023.11.10-20.39.17:883][455]LogAudioMixer: Display: Initializing Sound Submixes...
+[2023.11.10-20.39.17:883][455]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2023.11.10-20.39.17:883][455]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2023.11.10-20.39.17:886][455]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called. InstanceID=6
+[2023.11.10-20.39.17:886][455]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048, InstanceID=6
+[2023.11.10-20.39.17:888][455]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=6
+[2023.11.10-20.39.17:888][455]LogInit: FAudioDevice initialized with ID 6.
+[2023.11.10-20.39.17:888][455]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=6
+[2023.11.10-20.39.17:888][455]LogAudio: Display: Audio Device (ID: 6) registered with world 'ThirdPersonMap'.
+[2023.11.10-20.39.17:888][455]LogAudioMixer: Initializing Audio Bus Subsystem for audio device with ID 6
+[2023.11.10-20.39.17:893][455]LogLoad: Game class is 'BP_ThirdPersonGameMode_C'
+[2023.11.10-20.39.17:898][455]LogWorld: Bringing World /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap up for play (max tick rate 0) at 2023.11.10-15.39.17
+[2023.11.10-20.39.17:900][455]LogWorld: Bringing up level for play took: 0.007219
+[2023.11.10-20.39.17:903][455]LogOnline: OSS: Created online subsystem instance for: :Context_55
+[2023.11.10-20.39.17:909][455]PIE: Server logged in
+[2023.11.10-20.39.17:910][455]PIE: Play in editor total start time 0.197 seconds.
+[2023.11.10-20.39.26:263][  4]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.39.26:263][  4]LogWorld: BeginTearingDown for /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.39.26:264][  4]LogWorld: UWorld::CleanupWorld for ThirdPersonMap, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.39.26:264][  4]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.39.26:265][  4]LogContentBundle: [ThirdPersonMap(Standalone)] Deleting container.
+[2023.11.10-20.39.26:273][  4]LogPlayLevel: Display: Shutting down PIE online subsystems
+[2023.11.10-20.39.26:280][  4]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.39.26:298][  4]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.39.26:299][  4]LogAudioMixer: Deinitializing Audio Bus Subsystem for audio device with ID 6
+[2023.11.10-20.39.26:299][  4]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=6
+[2023.11.10-20.39.26:301][  4]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=6
+[2023.11.10-20.39.26:309][  4]LogUObjectHash: Compacting FUObjectHashTables data took   1.48ms
+[2023.11.10-20.39.26:437][  5]LogPlayLevel: Display: Destroying online subsystem :Context_55
+[2023.11.10-20.39.28:117][130]Cmd: DELETE
+[2023.11.10-20.39.28:117][130]Cmd: ACTOR DELETE
+[2023.11.10-20.39.28:122][130]LogEditorActor: Deleted Actor: BP_Enemy_Base_C
+[2023.11.10-20.39.28:147][130]LogUObjectHash: Compacting FUObjectHashTables data took   1.71ms
+[2023.11.10-20.39.28:153][130]LogEditorActor: Deleted 1 Actors (0.035 secs)
+[2023.11.10-20.39.29:481][238]LogDebuggerCommands: Repeating last play command: Selected Viewport
+[2023.11.10-20.39.29:489][238]LogContentBundle: [ThirdPersonMap(Standalone)] Generating Streaming for 0 Content Bundles.
+[2023.11.10-20.39.29:490][238]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' started...
+[2023.11.10-20.39.29:493][238]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' took 3 ms (total: 15 ms)
+[2023.11.10-20.39.29:498][238]LogPlayLevel: PlayLevel: No blueprints needed recompiling
+[2023.11.10-20.39.29:498][238]PIE: New page: PIE session: ThirdPersonMap (Nov 10, 2023, 10:39:29 AM)
+[2023.11.10-20.39.29:498][238]LogPlayLevel: Creating play world package: /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.39.29:504][238]LogPlayLevel: PIE: StaticDuplicateObject took: (0.005908s)
+[2023.11.10-20.39.29:504][238]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap to /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap (0.005946s)
+[2023.11.10-20.39.29:520][238]LogUObjectHash: Compacting FUObjectHashTables data took   1.59ms
+[2023.11.10-20.39.29:526][238]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.39.29:527][238]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.39.29:527][238]LogAIModule: Creating AISystem for world ThirdPersonMap
+[2023.11.10-20.39.29:528][238]LogWorldPartition: ULevel::OnLevelLoaded(ThirdPersonMap)(bIsOwningWorldGameWorld=1, bIsOwningWorldPartitioned=1, InitializeForMainWorld=1, InitializeForEditor=0, InitializeForGame=1)
+[2023.11.10-20.39.29:528][238]LogWorldPartition: Display: WorldPartition initialize started...
+[2023.11.10-20.39.29:528][238]LogWorldPartition: UWorldPartition::Initialize : World = ThirdPersonMap, World Type = PIE, IsMainWorldPartition = 1, Location = V(0), Rotation = R(0), IsEditor = 0, IsGame = 0, IsPIEWorldTravel = 0, IsCooking = 0
+[2023.11.10-20.39.29:528][238]LogWorldPartition: UWorldPartition::Initialize Context : World NetMode = Standalone, IsServer = 0, IsDedicatedServer = 0, IsServerStreamingEnabled = 0, IsServerStreamingOutEnabled = 0, IsUsingMakingVisibleTransaction = 0, IsUsingMakingInvisibleTransaction = 0
+[2023.11.10-20.39.29:529][238]LogContentBundle: [ThirdPersonMap(Standalone)] Creating new contrainer.
+[2023.11.10-20.39.29:529][238]LogWorldPartition: Display: WorldPartition initialize took 1 ms (total: 97 ms)
+[2023.11.10-20.39.29:529][238]LogPlayLevel: PIE: World Init took: (0.003073s)
+[2023.11.10-20.39.29:529][238]LogAudio: Display: Creating Audio Device:                 Id: 7, Scope: Unique, Realtime: True
+[2023.11.10-20.39.29:529][238]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2023.11.10-20.39.29:530][238]LogAudioMixer: Display: 	Sample Rate:						  48000
+[2023.11.10-20.39.29:530][238]LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+[2023.11.10-20.39.29:530][238]LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+[2023.11.10-20.39.29:530][238]LogAudioMixer: Display: 	Number of buffers to queue:			  1
+[2023.11.10-20.39.29:530][238]LogAudioMixer: Display: 	Max Channels (voices):				  32
+[2023.11.10-20.39.29:530][238]LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+[2023.11.10-20.39.29:530][238]LogAudio: Display: AudioDevice MaxSources: 32
+[2023.11.10-20.39.29:530][238]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2023.11.10-20.39.29:530][238]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2023.11.10-20.39.29:530][238]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2023.11.10-20.39.29:532][238]LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+[2023.11.10-20.39.29:571][238]LogAudioMixer: Display: Using Audio Hardware Device Speakers (Wireless Stereo Headset)
+[2023.11.10-20.39.29:571][238]LogAudioMixer: Display: Initializing Sound Submixes...
+[2023.11.10-20.39.29:571][238]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2023.11.10-20.39.29:571][238]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2023.11.10-20.39.29:572][238]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called. InstanceID=7
+[2023.11.10-20.39.29:572][238]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048, InstanceID=7
+[2023.11.10-20.39.29:574][238]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=7
+[2023.11.10-20.39.29:574][238]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=7
+[2023.11.10-20.39.29:574][238]LogInit: FAudioDevice initialized with ID 7.
+[2023.11.10-20.39.29:574][238]LogAudio: Display: Audio Device (ID: 7) registered with world 'ThirdPersonMap'.
+[2023.11.10-20.39.29:574][238]LogAudioMixer: Initializing Audio Bus Subsystem for audio device with ID 7
+[2023.11.10-20.39.29:577][238]LogLoad: Game class is 'BP_ThirdPersonGameMode_C'
+[2023.11.10-20.39.29:581][238]LogWorld: Bringing World /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap up for play (max tick rate 0) at 2023.11.10-15.39.29
+[2023.11.10-20.39.29:582][238]LogWorld: Bringing up level for play took: 0.004794
+[2023.11.10-20.39.29:585][238]LogOnline: OSS: Created online subsystem instance for: :Context_56
+[2023.11.10-20.39.29:591][238]PIE: Server logged in
+[2023.11.10-20.39.29:592][238]PIE: Play in editor total start time 0.103 seconds.
+[2023.11.10-20.39.32:713][446]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.39.32:713][446]LogWorld: BeginTearingDown for /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.39.32:713][446]LogWorld: UWorld::CleanupWorld for ThirdPersonMap, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.39.32:714][446]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.39.32:714][446]LogContentBundle: [ThirdPersonMap(Standalone)] Deleting container.
+[2023.11.10-20.39.32:722][446]LogPlayLevel: Display: Shutting down PIE online subsystems
+[2023.11.10-20.39.32:730][446]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.39.32:748][446]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.39.32:749][446]LogAudioMixer: Deinitializing Audio Bus Subsystem for audio device with ID 7
+[2023.11.10-20.39.32:749][446]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=7
+[2023.11.10-20.39.32:751][446]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=7
+[2023.11.10-20.39.32:759][446]LogUObjectHash: Compacting FUObjectHashTables data took   1.59ms
+[2023.11.10-20.39.32:845][447]LogPlayLevel: Display: Destroying online subsystem :Context_56
+[2023.11.10-20.39.40:745][298]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.39.40:792][298]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.39.40:794][298]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocationAC72BC8940CDC4C8F69B7690F1D1E7B9.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.39.40:804][298]LogFileHelpers: InternalPromptForCheckoutAndSave took 59 ms (total: 12.8 sec)
+[2023.11.10-20.39.40:806][298]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.39.40:806][298]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.39.42:351][442]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.39.42:409][442]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.39.42:411][442]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocationCEA52D7C4F9A08938ED42ABAF59E2407.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.39.42:422][442]LogFileHelpers: InternalPromptForCheckoutAndSave took 70 ms (total: 12.8 sec)
+[2023.11.10-20.39.42:423][442]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.39.42:423][442]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.39.42:792][483]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.39.42:838][483]LogSavePackage: Moving output files for package: /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation
+[2023.11.10-20.39.42:840][483]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/EQ_FindIdealRangedLocation7AA903CF43A7C64D6243BF8F8C232E33.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/EQS/EQ_FindIdealRangedLocation.uasset'
+[2023.11.10-20.39.42:849][483]LogFileHelpers: InternalPromptForCheckoutAndSave took 57 ms (total: 12.9 sec)
+[2023.11.10-20.39.42:850][483]AssetCheck: New page: Asset Save: EQ_FindIdealRangedLocation
+[2023.11.10-20.39.42:850][483]LogContentValidation: Display: Validating /Script/AIModule.EnvQuery /Game/Enemies/AI/EQS/EQ_FindIdealRangedLocation.EQ_FindIdealRangedLocation
+[2023.11.10-20.40.29:272][198]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.40.29:342][198]LogUObjectHash: Compacting FUObjectHashTables data took   1.46ms
+[2023.11.10-20.40.30:097][237]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.40.30:288][237]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.40.30:301][237]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.40.30:303][237]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_RangedCE0003C34B49AFCAA1F1B4961D298548.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.40.30:317][237]LogFileHelpers: InternalPromptForCheckoutAndSave took 220 ms (total: 13.1 sec)
+[2023.11.10-20.40.30:320][237]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.40.30:320][237]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.40.48:321][ 23]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.40.48:400][ 23]LogUObjectHash: Compacting FUObjectHashTables data took   1.36ms
+[2023.11.10-20.40.48:919][ 70]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.40.49:060][ 70]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.40.49:072][ 70]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.40.49:073][ 70]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Ranged24AFD942490CB3C80B15159490B6A9FF.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.40.49:085][ 70]LogFileHelpers: InternalPromptForCheckoutAndSave took 165 ms (total: 13.3 sec)
+[2023.11.10-20.40.49:086][ 70]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.40.49:087][ 70]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.41.17:394][649]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.41.17:471][649]LogUObjectHash: Compacting FUObjectHashTables data took   1.73ms
+[2023.11.10-20.41.17:984][696]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.41.18:133][696]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.41.18:147][696]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.41.18:149][696]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_RangedE6F81E0445A5A0FE1EC1A0906D17E6F9.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.41.18:159][696]LogFileHelpers: InternalPromptForCheckoutAndSave took 175 ms (total: 13.4 sec)
+[2023.11.10-20.41.18:161][696]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.41.18:161][696]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.41.40:160][978]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.41.40:227][978]LogUObjectHash: Compacting FUObjectHashTables data took   1.38ms
+[2023.11.10-20.41.40:741][ 24]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.41.40:885][ 24]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.41.40:899][ 24]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.41.40:901][ 24]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_RangedEA409DC645C8345C7225498D47DD3ED6.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.41.40:911][ 24]LogFileHelpers: InternalPromptForCheckoutAndSave took 169 ms (total: 13.6 sec)
+[2023.11.10-20.41.40:913][ 24]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.41.40:913][ 24]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.42.57:792][324]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.42.57:859][324]LogUObjectHash: Compacting FUObjectHashTables data took   1.32ms
+[2023.11.10-20.42.58:204][351]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.42.58:351][351]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.42.58:365][351]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.42.58:366][351]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_RangedFAE1CEEA444570E16CC78EACB27FFA32.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.42.58:375][351]LogFileHelpers: InternalPromptForCheckoutAndSave took 170 ms (total: 13.8 sec)
+[2023.11.10-20.42.58:376][351]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.42.58:376][351]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.43.08:820][160]LogActorComponent: UnregisterComponent: (/Engine/Transient.EditorFloorComp) Not registered. Aborting.
+[2023.11.10-20.43.08:820][160]LogWorld: UWorld::CleanupWorld for World_33, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.43.08:820][160]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.43.10:127][275]LogWorld: UWorld::CleanupWorld for World_34, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.43.10:127][275]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.43.10:983][344]LogActorComponent: UnregisterComponent: (/Engine/Transient.EditorFloorComp) Not registered. Aborting.
+[2023.11.10-20.43.10:983][344]LogWorld: UWorld::CleanupWorld for World_46, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.43.10:983][344]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.43.36:860][ 43]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.43.36:931][ 43]LogUObjectHash: Compacting FUObjectHashTables data took   1.40ms
+[2023.11.10-20.43.37:599][111]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.43.37:762][111]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.43.37:777][111]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.43.37:779][111]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_RangedEF26DF954A4803C9BA03F5A121CE2223.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.43.37:788][111]LogFileHelpers: InternalPromptForCheckoutAndSave took 189 ms (total: 14.0 sec)
+[2023.11.10-20.43.37:790][111]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.43.37:790][111]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.43.56:810][164]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.43.56:888][164]LogUObjectHash: Compacting FUObjectHashTables data took   1.65ms
+[2023.11.10-20.43.57:351][200]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.43.57:503][200]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.43.57:519][200]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.43.57:521][200]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_RangedD7C95C244D88602E38EFBE886536FC33.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.43.57:531][200]LogFileHelpers: InternalPromptForCheckoutAndSave took 179 ms (total: 14.2 sec)
+[2023.11.10-20.43.57:533][200]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.43.57:533][200]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.44.01:923][686]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.44.01:975][686]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.44.01:977][686]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range33ABA9C54A8CA8AF56F994820FE0DA50.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.44.01:988][686]LogFileHelpers: InternalPromptForCheckoutAndSave took 65 ms (total: 14.2 sec)
+[2023.11.10-20.44.01:990][686]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.44.01:990][686]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.44.03:241][785]LogDebuggerCommands: Repeating last play command: Selected Viewport
+[2023.11.10-20.44.03:250][785]LogContentBundle: [ThirdPersonMap(Standalone)] Generating Streaming for 0 Content Bundles.
+[2023.11.10-20.44.03:250][785]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' started...
+[2023.11.10-20.44.03:252][785]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' took 2 ms (total: 18 ms)
+[2023.11.10-20.44.03:258][785]LogPlayLevel: PlayLevel: No blueprints needed recompiling
+[2023.11.10-20.44.03:258][785]PIE: New page: PIE session: ThirdPersonMap (Nov 10, 2023, 10:44:03 AM)
+[2023.11.10-20.44.03:283][785]LogPlayLevel: Creating play world package: /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.44.03:288][785]LogPlayLevel: PIE: StaticDuplicateObject took: (0.005658s)
+[2023.11.10-20.44.03:288][785]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap to /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap (0.005728s)
+[2023.11.10-20.44.03:308][785]LogUObjectHash: Compacting FUObjectHashTables data took   1.79ms
+[2023.11.10-20.44.03:317][785]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.44.03:317][785]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.44.03:318][785]LogAIModule: Creating AISystem for world ThirdPersonMap
+[2023.11.10-20.44.03:318][785]LogWorldPartition: ULevel::OnLevelLoaded(ThirdPersonMap)(bIsOwningWorldGameWorld=1, bIsOwningWorldPartitioned=1, InitializeForMainWorld=1, InitializeForEditor=0, InitializeForGame=1)
+[2023.11.10-20.44.03:318][785]LogWorldPartition: Display: WorldPartition initialize started...
+[2023.11.10-20.44.03:318][785]LogWorldPartition: UWorldPartition::Initialize : World = ThirdPersonMap, World Type = PIE, IsMainWorldPartition = 1, Location = V(0), Rotation = R(0), IsEditor = 0, IsGame = 0, IsPIEWorldTravel = 0, IsCooking = 0
+[2023.11.10-20.44.03:318][785]LogWorldPartition: UWorldPartition::Initialize Context : World NetMode = Standalone, IsServer = 0, IsDedicatedServer = 0, IsServerStreamingEnabled = 0, IsServerStreamingOutEnabled = 0, IsUsingMakingVisibleTransaction = 0, IsUsingMakingInvisibleTransaction = 0
+[2023.11.10-20.44.03:320][785]LogContentBundle: [ThirdPersonMap(Standalone)] Creating new contrainer.
+[2023.11.10-20.44.03:320][785]LogWorldPartition: Display: WorldPartition initialize took 1 ms (total: 99 ms)
+[2023.11.10-20.44.03:320][785]LogPlayLevel: PIE: World Init took: (0.003376s)
+[2023.11.10-20.44.03:320][785]LogAudio: Display: Creating Audio Device:                 Id: 8, Scope: Unique, Realtime: True
+[2023.11.10-20.44.03:320][785]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2023.11.10-20.44.03:320][785]LogAudioMixer: Display: 	Sample Rate:						  48000
+[2023.11.10-20.44.03:320][785]LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+[2023.11.10-20.44.03:320][785]LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+[2023.11.10-20.44.03:320][785]LogAudioMixer: Display: 	Number of buffers to queue:			  1
+[2023.11.10-20.44.03:320][785]LogAudioMixer: Display: 	Max Channels (voices):				  32
+[2023.11.10-20.44.03:320][785]LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+[2023.11.10-20.44.03:320][785]LogAudio: Display: AudioDevice MaxSources: 32
+[2023.11.10-20.44.03:321][785]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2023.11.10-20.44.03:321][785]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2023.11.10-20.44.03:321][785]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2023.11.10-20.44.03:323][785]LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+[2023.11.10-20.44.03:385][785]LogAudioMixer: Display: Using Audio Hardware Device Speakers (Wireless Stereo Headset)
+[2023.11.10-20.44.03:385][785]LogAudioMixer: Display: Initializing Sound Submixes...
+[2023.11.10-20.44.03:385][785]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2023.11.10-20.44.03:385][785]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2023.11.10-20.44.03:386][785]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called. InstanceID=8
+[2023.11.10-20.44.03:387][785]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048, InstanceID=8
+[2023.11.10-20.44.03:390][785]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=8
+[2023.11.10-20.44.03:390][785]LogInit: FAudioDevice initialized with ID 8.
+[2023.11.10-20.44.03:390][785]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=8
+[2023.11.10-20.44.03:390][785]LogAudio: Display: Audio Device (ID: 8) registered with world 'ThirdPersonMap'.
+[2023.11.10-20.44.03:390][785]LogAudioMixer: Initializing Audio Bus Subsystem for audio device with ID 8
+[2023.11.10-20.44.03:394][785]LogLoad: Game class is 'BP_ThirdPersonGameMode_C'
+[2023.11.10-20.44.03:400][785]LogWorld: Bringing World /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap up for play (max tick rate 0) at 2023.11.10-15.44.03
+[2023.11.10-20.44.03:402][785]LogWorld: Bringing up level for play took: 0.006878
+[2023.11.10-20.44.03:406][785]LogOnline: OSS: Created online subsystem instance for: :Context_57
+[2023.11.10-20.44.03:415][785]PIE: Server logged in
+[2023.11.10-20.44.03:416][785]PIE: Play in editor total start time 0.166 seconds.
+[2023.11.10-20.44.17:179][753]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.44.17:179][753]LogWorld: BeginTearingDown for /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.44.17:180][753]LogWorld: UWorld::CleanupWorld for ThirdPersonMap, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.44.17:181][753]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.44.17:181][753]LogContentBundle: [ThirdPersonMap(Standalone)] Deleting container.
+[2023.11.10-20.44.17:213][753]LogPlayLevel: Display: Shutting down PIE online subsystems
+[2023.11.10-20.44.17:221][753]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.44.17:241][753]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2023.11.10-20.44.17:241][753]LogAudioMixer: Deinitializing Audio Bus Subsystem for audio device with ID 8
+[2023.11.10-20.44.17:241][753]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=8
+[2023.11.10-20.44.17:243][753]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=8
+[2023.11.10-20.44.17:247][753]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.44.17:252][753]LogUObjectHash: Compacting FUObjectHashTables data took   1.75ms
+[2023.11.10-20.44.17:332][754]LogPlayLevel: Display: Destroying online subsystem :Context_57
+[2023.11.10-20.45.21:674][468]BlueprintLog: New page: Compile BP_Enemy_Ranged
+[2023.11.10-20.45.21:832][468]LogUObjectHash: Compacting FUObjectHashTables data took   1.53ms
+[2023.11.10-20.45.22:237][470]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.45.22:289][470]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Ranged" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset" SILENT=true
+[2023.11.10-20.45.22:305][470]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Ranged
+[2023.11.10-20.45.22:307][470]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Ranged4CDE99C346E0360FCBB51EBBB9EBEAD7.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Ranged.uasset'
+[2023.11.10-20.45.22:315][470]LogFileHelpers: InternalPromptForCheckoutAndSave took 78 ms (total: 14.3 sec)
+[2023.11.10-20.45.22:317][470]AssetCheck: New page: Asset Save: BP_Enemy_Ranged
+[2023.11.10-20.45.22:318][470]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged
+[2023.11.10-20.45.23:413][558]LogDebuggerCommands: Repeating last play command: Selected Viewport
+[2023.11.10-20.45.23:422][558]LogContentBundle: [ThirdPersonMap(Standalone)] Generating Streaming for 0 Content Bundles.
+[2023.11.10-20.45.23:423][558]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' started...
+[2023.11.10-20.45.23:425][558]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' took 2 ms (total: 21 ms)
+[2023.11.10-20.45.23:431][558]LogPlayLevel: PlayLevel: No blueprints needed recompiling
+[2023.11.10-20.45.23:431][558]PIE: New page: PIE session: ThirdPersonMap (Nov 10, 2023, 10:45:23 AM)
+[2023.11.10-20.45.23:451][558]LogPlayLevel: Creating play world package: /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.45.23:457][558]LogPlayLevel: PIE: StaticDuplicateObject took: (0.006171s)
+[2023.11.10-20.45.23:457][558]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap to /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap (0.006222s)
+[2023.11.10-20.45.23:474][558]LogUObjectHash: Compacting FUObjectHashTables data took   1.43ms
+[2023.11.10-20.45.23:482][558]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.45.23:482][558]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.45.23:483][558]LogAIModule: Creating AISystem for world ThirdPersonMap
+[2023.11.10-20.45.23:483][558]LogWorldPartition: ULevel::OnLevelLoaded(ThirdPersonMap)(bIsOwningWorldGameWorld=1, bIsOwningWorldPartitioned=1, InitializeForMainWorld=1, InitializeForEditor=0, InitializeForGame=1)
+[2023.11.10-20.45.23:483][558]LogWorldPartition: Display: WorldPartition initialize started...
+[2023.11.10-20.45.23:483][558]LogWorldPartition: UWorldPartition::Initialize : World = ThirdPersonMap, World Type = PIE, IsMainWorldPartition = 1, Location = V(0), Rotation = R(0), IsEditor = 0, IsGame = 0, IsPIEWorldTravel = 0, IsCooking = 0
+[2023.11.10-20.45.23:483][558]LogWorldPartition: UWorldPartition::Initialize Context : World NetMode = Standalone, IsServer = 0, IsDedicatedServer = 0, IsServerStreamingEnabled = 0, IsServerStreamingOutEnabled = 0, IsUsingMakingVisibleTransaction = 0, IsUsingMakingInvisibleTransaction = 0
+[2023.11.10-20.45.23:485][558]LogContentBundle: [ThirdPersonMap(Standalone)] Creating new contrainer.
+[2023.11.10-20.45.23:485][558]LogWorldPartition: Display: WorldPartition initialize took 1 ms (total: 100 ms)
+[2023.11.10-20.45.23:485][558]LogPlayLevel: PIE: World Init took: (0.003282s)
+[2023.11.10-20.45.23:485][558]LogAudio: Display: Creating Audio Device:                 Id: 9, Scope: Unique, Realtime: True
+[2023.11.10-20.45.23:485][558]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2023.11.10-20.45.23:485][558]LogAudioMixer: Display: 	Sample Rate:						  48000
+[2023.11.10-20.45.23:485][558]LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+[2023.11.10-20.45.23:485][558]LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+[2023.11.10-20.45.23:485][558]LogAudioMixer: Display: 	Number of buffers to queue:			  1
+[2023.11.10-20.45.23:485][558]LogAudioMixer: Display: 	Max Channels (voices):				  32
+[2023.11.10-20.45.23:485][558]LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+[2023.11.10-20.45.23:485][558]LogAudio: Display: AudioDevice MaxSources: 32
+[2023.11.10-20.45.23:486][558]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2023.11.10-20.45.23:486][558]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2023.11.10-20.45.23:486][558]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2023.11.10-20.45.23:488][558]LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+[2023.11.10-20.45.23:532][558]LogAudioMixer: Display: Using Audio Hardware Device Speakers (Wireless Stereo Headset)
+[2023.11.10-20.45.23:532][558]LogAudioMixer: Display: Initializing Sound Submixes...
+[2023.11.10-20.45.23:532][558]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2023.11.10-20.45.23:532][558]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2023.11.10-20.45.23:533][558]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called. InstanceID=9
+[2023.11.10-20.45.23:533][558]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048, InstanceID=9
+[2023.11.10-20.45.23:535][558]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=9
+[2023.11.10-20.45.23:535][558]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=9
+[2023.11.10-20.45.23:535][558]LogInit: FAudioDevice initialized with ID 9.
+[2023.11.10-20.45.23:535][558]LogAudio: Display: Audio Device (ID: 9) registered with world 'ThirdPersonMap'.
+[2023.11.10-20.45.23:535][558]LogAudioMixer: Initializing Audio Bus Subsystem for audio device with ID 9
+[2023.11.10-20.45.23:539][558]LogLoad: Game class is 'BP_ThirdPersonGameMode_C'
+[2023.11.10-20.45.23:543][558]LogWorld: Bringing World /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap up for play (max tick rate 0) at 2023.11.10-15.45.23
+[2023.11.10-20.45.23:545][558]LogWorld: Bringing up level for play took: 0.005666
+[2023.11.10-20.45.23:547][558]LogOnline: OSS: Created online subsystem instance for: :Context_58
+[2023.11.10-20.45.23:552][558]PIE: Server logged in
+[2023.11.10-20.45.23:553][558]PIE: Play in editor total start time 0.131 seconds.
+[2023.11.10-20.45.27:916][856]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.45.27:916][856]LogWorld: BeginTearingDown for /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.45.27:916][856]LogWorld: UWorld::CleanupWorld for ThirdPersonMap, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.45.27:916][856]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.45.27:917][856]LogContentBundle: [ThirdPersonMap(Standalone)] Deleting container.
+[2023.11.10-20.45.27:944][856]LogPlayLevel: Display: Shutting down PIE online subsystems
+[2023.11.10-20.45.27:952][856]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.45.27:970][856]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2023.11.10-20.45.27:970][856]LogAudioMixer: Deinitializing Audio Bus Subsystem for audio device with ID 9
+[2023.11.10-20.45.27:970][856]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=9
+[2023.11.10-20.45.27:972][856]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=9
+[2023.11.10-20.45.27:975][856]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.45.27:979][856]LogUObjectHash: Compacting FUObjectHashTables data took   1.32ms
+[2023.11.10-20.45.28:144][857]LogPlayLevel: Display: Destroying online subsystem :Context_58
+[2023.11.10-20.46.59:203][922]LogSlate: Window 'Save Asset As' being destroyed
+[2023.11.10-20.46.59:226][922]LogAssetEditorSubsystem: Opening Asset editor for Blueprint /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.BTD_CanSeeTarget
+[2023.11.10-20.46.59:227][922]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.46.59:227][922]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.46.59:306][922]LogPackageName: SearchForPackageOnDisk took   0.000s, but failed to resolve /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.
+[2023.11.10-20.46.59:307][922]LogPackageName: SearchForPackageOnDisk took   0.000s, but failed to resolve /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.
+[2023.11.10-20.46.59:347][922]LogAutomationController: Ignoring very large delta of 11.20 seconds in calls to FAutomationControllerManager::Tick() and not penalizing unresponsive tests
+[2023.11.10-20.47.00:376][ 46]BlueprintLog: New page: Compile BTD_CanSeeTarget
+[2023.11.10-20.47.00:397][ 46]LogUObjectHash: Compacting FUObjectHashTables data took   1.33ms
+[2023.11.10-20.47.00:841][ 93]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.47.00:888][ 93]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Decorators/BTD_CanSeeTarget
+[2023.11.10-20.47.00:888][ 93]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_CanSeeTargetE03E946F42BC576E6CB0B5A8B17B8D8C.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_CanSeeTarget.uasset'
+[2023.11.10-20.47.00:890][ 93]LogPackageName: SearchForPackageOnDisk took   0.000s to resolve /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.
+[2023.11.10-20.47.00:892][ 93]LogPackageName: SearchForPackageOnDisk took   0.000s to resolve /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.
+[2023.11.10-20.47.00:901][ 93]LogFileHelpers: InternalPromptForCheckoutAndSave took 59 ms (total: 14.4 sec)
+[2023.11.10-20.47.00:902][ 93]AssetCheck: New page: Asset Save: BTD_CanSeeTarget
+[2023.11.10-20.47.00:902][ 93]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.BTD_CanSeeTarget
+[2023.11.10-20.47.29:596][183]BlueprintLog: New page: Compile BTD_CanSeeTarget
+[2023.11.10-20.47.29:618][183]LogUObjectHash: Compacting FUObjectHashTables data took   1.86ms
+[2023.11.10-20.47.30:098][234]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.47.30:147][234]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Decorators/BTD_CanSeeTarget
+[2023.11.10-20.47.30:148][234]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_CanSeeTarget4D11822B4828AE8F30A4C4911E1CED58.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_CanSeeTarget.uasset'
+[2023.11.10-20.47.30:159][234]LogFileHelpers: InternalPromptForCheckoutAndSave took 60 ms (total: 14.4 sec)
+[2023.11.10-20.47.30:161][234]AssetCheck: New page: Asset Save: BTD_CanSeeTarget
+[2023.11.10-20.47.30:161][234]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.BTD_CanSeeTarget
+[2023.11.10-20.47.34:870][784]BlueprintLog: New page: Compile BTD_CanSeeTarget
+[2023.11.10-20.47.34:894][784]LogUObjectHash: Compacting FUObjectHashTables data took   1.36ms
+[2023.11.10-20.47.35:392][837]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.47.35:434][837]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Decorators/BTD_CanSeeTarget
+[2023.11.10-20.47.35:436][837]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_CanSeeTarget56BFEFC34A367293A8EF9786AAC6B513.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_CanSeeTarget.uasset'
+[2023.11.10-20.47.35:444][837]LogFileHelpers: InternalPromptForCheckoutAndSave took 52 ms (total: 14.5 sec)
+[2023.11.10-20.47.35:446][837]AssetCheck: New page: Asset Save: BTD_CanSeeTarget
+[2023.11.10-20.47.35:446][837]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.BTD_CanSeeTarget
+[2023.11.10-20.48.26:513][534]BlueprintLog: New page: Compile BTD_CanSeeTarget
+[2023.11.10-20.48.26:534][534]LogUObjectHash: Compacting FUObjectHashTables data took   1.33ms
+[2023.11.10-20.48.27:285][616]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.48.27:332][616]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Decorators/BTD_CanSeeTarget
+[2023.11.10-20.48.27:333][616]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_CanSeeTarget8C72762347CC9F51D61549BEEAE8A975.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_CanSeeTarget.uasset'
+[2023.11.10-20.48.27:342][616]LogFileHelpers: InternalPromptForCheckoutAndSave took 57 ms (total: 14.5 sec)
+[2023.11.10-20.48.27:344][616]AssetCheck: New page: Asset Save: BTD_CanSeeTarget
+[2023.11.10-20.48.27:344][616]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.BTD_CanSeeTarget
+[2023.11.10-20.48.53:730][670]LogAssetEditorSubsystem: Opening Asset editor for Blueprint /Game/Weapons/BP_Weapon_Base.BP_Weapon_Base
+[2023.11.10-20.48.53:730][670]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.48.53:730][670]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.48.58:159][160]LogWorld: UWorld::CleanupWorld for World_51, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.48.58:159][160]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.49.27:565][175]BlueprintLog: New page: Compile BTD_CanSeeTarget
+[2023.11.10-20.49.27:588][175]LogUObjectHash: Compacting FUObjectHashTables data took   1.32ms
+[2023.11.10-20.49.28:324][258]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.49.28:368][258]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Decorators/BTD_CanSeeTarget
+[2023.11.10-20.49.28:369][258]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_CanSeeTargetA460C5B347E9E4CA6969DE9498B30812.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_CanSeeTarget.uasset'
+[2023.11.10-20.49.28:378][258]LogFileHelpers: InternalPromptForCheckoutAndSave took 54 ms (total: 14.6 sec)
+[2023.11.10-20.49.28:379][258]AssetCheck: New page: Asset Save: BTD_CanSeeTarget
+[2023.11.10-20.49.28:379][258]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Decorators/BTD_CanSeeTarget.BTD_CanSeeTarget
+[2023.11.10-20.49.49:649][989]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.49.49:694][989]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.49.49:696][989]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_RangeB0C10CC44ADD0C1E49F9E5A5977B077C.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.49.49:706][989]LogFileHelpers: InternalPromptForCheckoutAndSave took 56 ms (total: 14.6 sec)
+[2023.11.10-20.49.49:707][989]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.49.49:707][989]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.51.22:769][767]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.51.22:815][767]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.51.22:817][767]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range3547B3804D6C00249A34D2AFC691EFE0.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.51.22:826][767]LogFileHelpers: InternalPromptForCheckoutAndSave took 56 ms (total: 14.7 sec)
+[2023.11.10-20.51.22:827][767]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.51.22:827][767]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.51.42:013][459]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.51.42:062][459]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.51.42:063][459]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_RangeE6B4C22E4D48D16CDD014F9C0D555982.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.51.42:076][459]LogFileHelpers: InternalPromptForCheckoutAndSave took 63 ms (total: 14.8 sec)
+[2023.11.10-20.51.42:077][459]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.51.42:077][459]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.51.55:432][ 39]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.51.55:481][ 39]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-20.51.55:482][ 39]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range8396E8FB4106BC0CB5A48B8ACEF33F22.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-20.51.55:493][ 39]LogFileHelpers: InternalPromptForCheckoutAndSave took 61 ms (total: 14.8 sec)
+[2023.11.10-20.51.55:494][ 39]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-20.51.55:494][ 39]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-20.52.01:221][602]LogDebuggerCommands: Repeating last play command: Selected Viewport
+[2023.11.10-20.52.01:229][602]LogContentBundle: [ThirdPersonMap(Standalone)] Generating Streaming for 0 Content Bundles.
+[2023.11.10-20.52.01:229][602]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' started...
+[2023.11.10-20.52.01:232][602]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' took 2 ms (total: 23 ms)
+[2023.11.10-20.52.01:238][602]LogPlayLevel: PlayLevel: No blueprints needed recompiling
+[2023.11.10-20.52.01:238][602]PIE: New page: PIE session: ThirdPersonMap (Nov 10, 2023, 10:52:01 AM)
+[2023.11.10-20.52.01:238][602]LogPlayLevel: Creating play world package: /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.52.01:245][602]LogPlayLevel: PIE: StaticDuplicateObject took: (0.007084s)
+[2023.11.10-20.52.01:245][602]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap to /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap (0.007140s)
+[2023.11.10-20.52.01:263][602]LogUObjectHash: Compacting FUObjectHashTables data took   1.54ms
+[2023.11.10-20.52.01:268][602]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.52.01:268][602]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.52.01:268][602]LogAIModule: Creating AISystem for world ThirdPersonMap
+[2023.11.10-20.52.01:269][602]LogWorldPartition: ULevel::OnLevelLoaded(ThirdPersonMap)(bIsOwningWorldGameWorld=1, bIsOwningWorldPartitioned=1, InitializeForMainWorld=1, InitializeForEditor=0, InitializeForGame=1)
+[2023.11.10-20.52.01:269][602]LogWorldPartition: Display: WorldPartition initialize started...
+[2023.11.10-20.52.01:269][602]LogWorldPartition: UWorldPartition::Initialize : World = ThirdPersonMap, World Type = PIE, IsMainWorldPartition = 1, Location = V(0), Rotation = R(0), IsEditor = 0, IsGame = 0, IsPIEWorldTravel = 0, IsCooking = 0
+[2023.11.10-20.52.01:269][602]LogWorldPartition: UWorldPartition::Initialize Context : World NetMode = Standalone, IsServer = 0, IsDedicatedServer = 0, IsServerStreamingEnabled = 0, IsServerStreamingOutEnabled = 0, IsUsingMakingVisibleTransaction = 0, IsUsingMakingInvisibleTransaction = 0
+[2023.11.10-20.52.01:271][602]LogContentBundle: [ThirdPersonMap(Standalone)] Creating new contrainer.
+[2023.11.10-20.52.01:271][602]LogWorldPartition: Display: WorldPartition initialize took 1 ms (total: 102 ms)
+[2023.11.10-20.52.01:271][602]LogPlayLevel: PIE: World Init took: (0.003617s)
+[2023.11.10-20.52.01:271][602]LogAudio: Display: Creating Audio Device:                 Id: 10, Scope: Unique, Realtime: True
+[2023.11.10-20.52.01:271][602]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2023.11.10-20.52.01:271][602]LogAudioMixer: Display: 	Sample Rate:						  48000
+[2023.11.10-20.52.01:271][602]LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+[2023.11.10-20.52.01:271][602]LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+[2023.11.10-20.52.01:271][602]LogAudioMixer: Display: 	Number of buffers to queue:			  1
+[2023.11.10-20.52.01:271][602]LogAudioMixer: Display: 	Max Channels (voices):				  32
+[2023.11.10-20.52.01:271][602]LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+[2023.11.10-20.52.01:271][602]LogAudio: Display: AudioDevice MaxSources: 32
+[2023.11.10-20.52.01:272][602]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2023.11.10-20.52.01:272][602]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2023.11.10-20.52.01:272][602]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2023.11.10-20.52.01:274][602]LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+[2023.11.10-20.52.01:314][602]LogAudioMixer: Display: Using Audio Hardware Device Speakers (Wireless Stereo Headset)
+[2023.11.10-20.52.01:315][602]LogAudioMixer: Display: Initializing Sound Submixes...
+[2023.11.10-20.52.01:315][602]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2023.11.10-20.52.01:315][602]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2023.11.10-20.52.01:316][602]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called. InstanceID=10
+[2023.11.10-20.52.01:316][602]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048, InstanceID=10
+[2023.11.10-20.52.01:318][602]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=10
+[2023.11.10-20.52.01:318][602]LogInit: FAudioDevice initialized with ID 10.
+[2023.11.10-20.52.01:318][602]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=10
+[2023.11.10-20.52.01:318][602]LogAudio: Display: Audio Device (ID: 10) registered with world 'ThirdPersonMap'.
+[2023.11.10-20.52.01:318][602]LogAudioMixer: Initializing Audio Bus Subsystem for audio device with ID 10
+[2023.11.10-20.52.01:321][602]LogLoad: Game class is 'BP_ThirdPersonGameMode_C'
+[2023.11.10-20.52.01:326][602]LogWorld: Bringing World /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap up for play (max tick rate 0) at 2023.11.10-15.52.01
+[2023.11.10-20.52.01:327][602]LogWorld: Bringing up level for play took: 0.005228
+[2023.11.10-20.52.01:330][602]LogOnline: OSS: Created online subsystem instance for: :Context_61
+[2023.11.10-20.52.01:335][602]PIE: Server logged in
+[2023.11.10-20.52.01:336][602]PIE: Play in editor total start time 0.107 seconds.
+[2023.11.10-20.52.10:010][194]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.52.10:010][194]LogWorld: BeginTearingDown for /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-20.52.10:011][194]LogWorld: UWorld::CleanupWorld for ThirdPersonMap, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-20.52.10:012][194]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.52.10:012][194]LogContentBundle: [ThirdPersonMap(Standalone)] Deleting container.
+[2023.11.10-20.52.10:043][194]LogPlayLevel: Display: Shutting down PIE online subsystems
+[2023.11.10-20.52.10:051][194]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-20.52.10:070][194]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2023.11.10-20.52.10:071][194]LogAudioMixer: Deinitializing Audio Bus Subsystem for audio device with ID 10
+[2023.11.10-20.52.10:071][194]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=10
+[2023.11.10-20.52.10:073][194]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=10
+[2023.11.10-20.52.10:076][194]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-20.52.10:080][194]LogUObjectHash: Compacting FUObjectHashTables data took   1.46ms
+[2023.11.10-20.52.10:255][195]LogPlayLevel: Display: Destroying online subsystem :Context_61
+[2023.11.10-20.52.36:113][332]LogUObjectHash: Compacting FUObjectHashTables data took   1.48ms
+[2023.11.10-20.52.36:122][332]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto9
+[2023.11.10-20.52.36:122][332]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/ThirdPersonMap_Auto97AC422784149AFB8C85ACFA78E815651.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto9.umap'
+[2023.11.10-20.52.36:124][332]LogAssetRegistry: Warning: ScanPathsSynchronous: C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto9.umap is in the /Temp path, will not scan.
+[2023.11.10-20.52.36:124][332]LogAssetRegistry: Warning: ScanPathsSynchronous: /Temp/__ExternalActors__/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto9 is in the /Temp path, will not scan.
+[2023.11.10-20.52.36:124][332]LogAssetRegistry: Warning: ScanPathsSynchronous: /Temp/__ExternalObjects__/Autosaves/Game/ThirdPerson/Maps/ThirdPersonMap_Auto9 is in the /Temp path, will not scan.
+[2023.11.10-20.52.36:125][332]LogFileHelpers: Editor autosave (incl. external actors) for '/Game/ThirdPerson/Maps/ThirdPersonMap' took 0.031
+[2023.11.10-20.52.36:125][332]LogFileHelpers: Editor autosave (incl. sublevels & external actors) for all levels took 0.031
+[2023.11.10-20.52.36:125][332]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Characters/Mannequins/Meshes/SK_Mannequin] ([1] browsable assets)...
+[2023.11.10-20.52.36:125][332]OBJ SavePackage: Finished generating thumbnails for package [/Game/Characters/Mannequins/Meshes/SK_Mannequin]
+[2023.11.10-20.52.36:141][332]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Characters/Mannequins/Meshes/SK_Mannequin_Auto9
+[2023.11.10-20.52.36:141][332]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/SK_Mannequin_Auto999ED0F1D4FB98386F74C059587DC81D7.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Characters/Mannequins/Meshes/SK_Mannequin_Auto9.uasset'
+[2023.11.10-20.52.36:144][332]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword] ([2] browsable assets)...
+[2023.11.10-20.52.36:144][332]OBJ SavePackage: Finished generating thumbnails for package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword]
+[2023.11.10-20.52.36:147][332]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto9
+[2023.11.10-20.52.36:147][332]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_IsWieldingSword_Auto9F040326240A5D0DB3AA1439059B16A23.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto9.uasset'
+[2023.11.10-20.52.36:149][332]LogFileHelpers: Auto-saving content packages took 0.024
+[2023.11.10-20.53.28:810][859]LogAssetEditorSubsystem: Opening Asset editor for Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.53.28:811][859]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.53.28:811][859]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.53.47:487][554]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.53.47:702][554]LogUObjectHash: Compacting FUObjectHashTables data took   1.38ms
+[2023.11.10-20.53.48:331][580]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.53.48:448][580]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.53.48:458][580]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.53.48:459][580]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base15A399C84EEF9AAC63061984A49604F9.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.53.48:469][580]LogFileHelpers: InternalPromptForCheckoutAndSave took 137 ms (total: 15.0 sec)
+[2023.11.10-20.53.48:471][580]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.53.48:471][580]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.54.04:130][762]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.54.04:277][762]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.54.04:288][762]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.54.04:289][762]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base2457D2154F9201090AC847ACAEB95E36.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.54.04:297][762]LogFileHelpers: InternalPromptForCheckoutAndSave took 167 ms (total: 15.1 sec)
+[2023.11.10-20.54.04:299][762]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.54.04:299][762]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.54.04:809][822]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.54.05:020][822]LogUObjectHash: Compacting FUObjectHashTables data took   1.42ms
+[2023.11.10-20.54.25:314][524]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.54.25:545][524]LogUObjectHash: Compacting FUObjectHashTables data took   1.42ms
+[2023.11.10-20.54.25:940][526]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.54.25:991][526]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.54.26:001][526]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.54.26:003][526]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base3D4558DB427468892BEB7FA3A4ED9D62.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.54.26:011][526]LogFileHelpers: InternalPromptForCheckoutAndSave took 70 ms (total: 15.2 sec)
+[2023.11.10-20.54.26:012][526]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.54.26:012][526]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.54.26:324][562]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.54.26:368][562]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.54.26:378][562]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.54.26:380][562]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base974C32684D7A59CAFA53FDAA64C3FBDB.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.54.26:389][562]LogFileHelpers: InternalPromptForCheckoutAndSave took 65 ms (total: 15.3 sec)
+[2023.11.10-20.54.26:391][562]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.54.26:391][562]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.55.17:823][ 92]LogD3D12RHI: Warning: Descriptor cache ran out of sub allocated descriptor blocks! Moving to Context local View heap strategy
+[2023.11.10-20.55.17:823][ 92]LogD3D12RHI: This should only happen in the Editor where it doesn't matter as much. If it happens in game you should increase the device global heap size!
+[2023.11.10-20.55.31:444][119]LogAssetEditorSubsystem: Opening Asset editor for Blueprint /Game/Player/BP_Player.BP_Player
+[2023.11.10-20.55.31:444][119]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.55.31:444][119]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.55.55:413][308]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.55.55:464][308]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.55.55:608][308]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Player/BP_Player" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Player/BP_Player.uasset" SILENT=true
+[2023.11.10-20.55.55:630][308]LogSavePackage: Moving output files for package: /Game/Player/BP_Player
+[2023.11.10-20.55.55:631][308]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Player9BCCBFD44BD236D8A14D22868CFD25E8.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Player/BP_Player.uasset'
+[2023.11.10-20.55.55:643][308]LogFileHelpers: InternalPromptForCheckoutAndSave took 230 ms (total: 15.5 sec)
+[2023.11.10-20.55.55:646][308]AssetCheck: New page: Asset Save: BP_Player
+[2023.11.10-20.55.55:646][308]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Player/BP_Player.BP_Player
+[2023.11.10-20.55.59:834][555]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.56.00:059][555]LogUObjectHash: Compacting FUObjectHashTables data took   1.44ms
+[2023.11.10-20.56.02:217][766]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.56.02:381][766]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.56.02:391][766]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.56.02:392][766]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base69D3697D41177B7A1E540DA4DD701A1B.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.56.02:402][766]LogFileHelpers: InternalPromptForCheckoutAndSave took 185 ms (total: 15.7 sec)
+[2023.11.10-20.56.02:404][766]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.56.02:404][766]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.56.03:658][909]LogD3D12RHI: OnlineHeap RollOver Detected. Increase the heap size to prevent creation of additional heaps
+[2023.11.10-20.56.12:221][678]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.56.12:466][678]LogUObjectHash: Compacting FUObjectHashTables data took   1.89ms
+[2023.11.10-20.57.10:437][927]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.57.10:651][927]LogUObjectHash: Compacting FUObjectHashTables data took   1.41ms
+[2023.11.10-20.57.11:018][935]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.57.11:110][935]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.57.11:122][935]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.57.11:124][935]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base2C88FE314E33D1216331EEBE37619D70.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.57.11:134][935]LogFileHelpers: InternalPromptForCheckoutAndSave took 115 ms (total: 15.8 sec)
+[2023.11.10-20.57.11:136][935]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.57.11:136][935]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.57.21:233][857]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.57.21:447][857]LogUObjectHash: Compacting FUObjectHashTables data took   1.49ms
+[2023.11.10-20.57.21:844][865]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.57.21:939][865]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.57.21:952][865]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.57.21:953][865]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_BaseEB7DD99141FB574E77139DA5D7D389D3.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.57.21:963][865]LogFileHelpers: InternalPromptForCheckoutAndSave took 119 ms (total: 15.9 sec)
+[2023.11.10-20.57.21:965][865]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.57.21:965][865]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.57.49:023][693]LogAssetEditorSubsystem: Opening Asset editor for Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-20.57.49:023][693]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-20.57.49:023][693]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-20.58.42:920][519]LogSlate: Warning: Slate: Had to block on waiting for a draw buffer
+[2023.11.10-20.58.55:364][991]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-20.58.55:404][991]LogUObjectHash: Compacting FUObjectHashTables data took   1.50ms
+[2023.11.10-20.58.55:883][ 32]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.58.55:931][ 32]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/BPI_EnemyAI" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset" SILENT=true
+[2023.11.10-20.58.55:935][ 32]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BPI_EnemyAI
+[2023.11.10-20.58.55:937][ 32]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BPI_EnemyAI2B1A23BF4F3753B8F6B6AFAF26B6CC44.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset'
+[2023.11.10-20.58.55:947][ 32]LogFileHelpers: InternalPromptForCheckoutAndSave took 64 ms (total: 16.0 sec)
+[2023.11.10-20.58.55:949][ 32]AssetCheck: New page: Asset Save: BPI_EnemyAI
+[2023.11.10-20.58.55:949][ 32]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-20.59.05:242][946]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-20.59.05:277][946]LogUObjectHash: Compacting FUObjectHashTables data took   1.38ms
+[2023.11.10-20.59.05:587][971]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.59.05:627][971]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/BPI_EnemyAI" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset" SILENT=true
+[2023.11.10-20.59.05:631][971]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BPI_EnemyAI
+[2023.11.10-20.59.05:633][971]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BPI_EnemyAIB35FBE66420F66E0DED756818736CBDD.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset'
+[2023.11.10-20.59.05:642][971]LogFileHelpers: InternalPromptForCheckoutAndSave took 54 ms (total: 16.0 sec)
+[2023.11.10-20.59.05:643][971]AssetCheck: New page: Asset Save: BPI_EnemyAI
+[2023.11.10-20.59.05:643][971]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-20.59.10:330][517]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.59.10:475][517]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.59.10:489][517]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.59.10:490][517]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base8B836985423F7778C14736910BDF2AC2.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.59.10:499][517]LogFileHelpers: InternalPromptForCheckoutAndSave took 169 ms (total: 16.2 sec)
+[2023.11.10-20.59.10:501][517]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.59.10:501][517]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-20.59.28:771][607]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.59.28:983][607]LogUObjectHash: Compacting FUObjectHashTables data took   1.70ms
+[2023.11.10-20.59.35:398][306]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-20.59.35:607][306]LogUObjectHash: Compacting FUObjectHashTables data took   1.56ms
+[2023.11.10-20.59.36:119][328]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-20.59.36:262][328]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-20.59.36:277][328]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-20.59.36:278][328]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base8ED9A772485733E94D34A8988682A6C4.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-20.59.36:287][328]LogFileHelpers: InternalPromptForCheckoutAndSave took 167 ms (total: 16.4 sec)
+[2023.11.10-20.59.36:287][328]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-20.59.36:287][328]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-21.00.22:742][716]LogAssetEditorSubsystem: Opening Asset editor for BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Melee.BT_Enemy_Melee
+[2023.11.10-21.00.30:285][526]LogUObjectGlobals: Warning: StaticFindFirstObject: Ambiguous object name BehaviorTreeGraphNode_Task_27 while ResolveName, will return /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Melee.BT_Enemy_Melee:Behavior Tree.BehaviorTreeGraphNode_Task_27 but could also be: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range:Behavior Tree.BehaviorTreeGraphNode_Task_27
+[2023.11.10-21.00.30:286][526]LogProperty: Warning: ObjectProperty /Script/AIModule.BTCompositeChild:ChildTask: unresolved reference to '"/Game/Enemies/AI/Tasks/BTT_ClearFocus.BTT_ClearFocus_C'BehaviorTreeGraphNode_Task_27.BTT_ClearFocus_C_7'")'
+[2023.11.10-21.00.30:286][526]LogUObjectGlobals: Warning: StaticFindFirstObject: Ambiguous object name BehaviorTreeGraphNode_Task_28 while ResolveName, will return /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Melee.BT_Enemy_Melee:Behavior Tree.BehaviorTreeGraphNode_Task_28 but could also be: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range:Behavior Tree.BehaviorTreeGraphNode_Task_28
+[2023.11.10-21.00.30:286][526]LogProperty: Warning: ObjectProperty /Script/AIModule.BTCompositeChild:ChildTask: unresolved reference to '"/Game/Enemies/AI/Tasks/BTT_SetMovementSpeed.BTT_SetMovementSpeed_C'BehaviorTreeGraphNode_Task_28.BTT_SetMovementSpeed_C_8'")'
+[2023.11.10-21.00.30:286][526]LogUObjectGlobals: Warning: StaticFindFirstObject: Ambiguous object name BehaviorTreeGraphNode_Task_29 while ResolveName, will return /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Melee.BT_Enemy_Melee:Behavior Tree.BehaviorTreeGraphNode_Task_29 but could also be: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range:Behavior Tree.BehaviorTreeGraphNode_Task_29
+[2023.11.10-21.00.30:286][526]LogProperty: Warning: ObjectProperty /Script/AIModule.BTCompositeChild:ChildTask: unresolved reference to '"/Script/AIModule.BTTask_RunEQSQuery'BehaviorTreeGraphNode_Task_29.BTTask_RunEQSQuery_2'")'
+[2023.11.10-21.00.30:286][526]LogUObjectGlobals: Warning: StaticFindFirstObject: Ambiguous object name BehaviorTreeGraphNode_Task_30 while ResolveName, will return /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Melee.BT_Enemy_Melee:Behavior Tree.BehaviorTreeGraphNode_Task_30 but could also be: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range:Behavior Tree.BehaviorTreeGraphNode_Task_30
+[2023.11.10-21.00.30:286][526]LogProperty: Warning: ObjectProperty /Script/AIModule.BTCompositeChild:ChildTask: unresolved reference to '"/Script/AIModule.BTTask_MoveTo'BehaviorTreeGraphNode_Task_30.BTTask_MoveTo_2'")'
+[2023.11.10-21.00.30:286][526]LogUObjectGlobals: Warning: StaticFindFirstObject: Ambiguous object name BehaviorTreeGraphNode_Task_31 while ResolveName, will return /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Melee.BT_Enemy_Melee:Behavior Tree.BehaviorTreeGraphNode_Task_31 but could also be: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range:Behavior Tree.BehaviorTreeGraphNode_Task_31
+[2023.11.10-21.00.30:286][526]LogProperty: Warning: ObjectProperty /Script/AIModule.BTCompositeChild:ChildTask: unresolved reference to '"/Script/AIModule.BTTask_Wait'BehaviorTreeGraphNode_Task_31.BTTask_Wait_5'")'
+[2023.11.10-21.00.30:286][526]LogUObjectGlobals: Warning: StaticFindFirstObject: Ambiguous object name BehaviorTreeGraphNode_Task_32 while ResolveName, will return /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Melee.BT_Enemy_Melee:Behavior Tree.BehaviorTreeGraphNode_Task_32 but could also be: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range:Behavior Tree.BehaviorTreeGraphNode_Task_32
+[2023.11.10-21.00.30:286][526]LogProperty: Warning: ObjectProperty /Script/AIModule.BTCompositeChild:ChildTask: unresolved reference to '"/Game/Enemies/AI/Tasks/BTT_MoveToIdealRange.BTT_MoveToIdealRange_C'BehaviorTreeGraphNode_Task_32.BTT_MoveToIdealRange_C_5'")'
+[2023.11.10-21.00.30:286][526]LogUObjectGlobals: Warning: StaticFindFirstObject: Ambiguous object name BehaviorTreeGraphNode_Task_33 while ResolveName, will return /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Melee.BT_Enemy_Melee:Behavior Tree.BehaviorTreeGraphNode_Task_33 but could also be: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range:Behavior Tree.BehaviorTreeGraphNode_Task_33
+[2023.11.10-21.00.30:286][526]LogProperty: Warning: ObjectProperty /Script/AIModule.BTCompositeChild:ChildTask: unresolved reference to '"/Game/Enemies/AI/Tasks/BTT_DefaultAttack.BTT_DefaultAttack_C'BehaviorTreeGraphNode_Task_33.BTT_DefaultAttack_C_2'")'
+[2023.11.10-21.01.07:335][473]LogSlate: Window 'Save Asset As' being destroyed
+[2023.11.10-21.01.07:358][473]LogAssetEditorSubsystem: Opening Asset editor for Blueprint /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.BTD_IsHealthBelowThreshold
+[2023.11.10-21.01.07:359][473]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-21.01.07:359][473]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-21.01.07:438][473]LogPackageName: SearchForPackageOnDisk took   0.000s, but failed to resolve /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.
+[2023.11.10-21.01.07:439][473]LogPackageName: SearchForPackageOnDisk took   0.000s, but failed to resolve /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.
+[2023.11.10-21.01.07:505][473]LogAutomationController: Ignoring very large delta of 18.25 seconds in calls to FAutomationControllerManager::Tick() and not penalizing unresponsive tests
+[2023.11.10-21.01.32:766][ 71]BlueprintLog: New page: Compile BTD_IsHealthBelowThreshold
+[2023.11.10-21.01.32:798][ 71]LogUObjectHash: Compacting FUObjectHashTables data took   1.46ms
+[2023.11.10-21.01.33:254][117]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.01.33:301][117]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold
+[2023.11.10-21.01.33:301][117]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_IsHealthBelowThresholdBADA048D42C2E6E863552B92B4B59E24.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.uasset'
+[2023.11.10-21.01.33:303][117]LogPackageName: SearchForPackageOnDisk took   0.000s to resolve /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.
+[2023.11.10-21.01.33:306][117]LogPackageName: SearchForPackageOnDisk took   0.000s to resolve /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.
+[2023.11.10-21.01.33:316][117]LogFileHelpers: InternalPromptForCheckoutAndSave took 62 ms (total: 16.4 sec)
+[2023.11.10-21.01.33:318][117]AssetCheck: New page: Asset Save: BTD_IsHealthBelowThreshold
+[2023.11.10-21.01.33:318][117]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.BTD_IsHealthBelowThreshold
+[2023.11.10-21.02.24:435][839]BlueprintLog: New page: Compile BTD_IsHealthBelowThreshold
+[2023.11.10-21.02.24:457][839]LogUObjectHash: Compacting FUObjectHashTables data took   1.35ms
+[2023.11.10-21.02.24:794][875]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.02.24:837][875]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold
+[2023.11.10-21.02.24:838][875]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_IsHealthBelowThreshold4C5B1BA5406A3649655411863144AD89.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.uasset'
+[2023.11.10-21.02.24:848][875]LogFileHelpers: InternalPromptForCheckoutAndSave took 54 ms (total: 16.5 sec)
+[2023.11.10-21.02.24:850][875]AssetCheck: New page: Asset Save: BTD_IsHealthBelowThreshold
+[2023.11.10-21.02.24:850][875]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.BTD_IsHealthBelowThreshold
+[2023.11.10-21.02.32:250][580]BlueprintLog: New page: Compile BTD_IsHealthBelowThreshold
+[2023.11.10-21.02.32:275][580]LogUObjectHash: Compacting FUObjectHashTables data took   1.34ms
+[2023.11.10-21.02.32:721][627]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.02.32:771][627]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold
+[2023.11.10-21.02.32:772][627]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_IsHealthBelowThresholdFEC979CE4492A569AA89868F951FC5FA.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.uasset'
+[2023.11.10-21.02.32:785][627]LogFileHelpers: InternalPromptForCheckoutAndSave took 63 ms (total: 16.5 sec)
+[2023.11.10-21.02.32:787][627]AssetCheck: New page: Asset Save: BTD_IsHealthBelowThreshold
+[2023.11.10-21.02.32:787][627]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Decorators/BTD_IsHealthBelowThreshold.BTD_IsHealthBelowThreshold
+[2023.11.10-21.03.14:991][144]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.03.15:048][144]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-21.03.15:049][144]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range504354D44BBD92B52C597F82862CC0C5.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-21.03.15:060][144]LogFileHelpers: InternalPromptForCheckoutAndSave took 68 ms (total: 16.6 sec)
+[2023.11.10-21.03.15:061][144]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-21.03.15:061][144]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-21.03.34:968][406]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.03.35:016][406]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-21.03.35:018][406]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_RangeB1540A2245EBE49DF9806FA401561394.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-21.03.35:026][406]LogFileHelpers: InternalPromptForCheckoutAndSave took 57 ms (total: 16.7 sec)
+[2023.11.10-21.03.35:028][406]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-21.03.35:028][406]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-21.04.00:360][551]LogUObjectHash: Compacting FUObjectHashTables data took   1.81ms
+[2023.11.10-21.04.00:364][551]LogFileHelpers: Editor autosave (incl. external actors) for '/Game/ThirdPerson/Maps/ThirdPersonMap' took 0.031
+[2023.11.10-21.04.00:364][551]OBJ SavePackage: Generating thumbnails for [0] asset(s) in package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword] ([2] browsable assets)...
+[2023.11.10-21.04.00:364][551]OBJ SavePackage: Finished generating thumbnails for package [/Game/Enemies/AI/Decorators/BTD_IsWieldingSword]
+[2023.11.10-21.04.00:368][551]LogSavePackage: Moving output files for package: /Temp/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto0
+[2023.11.10-21.04.00:368][551]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTD_IsWieldingSword_Auto069962928439D51F6C4ABA8B1E9F1D058.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/Autosaves/Game/Enemies/AI/Decorators/BTD_IsWieldingSword_Auto0.uasset'
+[2023.11.10-21.04.00:371][551]LogFileHelpers: Auto-saving content packages took 0.007
+[2023.11.10-21.04.38:857][704]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.04.38:907][704]LogUObjectHash: Compacting FUObjectHashTables data took   1.35ms
+[2023.11.10-21.05.01:017][924]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.05.01:055][924]LogUObjectHash: Compacting FUObjectHashTables data took   1.36ms
+[2023.11.10-21.05.01:143][924]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.05.01:180][924]LogUObjectHash: Compacting FUObjectHashTables data took   1.39ms
+[2023.11.10-21.05.01:457][941]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.05.01:495][941]LogUObjectHash: Compacting FUObjectHashTables data took   1.43ms
+[2023.11.10-21.05.02:112][960]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.05.02:162][960]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/BPI_EnemyAI" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset" SILENT=true
+[2023.11.10-21.05.02:168][960]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BPI_EnemyAI
+[2023.11.10-21.05.02:170][960]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BPI_EnemyAIA589D4804A9E200EB28971B9C1960905.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset'
+[2023.11.10-21.05.02:181][960]LogFileHelpers: InternalPromptForCheckoutAndSave took 69 ms (total: 16.7 sec)
+[2023.11.10-21.05.02:183][960]AssetCheck: New page: Asset Save: BPI_EnemyAI
+[2023.11.10-21.05.02:183][960]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-21.05.54:654][626]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.05.54:690][626]LogUObjectHash: Compacting FUObjectHashTables data took   1.70ms
+[2023.11.10-21.06.14:456][772]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.06.14:498][772]LogUObjectHash: Compacting FUObjectHashTables data took   1.37ms
+[2023.11.10-21.06.14:955][808]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.06.14:998][808]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/BPI_EnemyAI" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset" SILENT=true
+[2023.11.10-21.06.15:003][808]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BPI_EnemyAI
+[2023.11.10-21.06.15:004][808]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BPI_EnemyAI8196FEC2438C73D660784791BD5B87AD.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset'
+[2023.11.10-21.06.15:014][808]LogFileHelpers: InternalPromptForCheckoutAndSave took 59 ms (total: 16.8 sec)
+[2023.11.10-21.06.15:015][808]AssetCheck: New page: Asset Save: BPI_EnemyAI
+[2023.11.10-21.06.15:015][808]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-21.06.23:930][849]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.06.23:964][849]LogUObjectHash: Compacting FUObjectHashTables data took   1.35ms
+[2023.11.10-21.06.24:360][881]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.06.24:404][881]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/BPI_EnemyAI" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset" SILENT=true
+[2023.11.10-21.06.24:409][881]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BPI_EnemyAI
+[2023.11.10-21.06.24:410][881]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BPI_EnemyAIFA039FE2446FF3A1827AFAA6C13EFE77.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset'
+[2023.11.10-21.06.24:421][881]LogFileHelpers: InternalPromptForCheckoutAndSave took 60 ms (total: 16.9 sec)
+[2023.11.10-21.06.24:422][881]AssetCheck: New page: Asset Save: BPI_EnemyAI
+[2023.11.10-21.06.24:422][881]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-21.06.37:240][396]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.06.37:276][396]LogUObjectHash: Compacting FUObjectHashTables data took   1.67ms
+[2023.11.10-21.06.37:690][433]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.06.37:730][433]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/BPI_EnemyAI" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset" SILENT=true
+[2023.11.10-21.06.37:735][433]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BPI_EnemyAI
+[2023.11.10-21.06.37:737][433]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BPI_EnemyAI0F94D97A4695529FECB5D6986F96BE92.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset'
+[2023.11.10-21.06.37:746][433]LogFileHelpers: InternalPromptForCheckoutAndSave took 55 ms (total: 16.9 sec)
+[2023.11.10-21.06.37:748][433]AssetCheck: New page: Asset Save: BPI_EnemyAI
+[2023.11.10-21.06.37:748][433]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-21.07.02:020][706]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.07.02:058][706]LogUObjectHash: Compacting FUObjectHashTables data took   1.58ms
+[2023.11.10-21.07.02:549][745]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.07.02:593][745]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/BPI_EnemyAI" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset" SILENT=true
+[2023.11.10-21.07.02:598][745]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BPI_EnemyAI
+[2023.11.10-21.07.02:600][745]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BPI_EnemyAI4576CAA84E0F46312BF0F2A165114B49.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset'
+[2023.11.10-21.07.02:613][745]LogFileHelpers: InternalPromptForCheckoutAndSave took 63 ms (total: 17.0 sec)
+[2023.11.10-21.07.02:614][745]AssetCheck: New page: Asset Save: BPI_EnemyAI
+[2023.11.10-21.07.02:615][745]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-21.07.42:944][899]LogEditorTransaction: Undo Add Node
+[2023.11.10-21.08.18:212][975]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-21.08.18:418][975]LogUObjectHash: Compacting FUObjectHashTables data took   1.48ms
+[2023.11.10-21.08.18:748][976]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.08.18:909][976]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-21.08.18:924][976]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-21.08.18:926][976]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_Base385BA98147B418688083C8868AD1569C.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-21.08.18:935][976]LogFileHelpers: InternalPromptForCheckoutAndSave took 187 ms (total: 17.2 sec)
+[2023.11.10-21.08.18:936][976]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-21.08.18:936][976]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-21.08.38:638][302]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-21.08.38:827][302]LogUObjectHash: Compacting FUObjectHashTables data took   1.40ms
+[2023.11.10-21.08.43:151][665]BlueprintLog: New page: Compile BP_Enemy_Base
+[2023.11.10-21.08.43:342][665]LogUObjectHash: Compacting FUObjectHashTables data took   1.48ms
+[2023.11.10-21.08.43:652][666]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.08.43:797][666]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/BP_Enemy_Base" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset" SILENT=true
+[2023.11.10-21.08.43:813][666]LogSavePackage: Moving output files for package: /Game/Enemies/BP_Enemy_Base
+[2023.11.10-21.08.43:814][666]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BP_Enemy_BaseCBD7C9724516DCBC39169BB9EB30F69E.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/BP_Enemy_Base.uasset'
+[2023.11.10-21.08.43:825][666]LogFileHelpers: InternalPromptForCheckoutAndSave took 173 ms (total: 17.3 sec)
+[2023.11.10-21.08.43:827][666]AssetCheck: New page: Asset Save: BP_Enemy_Base
+[2023.11.10-21.08.43:827][666]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/BP_Enemy_Base.BP_Enemy_Base
+[2023.11.10-21.09.04:065][225]LogSlate: Window 'Save Asset As' being destroyed
+[2023.11.10-21.09.04:095][225]LogAssetEditorSubsystem: Opening Asset editor for Blueprint /Game/Enemies/AI/Tasks/BTT_Heal.BTT_Heal
+[2023.11.10-21.09.04:095][225]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-21.09.04:095][225]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-21.09.04:180][225]LogPackageName: SearchForPackageOnDisk took   0.000s, but failed to resolve /Game/Enemies/AI/Tasks/BTT_Heal.
+[2023.11.10-21.09.04:181][225]LogPackageName: SearchForPackageOnDisk took   0.000s, but failed to resolve /Game/Enemies/AI/Tasks/BTT_Heal.
+[2023.11.10-21.09.04:252][225]LogAutomationController: Ignoring very large delta of 6.75 seconds in calls to FAutomationControllerManager::Tick() and not penalizing unresponsive tests
+[2023.11.10-21.09.26:683][209]BlueprintLog: New page: Compile BTT_Heal
+[2023.11.10-21.09.26:713][209]LogUObjectHash: Compacting FUObjectHashTables data took   1.54ms
+[2023.11.10-21.09.27:004][241]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.09.27:047][241]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/Tasks/BTT_Heal" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Tasks/BTT_Heal.uasset" SILENT=true
+[2023.11.10-21.09.27:050][241]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Tasks/BTT_Heal
+[2023.11.10-21.09.27:050][241]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTT_HealDD78E53E499DDF258CE08E84770C103E.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Tasks/BTT_Heal.uasset'
+[2023.11.10-21.09.27:052][241]LogPackageName: SearchForPackageOnDisk took   0.000s to resolve /Game/Enemies/AI/Tasks/BTT_Heal.
+[2023.11.10-21.09.27:055][241]LogPackageName: SearchForPackageOnDisk took   0.000s to resolve /Game/Enemies/AI/Tasks/BTT_Heal.
+[2023.11.10-21.09.27:062][241]LogFileHelpers: InternalPromptForCheckoutAndSave took 57 ms (total: 17.4 sec)
+[2023.11.10-21.09.27:064][241]AssetCheck: New page: Asset Save: BTT_Heal
+[2023.11.10-21.09.27:064][241]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Tasks/BTT_Heal.BTT_Heal
+[2023.11.10-21.09.45:130][442]BlueprintLog: New page: Compile BPI_EnemyAI
+[2023.11.10-21.09.45:176][442]LogUObjectHash: Compacting FUObjectHashTables data took   1.40ms
+[2023.11.10-21.09.45:687][483]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.09.45:730][483]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/BPI_EnemyAI" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset" SILENT=true
+[2023.11.10-21.09.45:735][483]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BPI_EnemyAI
+[2023.11.10-21.09.45:737][483]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BPI_EnemyAI7A633CE14CF6EAF79E197686AA8377F9.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BPI_EnemyAI.uasset'
+[2023.11.10-21.09.45:749][483]LogFileHelpers: InternalPromptForCheckoutAndSave took 62 ms (total: 17.5 sec)
+[2023.11.10-21.09.45:751][483]AssetCheck: New page: Asset Save: BPI_EnemyAI
+[2023.11.10-21.09.45:751][483]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/BPI_EnemyAI.BPI_EnemyAI
+[2023.11.10-21.10.16:057][ 92]BlueprintLog: New page: Compile BTT_Heal
+[2023.11.10-21.10.16:084][ 92]LogUObjectHash: Compacting FUObjectHashTables data took   1.36ms
+[2023.11.10-21.11.03:016][755]BlueprintLog: New page: Compile BTT_Heal
+[2023.11.10-21.11.03:049][755]LogUObjectHash: Compacting FUObjectHashTables data took   1.36ms
+[2023.11.10-21.11.03:405][794]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.11.03:447][794]Cmd: OBJ SAVEPACKAGE PACKAGE="/Game/Enemies/AI/Tasks/BTT_Heal" FILE="C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Tasks/BTT_Heal.uasset" SILENT=true
+[2023.11.10-21.11.03:451][794]LogSavePackage: Moving output files for package: /Game/Enemies/AI/Tasks/BTT_Heal
+[2023.11.10-21.11.03:453][794]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BTT_HealA6CE5C834049BBBC68216187B1A5F01B.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/Tasks/BTT_Heal.uasset'
+[2023.11.10-21.11.03:462][794]LogFileHelpers: InternalPromptForCheckoutAndSave took 57 ms (total: 17.5 sec)
+[2023.11.10-21.11.03:464][794]AssetCheck: New page: Asset Save: BTT_Heal
+[2023.11.10-21.11.03:464][794]LogContentValidation: Display: Validating /Script/Engine.Blueprint /Game/Enemies/AI/Tasks/BTT_Heal.BTT_Heal
+[2023.11.10-21.11.07:750][303]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.11.07:802][303]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-21.11.07:804][303]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range8F4D3BEC4489EBDF5A5FB48285B36E57.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-21.11.07:814][303]LogFileHelpers: InternalPromptForCheckoutAndSave took 64 ms (total: 17.6 sec)
+[2023.11.10-21.11.07:816][303]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-21.11.07:816][303]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-21.11.19:798][225]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.11.19:853][225]LogSavePackage: Moving output files for package: /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range
+[2023.11.10-21.11.19:855][225]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/BT_Enemy_Range9159079248165538F48E0DA8E4A5C0C0.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/Enemies/AI/BehaviorTrees/BT_Enemy_Range.uasset'
+[2023.11.10-21.11.19:866][225]LogFileHelpers: InternalPromptForCheckoutAndSave took 68 ms (total: 17.7 sec)
+[2023.11.10-21.11.19:869][225]AssetCheck: New page: Asset Save: BT_Enemy_Range
+[2023.11.10-21.11.19:869][225]LogContentValidation: Display: Validating /Script/AIModule.BehaviorTree /Game/Enemies/AI/BehaviorTrees/BT_Enemy_Range.BT_Enemy_Range
+[2023.11.10-21.11.24:648][711]LogDebuggerCommands: Repeating last play command: Selected Viewport
+[2023.11.10-21.11.24:658][711]LogContentBundle: [ThirdPersonMap(Standalone)] Generating Streaming for 0 Content Bundles.
+[2023.11.10-21.11.24:658][711]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' started...
+[2023.11.10-21.11.24:660][711]LogWorldPartition: Display: GenerateStreaming for 'ThirdPersonMap' took 2 ms (total: 26 ms)
+[2023.11.10-21.11.24:674][711]BlueprintLog: New page: Pre-Play auto-recompile
+[2023.11.10-21.11.24:675][711]LogPlayLevel: [PlayLevel] Compiling BP_Player before play...
+[2023.11.10-21.11.24:839][711]LogUObjectHash: Compacting FUObjectHashTables data took   1.47ms
+[2023.11.10-21.11.24:846][711]LogPlayLevel: PlayLevel: Blueprint regeneration took 171 ms (1 blueprints)
+[2023.11.10-21.11.24:846][711]PIE: New page: PIE session: ThirdPersonMap (Nov 10, 2023, 11:11:24 AM)
+[2023.11.10-21.11.24:846][711]LogPlayLevel: Creating play world package: /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-21.11.24:853][711]LogPlayLevel: PIE: StaticDuplicateObject took: (0.007372s)
+[2023.11.10-21.11.24:853][711]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap to /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap (0.007420s)
+[2023.11.10-21.11.24:870][711]LogUObjectHash: Compacting FUObjectHashTables data took   1.44ms
+[2023.11.10-21.11.24:872][711]LogWorldSubsystemInput: UEnhancedInputDeveloperSettings::bEnableWorldSubsystem is false, the world subsystem will not be created!
+[2023.11.10-21.11.24:872][711]LogChaos: FPhysicsSolverBase::AsyncDt:-1.000000
+[2023.11.10-21.11.24:873][711]LogAIModule: Creating AISystem for world ThirdPersonMap
+[2023.11.10-21.11.24:874][711]LogWorldPartition: ULevel::OnLevelLoaded(ThirdPersonMap)(bIsOwningWorldGameWorld=1, bIsOwningWorldPartitioned=1, InitializeForMainWorld=1, InitializeForEditor=0, InitializeForGame=1)
+[2023.11.10-21.11.24:874][711]LogWorldPartition: Display: WorldPartition initialize started...
+[2023.11.10-21.11.24:874][711]LogWorldPartition: UWorldPartition::Initialize : World = ThirdPersonMap, World Type = PIE, IsMainWorldPartition = 1, Location = V(0), Rotation = R(0), IsEditor = 0, IsGame = 0, IsPIEWorldTravel = 0, IsCooking = 0
+[2023.11.10-21.11.24:874][711]LogWorldPartition: UWorldPartition::Initialize Context : World NetMode = Standalone, IsServer = 0, IsDedicatedServer = 0, IsServerStreamingEnabled = 0, IsServerStreamingOutEnabled = 0, IsUsingMakingVisibleTransaction = 0, IsUsingMakingInvisibleTransaction = 0
+[2023.11.10-21.11.24:875][711]LogContentBundle: [ThirdPersonMap(Standalone)] Creating new contrainer.
+[2023.11.10-21.11.24:875][711]LogWorldPartition: Display: WorldPartition initialize took 1 ms (total: 104 ms)
+[2023.11.10-21.11.24:875][711]LogPlayLevel: PIE: World Init took: (0.003173s)
+[2023.11.10-21.11.24:875][711]LogAudio: Display: Creating Audio Device:                 Id: 11, Scope: Unique, Realtime: True
+[2023.11.10-21.11.24:875][711]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2023.11.10-21.11.24:875][711]LogAudioMixer: Display: 	Sample Rate:						  48000
+[2023.11.10-21.11.24:875][711]LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+[2023.11.10-21.11.24:875][711]LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+[2023.11.10-21.11.24:875][711]LogAudioMixer: Display: 	Number of buffers to queue:			  1
+[2023.11.10-21.11.24:875][711]LogAudioMixer: Display: 	Max Channels (voices):				  32
+[2023.11.10-21.11.24:876][711]LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+[2023.11.10-21.11.24:876][711]LogAudio: Display: AudioDevice MaxSources: 32
+[2023.11.10-21.11.24:876][711]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2023.11.10-21.11.24:876][711]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2023.11.10-21.11.24:876][711]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2023.11.10-21.11.24:880][711]LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+[2023.11.10-21.11.24:921][711]LogAudioMixer: Display: Using Audio Hardware Device Speakers (Wireless Stereo Headset)
+[2023.11.10-21.11.24:922][711]LogAudioMixer: Display: Initializing Sound Submixes...
+[2023.11.10-21.11.24:922][711]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2023.11.10-21.11.24:922][711]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2023.11.10-21.11.24:922][711]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called. InstanceID=11
+[2023.11.10-21.11.24:922][711]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048, InstanceID=11
+[2023.11.10-21.11.24:925][711]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=11
+[2023.11.10-21.11.24:925][711]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=11
+[2023.11.10-21.11.24:925][711]LogInit: FAudioDevice initialized with ID 11.
+[2023.11.10-21.11.24:925][711]LogAudio: Display: Audio Device (ID: 11) registered with world 'ThirdPersonMap'.
+[2023.11.10-21.11.24:925][711]LogAudioMixer: Initializing Audio Bus Subsystem for audio device with ID 11
+[2023.11.10-21.11.24:931][711]LogLoad: Game class is 'BP_ThirdPersonGameMode_C'
+[2023.11.10-21.11.24:935][711]LogWorld: Bringing World /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap.ThirdPersonMap up for play (max tick rate 0) at 2023.11.10-16.11.24
+[2023.11.10-21.11.24:937][711]LogWorld: Bringing up level for play took: 0.005534
+[2023.11.10-21.11.24:939][711]LogOnline: OSS: Created online subsystem instance for: :Context_68
+[2023.11.10-21.11.24:944][711]PIE: Server logged in
+[2023.11.10-21.11.24:945][711]PIE: Play in editor total start time 0.287 seconds.
+[2023.11.10-21.11.43:775][952]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-21.11.43:775][952]LogWorld: BeginTearingDown for /Game/ThirdPerson/Maps/UEDPIE_0_ThirdPersonMap
+[2023.11.10-21.11.43:775][952]LogWorld: UWorld::CleanupWorld for ThirdPersonMap, bSessionEnded=true, bCleanupResources=true
+[2023.11.10-21.11.43:776][952]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-21.11.43:776][952]LogContentBundle: [ThirdPersonMap(Standalone)] Deleting container.
+[2023.11.10-21.11.43:812][952]LogPlayLevel: Display: Shutting down PIE online subsystems
+[2023.11.10-21.11.43:822][952]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2023.11.10-21.11.43:842][952]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2023.11.10-21.11.43:843][952]LogAudioMixer: Deinitializing Audio Bus Subsystem for audio device with ID 11
+[2023.11.10-21.11.43:843][952]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=11
+[2023.11.10-21.11.43:845][952]LogAudioMixer: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=11
+[2023.11.10-21.11.43:854][952]LogUObjectHash: Compacting FUObjectHashTables data took   1.72ms
+[2023.11.10-21.11.44:034][953]LogPlayLevel: Display: Destroying online subsystem :Context_68
+[2023.11.10-21.11.45:185][ 43]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.11.45:262][ 43]LogUObjectHash: Compacting FUObjectHashTables data took   1.51ms
+[2023.11.10-21.11.45:285][ 43]LogUObjectHash: Compacting FUObjectHashTables data took   0.64ms
+[2023.11.10-21.11.45:306][ 43]LogUObjectHash: Compacting FUObjectHashTables data took   0.82ms
+[2023.11.10-21.11.45:359][ 43]LogUObjectHash: Compacting FUObjectHashTables data took   0.91ms
+[2023.11.10-21.11.45:367][ 43]LogSavePackage: Moving output files for package: /Game/ThirdPerson/Maps/ThirdPersonMap
+[2023.11.10-21.11.45:368][ 43]LogSavePackage: Moving 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Saved/ThirdPersonMapD768BE9E497E68B6D123DAA380B7C59E.tmp' to 'C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/SmartAI/Content/ThirdPerson/Maps/ThirdPersonMap.umap'
+[2023.11.10-21.11.45:376][ 43]LogFileHelpers: Saving map 'ThirdPersonMap' took 0.067
+[2023.11.10-21.11.45:390][ 43]LogFileHelpers: InternalPromptForCheckoutAndSave took 204 ms (total: 17.9 sec)
+[2023.11.10-21.11.45:392][ 43]AssetCheck: New page: Asset Save: ThirdPersonMap
+[2023.11.10-21.11.45:392][ 43]LogContentValidation: Display: Validating /Script/Engine.World /Game/ThirdPerson/Maps/ThirdPersonMap.ThirdPersonMap
+[2023.11.10-21.11.58:047][146]LogFileHelpers: InternalPromptForCheckoutAndSave started...
+[2023.11.10-21.11.58:124][146]LogUObjectHash: Compacting FUObjectHashTables data took   1.47ms
+[2023.11.10-21.11.58:147][146]LogUObjectHash: Compacting FUObjectHashTables data took   0.71ms
+[2023.11.10-21.11.58:170][146]LogUObjectHash: Compacting FUObjectHashTables data took   0.71ms
+[2023.11.10-21.11.58:184][146]LogFileHelpers: InternalPromptForCheckoutAndSave took 137 ms (total: 18.0 sec)
