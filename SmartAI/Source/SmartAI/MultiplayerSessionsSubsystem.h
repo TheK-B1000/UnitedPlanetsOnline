@@ -20,3 +20,5 @@ public:
 	void Initialize(FSubsystemCollectionBase& Collection) override;
 	void Deinitialize() override;
 	// End USubsystem
+
+	IOnlineSessionPtr SessionInterface;
