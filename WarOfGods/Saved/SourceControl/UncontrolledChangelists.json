@@ -5,7 +5,17 @@
 			"guid": "00000000000000000000000000000000",
 			"description": "Default Uncontrolled Changelist",
 			"files": [
-				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/StarterContent/Props/MaterialSphere.uasset"
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/StarterContent/Props/MaterialSphere.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/Framework/BP_WarOfGods_GameInstance.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/Framework/BP_WarOfGodsMenuPawn.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/MainMenu/BP_MainMenuGameMode.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/Framework/BP_WarOfGodsMenuController.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/MainMenu/MainMenu.umap",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/MainMenu/WBP_MainMenu.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/ThirdPerson/Blueprints/BP_ThirdPersonGameMode.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/Framework/BP_WarOfGods_PlayerController.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/SavedData/S_PlayerProfile.uasset",
+				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/SavedData/SG_PlayerProfile.uasset"
 			]
 		}
 	]
