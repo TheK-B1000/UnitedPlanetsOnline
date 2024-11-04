@@ -5,6 +5,7 @@
 			"guid": "00000000000000000000000000000000",
 			"description": "Default Uncontrolled Changelist",
 			"files": [
+				"B:/Unreal/UnitedPlanetsOnline/WarOfGods/Content/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.uasset",
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/StarterContent/Props/MaterialSphere.uasset",
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/Framework/BP_WarOfGods_GameInstance.uasset",
 				"C:/Users/K-B/Desktop/K-B Folder/Unreal/UnitedPlanetsOnline/WarOfGods/Content/MainMenu/BP_MainMenuGameMode.uasset",

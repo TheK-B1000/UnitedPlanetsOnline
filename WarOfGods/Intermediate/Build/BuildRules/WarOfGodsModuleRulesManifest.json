@@ -1,0 +1,8 @@
+{
+	"SourceFiles": [
+		"B:\\Unreal\\UnitedPlanetsOnline\\WarOfGods\\Source\\WarOfGods\\WarOfGods.Build.cs",
+		"B:\\Unreal\\UnitedPlanetsOnline\\WarOfGods\\Source\\WarOfGods.Target.cs",
+		"B:\\Unreal\\UnitedPlanetsOnline\\WarOfGods\\Source\\WarOfGodsEditor.Target.cs"
+	],
+	"EngineVersion": "5.3.1"
+}

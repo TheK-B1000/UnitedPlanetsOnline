@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="..\..\WarOfGods.uproject" />
+    <Filter Include="Source">
+      <UniqueIdentifier>{F31BBDD1-B3E8-3BCC-9652-680E16935819}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Source\WarOfGods.Target.cs">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="..\..\Source\WarOfGodsEditor.Target.cs">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="..\..\WarOfGods.png" />
+    <Filter Include="Config">
+      <UniqueIdentifier>{FA535FFB-25E1-3D20-B416-52F9BE21E06E}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Config\DefaultEditor.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultEditorPerProjectUserSettings.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultEngine.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultGame.ini">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="..\..\Config\DefaultInput.ini">
+      <Filter>Config</Filter>
+    </None>
+    <Filter Include="Source\WarOfGods">
+      <UniqueIdentifier>{35784AE5-D6DB-39A1-B865-2C67A12D04F9}</UniqueIdentifier>
+    </Filter>
+    <None Include="..\..\Source\WarOfGods\WarOfGods.Build.cs">
+      <Filter>Source\WarOfGods</Filter>
+    </None>
+    <ClCompile Include="..\..\Source\WarOfGods\WarOfGods.cpp">
+      <Filter>Source\WarOfGods</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Source\WarOfGods\WarOfGods.h">
+      <Filter>Source\WarOfGods</Filter>
+    </ClInclude>
+    <Filter Include="Source\WarOfGods\Private">
+      <UniqueIdentifier>{C2438EC2-781E-3175-B0F5-3E8AEBFFA279}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\WarOfGods\Private\LockonComponent.cpp">
+      <Filter>Source\WarOfGods\Private</Filter>
+    </ClCompile>
+    <Filter Include="Source\WarOfGods\Public">
+      <UniqueIdentifier>{6231FE70-3179-36B5-A9DD-627B61CEB9A5}</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="..\..\Source\WarOfGods\Public\LockonComponent.h">
+      <Filter>Source\WarOfGods\Public</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

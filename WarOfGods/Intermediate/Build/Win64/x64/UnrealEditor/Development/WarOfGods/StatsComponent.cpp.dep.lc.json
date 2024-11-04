@@ -1,0 +1,15 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "b:\\unreal\\unitedplanetsonline\\warofgods\\source\\warofgods\\private\\characters\\statscomponent.cpp",
+        "ProvidedModule": "",
+        "PCH": "b:\\unreal\\unitedplanetsonline\\warofgods\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\engine\\sharedpch.engine.cpp20.h.pch",
+        "Includes": [
+            "b:\\unreal\\unitedplanetsonline\\warofgods\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\warofgods\\definitions.warofgods.h",
+            "b:\\unreal\\unitedplanetsonline\\warofgods\\source\\warofgods\\public\\characters\\statscomponent.h",
+            "b:\\unreal\\unitedplanetsonline\\warofgods\\intermediate\\build\\win64\\unrealeditor\\inc\\warofgods\\uht\\statscomponent.generated.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

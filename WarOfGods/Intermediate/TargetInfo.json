@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "WarOfGods",
+			"Path": "..\\Source\\WarOfGods.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "WarOfGodsEditor",
+			"Path": "..\\Source\\WarOfGodsEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}

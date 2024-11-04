@@ -1,0 +1,14 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "b:\\unreal\\unitedplanetsonline\\warofgods\\source\\warofgods\\warofgods.cpp",
+        "ProvidedModule": "",
+        "PCH": "b:\\unreal\\unitedplanetsonline\\warofgods\\intermediate\\build\\win64\\x64\\warofgodseditor\\development\\engine\\sharedpch.engine.cpp20.inclorderunreal5_0.h.pch",
+        "Includes": [
+            "b:\\unreal\\unitedplanetsonline\\warofgods\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\warofgods\\definitions.warofgods.h",
+            "b:\\unreal\\unitedplanetsonline\\warofgods\\source\\warofgods\\warofgods.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}
