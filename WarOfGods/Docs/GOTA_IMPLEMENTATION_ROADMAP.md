@@ -1,131 +1,99 @@
 # Gods of the Arena — Implementation Roadmap
 
-**Date:** 2026-10-27  
-**Engine target:** **UE 5.8 only**  
-**Current branch:** `cpp-branch`
+**Updated:** 2026-10-27 (Phase 1 in progress)  
+**Engine:** UE 5.8 ONLY  
+**Branch:** `cpp-branch`
 
 ---
 
-## North-star proof (do this before expanding modes)
+## North-star proof
 
-> One hero (`BP_Player`), one weapon (sword **or** axe), one arena (`ThirdPersonMap`), one intelligent enemy (`BP_Enemy_Melee`), **perfect parry**, **perfect dodge**, **one divine counterattack** — then the same encounter over the network.
+> One hero, one weapon, one arena, one intelligent enemy, perfect parry, perfect dodge, one divine counter — then the same encounter over the network.
 
-All Story / PvE / PvP modes must share that combat foundation.
-
----
-
-## Phase 0 — Discovery & recovery (this milestone)
-
-**Status: Complete (static audit + Source flatten + UE 5.8 compile)**
-
-| Deliverable | Done |
-|-------------|------|
-| Project audit | `Docs/GOTA_PROJECT_AUDIT.md` |
-| Technical debt | `Docs/GOTA_TECHNICAL_DEBT.md` |
-| Asset inventory | `Docs/GOTA_ASSET_INVENTORY.md` |
-| Roadmap | this file |
-| Flat Source `Public\|Private/{Characters,Combat,Events}` | Yes |
-| Engine upgrade 5.3 → 5.8 | Yes; Editor module build **Succeeded** |
-| `ULockonComponent` real behavior | Yes |
-| `UCombatComponent` + `CombatEvents` observer shell | Yes |
-| `UStatsComponent` Health/Stamina/DivineMomentum | Yes |
-| Editor BP graph capture | **Deferred** — Unverified (static only) |
-| Content mass move | Explicitly deferred |
-
-**Acceptance:** Existing content preserved; build known good on 5.8; systems inventoried.
+Then expand Story (1–5 players), PvE waves, PvP duels on that foundation. **Do not scaffold the three modes yet.**
 
 ---
 
-## Phase 1 — Engineering foundation
+## Priority order (active)
 
-**Goal:** Contracts without breaking BP combat.
+1. Verified UE 5.8 playable baseline  
+2. Existing combat behavior capture (editor)  
+3. Lock-on integration (`IA_Lockon` → `ULockonComponent`)  
+4. Typed combat event integration (BP → `Notify*`)  
+5. Stats ownership / replication verification (observation mode)  
+6. First networked combat smoke test (1 listen + 1 client)  
+7. Combat timing improvements (DataAsset windows)  
+8. Perfect parry  
+9. Perfect dodge  
+10. Divine counterattack  
+11. Full networked combat vertical slice  
 
-1. Open project in UE 5.8 editor; resave critical assets; fix redirectors.
-2. Capture BP behavior for `BP_Player`, `BPC_Attacks`, `BPC_DamageSystem`, weapons, Framework replication (fill Unverified rows).
-3. Wire `UCombatComponent` Notify* calls from existing BP attack/parry/block nodes (no rule rewrite).
-4. Optionally attach `ULockonComponent` / `UStatsComponent` / `UCombatComponent` to `BP_Player` if not already present.
-5. Add Gameplay Tag data asset taxonomy (`State.Combat.*`) — lightweight.
-6. Decide GAS: adopt vs extend custom Stats (document in Architecture doc).
-7. Enable chosen Online Subsystem only after lobby audit.
-8. Add Automation smoke test for Stats clamp / DivineMomentum consume.
+---
 
-**Acceptance:** Project opens cleanly on 5.8; events fire from existing combat; no intentional BP feature regressions.
+## Phase 0 — Complete
+
+Audit docs, UE 5.8 upgrade, flat Source layout, Lockon/Combat/Stats shells, professional gitignore.
+
+---
+
+## Phase 1 — Engineering foundation (current)
+
+| Item | Status |
+|------|--------|
+| UE 5.8 module build | Done |
+| Asset cleanup / biome plan | Done — see `GOTA_ASSET_CLEANUP.md` |
+| Stats observation mode (no dual health) | Done — `bAuthoritativeMutations=false` |
+| Runtime component bootstrap + event logging | Done — `UCombatBootstrapSubsystem` |
+| Combat design spec | Done — `GOTA_COMBAT_DESIGN.md` |
+| GAS ADR | Done — defer — `ADR_GAS_ADOPTION.md` |
+| Editor open / CompileAllBlueprints | In progress / operator |
+| BP graph capture (attack/parry/dodge) | Pending editor |
+| Wire Notify* inside `BPC_Attacks` / `BP_Player` | Pending editor (bootstrap cannot invent outcomes) |
+| Lock-on IA wiring verification | Pending editor |
+| Listen-server smoke test | Pending |
+
+**BP wiring checklist (editor, minimal):**
+
+1. Open `BP_Player` — confirm Enhanced Input `IA_Lockon` calls `ToggleLockon` on `ULockonComponent` (or add Call).  
+2. On successful hit in `BPC_Attacks` / damage apply: `Get Component Combat` → `NotifyHitConfirmed`.  
+3. On block success → `NotifyBlockSucceeded`.  
+4. On parry success → `NotifyParrySucceeded` (`bPerfect` as applicable).  
+5. Optionally on health change → `ObserveHealth` (do **not** enable authoritative Stats yet).
 
 ---
 
 ## Phase 2 — Combat vertical slice
 
-**Scope:** `BP_Player` + sword/axe + `BP_Enemy_Melee` + ThirdPerson arena.
-
-| Feature | Approach |
-|---------|----------|
-| Light / heavy / combo | Preserve `BPC_Attacks`; tune data |
-| Block / timed parry / perfect parry | Capture existing windows; expose timing DataAsset |
-| Dodge / perfect dodge | Add anim + invuln window in C++/BP |
-| Counter after perfect parry | Montage + damage notify |
-| Divine counter | Spend DivineMomentum; reuse AOE/Lightning placeholder |
-| Hit reactions / stagger | Existing melee/boss hooks |
-| Lock-on | `ULockonComponent` + `IA_Lockon` |
-| Debug | Draw parry/dodge windows, lock target |
-
-**Acceptance:** Full offensive/defensive loop feels intentional; timings tunable; encounter reliable in PIE.
+Neutral arena map + sword/axe + melee enemy + tunable parry/dodge/divine counter. Use FightingAnimsetPro / BossyEnemy anims. Dress later biomes from Megascans/EuropeanBeech **without** committing 30GB libraries.
 
 ---
 
 ## Phase 3 — Multiplayer combat
 
-1. Server-authoritative damage via Stats/DamageSystem single path.
-2. Validate parry/dodge windows server-side (timestamp / tolerance).
-3. Replicate combat state; clients play montages/cues.
-4. Broadcast cosmetic events locally from RepNotifies / GameplayCues — not as authority.
-5. Test 2-client listen server under latency/packet loss.
-
-**Acceptance:** Two clients agree on outcomes; documented latency behavior.
+Authoritative damage/parry validation; 2-client tests; document latency.
 
 ---
 
-## Phase 4 — Three-mode prototype
-
-Shared combat + thin mode layers:
-
-- One co-op story encounter (objectives + revive stub)
-- One PvE wave arena (wave GameState)
-- One PvP 1v1 duel (match lifecycle)
-
----
-
-## Phases 5–10 (summary)
+## Phase 4+ (summary)
 
 | Phase | Focus |
 |-------|--------|
-| 5 | Five-player co-op, party, scaling, reconnect policy |
-| 6 | Combat polish (anim, VFX, audio, camera) |
-| 7 | Enemy depth, encounter director, boss prototype |
-| 8 | Story/quest expansion |
-| 9 | PvE/PvP expansion & balance |
-| 10 | Optimization, packaging, release readiness |
+| 4 | Thin Story encounter + PvE wave + PvP duel prototypes |
+| 5 | Five-player co-op |
+| 6 | Combat polish + revisit GAS |
+| 7 | Enemy director / boss |
+| 8–10 | Story, modes expansion, ship |
 
 ---
 
-## Dependency order
+## Arena biomes (content track, parallel)
 
-```mermaid
-flowchart TD
-  P0[Phase0_Audit_UE58]
-  P1[Phase1_Wire_Events]
-  P2[Phase2_Combat_Slice]
-  P3[Phase3_Net_Combat]
-  P4[Phase4_Three_Modes]
-  P0 --> P1 --> P2 --> P3 --> P4
-```
+| Arena | Biome | Asset feed |
+|-------|-------|------------|
+| Neutral | Training pit | ThirdPerson + LevelPrototyping |
+| Forest | Sacred grove | EuropeanBeech + plants |
+| Volcanic | Ash/lava | LavaFieldCollections + FX |
+| Canyon | Cliffs/hoodoo | Megascans Rock/Cliff (curated) |
+| Ruins | Temple | Pedestals + Props + IB FX |
 
-Do not scaffold Story/PvE/PvP frameworks before Phase 2 combat feel is accepted.
-
----
-
-## Immediate next action
-
-1. Launch `WarOfGods.uproject` with UE 5.8.  
-2. Allow asset resaves.  
-3. Document `BPC_Attacks` parry/combo graph into the audit (clear Unverified).  
-4. Add dodge placeholder montage and DivineMomentum grant on perfect parry.
+Folders: `Content/Arenas/{Neutral,Forest,Volcanic,Canyon,Ruins}/`

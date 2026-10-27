@@ -118,3 +118,15 @@ Staging/
 # Legacy course leftovers
 MultiplayerCourse/.vs/
 MultiplayerCourse/Intermediate/
+
+# -----------------------------------------------------------------------------
+# Heavy marketplace libraries — keep on disk for arena dressing; curate before commit
+# See Docs/GOTA_ASSET_CLEANUP.md
+# -----------------------------------------------------------------------------
+WarOfGods/Content/Megascans/
+WarOfGods/Content/EuropeanBeech/
+WarOfGods/Content/Maps/Assembly/
+WarOfGods/Content/Maps/Assembly_Zoo.*
+WarOfGods/Content/Maps/Megascans_Zoo.*
+WarOfGods/Content/FightingAnimsetPro/SourceFiles/
+

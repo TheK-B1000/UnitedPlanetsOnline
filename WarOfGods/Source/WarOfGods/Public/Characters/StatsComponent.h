@@ -60,6 +60,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat|Stats")
 	bool ConsumeDivineMomentum(float Amount);
 
+	/**
+	 * When false (Phase 1 default via bootstrap), mutation APIs no-op so BPC_DamageSystem
+	 * remains the health authority. DivineMomentum / Stamina helpers can still be enabled later.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Combat|Stats")
+	void SetAuthoritativeMutationsEnabled(bool bEnabled);
+
+	UFUNCTION(BlueprintPure, Category = "Combat|Stats")
+	bool AreAuthoritativeMutationsEnabled() const { return bAuthoritativeMutations; }
+
+	/** Mirror BP-owned health into replicated display without claiming authority. */
+	UFUNCTION(BlueprintCallable, Category = "Combat|Stats")
+	void ObserveHealth(float Current, float Maximum);
+
 	UPROPERTY(BlueprintAssignable, Category = "Combat|Stats")
 	FOnStatChanged OnHealthChanged;
 
@@ -92,6 +106,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category = "Combat|Stats")
 	float MaxDivineMomentum = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|Stats")
+	bool bAuthoritativeMutations = false;
 
 	UFUNCTION()
 	void OnRep_Health(float OldHealth);

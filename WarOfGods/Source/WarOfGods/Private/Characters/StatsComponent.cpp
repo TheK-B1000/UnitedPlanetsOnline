@@ -25,13 +25,38 @@ void UStatsComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 void UStatsComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	Health = MaxHealth;
-	Stamina = MaxStamina;
+	if (bAuthoritativeMutations)
+	{
+		Health = MaxHealth;
+		Stamina = MaxStamina;
+	}
+}
+
+void UStatsComponent::SetAuthoritativeMutationsEnabled(bool bEnabled)
+{
+	bAuthoritativeMutations = bEnabled;
+}
+
+void UStatsComponent::ObserveHealth(float Current, float Maximum)
+{
+	MaxHealth = FMath::Max(Maximum, 1.f);
+	const float Old = Health;
+	Health = FMath::Clamp(Current, 0.f, MaxHealth);
+	if (!FMath::IsNearlyEqual(Old, Health))
+	{
+		OnHealthChanged.Broadcast(Health, MaxHealth);
+		if (Health <= 0.f && Old > 0.f)
+		{
+			FCombatActorEvent Event;
+			Event.Target = GetOwner();
+			OnDied.Broadcast(Event);
+		}
+	}
 }
 
 void UStatsComponent::SetHealth(float NewHealth)
 {
-	if (!HasAuthorityToMutate())
+	if (!bAuthoritativeMutations || !HasAuthorityToMutate())
 	{
 		return;
 	}
@@ -70,7 +95,7 @@ void UStatsComponent::Heal(float Amount)
 
 bool UStatsComponent::ConsumeStamina(float Amount)
 {
-	if (!HasAuthorityToMutate() || Amount <= 0.f)
+	if (!bAuthoritativeMutations || !HasAuthorityToMutate() || Amount <= 0.f)
 	{
 		return false;
 	}
@@ -86,7 +111,7 @@ bool UStatsComponent::ConsumeStamina(float Amount)
 
 void UStatsComponent::RestoreStamina(float Amount)
 {
-	if (!HasAuthorityToMutate() || Amount <= 0.f)
+	if (!bAuthoritativeMutations || !HasAuthorityToMutate() || Amount <= 0.f)
 	{
 		return;
 	}
@@ -101,6 +126,7 @@ void UStatsComponent::RestoreStamina(float Amount)
 
 void UStatsComponent::AddDivineMomentum(float Amount)
 {
+	// DivineMomentum is C++-owned even while Health stays BP-owned.
 	if (!HasAuthorityToMutate() || Amount <= 0.f)
 	{
 		return;
