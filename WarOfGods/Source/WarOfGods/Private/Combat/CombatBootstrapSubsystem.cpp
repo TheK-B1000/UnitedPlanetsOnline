@@ -134,27 +134,32 @@ void UCombatBootstrapSubsystem::BindCombatLogging(UCombatComponent* Combat)
 	}
 	LoggingBound.Add(Combat);
 
-	Combat->OnAttackStarted.AddLambda([](const FCombatActorEvent& Event)
-	{
-		UE_LOG(LogGOTACombatBootstrap, Verbose, TEXT("Event AttackStarted Instigator=%s Target=%s"),
-			*GetNameSafe(Event.Instigator.Get()), *GetNameSafe(Event.Target.Get()));
-	});
+	Combat->OnAttackStarted.AddDynamic(this, &UCombatBootstrapSubsystem::HandleAttackStarted);
+	Combat->OnHitConfirmed.AddDynamic(this, &UCombatBootstrapSubsystem::HandleHitConfirmed);
+	Combat->OnBlockSucceeded.AddDynamic(this, &UCombatBootstrapSubsystem::HandleBlockSucceeded);
+	Combat->OnParrySucceeded.AddDynamic(this, &UCombatBootstrapSubsystem::HandleParrySucceeded);
+}
 
-	Combat->OnHitConfirmed.AddLambda([](const FCombatHitEvent& Event)
-	{
-		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event HitConfirmed Attacker=%s Victim=%s Damage=%.1f AttackId=%s"),
-			*GetNameSafe(Event.Attacker.Get()), *GetNameSafe(Event.Victim.Get()), Event.Damage, *Event.AttackId.ToString());
-	});
+void UCombatBootstrapSubsystem::HandleAttackStarted(const FCombatActorEvent& Event)
+{
+	UE_LOG(LogGOTACombatBootstrap, Verbose, TEXT("Event AttackStarted Instigator=%s Target=%s"),
+		*GetNameSafe(Event.Instigator.Get()), *GetNameSafe(Event.Target.Get()));
+}
 
-	Combat->OnBlockSucceeded.AddLambda([](const FCombatDefenseEvent& Event)
-	{
-		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event BlockSucceeded Defender=%s Attacker=%s"),
-			*GetNameSafe(Event.Defender.Get()), *GetNameSafe(Event.Attacker.Get()));
-	});
+void UCombatBootstrapSubsystem::HandleHitConfirmed(const FCombatHitEvent& Event)
+{
+	UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event HitConfirmed Attacker=%s Victim=%s Damage=%.1f AttackId=%s"),
+		*GetNameSafe(Event.Attacker.Get()), *GetNameSafe(Event.Victim.Get()), Event.Damage, *Event.AttackId.ToString());
+}
 
-	Combat->OnParrySucceeded.AddLambda([](const FCombatDefenseEvent& Event)
-	{
-		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event ParrySucceeded Defender=%s Attacker=%s Perfect=%d"),
-			*GetNameSafe(Event.Defender.Get()), *GetNameSafe(Event.Attacker.Get()), Event.bPerfect ? 1 : 0);
-	});
+void UCombatBootstrapSubsystem::HandleBlockSucceeded(const FCombatDefenseEvent& Event)
+{
+	UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event BlockSucceeded Defender=%s Attacker=%s"),
+		*GetNameSafe(Event.Defender.Get()), *GetNameSafe(Event.Attacker.Get()));
+}
+
+void UCombatBootstrapSubsystem::HandleParrySucceeded(const FCombatDefenseEvent& Event)
+{
+	UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event ParrySucceeded Defender=%s Attacker=%s Perfect=%d"),
+		*GetNameSafe(Event.Defender.Get()), *GetNameSafe(Event.Attacker.Get()), Event.bPerfect ? 1 : 0);
 }

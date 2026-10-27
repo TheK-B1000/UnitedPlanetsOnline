@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Events/CombatEvents.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "CombatBootstrapSubsystem.generated.h"
 
@@ -37,6 +38,18 @@ public:
 protected:
 	UFUNCTION()
 	void HandlePawnPossessed(APawn* OldPawn, APawn* NewPawn);
+
+	UFUNCTION()
+	void HandleAttackStarted(const FCombatActorEvent& Event);
+
+	UFUNCTION()
+	void HandleHitConfirmed(const FCombatHitEvent& Event);
+
+	UFUNCTION()
+	void HandleBlockSucceeded(const FCombatDefenseEvent& Event);
+
+	UFUNCTION()
+	void HandleParrySucceeded(const FCombatDefenseEvent& Event);
 
 	void HandleActorSpawned(AActor* Spawned);
 	void BindPlayerController(APlayerController* PC);
