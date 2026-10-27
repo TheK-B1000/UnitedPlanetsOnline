@@ -147,6 +147,30 @@ void AArenaGrayboxBuilder::AddPillar(const FVector& Center, float HeightUU)
 	BuiltMeshes.Add(Mesh);
 }
 
+UStaticMesh* AArenaGrayboxBuilder::TryLoadMesh(const TCHAR* Path) const
+{
+	return LoadObject<UStaticMesh>(nullptr, Path);
+}
+
+void AArenaGrayboxBuilder::AddMeshAt(UStaticMesh* MeshAsset, const FVector& Location, const FRotator& Rotation, const FVector& Scale)
+{
+	if (!MeshAsset)
+	{
+		return;
+	}
+
+	UStaticMeshComponent* Mesh = NewObject<UStaticMeshComponent>(this);
+	Mesh->SetStaticMesh(MeshAsset);
+	Mesh->SetupAttachment(GetRootComponent());
+	Mesh->RegisterComponent();
+	Mesh->SetWorldLocation(GetActorLocation() + Location);
+	Mesh->SetWorldRotation(Rotation);
+	Mesh->SetWorldScale3D(Scale);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Mesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+	BuiltMeshes.Add(Mesh);
+}
+
 void AArenaGrayboxBuilder::SpawnPlayerStartAt(const FVector& Location, int32 Slot, EBiomeId Biome)
 {
 	if (!bSpawnPlayerStarts || !GetWorld())
@@ -284,14 +308,44 @@ void AArenaGrayboxBuilder::BuildShatteredDominionThreeBiome()
 	AddBox(FVector(0.f, 3500.f, 40.f), FVector(300.f, 1000.f, 40.f), Ruins);
 	SpawnBiomeVolumeAt(RuinsCenter + FVector(0.f, 0.f, 600.f), FVector(2300.f, 2300.f, 900.f), EBiomeId::StoneRuins);
 
-	// --- Forest (east) — placeholder trunks ---
+	// --- Forest (east) — European Beech when available, else placeholder trunks ---
 	const FVector ForestCenter(6000.f, 0.f, 0.f);
 	AddBox(ForestCenter + FVector(0.f, 0.f, -50.f), FVector(2200.f, 2200.f, 50.f), Forest);
+
+	static const TCHAR* BeechPaths[] = {
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_01.SM_EuropeanBeech_Forest_01"),
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_02.SM_EuropeanBeech_Forest_02"),
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_03.SM_EuropeanBeech_Forest_03"),
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_04.SM_EuropeanBeech_Forest_04"),
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_05.SM_EuropeanBeech_Forest_05"),
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_06.SM_EuropeanBeech_Forest_06"),
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_07.SM_EuropeanBeech_Forest_07"),
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_08.SM_EuropeanBeech_Forest_08"),
+	};
+
+	TArray<UStaticMesh*> BeechMeshes;
+	for (const TCHAR* Path : BeechPaths)
+	{
+		if (UStaticMesh* M = TryLoadMesh(Path))
+		{
+			BeechMeshes.Add(M);
+		}
+	}
+
 	for (int32 i = 0; i < 16; ++i)
 	{
 		const float X = -1500.f + (i % 4) * 1000.f;
 		const float Y = -1500.f + (i / 4) * 1000.f;
-		AddPillar(ForestCenter + FVector(X, Y, 0.f), 900.f + (i % 3) * 100.f);
+		const FVector TreeLoc = ForestCenter + FVector(X, Y, 0.f);
+		if (BeechMeshes.Num() > 0)
+		{
+			UStaticMesh* Tree = BeechMeshes[i % BeechMeshes.Num()];
+			AddMeshAt(Tree, TreeLoc, FRotator(0.f, i * 45.f, 0.f), FVector(1.f));
+		}
+		else
+		{
+			AddPillar(TreeLoc, 900.f + (i % 3) * 100.f);
+		}
 	}
 	AddBox(FVector(3500.f, 0.f, 40.f), FVector(1000.f, 300.f, 40.f), Forest);
 	SpawnBiomeVolumeAt(ForestCenter + FVector(0.f, 0.f, 600.f), FVector(2300.f, 2300.f, 900.f), EBiomeId::Forest);

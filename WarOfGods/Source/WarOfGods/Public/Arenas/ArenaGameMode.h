@@ -10,10 +10,11 @@
 class AArenaGrayboxBuilder;
 class AArenaEncounterDirector;
 class AArenaPlayerStart;
+class APawn;
 
 /**
- * 4-player arena mode. Builds graybox layout on BeginPlay when AutoBuildGraybox is set.
- * Preserves DefaultPawnClass from project/BP when assigned in editor.
+ * 4-player arena mode. Builds graybox on BeginPlay.
+ * Soft-loads BP_Player / BP_Enemy_Melee / WarOfGods PlayerController when present.
  */
 UCLASS()
 class WAROFGODS_API AArenaGameMode : public AGameModeBase
@@ -43,11 +44,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Arena")
 	bool bAutoStartEncounterDirector = true;
 
-	/** Story / PvE / skirmish: host + 3 friends. */
+	/** Host + 3 friends. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Arena")
 	int32 SoftMaxPlayers = 4;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Arena|Classes")
+	TSoftClassPtr<APawn> SoftPlayerClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Arena|Classes")
+	TSoftClassPtr<APlayerController> SoftPlayerControllerClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Arena|Classes")
+	TSoftClassPtr<APawn> SoftEnemyClass;
+
+	UFUNCTION(BlueprintCallable, Category = "Arena")
+	void SetGrayboxLayout(EArenaGrayboxLayout NewLayout);
+
 protected:
+	void ResolveSoftClasses();
 	void EnsureGraybox();
 	void EnsureEncounterDirector();
 	AArenaPlayerStart* FindStartForSlot(int32 Slot) const;

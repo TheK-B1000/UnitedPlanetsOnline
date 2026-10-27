@@ -1,32 +1,50 @@
-# Arena Graybox — How to Play (4 players)
+# Arena Graybox — Play Now (4 players)
 
-## Quick PIE (Titan's Quarry)
+Default GameMode is now **`ArenaGameMode`** on `ThirdPersonMap`.
 
-1. Open `ThirdPersonMap` (or any open level) in UE 5.8.
-2. **World Settings → GameMode Override** → `ArenaGameMode`.
-3. Set on the GameMode (Details, or subclass BP later):
-   - `GrayboxLayout` = `TitansQuarry` (default) or `ShatteredDominionThreeBiome`
-   - `SoftMaxPlayers` = 4
-   - `bAutoBuildGraybox` = true
-4. Play. Graybox geometry + 4 `ArenaPlayerStart`s spawn at runtime.
-5. Assign `EncounterDirector → EnemyClass` = `BP_Enemy_Melee` when ready (otherwise waves log only).
+## PIE
 
-### Multiplayer PIE
+1. Open project in UE 5.8 → `ThirdPersonMap` (startup map).
+2. Play.
+3. You should spawn in **Titan's Quarry** graybox with `BP_Player` (if it loads).
+4. Melee enemies wave-spawn when `BP_Enemy_Melee` resolves.
 
-- Play → Net Mode: **Play As Listen Server**, Number of Players: **4**.
-- Confirm each client sees the same stone/forest/volcano placeholders (local deterministic build).
+### 4-player
 
-### Shattered Dominion 3-biome stub
+Play → Net Mode: **Listen Server** → Number of Players: **4**.
 
-Set `GrayboxLayout` = `ShatteredDominionThreeBiome`:
+### Switch to Shattered Dominion (3 biomes)
 
-- Center: Pantheon Coliseum  
-- North: Stone Ruins (+ bridge)  
-- East: Forest placeholders  
-- West: Volcanic + lava marker  
+In console (`~`):
 
-Walk the bridges between regions; watch Output Log for `BiomeEnter`.
+```
+gota.BuildArena Dominion
+```
 
-## Placeholders
+Or travel with:
 
-Missing Iceland / Nordic / full Megascans dress → colored boxes and pillars until packs are curated. Combat uses existing BP systems.
+```
+open ThirdPersonMap?Arena=Dominion
+```
+
+Back to Quarry:
+
+```
+gota.BuildArena Quarry
+```
+
+### Regions (Dominion)
+
+| Direction | Biome |
+|-----------|--------|
+| Center | Pantheon Coliseum |
+| North | Stone Ruins |
+| East | Forest (European Beech meshes if pack present, else green pillars) |
+| West | Volcanic + lava marker |
+
+Watch Output Log for `BiomeEnter`.
+
+## Notes
+
+- Main Menu map still uses its own GameMode when you open `MainMenu`.
+- Art dress (LavaField / Moab / Iceland) comes after graybox combat feels good.

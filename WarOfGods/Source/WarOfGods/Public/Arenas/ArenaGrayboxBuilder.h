@@ -57,6 +57,8 @@ protected:
 	void EnsureMeshes();
 	void AddBox(const FVector& Center, const FVector& Extent, const FLinearColor& Color);
 	void AddPillar(const FVector& Center, float HeightUU);
+	void AddMeshAt(UStaticMesh* Mesh, const FVector& Location, const FRotator& Rotation, const FVector& Scale);
+	UStaticMesh* TryLoadMesh(const TCHAR* Path) const;
 	void SpawnPlayerStartAt(const FVector& Location, int32 Slot, EBiomeId Biome);
 	void SpawnBiomeVolumeAt(const FVector& Center, const FVector& Extent, EBiomeId BiomeId);
 
