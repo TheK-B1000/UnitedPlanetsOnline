@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Engine/Texture2D.h"
 #include "Arenas/ArenaTypes.h"
 #include "ArenaDefinition.generated.h"
 
@@ -21,11 +22,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena")
 	FText DisplayName;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena|Menu")
+	FText Tagline;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena|Menu", meta = (MultiLine = "true"))
+	FText Description;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena|Menu")
+	TSoftObjectPtr<UTexture2D> Thumbnail;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena")
 	TSoftObjectPtr<UWorld> ArenaMap;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena")
 	TArray<EArenaMode> SupportedModes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena")
+	TArray<EBiomeId> BiomeIds;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena")
 	TArray<TObjectPtr<UBiomeDefinition>> Biomes;
@@ -35,6 +48,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena")
 	bool bUsesWorldPartition = false;
+
+	/** When false, menu shows Coming Soon / hides from selectable list. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena|Menu")
+	bool bIsSelectable = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Arena|Menu")
+	bool bComingSoon = true;
 
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{

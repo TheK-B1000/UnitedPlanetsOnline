@@ -15,9 +15,15 @@ public class WarOfGods : ModuleRules
 			"Engine",
 			"InputCore",
 			"EnhancedInput",
-			"GameplayTags"
+			"GameplayTags",
+			"UMG",
+			"Slate",
+			"SlateCore"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"DeveloperSettings"
+		});
 	}
 }

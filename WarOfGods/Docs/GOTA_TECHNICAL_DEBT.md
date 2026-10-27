@@ -27,8 +27,9 @@
 | Dual damage paths (`BPC_DamageSystem` vs `UStatsComponent`) | Double-application risk if both used | High | Single authority path; BP wraps C++ or vice versa |
 | Observer events not yet wired from BP | Event architecture unused | Medium | Call `Notify*` from existing attack/parry nodes |
 | No GAS | Custom attributes/effects duplication risk | Medium | Evaluate after combat contracts stable |
-| No Online Subsystem enabled | Sessions may use incomplete OSS | Medium | Choose Steam/EOS after lobby audit |
-| Template ThirdPerson GameMode still default | Mode split unclear | Medium | Introduce mode-specific GMs sharing combat |
+| No Online Subsystem enabled | Sessions may use incomplete OSS; invites unavailable in frontend | Medium | Choose Steam/EOS after lobby audit |
+| Frontend WBPs not yet authored | C++ menu bases compile; level still hosts legacy `WBP_MainMenu` | High | Create `WBP_GOTA_*` per `Docs/GOTA_FRONTEND_MENU.md` |
+| Template ThirdPerson GameMode still EditorStartup default | Mode split intentional for playtest | Low | Keep; `GameDefaultMap` is `L_GOTA_MainMenu` |
 | Project/repo names diverge (`UnitedPlanetsOnline` / `WarOfGods` / GOTA) | Confusion only | Low | Rename later when branding locked |
 
 ### Content / assets
