@@ -2,8 +2,20 @@
 
 **Status:** Accepted recommendation — **Defer GAS until after networked combat vertical slice**  
 **Date:** 2026-10-27  
+**Reconfirmed:** 2026-10-28 — **Implementation 07**  
 **Engine:** UE 5.8  
 **Project:** WarOfGods / Gods of the Arena
+
+### Implementation 07 confirmation
+
+Perfect Parry / Dodge / Divine Counter landed on `UCombatTimingComponent` + `UStatsComponent` **without** GAS.  
+Do **not** enable `GameplayAbilities` until:
+
+1. BP wires `ResolveIncomingAttack` and two-client defense feels correct  
+2. Divine powers need prediction / GameplayCues beyond local Notify*  
+3. Phase 6 ability count justifies AttributeSet migration  
+
+Until then, prefer GameplayTags + timing DataAssets over a second framework.
 
 ---
 

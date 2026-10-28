@@ -55,14 +55,14 @@ flowchart TB
 
 | State | Behavior | Notes |
 |-------|----------|-------|
-| Block | Reduces/prevents eligible damage | Exists (git + enemy `BTT_MeleeBlock`) |
-| Timed parry | Window during block/parry input | Exists; **exact frames Unverified** until BP capture |
-| Perfect parry | Tighter window → stagger / DivineMomentum grant | Target: boss `Boss_Parried` anims available |
+| Block | Reduces/prevents eligible damage | `RequestBlock` + sustain after timed window |
+| Timed parry | Window after `RequestParry` | `UCombatTimingComponent` + `UCombatTimingConfig` |
+| Perfect parry | Leading sub-window → DivineMomentum | Defaults in `GOTA_IMPL_04_06_COMBAT_TIMING.md` |
 | Guard break | Punish turtle | Not verified — Phase 2 |
-| Unparryable | Distinct telegraph | Enemy attack enums — expand later |
+| Unparryable | Distinct telegraph | Pass `bUnparryable=true` into `ResolveIncomingAttack` |
 
 **Event sequence (parry):**  
-Incoming hit vs defender parry window → BP success → `NotifyParrySucceeded(Attacker, bPerfect, AttackId)` → optional `AddDivineMomentum` on perfect → counter montage.
+`RequestParry` → incoming hit → `ResolveIncomingAttack` → if cancel, skip BP damage → `NotifyParrySucceeded` / `OnPerfectParry` → momentum grant on authority.
 
 **PvP:** Server validates window with latency tolerance; clients never authoritatively declare parry success.
 
@@ -72,12 +72,12 @@ Incoming hit vs defender parry window → BP success → `NotifyParrySucceeded(A
 
 | Item | Status |
 |------|--------|
-| Dedicated dodge input/anims | **Missing** by asset name search |
-| Invulnerability frames | Missing |
-| Perfect dodge | Missing |
-| FightingAnimsetPro | Likely contains rolls/evasions — **verify in editor** before authoring new anims |
+| Dedicated dodge input/anims | C++ `RequestDodge` ready; **BP anim bind pending** |
+| Invulnerability frames | `DodgeIFrameStart/End` on timing config |
+| Perfect dodge | Leading i-frame sub-window → momentum |
+| FightingAnimsetPro | Prefer retarget rolls — verify in editor |
 
-**Phase 2 requirement:** Directional dodge, i-frames, perfect dodge window, dodge-attack cancel into counter. Prefer retarget from FightingAnimsetPro over new purchases.
+**Contract:** Before damage, `ResolveIncomingAttack` cancels hits inside i-frames and fires `NotifyPerfectDodge` when perfect.
 
 ---
 
@@ -91,7 +91,8 @@ Incoming hit vs defender parry window → BP success → `NotifyParrySucceeded(A
 | Reset | On death; optional drain out of combat |
 | Modes | Campaign full; PvP normalized / restricted |
 
-C++ API: `AddDivineMomentum` / `ConsumeDivineMomentum` (authority-only).
+C++ API: `AddDivineMomentum` / `ConsumeDivineMomentum` (authority-only).  
+Counter: `UCombatTimingComponent::RequestDivineCounter` consumes cost and opens an auto-perfect window.
 
 ---
 

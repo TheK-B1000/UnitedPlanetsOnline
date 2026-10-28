@@ -3,12 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Combat/CombatTimingTypes.h"
 #include "Events/CombatEvents.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "CombatBootstrapSubsystem.generated.h"
 
 class APawn;
 class UCombatComponent;
+class UCombatTimingComponent;
 
 /**
  * Ensures combat C++ components exist on player pawns without requiring a BP parent change.
@@ -51,11 +53,22 @@ protected:
 	UFUNCTION()
 	void HandleParrySucceeded(const FCombatDefenseEvent& Event);
 
+	UFUNCTION()
+	void HandlePerfectParry(const FCombatDefenseEvent& Event);
+
+	UFUNCTION()
+	void HandlePerfectDodge(const FCombatDefenseEvent& Event);
+
+	UFUNCTION()
+	void HandleDefenseResolved(const FCombatDefenseResolveResult& Result);
+
 	void HandleActorSpawned(AActor* Spawned);
 	void BindPlayerController(APlayerController* PC);
 	void EnsureComponentsOnPawn(APawn* Pawn);
 	void BindCombatLogging(UCombatComponent* Combat);
+	void BindTimingLogging(UCombatTimingComponent* Timing);
 
 	FDelegateHandle ActorSpawnedHandle;
 	TSet<TWeakObjectPtr<UCombatComponent>> LoggingBound;
+	TSet<TWeakObjectPtr<UCombatTimingComponent>> TimingLoggingBound;
 };

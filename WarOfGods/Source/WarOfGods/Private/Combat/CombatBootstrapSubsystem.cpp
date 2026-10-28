@@ -4,6 +4,8 @@
 
 #include "Characters/StatsComponent.h"
 #include "Combat/CombatComponent.h"
+#include "Combat/CombatTimingComponent.h"
+#include "Combat/CombatTimingTypes.h"
 #include "Combat/LockonComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
@@ -23,6 +25,7 @@ void UCombatBootstrapSubsystem::Deinitialize()
 		World->RemoveOnActorSpawnedHandler(ActorSpawnedHandle);
 	}
 	LoggingBound.Reset();
+	TimingLoggingBound.Reset();
 	Super::Deinitialize();
 }
 
@@ -100,6 +103,14 @@ void UCombatBootstrapSubsystem::EnsureComponentsOnPawn(APawn* Pawn)
 		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Attached UCombatComponent to %s"), *GetNameSafe(Pawn));
 	}
 
+	UCombatTimingComponent* Timing = Pawn->FindComponentByClass<UCombatTimingComponent>();
+	if (!Timing)
+	{
+		Timing = NewObject<UCombatTimingComponent>(Pawn, TEXT("GOTA_CombatTimingComponent"));
+		Timing->RegisterComponent();
+		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Attached UCombatTimingComponent to %s"), *GetNameSafe(Pawn));
+	}
+
 	if (!Pawn->FindComponentByClass<ULockonComponent>())
 	{
 		ULockonComponent* Lockon = NewObject<ULockonComponent>(Pawn, TEXT("GOTA_LockonComponent"));
@@ -124,6 +135,10 @@ void UCombatBootstrapSubsystem::EnsureComponentsOnPawn(APawn* Pawn)
 	{
 		BindCombatLogging(Combat);
 	}
+	if (bLogCombatEvents && Timing)
+	{
+		BindTimingLogging(Timing);
+	}
 }
 
 void UCombatBootstrapSubsystem::BindCombatLogging(UCombatComponent* Combat)
@@ -138,6 +153,18 @@ void UCombatBootstrapSubsystem::BindCombatLogging(UCombatComponent* Combat)
 	Combat->OnHitConfirmed.AddDynamic(this, &UCombatBootstrapSubsystem::HandleHitConfirmed);
 	Combat->OnBlockSucceeded.AddDynamic(this, &UCombatBootstrapSubsystem::HandleBlockSucceeded);
 	Combat->OnParrySucceeded.AddDynamic(this, &UCombatBootstrapSubsystem::HandleParrySucceeded);
+	Combat->OnPerfectParry.AddDynamic(this, &UCombatBootstrapSubsystem::HandlePerfectParry);
+	Combat->OnPerfectDodge.AddDynamic(this, &UCombatBootstrapSubsystem::HandlePerfectDodge);
+}
+
+void UCombatBootstrapSubsystem::BindTimingLogging(UCombatTimingComponent* Timing)
+{
+	if (!Timing || TimingLoggingBound.Contains(Timing))
+	{
+		return;
+	}
+	TimingLoggingBound.Add(Timing);
+	Timing->OnDefenseResolved.AddDynamic(this, &UCombatBootstrapSubsystem::HandleDefenseResolved);
 }
 
 void UCombatBootstrapSubsystem::HandleAttackStarted(const FCombatActorEvent& Event)
@@ -162,4 +189,22 @@ void UCombatBootstrapSubsystem::HandleParrySucceeded(const FCombatDefenseEvent& 
 {
 	UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event ParrySucceeded Defender=%s Attacker=%s Perfect=%d"),
 		*GetNameSafe(Event.Defender.Get()), *GetNameSafe(Event.Attacker.Get()), Event.bPerfect ? 1 : 0);
+}
+
+void UCombatBootstrapSubsystem::HandlePerfectParry(const FCombatDefenseEvent& Event)
+{
+	UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event PerfectParry Defender=%s Attacker=%s"),
+		*GetNameSafe(Event.Defender.Get()), *GetNameSafe(Event.Attacker.Get()));
+}
+
+void UCombatBootstrapSubsystem::HandlePerfectDodge(const FCombatDefenseEvent& Event)
+{
+	UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event PerfectDodge Defender=%s Attacker=%s"),
+		*GetNameSafe(Event.Defender.Get()), *GetNameSafe(Event.Attacker.Get()));
+}
+
+void UCombatBootstrapSubsystem::HandleDefenseResolved(const FCombatDefenseResolveResult& Result)
+{
+	UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Event DefenseResolved Outcome=%d CancelDamage=%d Age=%.3f Momentum=+%.1f"),
+		static_cast<int32>(Result.Outcome), Result.bCancelDamage ? 1 : 0, Result.DefenseAgeSeconds, Result.DivineMomentumGranted);
 }

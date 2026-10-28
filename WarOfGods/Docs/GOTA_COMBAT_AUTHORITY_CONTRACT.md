@@ -36,3 +36,12 @@ Goal: one authoritative outcome path for multiplayer without a second damage fra
 - [ ] Block / parry do not double-apply
 - [ ] Death ends Duel round on server for both peers
 - [ ] Skirmish unchanged when not using DuelGameMode
+
+## Implementation 03A hook (C++)
+
+`ADuelGameMode` now binds `UCombatComponent::OnCharacterDied` and destroys the dead pawn, then resolves the round.  
+**Still required in Editor (BP):**
+
+1. On lethal in `BPC_DamageSystem` (server): `Combat->NotifyDied(Killer, Tags)` then Destroy or Disable.
+2. After each HP change: `Stats->ObserveHealth(Current, Max)`.
+3. Optional: implement `IDuelFighterInterface` on `BP_Player` for `ResetForDuelRound` / `SetDuelCombatEnabled`.
