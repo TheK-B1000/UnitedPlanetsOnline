@@ -15,10 +15,14 @@ void ADuelGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ADuelGameState, DuelPhase);
 	DOREPLIFETIME(ADuelGameState, CurrentRound);
 	DOREPLIFETIME(ADuelGameState, RoundsToWin);
+	DOREPLIFETIME(ADuelGameState, BestOfRounds);
 	DOREPLIFETIME(ADuelGameState, ScorePlayer0);
 	DOREPLIFETIME(ADuelGameState, ScorePlayer1);
 	DOREPLIFETIME(ADuelGameState, PhaseDeadlineServerTime);
+	DOREPLIFETIME(ADuelGameState, RoundEndServerTime);
+	DOREPLIFETIME(ADuelGameState, bCombatEnabled);
 	DOREPLIFETIME(ADuelGameState, MatchOutcome);
+	DOREPLIFETIME(ADuelGameState, LastRoundWinnerSlot);
 }
 
 void ADuelGameState::SetDuelPhase(EDuelPhase NewPhase)
@@ -32,12 +36,27 @@ void ADuelGameState::SetDuelPhase(EDuelPhase NewPhase)
 
 	switch (NewPhase)
 	{
-	case EDuelPhase::WaitingForPlayers: SetArenaPhase(EArenaPhase::WaitingForPlayers); break;
-	case EDuelPhase::Countdown: SetArenaPhase(EArenaPhase::Countdown); break;
-	case EDuelPhase::InRound: SetArenaPhase(EArenaPhase::Active); break;
-	case EDuelPhase::RoundEnd: SetArenaPhase(EArenaPhase::WaveBreak); break;
-	case EDuelPhase::MatchEnd: SetArenaPhase(EArenaPhase::Completed); break;
-	default: break;
+	case EDuelPhase::WaitingForPlayers:
+	case EDuelPhase::WaitingForReady:
+		SetArenaPhase(EArenaPhase::WaitingForPlayers);
+		break;
+	case EDuelPhase::PreparingRound:
+	case EDuelPhase::Countdown:
+		SetArenaPhase(EArenaPhase::Countdown);
+		break;
+	case EDuelPhase::InRound:
+		SetArenaPhase(EArenaPhase::Active);
+		break;
+	case EDuelPhase::RoundEnd:
+	case EDuelPhase::Intermission:
+		SetArenaPhase(EArenaPhase::WaveBreak);
+		break;
+	case EDuelPhase::MatchEnd:
+	case EDuelPhase::ReturningToLobby:
+		SetArenaPhase(EArenaPhase::Completed);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -49,6 +68,15 @@ void ADuelGameState::BroadcastScore()
 float ADuelGameState::GetSecondsUntilPhaseDeadline() const
 {
 	return FMath::Max(0.f, PhaseDeadlineServerTime - GetServerWorldTimeSeconds());
+}
+
+float ADuelGameState::GetSecondsUntilRoundEnd() const
+{
+	if (RoundEndServerTime <= 0.f)
+	{
+		return 0.f;
+	}
+	return FMath::Max(0.f, RoundEndServerTime - GetServerWorldTimeSeconds());
 }
 
 void ADuelGameState::OnRep_DuelPhase()

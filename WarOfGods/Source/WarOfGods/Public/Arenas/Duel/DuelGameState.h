@@ -27,6 +27,9 @@ public:
 	int32 RoundsToWin = 2;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
+	int32 BestOfRounds = 3;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
 	int32 ScorePlayer0 = 0;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
@@ -35,8 +38,17 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
 	float PhaseDeadlineServerTime = 0.f;
 
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
+	float RoundEndServerTime = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
+	bool bCombatEnabled = false;
+
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MatchOutcome, Category = "Duel")
 	EDuelMatchOutcome MatchOutcome = EDuelMatchOutcome::None;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
+	int32 LastRoundWinnerSlot = INDEX_NONE;
 
 	UPROPERTY(BlueprintAssignable, Category = "Duel")
 	FOnDuelPhaseChanged OnDuelPhaseChanged;
@@ -55,6 +67,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Duel")
 	float GetSecondsUntilPhaseDeadline() const;
+
+	UFUNCTION(BlueprintPure, Category = "Duel")
+	float GetSecondsUntilRoundEnd() const;
 
 	UFUNCTION()
 	void OnRep_DuelPhase();

@@ -32,8 +32,8 @@ namespace
 			World,
 			FName(TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap")),
 			true,
-			TEXT("game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?listen"));
-		UE_LOG(LogTemp, Log, TEXT("gota.Duel -> Titan's Quarry 1v1 PvP (best of 3)"));
+			TEXT("game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?BestOf=3?listen"));
+		UE_LOG(LogTemp, Log, TEXT("gota.Duel -> Trial of Champions (Titan's Quarry, best of 3)"));
 	}
 
 	FAutoConsoleCommand LaunchDuelCmd(

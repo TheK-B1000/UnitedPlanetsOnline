@@ -9,10 +9,13 @@ UENUM(BlueprintType)
 enum class EDuelPhase : uint8
 {
 	WaitingForPlayers,
+	WaitingForReady,
+	PreparingRound,
 	Countdown,
-	InRound,
-	RoundEnd,
-	MatchEnd,
+	InRound UMETA(DisplayName = "RoundActive"),
+	RoundEnd UMETA(DisplayName = "RoundResolving"),
+	Intermission,
+	MatchEnd UMETA(DisplayName = "MatchCompleted"),
 	ReturningToLobby
 };
 
@@ -22,7 +25,8 @@ enum class EDuelMatchOutcome : uint8
 	None,
 	Player0Wins,
 	Player1Wins,
-	Draw
+	Draw,
+	DrawByTimeout
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDuelPhaseChanged, EDuelPhase, NewPhase);
