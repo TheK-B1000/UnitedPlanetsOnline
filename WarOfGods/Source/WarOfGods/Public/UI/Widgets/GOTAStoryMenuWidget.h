@@ -9,8 +9,8 @@
 class UGOTAMenuButtonWidget;
 
 /**
- * Story Mode hub: New Game (Chapter 1 Fallen Sanctuary), Continue, Solo / Host Co-op.
- * Bind in WBP_GOTA_StoryMode (or parent under main menu stack).
+ * Story Mode hub: New Game, Continue, Host Co-op, Join Co-op, Back.
+ * Bind in WBP_GOTA_StoryMode.
  */
 UCLASS(Blueprintable)
 class WAROFGODS_API UGOTAStoryMenuWidget : public UGOTAMenuScreenWidget
@@ -32,6 +32,8 @@ protected:
 	UFUNCTION()
 	void HandleNewGameCoop();
 	UFUNCTION()
+	void HandleJoinCoop();
+	UFUNCTION()
 	void HandleContinue();
 	UFUNCTION()
 	void HandleBack();
@@ -41,6 +43,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Story")
 	TObjectPtr<UGOTAMenuButtonWidget> Btn_NewGameCoop;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Story")
+	TObjectPtr<UGOTAMenuButtonWidget> Btn_JoinCoop;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Story")
 	TObjectPtr<UGOTAMenuButtonWidget> Btn_Continue;

@@ -3,6 +3,8 @@
 #include "UI/Widgets/GOTAStoryMenuWidget.h"
 #include "UI/GOTAMenuSubsystem.h"
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
+#include "Multiplayer/GotaSessionSubsystem.h"
+#include "Engine/GameInstance.h"
 
 UGOTAStoryMenuWidget::UGOTAStoryMenuWidget()
 {
@@ -15,13 +17,18 @@ void UGOTAStoryMenuWidget::NativeOnInitialized()
 
 	if (Btn_NewGameSolo)
 	{
-		Btn_NewGameSolo->SetLabel(NSLOCTEXT("GOTA", "StorySolo", "START CHAPTER 1 — SOLO"));
+		Btn_NewGameSolo->SetLabel(NSLOCTEXT("GOTA", "StoryNewGame", "NEW GAME"));
 		Btn_NewGameSolo->OnActivated.AddDynamic(this, &UGOTAStoryMenuWidget::HandleNewGameSolo);
 	}
 	if (Btn_NewGameCoop)
 	{
-		Btn_NewGameCoop->SetLabel(NSLOCTEXT("GOTA", "StoryCoop", "START CHAPTER 1 — HOST CO-OP"));
+		Btn_NewGameCoop->SetLabel(NSLOCTEXT("GOTA", "StoryHostCoop", "HOST COOPERATIVE STORY"));
 		Btn_NewGameCoop->OnActivated.AddDynamic(this, &UGOTAStoryMenuWidget::HandleNewGameCoop);
+	}
+	if (Btn_JoinCoop)
+	{
+		Btn_JoinCoop->SetLabel(NSLOCTEXT("GOTA", "StoryJoinCoop", "JOIN COOPERATIVE STORY"));
+		Btn_JoinCoop->OnActivated.AddDynamic(this, &UGOTAStoryMenuWidget::HandleJoinCoop);
 	}
 	if (Btn_Continue)
 	{
@@ -61,9 +68,37 @@ void UGOTAStoryMenuWidget::HandleNewGameSolo()
 
 void UGOTAStoryMenuWidget::HandleNewGameCoop()
 {
+	// Host LAN session then travel into Story GameMode with listen.
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			Sessions->SetSelectedMode(EArenaMode::Story);
+			Sessions->HostSession(4, true);
+		}
+	}
 	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
 	{
 		Subsystem->RequestStartStoryPrologue(true);
+	}
+}
+
+void UGOTAStoryMenuWidget::HandleJoinCoop()
+{
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			if (Sessions->FindSessions(true))
+			{
+				Sessions->JoinFirstFoundSession();
+				return;
+			}
+		}
+	}
+	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	{
+		Subsystem->NavigateTo(EGOTAMenuScreen::Multiplayer, false);
 	}
 }
 

@@ -1,53 +1,56 @@
-# Story Chapter 1 — The Fallen Sanctuary
+# Story Prologue — The Fallen Sanctuary
 
-Story Mode does **not** load Titan's Quarry or Shattered Dominion. It opens a dedicated prologue space: ruined sanctuary outside the Pantheon Coliseum gates.
+**Canon:** `GOTA_STORY_BIBLE.md` v2.0 — *The Sovereign Protocol*  
+**Unit:** UPA Aegis Team Seven — Authority Wardens  
+**Boss:** Oathbound Sentinel (experimental guardian / unknown energy system)  
+
+Act I opener: Aegis Team Seven investigates a silent UPG research site. Locals worship an Ascendant “guardian” as a god. The ruins read as a temple; underneath is unauthorized security infrastructure that later connects to the Sovereign Protocol (do not name Protocol in prologue UI).
+
+Story Mode does **not** load Titan's Quarry or Shattered Dominion. Preferred map: `/Game/Story/Maps/L_GOTA_Story_Prologue` (fallback: `ThirdPersonMap` + runtime FallenSanctuary graybox).
 
 ## Menu flow
 
 ```
 Main Menu
-  └─ Story Mode          → EGOTAMenuScreen::StoryMode
+  └─ Story Mode
        ├─ Start Chapter 1 — Solo
        ├─ Start Chapter 1 — Host Co-op (?listen, 4 slots)
-       ├─ Continue         (hidden until GOTA_Campaign_Slot.sav)
+       ├─ Continue
        └─ Back
 ```
 
-Travel options: `Arena=Story` + `Mode=Story` → `EArenaGrayboxLayout::FallenSanctuary`.
-
-Preferred map: `/Game/Story/Maps/L_GOTA_Story_Prologue`  
-Fallback until that map exists: `ThirdPersonMap` with the same URL options (runtime graybox).
+Travel: `Arena=Story` + `Mode=Story` → `EArenaGrayboxLayout::FallenSanctuary`.
 
 ## Layout (graybox)
 
 | Zone | Purpose |
 |------|---------|
-| Courtyard + ruined temple (north) | Arrival / exploration |
-| Warrior encampment (SW) | Spawn cluster (4 non-overlapping starts) |
-| Training clearing (east) | First encounter space |
-| Gate path (south) | Approach toward Coliseum |
-| Distant coliseum silhouette (~Y -9000) | Visual destination only |
+| Courtyard + ruined sanctuary (north) | Arrival / investigation |
+| Warden LZ (SW) | 4 non-overlapping spawns |
+| Perimeter clearing (east) | First hostiles / constructs |
+| Gate path (south) | Approach toward Coliseum silhouette |
+| Distant coliseum (~Y -9000) | Arena Initiative landmark (visual) |
 
-## Chapter 1 beat sheet (design)
+## Beat sheet (bible-aligned)
 
-1. **Arrival** — spawn at camp; short cinematic later  
-2. **Exploration** — move / camera / environment  
-3. **First encounter** — basic enemies in east clearing  
-4. **First divine power** — unlock counterattack (content TBD)  
-5. **The Gates** — miniboss at southern gate → journey toward Coliseum  
+1. **Deploy** — UPA credentials / Vey briefing (cinematic later)  
+2. **Contact** — local survivors; low-tech cultural overlay  
+3. **Investigate** — missing research team  
+4. **Defend / clear** — hostile constructs  
+5. **Ascendant Beacon** — communications checkpoint (UI: Activate Ascendant Beacon)  
+6. **Oathbound Sentinel** — defeat/disable guardian  
+7. **Extract evidence** — unauthorized energy / security network → investigation expands toward Quarry Protocol  
 
-## Editor follow-up
+**Moral fork:** prioritize evidence recovery vs civilian protection under pressure — both completable; trust/consequences differ.
 
-1. Create `Content/Story/Maps/L_GOTA_Story_Prologue` (duplicate ThirdPersonMap or empty + lighting).  
-2. Set World Settings GameMode Override → `ArenaGameMode` (or leave global).  
-3. Place `AArenaGrayboxBuilder` with Layout = Fallen Sanctuary, **or** rely on GameMode auto-build with `?Arena=Story`.  
-4. Author `WBP_GOTA_StoryMode` parenting `UGOTAStoryMenuWidget`; show it when `OnMenuScreenChanged` → StoryMode.  
-5. Dress with stone / forest / ruins assets already in project.  
-6. Later: geographically connect to Shattered Dominion without making Dominion the Story spawn.
+## Dress rule
 
-## Console / PIE
+Stone / forest / ruins first. Add UPA drones, holograms, tech props selectively. No megacity prologue. No Ayla / Erebus-7 spoilers in prologue dialogue.
+
+## Console
 
 ```
 gota.BuildArena Story
-open ThirdPersonMap?Arena=Story?Mode=Story
+gota.Story
+gota.Story DivineShrine
 ```
