@@ -8,6 +8,7 @@
 #include "GOTAHordeResultsWidget.generated.h"
 
 class UTextBlock;
+class UButton;
 class UGOTAMenuButtonWidget;
 class AHordeGameMode;
 
@@ -27,6 +28,7 @@ protected:
 	void HandleReturnToLobby();
 
 	void Refresh();
+	void EnsureRuntimeLayout();
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Horde")
 	TObjectPtr<UTextBlock> Text_Outcome;
@@ -39,4 +41,11 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Horde")
 	TObjectPtr<UGOTAMenuButtonWidget> Btn_ReturnToLobby;
+
+	/** C++ fallback buttons when WBP / GOTAMenuButtonWidget are absent. */
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> Btn_ReplayNative;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> Btn_ReturnNative;
 };

@@ -140,6 +140,61 @@ void AHordeEncounterDirector::CleanupTrackedEnemies(bool bDestroyAlive)
 	PushCountsToGameState();
 }
 
+void AHordeEncounterDirector::ForceClearWave()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	StopWaveSpawning();
+	SpawnQueueIndex = SpawnQueue.Num();
+	RemainingToSpawn = 0;
+	CleanupTrackedEnemies(true);
+	AliveCount = 0;
+	PushCountsToGameState();
+
+	if (!bWaveClearBroadcast)
+	{
+		bWaveClearBroadcast = true;
+		UE_LOG(LogTemp, Log, TEXT("Horde ForceClearWave broadcast (defeated=%d failedSpawns=%d)"), DefeatedCount, FailedSpawnCount);
+		OnWaveCleared.Broadcast();
+	}
+}
+
+int32 AHordeEncounterDirector::FlushSpawnQueueNow()
+{
+	if (!HasAuthority() || !ActiveWave)
+	{
+		return 0;
+	}
+
+	bSpawnQueueActive = true;
+	int32 Spawned = 0;
+	const int32 Safety = FMath::Max(SpawnQueue.Num() + 4, 16);
+	for (int32 i = 0; i < Safety && SpawnQueueIndex < SpawnQueue.Num(); ++i)
+	{
+		const FHordeEnemySpawnEntry& Entry = SpawnQueue[SpawnQueueIndex];
+		if (TrySpawnOne(Entry))
+		{
+			++Spawned;
+			++SpawnQueueIndex;
+			RemainingToSpawn = FMath::Max(0, RemainingToSpawn - 1);
+		}
+		else
+		{
+			++FailedSpawnCount;
+			++SpawnQueueIndex;
+			RemainingToSpawn = FMath::Max(0, RemainingToSpawn - 1);
+			UE_LOG(LogTemp, Warning, TEXT("Horde FlushSpawnQueueNow failed (total failures=%d)"), FailedSpawnCount);
+		}
+	}
+	StopWaveSpawning();
+	PushCountsToGameState();
+	UE_LOG(LogTemp, Log, TEXT("Horde FlushSpawnQueueNow spawned=%d alive=%d failed=%d"), Spawned, AliveCount, FailedSpawnCount);
+	return Spawned;
+}
+
 bool AHordeEncounterDirector::IsWaveFullyCleared() const
 {
 	return RemainingToSpawn <= 0 && !bSpawnQueueActive && AliveCount <= 0 && SpawnQueueIndex >= SpawnQueue.Num();
@@ -187,7 +242,15 @@ bool AHordeEncounterDirector::TrySpawnOne(const FHordeEnemySpawnEntry& Entry)
 	UClass* EnemyClass = Entry.EnemyClass.LoadSynchronous();
 	if (!EnemyClass)
 	{
-		return false;
+		// Soft path may be stale; try the common melee pawn used across GOTA modes.
+		static TSoftClassPtr<APawn> MeleeFallback(FSoftObjectPath(TEXT("/Game/Enemies/MeleeEnemy/BP_Enemy_Melee.BP_Enemy_Melee_C")));
+		EnemyClass = MeleeFallback.LoadSynchronous();
+		if (!EnemyClass)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Horde TrySpawnOne: class load failed for %s"), *Entry.EnemyClass.ToString());
+			return false;
+		}
+		UE_LOG(LogTemp, Warning, TEXT("Horde TrySpawnOne: fell back to BP_Enemy_Melee for role %d"), static_cast<int32>(Entry.Role));
 	}
 
 	AHordeSpawnPoint* Point = PickSpawnPoint(Entry.Role);

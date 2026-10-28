@@ -5,19 +5,12 @@
 #include "Arenas/Horde/HordeGameState.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
+#include "UI/Widgets/GOTAHordeHUDWidget.h"
+#include "UI/Widgets/GOTAHordeResultsWidget.h"
 
 void AHordeHUD::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (!HudWidgetClass.ToSoftObjectPath().IsValid())
-	{
-		HudWidgetClass = TSoftClassPtr<UUserWidget>(FSoftObjectPath(TEXT("/Game/UI/Horde/WBP_GOTA_HordeHUD.WBP_GOTA_HordeHUD_C")));
-	}
-	if (!ResultsWidgetClass.ToSoftObjectPath().IsValid())
-	{
-		ResultsWidgetClass = TSoftClassPtr<UUserWidget>(FSoftObjectPath(TEXT("/Game/UI/Horde/WBP_GOTA_HordeResults.WBP_GOTA_HordeResults_C")));
-	}
 
 	APlayerController* PC = GetOwningPlayerController();
 	if (!PC || !PC->IsLocalController())
@@ -25,13 +18,16 @@ void AHordeHUD::BeginPlay()
 		return;
 	}
 
-	if (UClass* HudClass = HudWidgetClass.LoadSynchronous())
+	UClass* HudClass = HudWidgetClass.LoadSynchronous();
+	if (!HudClass)
 	{
-		ActiveHud = CreateWidget<UUserWidget>(PC, HudClass);
-		if (ActiveHud)
-		{
-			ActiveHud->AddToViewport(50);
-		}
+		HudClass = UGOTAHordeHUDWidget::StaticClass();
+	}
+
+	ActiveHud = CreateWidget<UUserWidget>(PC, HudClass);
+	if (ActiveHud)
+	{
+		ActiveHud->AddToViewport(50);
 	}
 
 	if (AHordeGameState* GS = GetWorld()->GetGameState<AHordeGameState>())
@@ -59,12 +55,16 @@ void AHordeHUD::ShowResults()
 	{
 		return;
 	}
-	if (UClass* ResultsClass = ResultsWidgetClass.LoadSynchronous())
+
+	UClass* ResultsClass = ResultsWidgetClass.LoadSynchronous();
+	if (!ResultsClass)
 	{
-		ActiveResults = CreateWidget<UUserWidget>(PC, ResultsClass);
-		if (ActiveResults)
-		{
-			ActiveResults->AddToViewport(200);
-		}
+		ResultsClass = UGOTAHordeResultsWidget::StaticClass();
+	}
+
+	ActiveResults = CreateWidget<UUserWidget>(PC, ResultsClass);
+	if (ActiveResults)
+	{
+		ActiveResults->AddToViewport(200);
 	}
 }

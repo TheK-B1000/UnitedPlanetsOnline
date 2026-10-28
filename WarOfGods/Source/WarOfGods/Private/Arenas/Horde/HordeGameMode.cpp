@@ -15,7 +15,11 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
+#include "NavMesh/NavMeshBoundsVolume.h"
+#include "NavigationSystem.h"
 #include "TimerManager.h"
+#include "UI/Widgets/GOTAHordeHUDWidget.h"
+#include "UI/Widgets/GOTAHordeResultsWidget.h"
 
 AHordeGameMode::AHordeGameMode()
 {
@@ -31,6 +35,7 @@ AHordeGameMode::AHordeGameMode()
 	SoftRangedEnemyClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged_C")));
 	SoftEliteEnemyClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Enemies/MeleeEnemy/BP_Enemy_Melee.BP_Enemy_Melee_C")));
 	SoftBossEnemyClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Enemies/BossEnemy/BP_Enemy_Boss.BP_Enemy_Boss_C")));
+	// Prefer authored WBPs when present; C++ UGOTAHorde*Widget is the runtime fallback.
 	HordeHudWidgetClass = TSoftClassPtr<UUserWidget>(FSoftObjectPath(TEXT("/Game/UI/Horde/WBP_GOTA_HordeHUD.WBP_GOTA_HordeHUD_C")));
 	HordeResultsWidgetClass = TSoftClassPtr<UUserWidget>(FSoftObjectPath(TEXT("/Game/UI/Horde/WBP_GOTA_HordeResults.WBP_GOTA_HordeResults_C")));
 }
@@ -51,6 +56,14 @@ void AHordeGameMode::InitGame(const FString& MapName, const FString& Options, FS
 			ArenaMode = EArenaMode::PvEHorde;
 		}
 	}
+
+	bHordeSmokeTest = UGameplayStatics::HasOption(Options, TEXT("HordeSmoke"));
+	if (bHordeSmokeTest)
+	{
+		AutoStartDelay = 0.25f;
+		bAutoStartWhenPlayersReady = true;
+		UE_LOG(LogTemp, Log, TEXT("HordeSmoke: enabled (fast prep + auto ForceClear wave 1)"));
+	}
 }
 
 void AHordeGameMode::BeginPlay()
@@ -64,6 +77,7 @@ void AHordeGameMode::BeginPlay()
 	}
 
 	EnsureHordeInfrastructure();
+	ResolveHordeEnemyClasses();
 	BuildRuntimeMatchDefinition();
 
 	if (AHordeGameState* GS = GetHordeGS())
@@ -72,7 +86,15 @@ void AHordeGameMode::BeginPlay()
 		GS->ActiveArenaId = ArenaId;
 		GS->TotalRegularWaves = RuntimeMatchDef ? RuntimeMatchDef->Waves.Num() : 5;
 		GS->MatchStartServerTime = GS->GetServerWorldTimeSeconds();
-		GS->SetHordePhase(EHordeMatchPhase::WaitingForPlayers);
+		// PostLogin can race before BeginPlay — never clobber an already-started match.
+		if (!bMatchStarted)
+		{
+			GS->SetHordePhase(EHordeMatchPhase::WaitingForPlayers);
+		}
+		UE_LOG(LogTemp, Log, TEXT("Horde BeginPlay arena=%d waves=%d director=%s"),
+			static_cast<int32>(ArenaId),
+			GS->TotalRegularWaves,
+			HordeDirector ? TEXT("ok") : TEXT("null"));
 	}
 
 	GetWorldTimerManager().SetTimer(
@@ -82,7 +104,21 @@ void AHordeGameMode::BeginPlay()
 		1.f,
 		true);
 
-	if (bAutoStartWhenPlayersReady)
+	bHordeInfrastructureReady = true;
+
+	if (bHordeSmokeTest && !bMatchStarted && GetNumPlayers() >= 1)
+	{
+		// NullRHI/-game may not tick timers reliably — run wave1 spawn+clear synchronously.
+		RequestStartMatch();
+		GetWorldTimerManager().ClearTimer(PhaseTimerHandle);
+		BeginNextWave();
+		if (HordeDirector)
+		{
+			HordeDirector->FlushSpawnQueueNow();
+		}
+		RunHordeSmokeStep();
+	}
+	else if (bAutoStartWhenPlayersReady && !bMatchStarted && GetNumPlayers() >= 1)
 	{
 		GetWorldTimerManager().SetTimer(
 			PhaseTimerHandle,
@@ -101,10 +137,12 @@ void AHordeGameMode::PostLogin(APlayerController* NewPlayer)
 
 	if (AHordeGameState* GS = GetHordeGS())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Horde PostLogin players=%d phase=%d"), GetNumPlayers(), (int32)GS->HordePhase);
+		UE_LOG(LogTemp, Log, TEXT("Horde PostLogin players=%d phase=%d infra=%d"),
+			GetNumPlayers(), (int32)GS->HordePhase, bHordeInfrastructureReady ? 1 : 0);
 	}
 
-	if (bAutoStartWhenPlayersReady && !bMatchStarted && GetNumPlayers() >= 1)
+	// Only start after BeginPlay built director + wave defs (PostLogin can fire first).
+	if (bHordeInfrastructureReady && bAutoStartWhenPlayersReady && !bMatchStarted && GetNumPlayers() >= 1)
 	{
 		RequestStartMatch();
 	}
@@ -119,6 +157,7 @@ void AHordeGameMode::Logout(AController* Exiting)
 void AHordeGameMode::EnsureHordeInfrastructure()
 {
 	EnsureDefaultSpawnPoints();
+	EnsureHordeNavBounds();
 
 	for (TActorIterator<AHordeEncounterDirector> It(GetWorld()); It; ++It)
 	{
@@ -133,6 +172,9 @@ void AHordeGameMode::EnsureHordeInfrastructure()
 	}
 	if (HordeDirector)
 	{
+		// Avoid double-binding if Ensure is called more than once.
+		HordeDirector->OnWaveCleared.RemoveAll(this);
+		HordeDirector->OnEnemyDefeated.RemoveAll(this);
 		HordeDirector->OnWaveCleared.AddDynamic(this, &AHordeGameMode::OnDirectorWaveCleared);
 		HordeDirector->OnEnemyDefeated.AddDynamic(this, &AHordeGameMode::OnDirectorEnemyDefeated);
 		if (SpawnedGraybox)
@@ -140,6 +182,54 @@ void AHordeGameMode::EnsureHordeInfrastructure()
 			HordeDirector->SetActorLocation(SpawnedGraybox->GetActorLocation());
 		}
 	}
+}
+
+void AHordeGameMode::EnsureHordeNavBounds()
+{
+	for (TActorIterator<ANavMeshBoundsVolume> It(GetWorld()); It; ++It)
+	{
+		return;
+	}
+
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ANavMeshBoundsVolume* Bounds = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(
+		ANavMeshBoundsVolume::StaticClass(), FVector(0.f, 0.f, 200.f), FRotator::ZeroRotator, Params);
+	if (Bounds)
+	{
+		Bounds->SetActorScale3D(FVector(50.f, 50.f, 20.f)); // ~5000uu footprint for Quarry pit
+		if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+		{
+			NavSys->Build();
+			UE_LOG(LogTemp, Log, TEXT("Horde: spawned NavMeshBoundsVolume and requested nav build"));
+		}
+	}
+}
+
+void AHordeGameMode::ResolveHordeEnemyClasses()
+{
+	auto ResolveOrFallback = [](TSoftClassPtr<APawn>& Soft, const TSoftClassPtr<APawn>& Fallback, const TCHAR* Label)
+	{
+		if (Soft.IsNull())
+		{
+			Soft = Fallback;
+			return;
+		}
+		if (!Soft.LoadSynchronous())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Horde: %s class missing (%s) — falling back to melee"), Label, *Soft.ToString());
+			Soft = Fallback;
+		}
+	};
+
+	if (SoftEnemyClass.IsNull() || !SoftEnemyClass.LoadSynchronous())
+	{
+		SoftEnemyClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Enemies/MeleeEnemy/BP_Enemy_Melee.BP_Enemy_Melee_C")));
+	}
+
+	ResolveOrFallback(SoftRangedEnemyClass, SoftEnemyClass, TEXT("Ranged"));
+	ResolveOrFallback(SoftEliteEnemyClass, SoftEnemyClass, TEXT("Elite"));
+	ResolveOrFallback(SoftBossEnemyClass, SoftEnemyClass, TEXT("Boss"));
 }
 
 void AHordeGameMode::EnsureDefaultSpawnPoints()
@@ -256,8 +346,14 @@ void AHordeGameMode::RequestStartMatch()
 	{
 		return;
 	}
+	if (!bHordeInfrastructureReady || !HordeDirector || !RuntimeMatchDef)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Horde RequestStartMatch deferred — infra not ready"));
+		return;
+	}
 	bMatchStarted = true;
 	NextWaveToStart = 0;
+	UE_LOG(LogTemp, Log, TEXT("Horde RequestStartMatch -> Preparing"));
 	BeginPreparing();
 }
 
@@ -298,7 +394,11 @@ bool AHordeGameMode::TryTransition(EHordeMatchPhase NewPhase)
 void AHordeGameMode::BeginPreparing()
 {
 	TryTransition(EHordeMatchPhase::Preparing);
-	const float Prep = RuntimeMatchDef ? RuntimeMatchDef->MatchPrepareSeconds : 5.f;
+	float Prep = RuntimeMatchDef ? RuntimeMatchDef->MatchPrepareSeconds : 5.f;
+	if (bHordeSmokeTest)
+	{
+		Prep = 0.5f;
+	}
 	if (AHordeGameState* GS = GetHordeGS())
 	{
 		GS->PhaseDeadlineServerTime = GS->GetServerWorldTimeSeconds() + Prep;
@@ -333,6 +433,48 @@ void AHordeGameMode::BeginNextWave()
 	HordeDirector->ConfigureWave(Wave, GetActivePlayerCount());
 	TryTransition(EHordeMatchPhase::WaveActive);
 	HordeDirector->StartWaveSpawning();
+}
+
+void AHordeGameMode::RunHordeSmokeStep()
+{
+	if (!HasAuthority() || !bHordeSmokeTest)
+	{
+		return;
+	}
+
+	DevDumpStatus();
+	const int32 Alive = HordeDirector ? HordeDirector->GetAliveCount() : 0;
+	const int32 Failed = HordeDirector ? HordeDirector->GetFailedSpawnCount() : 0;
+	const int32 Remaining = HordeDirector ? HordeDirector->GetRemainingToSpawn() : 0;
+
+	if (Alive <= 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HordeSmoke: FAIL - no enemies spawned (alive=%d remaining=%d failed=%d)"),
+			Alive, Remaining, Failed);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("HordeSmoke: wave1 spawned alive=%d remaining=%d failed=%d - ForceClear"),
+			Alive, Remaining, Failed);
+		DevForceClearWave();
+		DevDumpStatus();
+
+		if (AHordeGameState* GS = GetHordeGS())
+		{
+			const bool bAdvanced = GS->HordePhase == EHordeMatchPhase::WaveCompleted
+				|| GS->HordePhase == EHordeMatchPhase::Intermission
+				|| GS->CurrentWaveIndex >= 1;
+			UE_LOG(LogTemp, Log, TEXT("HordeSmoke: %s phase=%d wave=%d"),
+				bAdvanced ? TEXT("PASS") : TEXT("FAIL"),
+				static_cast<int32>(GS->HordePhase),
+				GS->CurrentWaveIndex);
+		}
+	}
+
+	if (FParse::Param(FCommandLine::Get(), TEXT("HordeSmokeQuit")))
+	{
+		FPlatformMisc::RequestExit(false);
+	}
 }
 
 void AHordeGameMode::BeginIntermission()
@@ -558,17 +700,31 @@ void AHordeGameMode::RespawnEliminatedPlayers()
 	}
 }
 
+UClass* AHordeGameMode::ResolveHudWidgetClass() const
+{
+	if (UClass* HudClass = HordeHudWidgetClass.LoadSynchronous())
+	{
+		return HudClass;
+	}
+	return UGOTAHordeHUDWidget::StaticClass();
+}
+
+UClass* AHordeGameMode::ResolveResultsWidgetClass() const
+{
+	if (UClass* ResultsClass = HordeResultsWidgetClass.LoadSynchronous())
+	{
+		return ResultsClass;
+	}
+	return UGOTAHordeResultsWidget::StaticClass();
+}
+
 void AHordeGameMode::PresentHudToPlayer(APlayerController* PC)
 {
-	if (!PC || PC->IsLocalController() == false && !PC->IsLocalPlayerController())
-	{
-		// Still create on owning client via local PC only.
-	}
 	if (!PC || !PC->IsLocalPlayerController())
 	{
 		return;
 	}
-	if (UClass* HudClass = HordeHudWidgetClass.LoadSynchronous())
+	if (UClass* HudClass = ResolveHudWidgetClass())
 	{
 		if (UUserWidget* Hud = CreateWidget<UUserWidget>(PC, HudClass))
 		{
@@ -586,13 +742,76 @@ void AHordeGameMode::PresentResultsToAll()
 		{
 			continue;
 		}
-		if (UClass* ResultsClass = HordeResultsWidgetClass.LoadSynchronous())
+		if (UClass* ResultsClass = ResolveResultsWidgetClass())
 		{
 			if (UUserWidget* Results = CreateWidget<UUserWidget>(PC, ResultsClass))
 			{
 				Results->AddToViewport(200);
 			}
 		}
+	}
+}
+
+void AHordeGameMode::DevForceClearWave()
+{
+	if (!HasAuthority() || !HordeDirector)
+	{
+		return;
+	}
+	HordeDirector->ForceClearWave();
+}
+
+void AHordeGameMode::DevSkipPrepare()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	AHordeGameState* GS = GetHordeGS();
+	if (!GS)
+	{
+		return;
+	}
+	if (GS->HordePhase == EHordeMatchPhase::WaitingForPlayers)
+	{
+		RequestStartMatch();
+		GetWorldTimerManager().ClearTimer(PhaseTimerHandle);
+		BeginNextWave();
+		return;
+	}
+	if (GS->HordePhase == EHordeMatchPhase::Preparing || GS->HordePhase == EHordeMatchPhase::Intermission)
+	{
+		GetWorldTimerManager().ClearTimer(PhaseTimerHandle);
+		BeginNextWave();
+	}
+}
+
+void AHordeGameMode::DevDumpStatus() const
+{
+	const AHordeGameState* GS = GetHordeGS();
+	const int32 PlayerCount = GameState ? GameState->PlayerArray.Num() : 0;
+	UE_LOG(LogTemp, Log, TEXT("Horde Dump: players=%d started=%d ended=%d nextWave=%d"),
+		PlayerCount, bMatchStarted ? 1 : 0, bMatchEnded ? 1 : 0, NextWaveToStart);
+	if (GS)
+	{
+		UE_LOG(LogTemp, Log, TEXT("  phase=%d wave=%d/%d alive=%d toSpawn=%d defeated=%d score=%d outcome=%d"),
+			static_cast<int32>(GS->HordePhase),
+			GS->CurrentWaveIndex,
+			GS->TotalRegularWaves,
+			GS->EnemiesAlive,
+			GS->EnemiesRemainingToSpawn,
+			GS->EnemiesDefeated,
+			GS->TeamScore,
+			static_cast<int32>(GS->MatchOutcome));
+	}
+	if (HordeDirector)
+	{
+		UE_LOG(LogTemp, Log, TEXT("  director alive=%d remaining=%d defeated=%d failed=%d cleared=%d"),
+			HordeDirector->GetAliveCount(),
+			HordeDirector->GetRemainingToSpawn(),
+			HordeDirector->GetDefeatedCount(),
+			HordeDirector->GetFailedSpawnCount(),
+			HordeDirector->IsWaveFullyCleared() ? 1 : 0);
 	}
 }
 

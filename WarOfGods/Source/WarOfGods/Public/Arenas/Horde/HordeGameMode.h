@@ -41,6 +41,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Horde")
 	void RequestReturnToLobby();
 
+	/** Dev: destroy current wave enemies and advance clear. */
+	UFUNCTION(BlueprintCallable, Category = "Horde|Dev")
+	void DevForceClearWave();
+
+	/** Dev: skip Waiting/Preparing/Intermission into the next wave immediately. */
+	UFUNCTION(BlueprintCallable, Category = "Horde|Dev")
+	void DevSkipPrepare();
+
+	UFUNCTION(BlueprintCallable, Category = "Horde|Dev")
+	void DevDumpStatus() const;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Horde")
 	TSoftObjectPtr<UHordeMatchDefinition> MatchDefinitionAsset;
 
@@ -71,6 +82,8 @@ public:
 protected:
 	void EnsureHordeInfrastructure();
 	void EnsureDefaultSpawnPoints();
+	void EnsureHordeNavBounds();
+	void ResolveHordeEnemyClasses();
 	void BuildRuntimeMatchDefinition();
 	UHordeWaveDefinition* MakeRuntimeWave(FName Id, FText Name, int32 Melee, int32 Ranged, int32 Elite, bool bBoss, int32 Concurrent);
 	bool TryTransition(EHordeMatchPhase NewPhase);
@@ -86,6 +99,8 @@ protected:
 	void RespawnEliminatedPlayers();
 	void PresentHudToPlayer(APlayerController* PC);
 	void PresentResultsToAll();
+	UClass* ResolveHudWidgetClass() const;
+	UClass* ResolveResultsWidgetClass() const;
 	int32 GetActivePlayerCount() const;
 	AHordeGameState* GetHordeGS() const;
 
@@ -109,8 +124,13 @@ protected:
 
 	bool bMatchStarted = false;
 	bool bMatchEnded = false;
+	bool bHordeSmokeTest = false;
+	bool bHordeInfrastructureReady = false;
 	int32 NextWaveToStart = 0;
 
 	FTimerHandle PhaseTimerHandle;
 	FTimerHandle PlayerWatchTimerHandle;
+	FTimerHandle SmokeTimerHandle;
+
+	void RunHordeSmokeStep();
 };

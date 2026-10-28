@@ -32,6 +32,7 @@ protected:
 	void HandleScoreChanged(int32 TeamScore);
 
 	void RefreshFromGameState();
+	void EnsureRuntimeLayout();
 	AHordeGameState* GetHordeGS() const;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Horde")

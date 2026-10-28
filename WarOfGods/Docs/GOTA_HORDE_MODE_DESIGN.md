@@ -40,8 +40,10 @@ Counts scale with extra players (`CountPerExtraPlayer`), not raw health multipli
 ## Entry points
 
 - Console: `gota.Horde`
+- Dev: `gota.Horde.Dump` / `gota.Horde.SkipPrep` / `gota.Horde.ForceClear`
 - Frontend: PvE Arena → select Titan's Quarry → opens map with `game=/Script/WarOfGods.HordeGameMode?Mode=Horde`
-- URL options: `Mode=Horde`, `Arena=Quarry`
+- URL options: `Mode=Horde`, `Arena=Quarry`, `HordeSmoke` (headless one-wave spawn+clear)
+- HUD: prefers `WBP_GOTA_Horde*`; falls back to C++ `UGOTAHorde*Widget` runtime layout
 
 ## Out of scope (this milestone)
 

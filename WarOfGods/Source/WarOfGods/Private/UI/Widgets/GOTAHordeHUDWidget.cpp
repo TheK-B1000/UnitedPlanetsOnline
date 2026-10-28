@@ -3,13 +3,19 @@
 #include "UI/Widgets/GOTAHordeHUDWidget.h"
 
 #include "Arenas/Horde/HordeGameState.h"
+#include "Blueprint/WidgetTree.h"
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
 #include "Kismet/GameplayStatics.h"
 
 void UGOTAHordeHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	EnsureRuntimeLayout();
 	if (AHordeGameState* GS = GetHordeGS())
 	{
 		GS->OnHordePhaseChanged.AddDynamic(this, &UGOTAHordeHUDWidget::HandlePhaseChanged);
@@ -28,6 +34,66 @@ void UGOTAHordeHUDWidget::NativeDestruct()
 		GS->OnHordeScoreChanged.RemoveAll(this);
 	}
 	Super::NativeDestruct();
+}
+
+void UGOTAHordeHUDWidget::EnsureRuntimeLayout()
+{
+	if (Text_Wave && Text_Phase && Text_Enemies && Text_Score)
+	{
+		return;
+	}
+	if (!WidgetTree)
+	{
+		return;
+	}
+
+	UCanvasPanel* Root = Cast<UCanvasPanel>(GetRootWidget());
+	if (!Root)
+	{
+		Root = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("HordeHudRoot"));
+		WidgetTree->RootWidget = Root;
+	}
+
+	UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("HordeHudBox"));
+	if (UCanvasPanelSlot* RootSlot = Root->AddChildToCanvas(Box))
+	{
+		RootSlot->SetAutoSize(true);
+		RootSlot->SetAnchors(FAnchors(0.f, 0.f));
+		RootSlot->SetPosition(FVector2D(48.f, 48.f));
+	}
+
+	auto MakeLine = [this, Box](const TCHAR* Name) -> UTextBlock*
+	{
+		UTextBlock* Text = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), Name);
+		Text->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		FSlateFontInfo Font = Text->GetFont();
+		Font.Size = 22;
+		Text->SetFont(Font);
+		if (UVerticalBoxSlot* Slot = Box->AddChildToVerticalBox(Text))
+		{
+			Slot->SetPadding(FMargin(0.f, 0.f, 0.f, 6.f));
+		}
+		return Text;
+	};
+
+	if (!Text_Wave) { Text_Wave = MakeLine(TEXT("Text_Wave")); }
+	if (!Text_Phase) { Text_Phase = MakeLine(TEXT("Text_Phase")); }
+	if (!Text_Enemies) { Text_Enemies = MakeLine(TEXT("Text_Enemies")); }
+	if (!Text_Score) { Text_Score = MakeLine(TEXT("Text_Score")); }
+	if (!Text_Countdown) { Text_Countdown = MakeLine(TEXT("Text_Countdown")); }
+
+	if (!Bar_BossHealth)
+	{
+		Bar_BossHealth = WidgetTree->ConstructWidget<UProgressBar>(UProgressBar::StaticClass(), TEXT("Bar_BossHealth"));
+		Bar_BossHealth->SetPercent(1.f);
+		Bar_BossHealth->SetFillColorAndOpacity(FLinearColor(0.85f, 0.15f, 0.1f));
+		if (UVerticalBoxSlot* BarSlot = Box->AddChildToVerticalBox(Bar_BossHealth))
+		{
+			BarSlot->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+			BarSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+		}
+		Bar_BossHealth->SetVisibility(ESlateVisibility::Collapsed);
+	}
 }
 
 void UGOTAHordeHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

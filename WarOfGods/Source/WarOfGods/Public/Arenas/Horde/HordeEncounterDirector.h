@@ -45,8 +45,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Horde")
 	void CleanupTrackedEnemies(bool bDestroyAlive);
 
+	/** Dev/test: destroy alive enemies, drain queue, broadcast wave cleared. */
+	UFUNCTION(BlueprintCallable, Category = "Horde")
+	void ForceClearWave();
+
+	/** Dev/test: drain the spawn queue immediately (no timer ticks required). */
+	UFUNCTION(BlueprintCallable, Category = "Horde")
+	int32 FlushSpawnQueueNow();
+
 	UFUNCTION(BlueprintPure, Category = "Horde")
 	bool IsWaveFullyCleared() const;
+
+	UFUNCTION(BlueprintPure, Category = "Horde")
+	int32 GetFailedSpawnCount() const { return FailedSpawnCount; }
 
 	UFUNCTION(BlueprintPure, Category = "Horde")
 	bool HasPendingSpawns() const { return RemainingToSpawn > 0 || bSpawnQueueActive; }
