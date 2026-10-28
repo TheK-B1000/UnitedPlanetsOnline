@@ -5,6 +5,7 @@
 #include "UI/GOTAMenuCameraDirector.h"
 #include "UI/GOTAMenuSettingsAdapter.h"
 #include "Arenas/ArenaDefinition.h"
+#include "Story/GOTAStorySaveGame.h"
 #include "Engine/AssetManager.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -117,7 +118,14 @@ void UGOTAMenuSubsystem::SkipCameraTransition()
 
 bool UGOTAMenuSubsystem::HasValidContinueSave() const
 {
-	// Profile save alone is not a campaign continue point.
+	auto SlotExists = [](const FString& Slot) -> bool
+	{
+		return UGameplayStatics::DoesSaveGameExist(Slot, 0);
+	};
+	if (SlotExists(CampaignSaveSlot) || SlotExists(TEXT("GOTA_Campaign_Solo")) || SlotExists(TEXT("GOTA_Campaign_Host")))
+	{
+		return true;
+	}
 	const FString SlotFile = FPaths::Combine(
 		FPaths::ProjectSavedDir(),
 		TEXT("SaveGames"),
@@ -153,7 +161,7 @@ void UGOTAMenuSubsystem::RequestStartStoryPrologue(bool bHostCoop)
 			*DefaultArenaMap.ToString());
 	}
 
-	FString Options = TEXT("Arena=Story?Mode=Story");
+	FString Options = TEXT("game=/Script/WarOfGods.GOTAStoryGameMode?Mode=Story");
 	if (bHostCoop)
 	{
 		Options += TEXT("?listen");
@@ -170,8 +178,32 @@ void UGOTAMenuSubsystem::RequestContinueStory()
 		UE_LOG(LogTemp, Warning, TEXT("RequestContinueStory: no campaign save (%s)"), *CampaignSaveSlot);
 		return;
 	}
-	// Checkpoint restore not authored yet — reopen Chapter 1 sanctuary as honest path.
-	RequestStartStoryPrologue(false);
+
+	FName Checkpoint = NAME_None;
+	if (UGOTAStorySaveGame* Save = Cast<UGOTAStorySaveGame>(
+		UGameplayStatics::LoadGameFromSlot(CampaignSaveSlot, 0)))
+	{
+		Checkpoint = Save->CheckpointId;
+	}
+	else if (UGOTAStorySaveGame* Solo = Cast<UGOTAStorySaveGame>(
+		UGameplayStatics::LoadGameFromSlot(TEXT("GOTA_Campaign_Solo"), 0)))
+	{
+		Checkpoint = Solo->CheckpointId;
+	}
+
+	FSoftObjectPath MapPath = DefaultArenaMap;
+	const FString StoryPackage = StoryPrologueMap.GetLongPackageName();
+	if (!StoryPackage.IsEmpty() && FPackageName::DoesPackageExist(StoryPackage))
+	{
+		MapPath = StoryPrologueMap;
+	}
+
+	FString Options = TEXT("game=/Script/WarOfGods.GOTAStoryGameMode?Mode=Story");
+	if (!Checkpoint.IsNone())
+	{
+		Options += FString::Printf(TEXT("?Checkpoint=%s"), *Checkpoint.ToString());
+	}
+	UGameplayStatics::OpenLevel(this, FName(*MapPath.GetLongPackageName()), true, Options);
 }
 
 void UGOTAMenuSubsystem::RequestSoloStory()

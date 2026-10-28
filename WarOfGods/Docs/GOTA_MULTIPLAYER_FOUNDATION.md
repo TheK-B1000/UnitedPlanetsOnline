@@ -1,12 +1,22 @@
 # Multiplayer Foundation — Status & Playtest
 
+## Audit follow-up ([Audit multiplayer session stack](fe515f65-4df8-49a1-97e7-804994ca56b6))
+
+The audit correctly found legacy BP authority (`CreateMPSession`, `JoinMpSession`, MenuController `DestroySession`, Find on `WBP_MainMenu`). Current C++ already has `UGotaSessionSubsystem` + Null OSS in `DefaultEngine.ini`. Follow-up fixes:
+
+- **Do not** reflection-call GI `FindSessions` (that event is on `WBP_MainMenu`) — Null OSS find path only  
+- Join BP name: try **`JoinMpSession`** then `JoinMPSession`  
+- Destroy: try **MenuController** `DestroySession` first  
+- Explicitly enable **OnlineSubsystemNull** in `.uproject`  
+- Invites / matchmaking remain unavailable (Impl 08 Later)
+
 ## Honest status
 
 | Feature | Status |
 |---------|--------|
 | Host (LAN / Null OSS + BP `CreateMPSession` fallback) | Wired via `UGotaSessionSubsystem` |
-| Find Sessions | Wired when OnlineSubsystem Null is active; otherwise button marked unavailable |
-| Join (first found / `JoinMPSession` BP) | Wired; join-by-address supported |
+| Find Sessions | Null OSS LAN search (not GI) |
+| Join (first found / BP `JoinMpSession`) | Wired; join-by-address supported |
 | Friend invites / matchmaking | **Unavailable** (not fabricated) |
 | Champion Hall projection | Refresh from session + GameState `PlayerArray` into `UGOTALobbyViewModel` (not authority) |
 | 1v1 Duel (Titan's Quarry, best-of-3) | `ADuelGameMode` / `ADuelGameState` / `ADuelPlayerState` |

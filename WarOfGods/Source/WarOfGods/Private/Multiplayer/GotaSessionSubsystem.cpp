@@ -11,6 +11,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/PackageName.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "TimerManager.h"
@@ -214,12 +215,7 @@ bool UGotaSessionSubsystem::FindSessions(bool bLAN)
 {
 	bLANPreferred = bLAN;
 
-	if (TryCallGameInstance(FName(TEXT("FindSessions"))))
-	{
-		PushStatus(NSLOCTEXT("GOTA", "FindBP", "Searching via GameInstance FindSessions…"));
-		return true;
-	}
-
+	// Legacy FindSessions lives on WBP_MainMenu, not GameInstance — do not reflection-call GI.
 	IOnlineSessionPtr Sessions = GetSessions();
 	if (!Sessions.IsValid())
 	{
@@ -283,11 +279,13 @@ bool UGotaSessionSubsystem::JoinFirstFoundSession()
 
 bool UGotaSessionSubsystem::JoinSessionAtIndex(int32 SearchResultIndex)
 {
-	if (TryCallGameInstance(FName(TEXT("JoinMPSession"))))
+	// BP GI event is JoinMpSession (legacy); also accept JoinMPSession spelling.
+	if (TryCallGameInstance(FName(TEXT("JoinMpSession")))
+		|| TryCallGameInstance(FName(TEXT("JoinMPSession"))))
 	{
 		bSessionActive = true;
 		bIsHost = false;
-		PushStatus(NSLOCTEXT("GOTA", "JoinBP", "Joining via GameInstance JoinMPSession…"));
+		PushStatus(NSLOCTEXT("GOTA", "JoinBP", "Joining via GameInstance JoinMpSession…"));
 		OnJoinComplete.Broadcast(true);
 		return true;
 	}
@@ -393,6 +391,23 @@ void UGotaSessionSubsystem::DestroyCurrentSession()
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
 
+	// Legacy DestroySession is on BP_WarOfGodsMenuController, not GameInstance.
+	if (APlayerController* PC = GetGameInstance() ? GetGameInstance()->GetFirstLocalPlayerController() : nullptr)
+	{
+		if (UFunction* Fn = PC->FindFunction(FName(TEXT("DestroySession"))))
+		{
+			PC->ProcessEvent(Fn, nullptr);
+			bSessionActive = false;
+			bIsHost = false;
+			bLocalReady = false;
+			if (UGOTALobbyViewModel* Lobby = GetLobbyVM())
+			{
+				Lobby->ResetLobby();
+			}
+			PushStatus(NSLOCTEXT("GOTA", "DestroyedPC", "Session destroyed (MenuController)."));
+			return;
+		}
+	}
 	if (TryCallGameInstance(FName(TEXT("DestroySession"))))
 	{
 		bSessionActive = false;
@@ -469,11 +484,15 @@ FString UGotaSessionSubsystem::BuildTravelOptions(bool bListen) const
 	FString Options;
 	if (SelectedMode == EArenaMode::PvPDuel)
 	{
-		Options = TEXT("game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry");
+		Options = TEXT("game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?BestOf=3");
 	}
 	else if (SelectedMode == EArenaMode::PvEHorde)
 	{
 		Options = TEXT("game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry");
+	}
+	else if (SelectedMode == EArenaMode::Story)
+	{
+		Options = TEXT("game=/Script/WarOfGods.GOTAStoryGameMode?Mode=Story");
 	}
 	else
 	{
@@ -497,7 +516,16 @@ FString UGotaSessionSubsystem::BuildTravelOptions(bool bListen) const
 void UGotaSessionSubsystem::TravelToMatch(bool bAsListenHost)
 {
 	const FString Options = BuildTravelOptions(bAsListenHost);
-	const FString MapPackage = MatchMap.GetLongPackageName();
+	FSoftObjectPath MapPath = MatchMap;
+	if (SelectedMode == EArenaMode::Story)
+	{
+		const FString StoryPackage = TEXT("/Game/Story/Maps/L_GOTA_Story_Prologue");
+		if (FPackageName::DoesPackageExist(StoryPackage))
+		{
+			MapPath = FSoftObjectPath(StoryPackage + TEXT(".L_GOTA_Story_Prologue"));
+		}
+	}
+	const FString MapPackage = MapPath.GetLongPackageName();
 
 	if (bAsListenHost)
 	{

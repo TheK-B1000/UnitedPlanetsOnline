@@ -15,7 +15,40 @@ AGOTAMenuCameraDirector::AGOTAMenuCameraDirector()
 void AGOTAMenuCameraDirector::BeginPlay()
 {
 	Super::BeginPlay();
-	TransitionTo(StartupScreen, true);
+
+	if (IntroDelaySeconds > KINDA_SMALL_NUMBER)
+	{
+		GetWorldTimerManager().SetTimer(
+			IntroDelayHandle,
+			this,
+			&AGOTAMenuCameraDirector::PlayStartupShot,
+			IntroDelaySeconds,
+			false);
+	}
+	else
+	{
+		PlayStartupShot();
+	}
+}
+
+void AGOTAMenuCameraDirector::PlayStartupShot()
+{
+	if (!bBlendOnStartup)
+	{
+		TransitionTo(StartupScreen, true);
+		return;
+	}
+
+	// Temporarily stretch the startup shot blend for a cinematic open.
+	for (FGOTAMenuCameraShot& Shot : Shots)
+	{
+		if (Shot.Screen == StartupScreen && StartupBlendOverride > Shot.BlendTime)
+		{
+			Shot.BlendTime = StartupBlendOverride;
+			break;
+		}
+	}
+	TransitionTo(StartupScreen, false);
 }
 
 void AGOTAMenuCameraDirector::RegisterShot(EGOTAMenuScreen Screen, AActor* Camera, float BlendTime)

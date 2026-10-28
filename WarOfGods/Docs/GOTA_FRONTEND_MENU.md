@@ -58,7 +58,7 @@
 |---------|--------|
 | Main menu navigation (C++) | Implemented — needs WBP visuals |
 | Continue | **Hidden** until `Saved/SaveGames/GOTA_Campaign_Slot.sav` exists |
-| Story Mode | Hub → Chapter 1 Fallen Sanctuary (`Arena=Story`); not Quarry/Dominion |
+| Story Mode | Hub → Prologue Fallen Sanctuary UPA deploy (`Arena=Story`); not Quarry/Dominion — see `GOTA_STORY_BIBLE.md` |
 | Story Continue | Hidden until `GOTA_Campaign_Slot.sav` |
 | PvE Arena / Arena cards | Catalog + confirm; only Titan's Quarry travelable |
 | Settings apply/persist | Display + custom volumes/sens/accessibility; **no key rebind UI**; **no upscaling** (unsupported) |
@@ -67,6 +67,7 @@
 | Ready replication | ViewModel supports ready flags; BP RPCs not authored yet |
 | Extras | Hidden (`IsExtrasAvailable() == false`) |
 | Camera transitions | Director ready; cameras must be placed in level |
+| Impl 09 intro polish | `IntroDelaySeconds` + `bBlendOnStartup` / `StartupBlendOverride` on camera director |
 | CommonUI | Not added (existing UMG stack preserved) |
 
 ## Build

@@ -20,7 +20,8 @@ public class WarOfGods : ModuleRules
 			"Slate",
 			"SlateCore",
 			"OnlineSubsystem",
-			"OnlineSubsystemUtils"
+			"OnlineSubsystemUtils",
+			"NavigationSystem"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

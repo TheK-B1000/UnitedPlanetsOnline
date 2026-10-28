@@ -1,8 +1,8 @@
 # Gods of the Arena — Implementation Roadmap
 
-**Updated:** 2026-10-27 (Implementation 02 Horde C++ linked; PIE tests pending)  
+**Updated:** 2026-10-27 (Playable Integration 01 — freeze new features)  
 **Engine:** UE 5.8 ONLY  
-**Branch:** `feature/gota-cinematic-frontend` (Horde work lands here until split)
+**Branch:** `feature/gota-cinematic-frontend`
 
 ---
 
@@ -10,17 +10,21 @@
 
 > One hero, one weapon, one arena, one intelligent enemy, perfect parry, perfect dodge, one divine counter — then the same encounter over the network.
 
-Story Mode + **Wrath of the Gods** PvE Horde are active mode vertical slices. PvP follows once Horde proves server encounter authority.
+**Canon:** UPG Universe Story Bible **v2.0** — `GOTA_STORY_BIBLE.md` (*The Sovereign Protocol*). Confirmed: UPG/UPA/Earth/republic/Ascendants/1–4; Dir. **Cassian Rhen**; **SOVEREIGN**; Aegis Team Seven; Ayla Uncrowned God; Erebus-7 / Nova Requiem continuity locks. Players are UPA Wardens. Crossover build order: bible Part XIX (do not start Ayla C++ until Playable Integration Gates 1–4 pass).
+
+**Active milestone:** Playable Integration 01 — Titan's Quarry proving ground.  
+Track: `Docs/GOTA_PLAYABLE_INTEGRATION_RESULTS.md`. **No new features** until Gates 1–4 pass.
 
 ---
 
 ## Priority order (active)
 
-1. ~~Wrath of the Gods C++ vertical slice~~ — **Done (compile/link)**; PIE wave+boss still open — see `GOTA_HORDE_TEST_RESULTS.md`  
-2. Horde HUD/Results WBPs + `gota.Horde` PIE + LAN host+clients validation  
-3. Server-authoritative damage integration (smallest safe BP/C++ bridge)  
-4. Lock-on / Notify* combat polish  
-5. Implementation 03 — PvP duels on shared combat  
+1. **Gate 1 — Quarry dress PIE** (`DA_Dress_TitansQuarry`, `gota.BuildArena Quarry` / `?Arena=Quarry`)  
+2. **Gate 2 — BP combat + death bridge** (`NotifyDied`, `ObserveHealth`, Notify* events)  
+3. **Gate 3 — Horde one wave + Duel one match** on Quarry  
+4. **Gate 4 — 2p then 4p PIE**; LAN session test separate from PIE auto-connect  
+5. Only then: dress remaining arenas / Story polish / menu WBPs  
+6. Impl 07 GAS — **deferred**; Impl 08 invites — **later**  
 
 ---
 

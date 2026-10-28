@@ -68,16 +68,33 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GOTA|Camera")
 	EGOTAMenuScreen StartupScreen = EGOTAMenuScreen::MainMenu;
 
+	/**
+	 * Implementation 09: delay before first shot so level lighting / fog can settle.
+	 * 0 = immediate (previous behavior).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GOTA|Camera|Cinematic", meta = (ClampMin = "0.0"))
+	float IntroDelaySeconds = 0.35f;
+
+	/** When true, startup uses a short ease blend instead of a hard cut. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GOTA|Camera|Cinematic")
+	bool bBlendOnStartup = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GOTA|Camera|Cinematic", meta = (ClampMin = "0.0"))
+	float StartupBlendOverride = 1.6f;
+
 	UPROPERTY(BlueprintAssignable, Category = "GOTA|Camera")
 	FOnGOTAMenuTransitionFinished OnTransitionFinished;
 
 protected:
 	const FGOTAMenuCameraShot* FindShot(EGOTAMenuScreen Screen) const;
 	void FinishTransition();
+	void PlayStartupShot();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GOTA|Camera")
 	EGOTAMenuScreen ActiveScreen = EGOTAMenuScreen::None;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GOTA|Camera")
 	bool bIsTransitioning = false;
+
+	FTimerHandle IntroDelayHandle;
 };
