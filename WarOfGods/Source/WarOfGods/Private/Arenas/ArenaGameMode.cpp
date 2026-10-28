@@ -5,6 +5,8 @@
 #include "Arenas/ArenaEncounterDirector.h"
 #include "Arenas/ArenaGameState.h"
 #include "Arenas/ArenaGrayboxBuilder.h"
+#include "Arenas/ArenaVisualDressDefaults.h"
+#include "Arenas/ArenaVisualDressDefinition.h"
 #include "Arenas/ArenaPlayerStart.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameSession.h"
@@ -167,6 +169,11 @@ void AArenaGameMode::SetGrayboxLayout(EArenaGrayboxLayout NewLayout)
 	if (SpawnedGraybox)
 	{
 		SpawnedGraybox->Layout = NewLayout;
+		const FSoftObjectPath DressPath = ArenaVisualDressDefaults::GetCanonicalDressPath(NewLayout);
+		if (DressPath.IsValid())
+		{
+			SpawnedGraybox->VisualDress = TSoftObjectPtr<UArenaVisualDressDefinition>(DressPath);
+		}
 		SpawnedGraybox->BuildLayout();
 	}
 	else if (HasAuthority())
@@ -182,10 +189,24 @@ void AArenaGameMode::EnsureGraybox()
 		return;
 	}
 
+	auto BindCanonicalDress = [](AArenaGrayboxBuilder* Builder, EArenaGrayboxLayout Layout)
+	{
+		if (!Builder || !Builder->VisualDress.IsNull())
+		{
+			return;
+		}
+		const FSoftObjectPath DressPath = ArenaVisualDressDefaults::GetCanonicalDressPath(Layout);
+		if (DressPath.IsValid())
+		{
+			Builder->VisualDress = TSoftObjectPtr<UArenaVisualDressDefinition>(DressPath);
+		}
+	};
+
 	for (TActorIterator<AArenaGrayboxBuilder> It(GetWorld()); It; ++It)
 	{
 		SpawnedGraybox = *It;
 		SpawnedGraybox->Layout = GrayboxLayout;
+		BindCanonicalDress(SpawnedGraybox, GrayboxLayout);
 		SpawnedGraybox->BuildLayout();
 		return;
 	}
@@ -198,6 +219,7 @@ void AArenaGameMode::EnsureGraybox()
 	{
 		SpawnedGraybox->Layout = GrayboxLayout;
 		SpawnedGraybox->bBuildOnBeginPlay = true;
+		BindCanonicalDress(SpawnedGraybox, GrayboxLayout);
 		SpawnedGraybox->BuildLayout();
 	}
 }

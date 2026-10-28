@@ -3,6 +3,8 @@
 #include "Arenas/ArenaGrayboxBuilder.h"
 
 #include "Arenas/ArenaPlayerStart.h"
+#include "Arenas/ArenaVisualDressDefaults.h"
+#include "Arenas/ArenaVisualDressDefinition.h"
 #include "Arenas/BiomeVolume.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -90,13 +92,17 @@ void AArenaGrayboxBuilder::ClearBuiltActors()
 	bBuilt = false;
 }
 
-void AArenaGrayboxBuilder::AddBox(const FVector& Center, const FVector& Extent, const FLinearColor& Color)
+void AArenaGrayboxBuilder::AddBox(const FVector& Center, const FVector& Extent, const FLinearColor& Color, bool bPlaceholderBoundary)
 {
 	EnsureMeshes();
 	if (!CubeMesh) { return; }
 
 	UStaticMeshComponent* Mesh = NewObject<UStaticMeshComponent>(this);
 	Mesh->SetStaticMesh(CubeMesh);
+	if (bPlaceholderBoundary)
+	{
+		Mesh->ComponentTags.Add(FName(TEXT("GOTA_PlaceholderBoundary")));
+	}
 	Mesh->SetupAttachment(GetRootComponent());
 	Mesh->RegisterComponent();
 	Mesh->SetWorldLocation(GetActorLocation() + Center);
@@ -137,7 +143,7 @@ UStaticMesh* AArenaGrayboxBuilder::TryLoadMesh(const TCHAR* Path) const
 	return LoadObject<UStaticMesh>(nullptr, Path);
 }
 
-void AArenaGrayboxBuilder::AddMeshAt(UStaticMesh* MeshAsset, const FVector& Location, const FRotator& Rotation, const FVector& Scale)
+void AArenaGrayboxBuilder::AddMeshAt(UStaticMesh* MeshAsset, const FVector& Location, const FRotator& Rotation, const FVector& Scale, bool bVisualOnly)
 {
 	if (!MeshAsset) { return; }
 	UStaticMeshComponent* Mesh = NewObject<UStaticMeshComponent>(this);
@@ -147,9 +153,142 @@ void AArenaGrayboxBuilder::AddMeshAt(UStaticMesh* MeshAsset, const FVector& Loca
 	Mesh->SetWorldLocation(GetActorLocation() + Location);
 	Mesh->SetWorldRotation(Rotation);
 	Mesh->SetWorldScale3D(Scale);
-	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	Mesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+	if (bVisualOnly)
+	{
+		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	else
+	{
+		Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Mesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+	}
 	BuiltMeshes.Add(Mesh);
+}
+
+UStaticMesh* AArenaGrayboxBuilder::TryLoadSoftMesh(const TSoftObjectPtr<UStaticMesh>& SoftMesh) const
+{
+	if (SoftMesh.IsNull())
+	{
+		return nullptr;
+	}
+	if (UStaticMesh* Loaded = SoftMesh.Get())
+	{
+		return Loaded;
+	}
+	return SoftMesh.LoadSynchronous();
+}
+
+void AArenaGrayboxBuilder::PlaceDressPoolRing(const TArray<TSoftObjectPtr<UStaticMesh>>& Pool, float Radius, int32 Count, float Z, float UniformScale)
+{
+	if (Pool.Num() == 0 || Count <= 0)
+	{
+		return;
+	}
+	for (int32 i = 0; i < Count; ++i)
+	{
+		const float Angle = (2.f * PI * i) / Count;
+		const FVector Loc(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, Z);
+		const FRotator Rot(0.f, FMath::RadiansToDegrees(Angle) + 90.f, 0.f);
+		if (UStaticMesh* Mesh = TryLoadSoftMesh(Pool[i % Pool.Num()]))
+		{
+			AddMeshAt(Mesh, Loc, Rot, FVector(UniformScale), true);
+		}
+	}
+}
+
+void AArenaGrayboxBuilder::ApplyVisualDress()
+{
+	if (!bApplyVisualDress)
+	{
+		return;
+	}
+
+	UArenaVisualDressDefinition* Dress = ArenaVisualDressDefaults::ResolveDress(Layout, VisualDress, this);
+	if (!Dress)
+	{
+		return;
+	}
+	if (Dress->TargetLayout != Layout)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ArenaVisualDress %s targets layout %d but builder is %d — applying soft slots with fallback"),
+			*Dress->GetName(), static_cast<int32>(Dress->TargetLayout), static_cast<int32>(Layout));
+	}
+
+	int32 Placed = 0;
+	for (const FArenaDressMeshSlot& Slot : Dress->DressSlots)
+	{
+		if (UStaticMesh* Mesh = TryLoadSoftMesh(Slot.Mesh))
+		{
+			AddMeshAt(Mesh, Slot.RelativeLocation, Slot.RelativeRotation, Slot.Scale, Slot.bVisualOnly);
+			++Placed;
+		}
+	}
+
+	float CliffRadius = 2100.f;
+	float CliffScale = 0.4f;
+	float DebrisRadius = 780.f;
+	float DebrisScale = 0.75f;
+	float PillarRadius = 1050.f;
+	float PillarScale = 0.35f;
+	int32 CliffCount = 6;
+	int32 DebrisCount = 6;
+	int32 PillarCount = 5;
+
+	switch (Layout)
+	{
+	case EArenaGrayboxLayout::AshfallCrucible:
+		CliffRadius = 2300.f; CliffScale = 0.32f; DebrisRadius = 900.f; PillarRadius = 1500.f; PillarScale = 0.45f;
+		break;
+	case EArenaGrayboxLayout::FrostboundCitadel:
+		CliffRadius = 2300.f; CliffScale = 0.22f; DebrisRadius = 850.f; DebrisScale = 1.1f;
+		PillarRadius = 1200.f; PillarScale = 0.9f; CliffCount = 5;
+		break;
+	case EArenaGrayboxLayout::VerdantSanctuary:
+		CliffRadius = 2400.f; CliffScale = 0.2f; DebrisRadius = 1000.f; DebrisScale = 1.f;
+		PillarRadius = 1500.f; PillarScale = 1.f; PillarCount = 8; DebrisCount = 8;
+		break;
+	case EArenaGrayboxLayout::SunscarExpanse:
+		CliffRadius = 2600.f; CliffScale = 0.85f; DebrisRadius = 1100.f; DebrisScale = 1.f;
+		PillarRadius = 1300.f; PillarScale = 1.f;
+		break;
+	case EArenaGrayboxLayout::StormbreakCoast:
+		CliffRadius = 2100.f; CliffScale = 0.35f; DebrisRadius = 900.f; DebrisScale = 0.7f;
+		PillarRadius = 1400.f; PillarScale = 0.7f;
+		break;
+	case EArenaGrayboxLayout::ShatteredDominion:
+		CliffRadius = 2200.f; CliffScale = 0.3f; DebrisRadius = 900.f; PillarRadius = 1500.f; PillarScale = 0.4f;
+		CliffCount = 8; DebrisCount = 8;
+		break;
+	case EArenaGrayboxLayout::FallenSanctuary:
+		CliffRadius = 2600.f; CliffScale = 0.3f; DebrisRadius = 1100.f; DebrisScale = 1.f;
+		PillarRadius = 1800.f; PillarScale = 1.f; PillarCount = 6;
+		break;
+	default:
+		break;
+	}
+
+	PlaceDressPoolRing(Dress->CliffMeshPool, CliffRadius, FMath::Min(CliffCount, Dress->CliffMeshPool.Num()), -80.f, CliffScale);
+	PlaceDressPoolRing(Dress->DebrisMeshPool, DebrisRadius, FMath::Min(DebrisCount, Dress->DebrisMeshPool.Num()), 20.f, DebrisScale);
+	PlaceDressPoolRing(Dress->PillarMeshPool, PillarRadius, FMath::Min(PillarCount, Dress->PillarMeshPool.Num()), 0.f, PillarScale);
+
+	const int32 SoftPlaced = Placed
+		+ FMath::Min(CliffCount, Dress->CliffMeshPool.Num())
+		+ FMath::Min(DebrisCount, Dress->DebrisMeshPool.Num())
+		+ FMath::Min(PillarCount, Dress->PillarMeshPool.Num());
+
+	if (Dress->bHidePlaceholderWallsWhenDressed && SoftPlaced > 0)
+	{
+		for (UStaticMeshComponent* Comp : BuiltMeshes)
+		{
+			if (Comp && Comp->ComponentHasTag(FName(TEXT("GOTA_PlaceholderBoundary"))))
+			{
+				Comp->SetVisibility(false, true);
+				// Keep collision so players stay in-bounds.
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("ArenaVisualDress applied %d landmarks (+pools) from %s"), Placed, *Dress->GetName());
 }
 
 void AArenaGrayboxBuilder::SpawnPlayerStartAt(const FVector& Location, int32 Slot, EBiomeId Biome)
@@ -194,10 +333,11 @@ void AArenaGrayboxBuilder::SpawnFourCornerStarts(float Radius, float Z, EBiomeId
 void AArenaGrayboxBuilder::AddRingWalls(float HalfExtent, float WallHeight, const FLinearColor& Color)
 {
 	const float T = 50.f;
-	AddBox(FVector(0.f, HalfExtent + T, WallHeight * 0.5f), FVector(HalfExtent + T * 2.f, T, WallHeight * 0.5f), Color);
-	AddBox(FVector(0.f, -(HalfExtent + T), WallHeight * 0.5f), FVector(HalfExtent + T * 2.f, T, WallHeight * 0.5f), Color);
-	AddBox(FVector(HalfExtent + T, 0.f, WallHeight * 0.5f), FVector(T, HalfExtent + T * 2.f, WallHeight * 0.5f), Color);
-	AddBox(FVector(-(HalfExtent + T), 0.f, WallHeight * 0.5f), FVector(T, HalfExtent + T * 2.f, WallHeight * 0.5f), Color);
+	// Tagged so visual dress can hide cube walls once cliffs/meshes replace them (collision stays).
+	AddBox(FVector(0.f, HalfExtent + T, WallHeight * 0.5f), FVector(HalfExtent + T * 2.f, T, WallHeight * 0.5f), Color, true);
+	AddBox(FVector(0.f, -(HalfExtent + T), WallHeight * 0.5f), FVector(HalfExtent + T * 2.f, T, WallHeight * 0.5f), Color, true);
+	AddBox(FVector(HalfExtent + T, 0.f, WallHeight * 0.5f), FVector(T, HalfExtent + T * 2.f, WallHeight * 0.5f), Color, true);
+	AddBox(FVector(-(HalfExtent + T), 0.f, WallHeight * 0.5f), FVector(T, HalfExtent + T * 2.f, WallHeight * 0.5f), Color, true);
 }
 
 void AArenaGrayboxBuilder::AddRingPillars(float Radius, int32 Count, float Height, const FVector& Center)
@@ -217,8 +357,12 @@ void AArenaGrayboxBuilder::PlaceTreeRing(const FVector& Center, float Radius, in
 		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_03.SM_EuropeanBeech_Forest_03"),
 		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_04.SM_EuropeanBeech_Forest_04"),
 		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_05.SM_EuropeanBeech_Forest_05"),
+		TEXT("/Game/EuropeanBeech/Geometry/SimpleWind/SM_EuropeanBeech_Forest_06.SM_EuropeanBeech_Forest_06"),
 		TEXT("/Game/NorwayMaple/Geometry/SimpleWind/SM_NorwayMaple_Forest_01.SM_NorwayMaple_Forest_01"),
 		TEXT("/Game/NorwayMaple/Geometry/SimpleWind/SM_NorwayMaple_Forest_02.SM_NorwayMaple_Forest_02"),
+		TEXT("/Game/NorwayMaple/Geometry/SimpleWind/SM_NorwayMaple_Forest_03.SM_NorwayMaple_Forest_03"),
+		TEXT("/Game/WinterForestSet/Meshes/SM_WinterTree_A.SM_WinterTree_A"),
+		TEXT("/Game/WinterForestSet/Meshes/SM_WinterTree_C.SM_WinterTree_C"),
 	};
 
 	TArray<UStaticMesh*> Trees;
@@ -244,7 +388,8 @@ void AArenaGrayboxBuilder::PlaceTreeRing(const FVector& Center, float Radius, in
 
 void AArenaGrayboxBuilder::BuildLayout()
 {
-	if (bBuilt) { ClearBuiltActors(); }
+	// Always clear so rebuilds (and first build after partial editor spawn) never stack meshes.
+	ClearBuiltActors();
 	EnsureMeshes();
 
 	switch (Layout)
@@ -258,6 +403,8 @@ void AArenaGrayboxBuilder::BuildLayout()
 	case EArenaGrayboxLayout::ShatteredDominion: BuildShatteredDominion(); break;
 	case EArenaGrayboxLayout::FallenSanctuary: BuildFallenSanctuary(); break;
 	}
+
+	ApplyVisualDress();
 
 	bBuilt = true;
 	UE_LOG(LogTemp, Log, TEXT("ArenaGrayboxBuilder built %d (%d meshes, %d actors)"),

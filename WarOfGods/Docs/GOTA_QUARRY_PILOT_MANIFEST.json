@@ -1,0 +1,49 @@
+{
+  "pack": "Quarry Collections",
+  "vault_cache": "B:/Epic/VaultCache/QuarryCollections",
+  "destination_project": "B:/Unreal/UnitedPlanetsOnline/WarOfGods",
+  "destination_content_root": "B:/Unreal/UnitedPlanetsOnline/WarOfGods/Content",
+  "target_arena": "TitansQuarry",
+  "dress_data_asset": "/Game/Arenas/Data/DA_Dress_TitansQuarry",
+  "status": "in_project_pending_pie_validation",
+  "installed_at": "2026-10-27",
+  "source_classification": "IN_PROJECT (Add to Project into WarOfGods; Geometry + Megascans Quarry/Limestone present)",
+  "geometry_pilot_present": [
+    "Content/Geometry/SM_Quarry_Cliff_L_01.uasset",
+    "Content/Geometry/SM_Quarry_Cliff_L_02.uasset",
+    "Content/Geometry/SM_Quarry_Cliff_L_03.uasset",
+    "Content/Geometry/SM_Quarry_Cliff_M_01.uasset",
+    "Content/Geometry/SM_Quarry_Cliff_M_02.uasset",
+    "Content/Geometry/SM_Quarry_Spire_L_01.uasset",
+    "Content/Geometry/SM_Quarry_RockPile_S_01.uasset",
+    "Content/Geometry/SM_Quarry_RockPile_S_02.uasset",
+    "Content/Geometry/SM_Quarry_Ridge_S_01.uasset"
+  ],
+  "megascans_pilot_present": [
+    "Content/Megascans/3D_Assets/Limestone_Rocks_01",
+    "Content/Megascans/3D_Assets/Limestone_Slab_01",
+    "Content/Megascans/3D_Assets/Quarry_Outcrop_01",
+    "Content/Megascans/Surfaces/Quarry_Ground_Gravel_01"
+  ],
+  "note_full_pack": "Full Geometry SM_Quarry_* set (15 meshes, ~336 MB raw) plus Megascans Quarry_Cliff_01..16 are on disk. Runtime dress uses the pilot subset only via ArenaVisualDressDefaults / DA_Dress_TitansQuarry.",
+  "also_observed": "Content/Geometry/SM_Lava_* present (Lava Field Collections Geometry likely added in same pass).",
+  "runtime_integration": {
+    "transient_fallback": "ArenaVisualDressDefaults::FillTitansQuarryPilot",
+    "canonical_da": "/Game/Arenas/Data/DA_Dress_TitansQuarry",
+    "create_da_script": "Tools/GOTA_CreateDress_TitansQuarry.py",
+    "builder": "AArenaGrayboxBuilder::ApplyVisualDress via ResolveDress"
+  },
+  "validation": {
+    "meshes_on_disk": true,
+    "materials_compile": "pending_editor",
+    "gota_BuildArena_Quarry": "pending_pie",
+    "nav_spawns": "pending_pie",
+    "packaged_cook": "pending"
+  },
+  "rules": [
+    "Gameplay graybox collision remains authoritative",
+    "Dress meshes bVisualOnly=true by default",
+    "Do not Yes-to-All overwrite Megascans/MSPresets on future migrates",
+    "Create DA_Dress_TitansQuarry to persist; transient pilot works until then"
+  ]
+}
