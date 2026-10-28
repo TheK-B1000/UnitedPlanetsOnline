@@ -120,13 +120,62 @@ MultiplayerCourse/.vs/
 MultiplayerCourse/Intermediate/
 
 # -----------------------------------------------------------------------------
-# Heavy marketplace libraries — keep on disk for arena dressing; curate before commit
-# See Docs/GOTA_ASSET_CLEANUP.md
+# Heavy Marketplace / Fab libraries — stay on disk (VaultCache + project Content)
+# for arena dress; do NOT flood git. Curate via Migrate/dress DAs only.
+# See Docs/GOTA_ASSET_CLEANUP.md + Docs/GOTA_LOCAL_ASSET_MIGRATION.md
 # -----------------------------------------------------------------------------
 WarOfGods/Content/Megascans/
+WarOfGods/Content/MSPresets/
 WarOfGods/Content/EuropeanBeech/
+WarOfGods/Content/NorwayMaple/
+WarOfGods/Content/Iceland_Environment/
+WarOfGods/Content/WinterForestSet/
+WarOfGods/Content/Geometry/
+WarOfGods/Content/Water/
+WarOfGods/Content/Mannequin/
+WarOfGods/Content/A_Surface_Footstep/
+WarOfGods/Content/FreeAnimationLibrary/
+WarOfGods/Content/Free_Spells/
+WarOfGods/Content/Realistic_Starter_VFX_Pack_Vol2/
+WarOfGods/Content/ParagonRampage/
+WarOfGods/Content/PhotoR_Backgrounds/
+WarOfGods/Content/HumanVocalizations/
+WarOfGods/Content/FightingAnimsetPro/SourceFiles/
+
+# Marketplace demo / zoo maps (never ship)
 WarOfGods/Content/Maps/Assembly/
 WarOfGods/Content/Maps/Assembly_Zoo.*
 WarOfGods/Content/Maps/Megascans_Zoo.*
-WarOfGods/Content/FightingAnimsetPro/SourceFiles/
+WarOfGods/Content/Maps/QuarryCollections_*
+WarOfGods/Content/Maps/LavaFieldCollections_*
+
+# Pack-sidecar materials/textures pulled with Quixel collections
+WarOfGods/Content/Materials/Backdrop/
+WarOfGods/Content/Materials/Functions/
+WarOfGods/Content/Materials/Textures/
+WarOfGods/Content/Materials/M_Moab_*
+WarOfGods/Content/Materials/MPC_3DMaster.uasset
+WarOfGods/Content/Materials/MPC_Strata_Tweaking.uasset
+WarOfGods/Content/Materials/M_Backdrop.uasset
+WarOfGods/Content/Textures/Backdrop/
+WarOfGods/Content/Textures/HDRI_*
+WarOfGods/Content/Textures/mud_road_*
+WarOfGods/Content/Textures/DefaultDiffuse_VT.uasset
+WarOfGods/Content/Textures/GrayTextureCube.uasset
+
+# World Partition external actors for marketplace packs
+WarOfGods/Content/__ExternalActors__/Free_Spells/
+WarOfGods/Content/__ExternalActors__/LocomotionAnimPack/
+WarOfGods/Content/__ExternalObjects__/Free_Spells/
+WarOfGods/Content/__ExternalObjects__/LocomotionAnimPack/
+
+# Local install markers / Epic Launcher thumbnails
+WarOfGods/Content/_GOTA_VaultInstall/
+WarOfGods/PhotoR_Backgrounds.png
+WarOfGods/QuarryCollections.png
+WarOfGods/*.png
+
+# Empty Horde content placeholder dir (DAs authored later)
+# Keep Source + Docs; ignore accidental Intermediate under Tools
+WarOfGods/Tools/**/__pycache__/
 
