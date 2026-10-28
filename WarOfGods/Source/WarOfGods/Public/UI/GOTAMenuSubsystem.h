@@ -95,6 +95,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GOTA|Menu")
 	UUserWidget* GetRootMenuWidget() const { return RootMenuWidget; }
 
+	/** Creates and shows the cinematic frontend root widget when on a menu map. */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|Menu")
+	void PresentFrontendUI();
+
+	UFUNCTION(BlueprintCallable, Category = "GOTA|Menu")
+	void TryBindCameraDirectorInWorld();
+
 	UPROPERTY(BlueprintAssignable, Category = "GOTA|Menu")
 	FOnGOTAMenuScreenChanged OnMenuScreenChanged;
 
@@ -125,9 +132,19 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GOTA|Menu")
 	FName CampaignSaveKey = TEXT("Campaign");
 
+	/** Root shell that hosts all GOTA menu screens (created by Editor Python). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GOTA|Menu")
+	TSoftClassPtr<UUserWidget> FrontendRootWidgetClass =
+		TSoftClassPtr<UUserWidget>(FSoftObjectPath(TEXT("/Game/MainMenu/UI/WBP_GOTA_FrontendRoot.WBP_GOTA_FrontendRoot_C")));
+
 protected:
 	UFUNCTION()
 	void HandleCameraTransitionFinished();
+
+	UFUNCTION()
+	void HandlePostLoadMap(UWorld* LoadedWorld);
+
+	bool IsFrontendMap(const UWorld* World) const;
 	EGOTAMenuScreen ResolveCameraScreen(EGOTAMenuScreen Screen) const;
 
 	UPROPERTY()

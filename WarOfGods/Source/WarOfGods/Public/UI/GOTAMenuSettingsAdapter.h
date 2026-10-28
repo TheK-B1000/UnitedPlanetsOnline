@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericPlatform/GenericWindow.h"
 #include "UObject/Object.h"
 #include "UI/MenuTypes.h"
 #include "GOTAMenuSettingsAdapter.generated.h"

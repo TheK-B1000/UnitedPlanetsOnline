@@ -4,6 +4,8 @@
 #include "UI/GOTALobbyViewModel.h"
 #include "UI/GOTAMenuSubsystem.h"
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
+#include "Multiplayer/GotaSessionSubsystem.h"
+#include "Engine/GameInstance.h"
 
 UGOTALobbyWidget::UGOTALobbyWidget()
 {
@@ -20,7 +22,7 @@ void UGOTALobbyWidget::NativeOnInitialized()
 	}
 	if (Btn_StartMatch)
 	{
-		Btn_StartMatch->SetLabel(NSLOCTEXT("GOTA", "StartMatch", "START MATCH"));
+		Btn_StartMatch->SetLabel(NSLOCTEXT("GOTA", "StartMatch", "START DUEL"));
 		Btn_StartMatch->OnActivated.AddDynamic(this, &UGOTALobbyWidget::HandleStart);
 	}
 	if (Btn_Leave)
@@ -48,6 +50,15 @@ void UGOTALobbyWidget::NativeConstruct()
 		Lobby->OnLobbyUpdated.AddDynamic(this, &UGOTALobbyWidget::HandleLobbyUpdated);
 		HandleLobbyUpdated();
 	}
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			Sessions->SetSelectedMode(EArenaMode::PvPDuel);
+			Sessions->SetSelectedArena(EArenaId::TitansQuarry);
+			Sessions->RefreshLobbyProjection();
+		}
+	}
 }
 
 void UGOTALobbyWidget::NativeDestruct()
@@ -70,29 +81,84 @@ UGOTALobbyViewModel* UGOTALobbyWidget::GetLobby() const
 
 void UGOTALobbyWidget::HandleLobbyUpdated()
 {
-	if (UGOTALobbyViewModel* Lobby = GetLobby())
+	UGotaSessionSubsystem* Sessions = nullptr;
+	if (UGameInstance* GI = GetGameInstance())
 	{
-		if (Btn_StartMatch)
-		{
-			Btn_StartMatch->SetButtonEnabled(Lobby->CanHostStartMatch());
-		}
+		Sessions = GI->GetSubsystem<UGotaSessionSubsystem>();
+	}
+
+	const bool bCanStart = Sessions
+		? (Sessions->IsHosting() && Sessions->IsInSession())
+		: (GetLobby() && GetLobby()->CanHostStartMatch());
+
+	if (Btn_StartMatch)
+	{
+		Btn_StartMatch->SetButtonEnabled(bCanStart);
 	}
 	OnLobbyModelUpdated();
 }
 
-void UGOTALobbyWidget::HandleReady() { RequestToggleReady(); }
-void UGOTALobbyWidget::HandleStart()
+void UGOTALobbyWidget::HandleReady()
 {
-	if (UGOTALobbyViewModel* Lobby = GetLobby())
+	RequestToggleReady();
+	if (UGameInstance* GI = GetGameInstance())
 	{
-		if (!Lobby->CanHostStartMatch())
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
 		{
+			Sessions->SetLocalReady(!Sessions->IsLocalReady());
+			Sessions->RefreshLobbyProjection();
 			return;
 		}
 	}
-	RequestStartMatch();
+	if (UGOTALobbyViewModel* Lobby = GetLobby())
+	{
+		const TArray<FGOTALobbyPlayerSlot>& Slots = Lobby->GetSlots();
+		const bool bCurrentlyReady = Slots.IsValidIndex(0) ? Slots[0].bIsReady : false;
+		Lobby->SetPlayerReady(0, !bCurrentlyReady);
+	}
 }
-void UGOTALobbyWidget::HandleLeave() { RequestLeaveLobby(); }
+
+void UGOTALobbyWidget::HandleStart()
+{
+	RequestStartMatch();
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			if (!Sessions->IsHosting())
+			{
+				if (UGOTALobbyViewModel* Lobby = GetLobby())
+				{
+					Lobby->SetErrorMessage(NSLOCTEXT("GOTA", "OnlyHost", "Only the host can start."));
+				}
+				return;
+			}
+			Sessions->SetSelectedMode(EArenaMode::PvPDuel);
+			Sessions->StartMatchFromLobby();
+			return;
+		}
+	}
+}
+
+void UGOTALobbyWidget::HandleLeave()
+{
+	RequestLeaveLobby();
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			Sessions->DestroyCurrentSession();
+		}
+	}
+	if (UGOTALobbyViewModel* Lobby = GetLobby())
+	{
+		Lobby->ResetLobby();
+	}
+	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	{
+		Subsystem->NavigateTo(EGOTAMenuScreen::Multiplayer, false);
+	}
+}
 
 void UGOTALobbyWidget::HandleSelectArena()
 {

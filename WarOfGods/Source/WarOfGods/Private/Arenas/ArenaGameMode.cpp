@@ -74,19 +74,67 @@ void AArenaGameMode::InitGame(const FString& MapName, const FString& Options, FS
 		Session->MaxPlayers = SoftMaxPlayers;
 	}
 
-	// URL option: ?Arena=Dominion or ?Arena=Quarry
+	// URL: ?Arena=Story|Fallen|Quarry|Ashfall|...  and optional ?Mode=Story
 	if (UGameplayStatics::HasOption(Options, TEXT("Arena")))
 	{
-		const FString ArenaOpt = UGameplayStatics::ParseOption(Options, TEXT("Arena"));
-		if (ArenaOpt.Equals(TEXT("Dominion"), ESearchCase::IgnoreCase) || ArenaOpt.Equals(TEXT("Shattered"), ESearchCase::IgnoreCase))
+		const FString A = UGameplayStatics::ParseOption(Options, TEXT("Arena"));
+		auto Match = [&A](const TCHAR* Name) { return A.Equals(Name, ESearchCase::IgnoreCase); };
+
+		if (Match(TEXT("Story")) || Match(TEXT("Fallen")) || Match(TEXT("FallenSanctuary"))
+			|| Match(TEXT("Prologue")) || Match(TEXT("Sanctuary")))
 		{
-			GrayboxLayout = EArenaGrayboxLayout::ShatteredDominionThreeBiome;
+			GrayboxLayout = EArenaGrayboxLayout::FallenSanctuary;
+			ArenaId = EArenaId::FallenSanctuary;
+			ArenaMode = EArenaMode::Story;
+		}
+		else if (Match(TEXT("Dominion")) || Match(TEXT("Shattered")))
+		{
+			GrayboxLayout = EArenaGrayboxLayout::ShatteredDominion;
 			ArenaId = EArenaId::ShatteredDominion;
+		}
+		else if (Match(TEXT("Ashfall")) || Match(TEXT("Crucible")))
+		{
+			GrayboxLayout = EArenaGrayboxLayout::AshfallCrucible;
+			ArenaId = EArenaId::AshfallCrucible;
+		}
+		else if (Match(TEXT("Frostbound")) || Match(TEXT("Frost")) || Match(TEXT("Citadel")))
+		{
+			GrayboxLayout = EArenaGrayboxLayout::FrostboundCitadel;
+			ArenaId = EArenaId::FrostboundCitadel;
+		}
+		else if (Match(TEXT("Verdant")) || Match(TEXT("Forest")))
+		{
+			GrayboxLayout = EArenaGrayboxLayout::VerdantSanctuary;
+			ArenaId = EArenaId::VerdantSanctuary;
+		}
+		else if (Match(TEXT("Sunscar")) || Match(TEXT("Desert")) || Match(TEXT("Expanse")))
+		{
+			GrayboxLayout = EArenaGrayboxLayout::SunscarExpanse;
+			ArenaId = EArenaId::SunscarExpanse;
+		}
+		else if (Match(TEXT("Stormbreak")) || Match(TEXT("Coast")) || Match(TEXT("Storm")))
+		{
+			GrayboxLayout = EArenaGrayboxLayout::StormbreakCoast;
+			ArenaId = EArenaId::StormbreakCoast;
 		}
 		else
 		{
 			GrayboxLayout = EArenaGrayboxLayout::TitansQuarry;
 			ArenaId = EArenaId::TitansQuarry;
+		}
+	}
+
+	if (UGameplayStatics::HasOption(Options, TEXT("Mode")))
+	{
+		const FString ModeOpt = UGameplayStatics::ParseOption(Options, TEXT("Mode"));
+		if (ModeOpt.Equals(TEXT("Story"), ESearchCase::IgnoreCase))
+		{
+			ArenaMode = EArenaMode::Story;
+			if (ArenaId == EArenaId::TitansQuarry && GrayboxLayout == EArenaGrayboxLayout::TitansQuarry)
+			{
+				GrayboxLayout = EArenaGrayboxLayout::FallenSanctuary;
+				ArenaId = EArenaId::FallenSanctuary;
+			}
 		}
 	}
 }

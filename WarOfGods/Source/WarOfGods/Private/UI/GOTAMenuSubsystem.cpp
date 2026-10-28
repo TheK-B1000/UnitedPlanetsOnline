@@ -13,6 +13,10 @@
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
 #include "Blueprint/UserWidget.h"
+#include "EngineUtils.h"
+#include "GameFramework/PlayerController.h"
+#include "TimerManager.h"
+#include "UObject/UObjectGlobals.h"
 
 void UGOTAMenuSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -20,10 +24,12 @@ void UGOTAMenuSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	SettingsAdapter = NewObject<UGOTAMenuSettingsAdapter>(this);
 	LobbyViewModel = NewObject<UGOTALobbyViewModel>(this);
 	CurrentScreen = EGOTAMenuScreen::MainMenu;
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UGOTAMenuSubsystem::HandlePostLoadMap);
 }
 
 void UGOTAMenuSubsystem::Deinitialize()
 {
+	FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
 	if (AGOTAMenuCameraDirector* Director = CameraDirector.Get())
 	{
 		Director->OnTransitionFinished.RemoveAll(this);
@@ -308,6 +314,93 @@ FGOTAArenaCard UGOTAMenuSubsystem::BuildFallbackArenaCard(EArenaId ArenaId) cons
 void UGOTAMenuSubsystem::SetRootMenuWidget(UUserWidget* Widget)
 {
 	RootMenuWidget = Widget;
+}
+
+void UGOTAMenuSubsystem::HandlePostLoadMap(UWorld* LoadedWorld)
+{
+	if (!IsFrontendMap(LoadedWorld))
+	{
+		return;
+	}
+
+	CurrentScreen = EGOTAMenuScreen::MainMenu;
+	ScreenHistory.Reset();
+
+	// PC may not exist on the same frame as PostLoadMap — defer one tick.
+	if (UWorld* World = LoadedWorld)
+	{
+		World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &UGOTAMenuSubsystem::TryBindCameraDirectorInWorld));
+		World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &UGOTAMenuSubsystem::PresentFrontendUI));
+	}
+}
+
+bool UGOTAMenuSubsystem::IsFrontendMap(const UWorld* World) const
+{
+	if (!World)
+	{
+		return false;
+	}
+	const FString MapName = World->GetMapName();
+	return MapName.Contains(TEXT("L_GOTA_MainMenu"), ESearchCase::IgnoreCase)
+		|| MapName.Contains(TEXT("MainMenu"), ESearchCase::IgnoreCase);
+}
+
+void UGOTAMenuSubsystem::PresentFrontendUI()
+{
+	if (RootMenuWidget && RootMenuWidget->IsInViewport())
+	{
+		return;
+	}
+
+	UClass* WidgetClass = FrontendRootWidgetClass.LoadSynchronous();
+	if (!WidgetClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GOTA frontend root widget missing: %s"),
+			*FrontendRootWidgetClass.ToString());
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	APlayerController* PC = World->GetFirstPlayerController();
+	if (!PC)
+	{
+		return;
+	}
+
+	UUserWidget* Widget = CreateWidget<UUserWidget>(PC, WidgetClass);
+	if (!Widget)
+	{
+		return;
+	}
+
+	Widget->AddToViewport(100);
+	RootMenuWidget = Widget;
+	PC->bShowMouseCursor = true;
+	FInputModeUIOnly InputMode;
+	InputMode.SetWidgetToFocus(Widget->TakeWidget());
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	PC->SetInputMode(InputMode);
+	NavigateTo(EGOTAMenuScreen::MainMenu, true);
+}
+
+void UGOTAMenuSubsystem::TryBindCameraDirectorInWorld()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	for (TActorIterator<AGOTAMenuCameraDirector> It(World); It; ++It)
+	{
+		BindCameraDirector(*It);
+		return;
+	}
 }
 
 void UGOTAMenuSubsystem::HandleCameraTransitionFinished()

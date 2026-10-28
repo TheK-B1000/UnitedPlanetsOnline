@@ -28,7 +28,7 @@ One connected multi-biome battlefield. Continuous traversal — **no teleporter-
 | `Stormbreak` | Stormbreak Coast | Coast | Nordic Coast *(not verified)* | Gray cliff graybox |
 | `Quarry` | Titan's Quarry | Stone | LevelPrototyping, StarterContent pillars | **First build — playable now** |
 
-**Build order:** Quarry → Dominion 3-biome (Coliseum + Ruins + Forest + Volcanic) → remaining standalones → polish.
+**Build order:** All 6 standalones + Dominion 6-biome graybox are runtime-built via `AArenaGrayboxBuilder` / `gota.BuildArena`. Art dress next.
 
 ---
 
@@ -119,8 +119,8 @@ Do **not** import Hillside sample / vehicles / full Megascans 3D_Assets dump.
 | Deliverable | Status |
 |-------------|--------|
 | This design doc | Done |
-| C++ arena architecture | In progress |
-| Titan's Quarry graybox | In progress (runtime builder) |
-| Dominion 3-biome graybox stub | In progress |
+| C++ arena architecture | Done |
+| All 6 standalone arena grayboxes | Done (runtime builder) |
+| Shattered Dominion 6-biome graybox | Done (coliseum + N/E/W/S + NE frozen + NW desert) |
 | World Partition map | Deferred until graybox traversal feels right |
 | Full art dress | Deferred |

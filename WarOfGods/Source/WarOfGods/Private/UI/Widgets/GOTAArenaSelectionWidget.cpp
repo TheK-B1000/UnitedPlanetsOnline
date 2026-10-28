@@ -1,9 +1,11 @@
-// White Tiger Studios 2024
+﻿// White Tiger Studios 2024
 
 #include "UI/Widgets/GOTAArenaSelectionWidget.h"
 #include "UI/GOTALobbyViewModel.h"
 #include "UI/GOTAMenuSubsystem.h"
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
+#include "Multiplayer/GotaSessionSubsystem.h"
+#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
 UGOTAArenaSelectionWidget::UGOTAArenaSelectionWidget()
@@ -40,27 +42,15 @@ void UGOTAArenaSelectionWidget::RefreshArenaCards()
 		ArenaCards = Subsystem->BuildArenaCards();
 	}
 	OnArenaCardsUpdated(ArenaCards);
-
-	bool bCanConfirm = false;
-	for (const FGOTAArenaCard& Card : ArenaCards)
+	if (ArenaCards.Num() > 0)
 	{
-		if (Card.ArenaId == HighlightedArena && Card.bIsSelectable)
-		{
-			bCanConfirm = true;
-			break;
-		}
-	}
-	if (Btn_Confirm)
-	{
-		Btn_Confirm->SetButtonEnabled(bCanConfirm);
+		SelectArena(ArenaCards[0].ArenaId);
 	}
 }
 
 void UGOTAArenaSelectionWidget::SelectArena(EArenaId ArenaId)
 {
 	HighlightedArena = ArenaId;
-	OnArenaHighlighted(ArenaId);
-
 	bool bCanConfirm = false;
 	for (const FGOTAArenaCard& Card : ArenaCards)
 	{
@@ -74,6 +64,8 @@ void UGOTAArenaSelectionWidget::SelectArena(EArenaId ArenaId)
 	{
 		Btn_Confirm->SetButtonEnabled(bCanConfirm);
 	}
+
+	OnArenaHighlighted(ArenaId);
 
 	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
 	{
@@ -111,9 +103,33 @@ void UGOTAArenaSelectionWidget::ConfirmSelection()
 		}
 	}
 
+	// Multiplayer lobby path: store selection and return to Champion Hall.
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			if (Sessions->IsInSession())
+			{
+				Sessions->SetSelectedArena(Selected.ArenaId);
+				if (Selected.ArenaId == EArenaId::TitansQuarry)
+				{
+					Sessions->SetSelectedMode(EArenaMode::PvPDuel);
+				}
+				if (UGOTAMenuSubsystem* Menu = GetMenuSubsystem())
+				{
+					Menu->NavigateTo(EGOTAMenuScreen::Lobby, false);
+				}
+				return;
+			}
+		}
+	}
+
 	if (Selected.ArenaMap.IsValid())
 	{
-		UGameplayStatics::OpenLevelBySoftObjectPtr(this, TSoftObjectPtr<UWorld>(Selected.ArenaMap));
+		// Solo PvE path: Titan's Quarry launches Horde GameMode on the graybox map.
+		const FString Options = TEXT("game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry?listen");
+		const FString LongPackage = Selected.ArenaMap.GetLongPackageName();
+		UGameplayStatics::OpenLevel(this, FName(*LongPackage), true, Options);
 		return;
 	}
 

@@ -56,7 +56,7 @@ bool AGOTAMenuCameraDirector::TransitionTo(EGOTAMenuScreen Screen, bool bSkipBle
 		return false;
 	}
 
-	GetWorldTimerManager().ClearTimer(TransitionTimer);
+	GetWorldTimerManager().ClearAllTimersForObject(this);
 
 	const float BlendTime = bSkipBlend ? 0.f : Shot->BlendTime;
 	bIsTransitioning = BlendTime > KINDA_SMALL_NUMBER;
@@ -64,13 +64,14 @@ bool AGOTAMenuCameraDirector::TransitionTo(EGOTAMenuScreen Screen, bool bSkipBle
 
 	FViewTargetTransitionParams Params;
 	Params.BlendTime = BlendTime;
-	Params.BlendFunction = Shot->BlendFunction;
+	Params.BlendFunction = static_cast<EViewTargetBlendFunction>(Shot->BlendFunction);
 	Params.BlendExp = Shot->BlendExp;
 	Params.bLockOutgoing = false;
 	PC->SetViewTarget(Shot->CameraActor, Params);
 
 	if (bIsTransitioning)
 	{
+		FTimerHandle TransitionTimer;
 		GetWorldTimerManager().SetTimer(
 			TransitionTimer,
 			this,
@@ -93,7 +94,7 @@ void AGOTAMenuCameraDirector::SkipActiveTransition()
 		return;
 	}
 
-	GetWorldTimerManager().ClearTimer(TransitionTimer);
+	GetWorldTimerManager().ClearAllTimersForObject(this);
 
 	if (const FGOTAMenuCameraShot* Shot = FindShot(ActiveScreen))
 	{

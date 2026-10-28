@@ -18,7 +18,9 @@ public class WarOfGods : ModuleRules
 			"GameplayTags",
 			"UMG",
 			"Slate",
-			"SlateCore"
+			"SlateCore",
+			"OnlineSubsystem",
+			"OnlineSubsystemUtils"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "HAL/IConsoleManager.h"
+#include "Kismet/GameplayStatics.h"
 
 namespace
 {
@@ -66,11 +67,38 @@ namespace
 		if (Args.Num() > 0)
 		{
 			const FString& Arg = Args[0];
-			if (Arg.Equals(TEXT("Dominion"), ESearchCase::IgnoreCase) || Arg.Equals(TEXT("Shattered"), ESearchCase::IgnoreCase))
+			auto Match = [&Arg](const TCHAR* Name) { return Arg.Equals(Name, ESearchCase::IgnoreCase); };
+
+			if (Match(TEXT("Story")) || Match(TEXT("Fallen")) || Match(TEXT("FallenSanctuary"))
+				|| Match(TEXT("Prologue")) || Match(TEXT("Sanctuary")))
 			{
-				Layout = EArenaGrayboxLayout::ShatteredDominionThreeBiome;
+				Layout = EArenaGrayboxLayout::FallenSanctuary;
 			}
-			else if (Arg.Equals(TEXT("Quarry"), ESearchCase::IgnoreCase) || Arg.Equals(TEXT("Titans"), ESearchCase::IgnoreCase))
+			else if (Match(TEXT("Dominion")) || Match(TEXT("Shattered")))
+			{
+				Layout = EArenaGrayboxLayout::ShatteredDominion;
+			}
+			else if (Match(TEXT("Ashfall")) || Match(TEXT("Crucible")))
+			{
+				Layout = EArenaGrayboxLayout::AshfallCrucible;
+			}
+			else if (Match(TEXT("Frostbound")) || Match(TEXT("Frost")) || Match(TEXT("Citadel")))
+			{
+				Layout = EArenaGrayboxLayout::FrostboundCitadel;
+			}
+			else if (Match(TEXT("Verdant")) || Match(TEXT("Forest")))
+			{
+				Layout = EArenaGrayboxLayout::VerdantSanctuary;
+			}
+			else if (Match(TEXT("Sunscar")) || Match(TEXT("Desert")) || Match(TEXT("Expanse")))
+			{
+				Layout = EArenaGrayboxLayout::SunscarExpanse;
+			}
+			else if (Match(TEXT("Stormbreak")) || Match(TEXT("Coast")) || Match(TEXT("Storm")))
+			{
+				Layout = EArenaGrayboxLayout::StormbreakCoast;
+			}
+			else
 			{
 				Layout = EArenaGrayboxLayout::TitansQuarry;
 			}
@@ -91,8 +119,41 @@ namespace
 
 	FAutoConsoleCommand BuildArenaCmd(
 		TEXT("gota.BuildArena"),
-		TEXT("Rebuild arena graybox. Usage: gota.BuildArena Quarry|Dominion"),
+		TEXT("Rebuild arena graybox. Usage: gota.BuildArena Story|Quarry|Ashfall|Frostbound|Verdant|Sunscar|Stormbreak|Dominion"),
 		FConsoleCommandWithArgsDelegate::CreateStatic(&BuildLayoutCommand));
+
+	void LaunchHordeCommand()
+	{
+		UWorld* World = nullptr;
+		if (GEngine)
+		{
+			for (const FWorldContext& Context : GEngine->GetWorldContexts())
+			{
+				if (Context.World() && Context.World()->IsGameWorld())
+				{
+					World = Context.World();
+					break;
+				}
+			}
+		}
+		if (!World)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("gota.Horde: no game world"));
+			return;
+		}
+
+		UGameplayStatics::OpenLevel(
+			World,
+			FName(TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap")),
+			true,
+			TEXT("game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry?listen"));
+		UE_LOG(LogTemp, Log, TEXT("gota.Horde -> Titan's Quarry Wrath of the Gods"));
+	}
+
+	FAutoConsoleCommand LaunchHordeCmd(
+		TEXT("gota.Horde"),
+		TEXT("Travel to Titan's Quarry Wrath of the Gods (PvE Horde, 5 waves + boss)"),
+		FConsoleCommandDelegate::CreateStatic(&LaunchHordeCommand));
 }
 
 void FArenaConsoleCommands::Register()

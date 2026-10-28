@@ -1,8 +1,8 @@
 # Gods of the Arena — Implementation Roadmap
 
-**Updated:** 2026-10-27 (Phase 1 in progress)  
+**Updated:** 2026-10-27 (Implementation 02 Horde C++ linked; PIE tests pending)  
 **Engine:** UE 5.8 ONLY  
-**Branch:** `cpp-branch`
+**Branch:** `feature/gota-cinematic-frontend` (Horde work lands here until split)
 
 ---
 
@@ -10,23 +10,17 @@
 
 > One hero, one weapon, one arena, one intelligent enemy, perfect parry, perfect dodge, one divine counter — then the same encounter over the network.
 
-Then expand Story (1–5 players), PvE waves, PvP duels on that foundation. **Do not scaffold the three modes yet.**
+Story Mode + **Wrath of the Gods** PvE Horde are active mode vertical slices. PvP follows once Horde proves server encounter authority.
 
 ---
 
 ## Priority order (active)
 
-1. Verified UE 5.8 playable baseline  
-2. Existing combat behavior capture (editor)  
-3. Lock-on integration (`IA_Lockon` → `ULockonComponent`)  
-4. Typed combat event integration (BP → `Notify*`)  
-5. Stats ownership / replication verification (observation mode)  
-6. First networked combat smoke test (1 listen + 1 client)  
-7. Combat timing improvements (DataAsset windows)  
-8. Perfect parry  
-9. Perfect dodge  
-10. Divine counterattack  
-11. Full networked combat vertical slice  
+1. ~~Wrath of the Gods C++ vertical slice~~ — **Done (compile/link)**; PIE wave+boss still open — see `GOTA_HORDE_TEST_RESULTS.md`  
+2. Horde HUD/Results WBPs + `gota.Horde` PIE + LAN host+clients validation  
+3. Server-authoritative damage integration (smallest safe BP/C++ bridge)  
+4. Lock-on / Notify* combat polish  
+5. Implementation 03 — PvP duels on shared combat  
 
 ---
 

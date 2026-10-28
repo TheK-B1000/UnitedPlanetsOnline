@@ -1,0 +1,38 @@
+# Combat Authority Contract (Milestone 3)
+
+Goal: one authoritative outcome path for multiplayer without a second damage framework or GAS.
+
+## Ownership
+
+| Concern | Owner today | Target |
+|---------|-------------|--------|
+| Attack input | Local player → BP `BPC_Attacks` | Client input, server validates windows |
+| Hit detection | BP / anim notifies | Server confirms overlaps / traces |
+| Damage apply | `BPC_DamageSystem` | Server-only apply; clients predict FX |
+| Health mutation | BP health | Single path — either BP wraps C++ or C++ wraps BP; never both |
+| `UStatsComponent` | Observation mode (default) | Stay observation until BP notifies `ObserveHealth` every damage |
+| Parry / dodge / block success | BP timing | Server validates with latency tolerance; client never authorizes |
+| Death | BP destroy / ragdoll | Server sets eliminated; clients play death |
+| `UCombatComponent` Notify* | Local observers | Keep local; do **not** treat as replication |
+
+## Rules
+
+1. **No duplicate damage** — `UStatsComponent::ApplyDamage` stays no-op while `bAuthoritativeMutations == false`.
+2. **Observers are local** — UI/VFX bind to Notify*; GameState carries match outcomes.
+3. **Duel / Horde elimination** currently use **pawn validity** as the server round/wave signal. Wire `NotifyDied` → GameMode when BP death is reliable.
+4. Prefer `ObserveHealth(Current, Max)` from BP after each health change so HUD can replicate display without claiming authority.
+5. Do **not** adopt GAS in this milestone.
+
+## Migration steps (ordered)
+
+1. From `BPC_DamageSystem` (server branch only): after applying damage, call `Stats->ObserveHealth` + `Combat->NotifyHitConfirmed` / `NotifyDamageApplied`.
+2. On death: `Combat->NotifyDied` + GameMode elimination hook.
+3. Add server RPC for attack commit only after local prediction looks correct in PIE.
+4. Enable `SetAuthoritativeMutationsEnabled(true)` only after BP stops mutating health directly.
+
+## Verification checklist
+
+- [ ] Listen + 1 client: mutual hits register once
+- [ ] Block / parry do not double-apply
+- [ ] Death ends Duel round on server for both peers
+- [ ] Skirmish unchanged when not using DuelGameMode

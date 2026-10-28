@@ -15,7 +15,9 @@ enum class EArenaId : uint8
 	VerdantSanctuary UMETA(DisplayName = "Verdant Sanctuary"),
 	SunscarExpanse UMETA(DisplayName = "Sunscar Expanse"),
 	StormbreakCoast UMETA(DisplayName = "Stormbreak Coast"),
-	ShatteredDominion UMETA(DisplayName = "The Shattered Dominion")
+	ShatteredDominion UMETA(DisplayName = "The Shattered Dominion"),
+	/** Story Chapter 1 prologue — not a competitive arena. */
+	FallenSanctuary UMETA(DisplayName = "The Fallen Sanctuary")
 };
 
 UENUM(BlueprintType)
@@ -57,8 +59,14 @@ enum class EArenaPhase : uint8
 UENUM(BlueprintType)
 enum class EArenaGrayboxLayout : uint8
 {
-	TitansQuarry,
-	ShatteredDominionThreeBiome
+	TitansQuarry UMETA(DisplayName = "Titan's Quarry"),
+	AshfallCrucible UMETA(DisplayName = "Ashfall Crucible"),
+	FrostboundCitadel UMETA(DisplayName = "Frostbound Citadel"),
+	VerdantSanctuary UMETA(DisplayName = "Verdant Sanctuary"),
+	SunscarExpanse UMETA(DisplayName = "Sunscar Expanse"),
+	StormbreakCoast UMETA(DisplayName = "Stormbreak Coast"),
+	ShatteredDominion UMETA(DisplayName = "Shattered Dominion (6 biomes)"),
+	FallenSanctuary UMETA(DisplayName = "The Fallen Sanctuary (Story Prologue)")
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBiomeChanged, EBiomeId, NewBiome, EBiomeId, PreviousBiome);

@@ -8,13 +8,12 @@
 #include "ArenaGrayboxBuilder.generated.h"
 
 class UStaticMesh;
-class UInstancedStaticMeshComponent;
 class AArenaPlayerStart;
 class ABiomeVolume;
 
 /**
- * Builds playable placeholder arena geometry at runtime from LevelPrototyping / engine meshes.
- * Titan's Quarry = first standalone. ShatteredDominionThreeBiome = coliseum + ruins + forest + volcanic stubs.
+ * Runtime graybox for every standalone arena + full Shattered Dominion.
+ * Uses LevelPrototyping / engine cubes; dresses with Beech/Maple/Megascans when present.
  */
 UCLASS()
 class WAROFGODS_API AArenaGrayboxBuilder : public AActor
@@ -28,7 +27,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	/** Replicated so listen-server + clients build the same local placeholder geometry. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_Layout, Category = "Arena|Graybox")
 	EArenaGrayboxLayout Layout = EArenaGrayboxLayout::TitansQuarry;
 
@@ -44,9 +42,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Arena|Graybox")
 	bool bSpawnBiomeVolumes = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Arena|Graybox")
-	float UnitScale = 100.f;
-
 	UFUNCTION(BlueprintCallable, Category = "Arena|Graybox")
 	void BuildLayout();
 
@@ -61,9 +56,19 @@ protected:
 	UStaticMesh* TryLoadMesh(const TCHAR* Path) const;
 	void SpawnPlayerStartAt(const FVector& Location, int32 Slot, EBiomeId Biome);
 	void SpawnBiomeVolumeAt(const FVector& Center, const FVector& Extent, EBiomeId BiomeId);
+	void SpawnFourCornerStarts(float Radius, float Z, EBiomeId Biome);
+	void AddRingWalls(float HalfExtent, float WallHeight, const FLinearColor& Color);
+	void AddRingPillars(float Radius, int32 Count, float Height, const FVector& Center = FVector::ZeroVector);
+	void PlaceTreeRing(const FVector& Center, float Radius, int32 Count);
 
 	void BuildTitansQuarry();
-	void BuildShatteredDominionThreeBiome();
+	void BuildAshfallCrucible();
+	void BuildFrostboundCitadel();
+	void BuildVerdantSanctuary();
+	void BuildSunscarExpanse();
+	void BuildStormbreakCoast();
+	void BuildShatteredDominion();
+	void BuildFallenSanctuary();
 
 	UPROPERTY()
 	TObjectPtr<UStaticMesh> CubeMesh;

@@ -25,8 +25,9 @@ struct WAROFGODS_API FGOTAMenuCameraShot
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	float BlendTime = 1.25f;
 
+	/** Maps to EViewTargetBlendFunction (default VTBlend_EaseInOut = 3). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	TEnumAsByte<EViewTargetBlendFunction> BlendFunction = VTBlend_EaseInOut;
+	uint8 BlendFunction = 3;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	float BlendExp = 2.f;
@@ -79,6 +80,4 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GOTA|Camera")
 	bool bIsTransitioning = false;
-
-	FTimerHandle TransitionTimer;
 };
