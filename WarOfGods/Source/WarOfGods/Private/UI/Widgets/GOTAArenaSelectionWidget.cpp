@@ -1,12 +1,13 @@
 ﻿// White Tiger Studios 2024
 
 #include "UI/Widgets/GOTAArenaSelectionWidget.h"
-#include "UI/GOTALobbyViewModel.h"
+
+#include "Components/Image.h"
+#include "Components/PanelWidget.h"
+#include "Components/TextBlock.h"
+#include "Engine/Texture2D.h"
 #include "UI/GOTAMenuSubsystem.h"
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
-#include "Multiplayer/GotaSessionSubsystem.h"
-#include "Engine/GameInstance.h"
-#include "Kismet/GameplayStatics.h"
 
 UGOTAArenaSelectionWidget::UGOTAArenaSelectionWidget()
 {
@@ -16,132 +17,190 @@ UGOTAArenaSelectionWidget::UGOTAArenaSelectionWidget()
 void UGOTAArenaSelectionWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
+	if (Btn_ModeFightAI)
+	{
+		Btn_ModeFightAI->Style = EGOTAButtonStyle::Tab;
+		Btn_ModeFightAI->OnActivated.AddUniqueDynamic(this, &UGOTAArenaSelectionWidget::HandleFightAI);
+		TrackFocus(Btn_ModeFightAI);
+	}
+	if (Btn_ModeHorde)
+	{
+		Btn_ModeHorde->Style = EGOTAButtonStyle::Tab;
+		Btn_ModeHorde->OnActivated.AddUniqueDynamic(this, &UGOTAArenaSelectionWidget::HandleHorde);
+		TrackFocus(Btn_ModeHorde);
+	}
 	if (Btn_Confirm)
 	{
-		Btn_Confirm->SetLabel(NSLOCTEXT("GOTA", "EnterArena", "ENTER ARENA"));
-		Btn_Confirm->OnActivated.AddDynamic(this, &UGOTAArenaSelectionWidget::HandleConfirm);
+		Btn_Confirm->OnActivated.AddUniqueDynamic(this, &UGOTAArenaSelectionWidget::HandleConfirm);
+		TrackFocus(Btn_Confirm);
 	}
 	if (Btn_Back)
 	{
-		Btn_Back->SetLabel(NSLOCTEXT("GOTA", "Back", "BACK"));
-		Btn_Back->OnActivated.AddDynamic(this, &UGOTAArenaSelectionWidget::HandleBack);
+		Btn_Back->OnActivated.AddUniqueDynamic(this, &UGOTAArenaSelectionWidget::HandleBack);
+		TrackFocus(Btn_Back);
 	}
 }
 
-void UGOTAArenaSelectionWidget::NativeConstruct()
+void UGOTAArenaSelectionWidget::OnScreenActivated()
 {
-	Super::NativeConstruct();
-	RefreshArenaCards();
+	if (ArenaEntries.Num() == 0)
+	{
+		RebuildArenaList();
+	}
+	RefreshDetails();
 }
 
-void UGOTAArenaSelectionWidget::RefreshArenaCards()
+UGOTAMenuButtonWidget* UGOTAArenaSelectionWidget::GetDefaultFocusButton() const
 {
-	ArenaCards.Reset();
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	if (Btn_Confirm && Btn_Confirm->IsButtonEnabled())
 	{
-		ArenaCards = Subsystem->BuildArenaCards();
+		return Btn_Confirm;
 	}
-	OnArenaCardsUpdated(ArenaCards);
-	if (ArenaCards.Num() > 0)
+	return Btn_ModeFightAI;
+}
+
+void UGOTAArenaSelectionWidget::RebuildArenaList()
+{
+	const UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem();
+	if (!Subsystem || !Box_Arenas || !EntryClass)
 	{
-		SelectArena(ArenaCards[0].ArenaId);
+		return;
 	}
+	Box_Arenas->ClearChildren();
+	ArenaEntries.Reset();
+	Cards = Subsystem->BuildArenaCards();
+
+	for (const FGOTAArenaCard& Card : Cards)
+	{
+		UGOTAMenuButtonWidget* Entry = CreateWidget<UGOTAMenuButtonWidget>(this, EntryClass);
+		if (!Entry)
+		{
+			continue;
+		}
+		Entry->Style = EGOTAButtonStyle::ListEntry;
+		Entry->Payload = static_cast<int32>(Card.ArenaId);
+		Entry->SetLabel(Card.DisplayName);
+		Entry->SetSubtitle(Card.Tagline);
+		Entry->OnFocused.AddUniqueDynamic(this, &UGOTAArenaSelectionWidget::HandleArenaFocused);
+		TrackFocus(Entry);
+		Box_Arenas->AddChild(Entry);
+		ArenaEntries.Add(Entry);
+	}
+}
+
+void UGOTAArenaSelectionWidget::SelectRuleset(EGOTAArenaRuleset Ruleset)
+{
+	SelectedRuleset = Ruleset;
+	RefreshDetails();
 }
 
 void UGOTAArenaSelectionWidget::SelectArena(EArenaId ArenaId)
 {
-	HighlightedArena = ArenaId;
-	bool bCanConfirm = false;
-	for (const FGOTAArenaCard& Card : ArenaCards)
-	{
-		if (Card.ArenaId == ArenaId)
-		{
-			bCanConfirm = Card.bIsSelectable && !Card.bComingSoon;
-			break;
-		}
-	}
-	if (Btn_Confirm)
-	{
-		Btn_Confirm->SetButtonEnabled(bCanConfirm);
-	}
+	SelectedArena = ArenaId;
+	RefreshDetails();
+}
 
-	OnArenaHighlighted(ArenaId);
+void UGOTAArenaSelectionWidget::HandleFightAI()
+{
+	SelectRuleset(EGOTAArenaRuleset::FightAI);
+}
 
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+void UGOTAArenaSelectionWidget::HandleHorde()
+{
+	SelectRuleset(EGOTAArenaRuleset::Horde);
+}
+
+void UGOTAArenaSelectionWidget::HandleArenaFocused(UGOTAMenuButtonWidget* Button)
+{
+	// Focus previews (gamepad friendly); the arena under focus is the one Confirm launches.
+	if (Button && Button->Payload != INDEX_NONE)
 	{
-		if (UGOTALobbyViewModel* Lobby = Subsystem->GetLobbyViewModel())
-		{
-			Lobby->SetSelectedArena(ArenaId);
-		}
+		SelectArena(static_cast<EArenaId>(Button->Payload));
 	}
 }
 
-void UGOTAArenaSelectionWidget::ConfirmSelection()
+void UGOTAArenaSelectionWidget::RefreshDetails()
 {
-	FGOTAArenaCard Selected;
-	bool bFound = false;
-	for (const FGOTAArenaCard& Card : ArenaCards)
+	const UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem();
+
+	if (Btn_ModeFightAI) { Btn_ModeFightAI->SetSelected(SelectedRuleset == EGOTAArenaRuleset::FightAI); }
+	if (Btn_ModeHorde) { Btn_ModeHorde->SetSelected(SelectedRuleset == EGOTAArenaRuleset::Horde); }
+	for (UGOTAMenuButtonWidget* Entry : ArenaEntries)
 	{
-		if (Card.ArenaId == HighlightedArena)
+		if (Entry)
 		{
-			Selected = Card;
-			bFound = true;
-			break;
+			Entry->SetSelected(Entry->Payload == static_cast<int32>(SelectedArena));
 		}
 	}
 
-	if (!bFound || !Selected.bIsSelectable || Selected.bComingSoon)
+	if (Text_ModeTitle)
 	{
-		return;
+		Text_ModeTitle->SetText(SelectedRuleset == EGOTAArenaRuleset::FightAI
+			? NSLOCTEXT("GOTA", "ModeTrialTitle", "TRIAL OF CHAMPIONS — FIGHT AI")
+			: NSLOCTEXT("GOTA", "ModeHordeTitle", "WRATH OF THE GODS — HORDE"));
+	}
+	if (Text_ModeDescription)
+	{
+		Text_ModeDescription->SetText(SelectedRuleset == EGOTAArenaRuleset::FightAI
+			? NSLOCTEXT("GOTA", "ModeTrialDesc", "Single combat against an Arena Champion. Best of three rounds — first to two victories claims the trial.")
+			: NSLOCTEXT("GOTA", "ModeHordeDesc", "Survive five escalating waves and the champion that follows. Up to four Wardens."));
 	}
 
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	for (const FGOTAArenaCard& Card : Cards)
 	{
-		if (UGOTALobbyViewModel* Lobby = Subsystem->GetLobbyViewModel())
+		if (Card.ArenaId != SelectedArena)
 		{
-			Lobby->SetSelectedArena(Selected.ArenaId);
+			continue;
 		}
-	}
-
-	// Multiplayer lobby path: store selection and return to Champion Hall.
-	if (UGameInstance* GI = GetGameInstance())
-	{
-		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		if (Text_ArenaName) { Text_ArenaName->SetText(Card.DisplayName); }
+		if (Text_ArenaDescription) { Text_ArenaDescription->SetText(Card.Description); }
+		if (Image_ArenaPreview)
 		{
-			if (Sessions->IsInSession())
+			UTexture2D* Preview = Card.Thumbnail.LoadSynchronous();
+			Image_ArenaPreview->SetVisibility(Preview ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+			if (Preview)
 			{
-				Sessions->SetSelectedArena(Selected.ArenaId);
-				if (Selected.ArenaId == EArenaId::TitansQuarry)
-				{
-					Sessions->SetSelectedMode(EArenaMode::PvPDuel);
-				}
-				if (UGOTAMenuSubsystem* Menu = GetMenuSubsystem())
-				{
-					Menu->NavigateTo(EGOTAMenuScreen::Lobby, false);
-				}
-				return;
+				Image_ArenaPreview->SetBrushFromTexture(Preview, false);
 			}
 		}
 	}
 
-	if (Selected.ArenaMap.IsValid())
+	FText Reason;
+	const bool bAvailable = Subsystem && Subsystem->IsArenaRulesetAvailable(SelectedRuleset, SelectedArena, Reason);
+	if (Btn_Confirm)
 	{
-		// Solo PvE path: Titan's Quarry launches Horde GameMode on the graybox map.
-		const FString Options = TEXT("game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry?listen");
-		const FString LongPackage = Selected.ArenaMap.GetLongPackageName();
-		UGameplayStatics::OpenLevel(this, FName(*LongPackage), true, Options);
-		return;
+		Btn_Confirm->SetButtonEnabled(bAvailable);
 	}
-
-	RequestTravelToSelectedArena();
+	if (Text_Availability)
+	{
+		Text_Availability->SetText(bAvailable
+			? NSLOCTEXT("GOTA", "ArenaReady", "READY FOR DEPLOYMENT")
+			: Reason);
+	}
 }
 
-void UGOTAArenaSelectionWidget::HandleConfirm() { ConfirmSelection(); }
+void UGOTAArenaSelectionWidget::HandleConfirm()
+{
+	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	{
+		Subsystem->PlayUISound(EGOTAMenuSound::Confirm);
+		if (SelectedRuleset == EGOTAArenaRuleset::FightAI)
+		{
+			// Trial of Champions picks a hero first (validated again by the server on login).
+			Subsystem->BeginArenaHeroSelection(SelectedRuleset, SelectedArena);
+		}
+		else
+		{
+			Subsystem->RequestLaunchArena(SelectedRuleset, SelectedArena);
+		}
+	}
+}
 
 void UGOTAArenaSelectionWidget::HandleBack()
 {
 	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
 	{
+		Subsystem->PlayUISound(EGOTAMenuSound::Back);
 		Subsystem->GoBack(false);
 	}
 }

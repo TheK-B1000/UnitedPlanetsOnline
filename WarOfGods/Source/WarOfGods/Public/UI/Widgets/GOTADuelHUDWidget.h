@@ -30,6 +30,7 @@ protected:
 
 	void RefreshFromGameState();
 	ADuelGameState* GetDuelGS() const;
+	APawn* ResolveOpponentPawn(APlayerState*& OutOpponentPS) const;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
 	TObjectPtr<UTextBlock> Text_Round;
@@ -45,6 +46,18 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
 	TObjectPtr<UTextBlock> Text_Timer;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<UTextBlock> Text_LocalName;
+
+	/** Accepted hero portrait (resolved locally from the replicated HeroId). */
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<class UImage> Image_LocalHero;
+
+	FName ShownHeroId;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<UTextBlock> Text_OpponentName;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
 	TObjectPtr<UProgressBar> Bar_LocalHealth;

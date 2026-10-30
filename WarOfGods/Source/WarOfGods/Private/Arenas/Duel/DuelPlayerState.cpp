@@ -12,6 +12,7 @@ ADuelPlayerState::ADuelPlayerState()
 void ADuelPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ADuelPlayerState, HeroId);
 	DOREPLIFETIME(ADuelPlayerState, DuelSlot);
 	DOREPLIFETIME(ADuelPlayerState, RoundsWon);
 	DOREPLIFETIME(ADuelPlayerState, Eliminations);

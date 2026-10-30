@@ -105,8 +105,14 @@ void AArenaGrayboxBuilder::AddBox(const FVector& Center, const FVector& Extent, 
 	}
 	Mesh->SetupAttachment(GetRootComponent());
 	Mesh->RegisterComponent();
-	Mesh->SetWorldLocation(GetActorLocation() + Center);
-	Mesh->SetWorldScale3D(FVector((Extent.X * 2.f) / 100.f, (Extent.Y * 2.f) / 100.f, (Extent.Z * 2.f) / 100.f));
+	// Normalize by the mesh's real local bounds: LevelPrototyping SM_Cube is not centre-pivoted, so
+	// placing it at Center unadjusted shifted every graybox box (e.g. the Quarry floor covered only
+	// one quadrant and fighters at start 0 fell through the world).
+	const FBox LocalBounds = CubeMesh->GetBoundingBox();
+	const FVector LocalSize = LocalBounds.GetSize().ComponentMax(FVector(1.f));
+	const FVector Scale((Extent.X * 2.f) / LocalSize.X, (Extent.Y * 2.f) / LocalSize.Y, (Extent.Z * 2.f) / LocalSize.Z);
+	Mesh->SetWorldScale3D(Scale);
+	Mesh->SetWorldLocation(GetActorLocation() + Center - LocalBounds.GetCenter() * Scale);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Mesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
 	if (UMaterialInterface* BaseMat = Mesh->GetMaterial(0))
@@ -131,8 +137,12 @@ void AArenaGrayboxBuilder::AddPillar(const FVector& Center, float HeightUU)
 	Mesh->SetStaticMesh(MeshAsset);
 	Mesh->SetupAttachment(GetRootComponent());
 	Mesh->RegisterComponent();
-	Mesh->SetWorldLocation(GetActorLocation() + Center + FVector(0.f, 0.f, HeightUU * 0.5f));
-	Mesh->SetWorldScale3D(FVector(1.2f, 1.2f, HeightUU / 100.f));
+	// Same pivot normalization as AddBox: pillar base sits on Center regardless of mesh pivot.
+	const FBox LocalBounds = MeshAsset->GetBoundingBox();
+	const FVector LocalSize = LocalBounds.GetSize().ComponentMax(FVector(1.f));
+	const FVector Scale(120.f / LocalSize.X, 120.f / LocalSize.Y, HeightUU / LocalSize.Z);
+	Mesh->SetWorldScale3D(Scale);
+	Mesh->SetWorldLocation(GetActorLocation() + Center + FVector(0.f, 0.f, HeightUU * 0.5f) - LocalBounds.GetCenter() * Scale);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Mesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
 	BuiltMeshes.Add(Mesh);

@@ -1,137 +1,161 @@
 // White Tiger Studios 2024
 
 #include "UI/Widgets/GOTAMainMenuWidget.h"
+#include "UI/GOTAMenuContentDefinition.h"
 #include "UI/GOTAMenuSubsystem.h"
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
+#include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
+#include "TimerManager.h"
 
 UGOTAMainMenuWidget::UGOTAMainMenuWidget()
 {
 	ScreenId = EGOTAMenuScreen::MainMenu;
 }
 
+void UGOTAMainMenuWidget::ConfigureAction(UGOTAMenuButtonWidget* Button, EGOTAMenuAction Action, bool bCard)
+{
+	if (!Button)
+	{
+		return;
+	}
+	Button->MenuAction = Action;
+	Button->bUseCardContent = bCard;
+	Button->Style = bCard ? EGOTAButtonStyle::FeatureCard : EGOTAButtonStyle::NavRow;
+	TrackFocus(Button);
+}
+
 void UGOTAMainMenuWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	if (Btn_Continue)
+	ConfigureAction(Btn_Continue, EGOTAMenuAction::Continue, false);
+	ConfigureAction(Btn_NewStory, EGOTAMenuAction::Story, false);
+	ConfigureAction(Btn_PvEArena, EGOTAMenuAction::Arena, false);
+	ConfigureAction(Btn_Multiplayer, EGOTAMenuAction::Multiplayer, false);
+	ConfigureAction(Btn_Settings, EGOTAMenuAction::Settings, false);
+	ConfigureAction(Btn_Extras, EGOTAMenuAction::Extras, false);
+	ConfigureAction(Btn_Quit, EGOTAMenuAction::Quit, false);
+
+	ConfigureAction(Card_Story, EGOTAMenuAction::Story, true);
+	ConfigureAction(Card_Arena, EGOTAMenuAction::Arena, true);
+	ConfigureAction(Card_Multiplayer, EGOTAMenuAction::Multiplayer, true);
+	ConfigureAction(Card_Settings, EGOTAMenuAction::Settings, true);
+	ConfigureAction(Card_Extras, EGOTAMenuAction::Extras, true);
+
+	// Social controls: no friends / party backend exists (OSS Null) — shown, honestly disabled.
+	const FText SocialUnavailable = NSLOCTEXT("GOTA", "SocialUnavailable",
+		"Friends and party invites require an online platform service, which is not available in this build.");
+	for (UGOTAMenuButtonWidget* Social : { Btn_Friends.Get(), Btn_Plus.Get() })
 	{
-		Btn_Continue->SetLabel(NSLOCTEXT("GOTA", "Continue", "CONTINUE"));
-		Btn_Continue->OnActivated.AddDynamic(this, &UGOTAMainMenuWidget::HandleContinue);
+		if (Social)
+		{
+			Social->SetButtonEnabled(false);
+			Social->SetToolTipText(SocialUnavailable);
+		}
 	}
-	if (Btn_NewStory)
+
+	if (const UGOTAMenuContentDefinition* Content = GetMenuContent())
 	{
-		Btn_NewStory->SetLabel(NSLOCTEXT("GOTA", "StoryMode", "STORY MODE"));
-		Btn_NewStory->OnActivated.AddDynamic(this, &UGOTAMainMenuWidget::HandleNewStory);
-	}
-	if (Btn_PvEArena)
-	{
-		Btn_PvEArena->SetLabel(NSLOCTEXT("GOTA", "PvEArena", "PVE ARENA"));
-		Btn_PvEArena->OnActivated.AddDynamic(this, &UGOTAMainMenuWidget::HandlePvEArena);
-	}
-	if (Btn_Multiplayer)
-	{
-		Btn_Multiplayer->SetLabel(NSLOCTEXT("GOTA", "Multiplayer", "MULTIPLAYER"));
-		Btn_Multiplayer->OnActivated.AddDynamic(this, &UGOTAMainMenuWidget::HandleMultiplayer);
-	}
-	if (Btn_Settings)
-	{
-		Btn_Settings->SetLabel(NSLOCTEXT("GOTA", "Settings", "SETTINGS"));
-		Btn_Settings->OnActivated.AddDynamic(this, &UGOTAMainMenuWidget::HandleSettings);
-	}
-	if (Btn_Extras)
-	{
-		Btn_Extras->SetLabel(NSLOCTEXT("GOTA", "Extras", "EXTRAS"));
-		Btn_Extras->OnActivated.AddDynamic(this, &UGOTAMainMenuWidget::HandleExtras);
-	}
-	if (Btn_Quit)
-	{
-		Btn_Quit->SetLabel(NSLOCTEXT("GOTA", "Quit", "QUIT"));
-		Btn_Quit->OnActivated.AddDynamic(this, &UGOTAMainMenuWidget::HandleQuit);
+		if (Text_GameSubtitle && !Content->GameSubtitle.IsEmpty())
+		{
+			Text_GameSubtitle->SetText(Content->GameSubtitle);
+		}
 	}
 }
 
-void UGOTAMainMenuWidget::NativeConstruct()
+void UGOTAMainMenuWidget::NativeDestruct()
 {
-	Super::NativeConstruct();
-	RefreshContinueAvailability();
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	if (UWorld* World = GetWorld())
 	{
-		Subsystem->SetRootMenuWidget(this);
-		if (Btn_Extras)
+		World->GetTimerManager().ClearTimer(MessageTimer);
+	}
+	Super::NativeDestruct();
+}
+
+void UGOTAMainMenuWidget::OnScreenActivated()
+{
+	RefreshContinueAvailability();
+	RefreshProfile();
+	AdvanceInstitutionalMessage();
+	if (UWorld* World = GetWorld())
+	{
+		const UGOTAMenuContentDefinition* Content = GetMenuContent();
+		if (Content && Content->InstitutionalMessages.Num() > 1 && !MessageTimer.IsValid())
 		{
-			const bool bExtras = Subsystem->IsExtrasAvailable();
-			Btn_Extras->SetButtonEnabled(bExtras);
-			Btn_Extras->SetVisibility(bExtras ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+			World->GetTimerManager().SetTimer(MessageTimer, this, &UGOTAMainMenuWidget::AdvanceInstitutionalMessage, 9.f, true);
 		}
 	}
+}
+
+UGOTAMenuButtonWidget* UGOTAMainMenuWidget::GetDefaultFocusButton() const
+{
+	if (Btn_Continue && Btn_Continue->IsButtonEnabled())
+	{
+		return Btn_Continue;
+	}
+	return Btn_NewStory ? Btn_NewStory.Get() : Btn_PvEArena.Get();
 }
 
 void UGOTAMainMenuWidget::RefreshContinueAvailability()
 {
-	const bool bCanContinue = GetMenuSubsystem() && GetMenuSubsystem()->HasValidContinueSave();
-	if (Btn_Continue)
+	const UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem();
+	if (!Btn_Continue || !Subsystem)
 	{
-		Btn_Continue->SetButtonEnabled(bCanContinue);
-		Btn_Continue->SetVisibility(bCanContinue ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		return;
 	}
-}
-
-void UGOTAMainMenuWidget::HandleContinue()
-{
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	FText Reason;
+	const bool bCanContinue = Subsystem->IsMenuActionAvailable(EGOTAMenuAction::Continue, Reason);
+	Btn_Continue->SetButtonEnabled(bCanContinue);
+	if (bCanContinue)
 	{
-		Subsystem->RequestContinueStory();
-	}
-}
-
-void UGOTAMainMenuWidget::HandleNewStory()
-{
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
-	{
-		Subsystem->RequestStoryMode();
-	}
-}
-
-void UGOTAMainMenuWidget::HandlePvEArena()
-{
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
-	{
-		Subsystem->RequestPvEArena();
-	}
-}
-
-void UGOTAMainMenuWidget::HandleMultiplayer()
-{
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
-	{
-		Subsystem->NavigateTo(EGOTAMenuScreen::Multiplayer, false);
-	}
-}
-
-void UGOTAMainMenuWidget::HandleSettings()
-{
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
-	{
-		Subsystem->NavigateTo(EGOTAMenuScreen::Settings, false);
-	}
-}
-
-void UGOTAMainMenuWidget::HandleExtras()
-{
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
-	{
-		if (!Subsystem->IsExtrasAvailable())
+		Btn_Continue->ApplyDestinationContent();
+		const FText Summary = Subsystem->GetContinueSummary();
+		if (!Summary.IsEmpty())
 		{
-			return;
+			Btn_Continue->SetToolTipText(Summary);
 		}
-		Subsystem->NavigateTo(EGOTAMenuScreen::Extras, false);
+	}
+	else
+	{
+		Btn_Continue->SetSubtitle(NSLOCTEXT("GOTA", "NoMissionSub", "NO MISSION TO RESUME"));
+		Btn_Continue->SetToolTipText(Reason);
 	}
 }
 
-void UGOTAMainMenuWidget::HandleQuit()
+void UGOTAMainMenuWidget::RefreshProfile()
 {
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	const UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem();
+	if (!Subsystem)
 	{
-		Subsystem->RequestQuitGame();
+		return;
 	}
+	const FGOTAProfileView Profile = Subsystem->GetProfileView();
+	if (Text_ProfileName)
+	{
+		Text_ProfileName->SetText(Profile.DisplayName);
+	}
+	if (Text_ProfileRank)
+	{
+		Text_ProfileRank->SetText(Profile.bHasProgression
+			? FText::Format(NSLOCTEXT("GOTA", "LevelFmt", "LEVEL {0}"), FText::AsNumber(Profile.Level))
+			: Profile.RankTitle);
+	}
+	if (Bar_ProfileProgress)
+	{
+		Bar_ProfileProgress->SetVisibility(Profile.bHasProgression ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+		Bar_ProfileProgress->SetPercent(Profile.LevelProgress);
+	}
+}
+
+void UGOTAMainMenuWidget::AdvanceInstitutionalMessage()
+{
+	const UGOTAMenuContentDefinition* Content = GetMenuContent();
+	if (!Text_Slogan || !Content || Content->InstitutionalMessages.Num() == 0)
+	{
+		return;
+	}
+	MessageIndex = MessageIndex % Content->InstitutionalMessages.Num();
+	Text_Slogan->SetText(Content->InstitutionalMessages[MessageIndex]);
+	++MessageIndex;
 }

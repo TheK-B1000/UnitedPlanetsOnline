@@ -69,7 +69,24 @@ public:
 	UPROPERTY(config, BlueprintReadWrite, Category = "Settings|Display")
 	bool bVSyncEnabled = true;
 
-	/** Applies non-display volumes to Audio Mix / sound class proxies when available. */
+	/** Skips menu tweens, backdrop drift and camera blends. */
+	UPROPERTY(config, BlueprintReadWrite, Category = "Settings|Accessibility")
+	bool bReducedMotion = false;
+
+	/**
+	 * Applies Master (transient primary volume) and SFX (sound-mix override of the default
+	 * sound class). Music and UI are applied by the menu audio owners via SC_GOTA_Music / SC_GOTA_UI.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "Settings|Audio")
 	void ApplyAudioVolumes();
+
+	/** Scales all UMG via the project DPI curve multiplier. */
+	UFUNCTION(BlueprintCallable, Category = "Settings|Accessibility")
+	void ApplyUIScale();
+
+	virtual void LoadSettings(bool bForceReload) override;
+
+private:
+	UPROPERTY(Transient)
+	TObjectPtr<class USoundMix> RuntimeVolumeMix;
 };

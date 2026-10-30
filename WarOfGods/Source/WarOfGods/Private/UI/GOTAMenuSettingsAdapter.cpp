@@ -32,9 +32,22 @@ bool UGOTAMenuSettingsAdapter::Apply(bool bCheckCommandLine)
 		return false;
 	}
 
-	CaptureBaseline();
+	if (!bHasBaseline)
+	{
+		CaptureBaseline();
+	}
+	// Compare pending display values to the last *applied* baseline (not to themselves).
+	const FIntPoint PendingRes = Settings->GetScreenResolution();
+	const int32 PendingMode = static_cast<int32>(Settings->GetFullscreenMode());
+	bLastApplyChangedDisplay = PendingRes.X != BaselineResolutionX || PendingRes.Y != BaselineResolutionY
+		|| PendingMode != BaselineFullscreenMode;
+
 	Settings->ApplySettings(bCheckCommandLine);
 	Settings->SaveSettings();
+	if (!bLastApplyChangedDisplay)
+	{
+		CaptureBaseline();
+	}
 	OnApplyResult.Broadcast(true);
 	NotifyChanged();
 	return true;
@@ -67,6 +80,7 @@ void UGOTAMenuSettingsAdapter::ConfirmDisplayChanges()
 		Settings->SaveSettings();
 		CaptureBaseline();
 	}
+	bLastApplyChangedDisplay = false;
 }
 
 void UGOTAMenuSettingsAdapter::RevertDisplayChanges()
@@ -80,6 +94,66 @@ void UGOTAMenuSettingsAdapter::RevertDisplayChanges()
 		Settings->SetScreenResolution(FIntPoint(BaselineResolutionX, BaselineResolutionY));
 		Settings->SetFullscreenMode(static_cast<EWindowMode::Type>(BaselineFullscreenMode));
 		Settings->ApplyResolutionSettings(false);
+		Settings->SaveSettings();
+	}
+	bLastApplyChangedDisplay = false;
+	NotifyChanged();
+}
+
+void UGOTAMenuSettingsAdapter::SetScalabilityGroup(int32 Group, int32 Level)
+{
+	UGOTAGameUserSettings* Settings = GetSettings();
+	if (!Settings)
+	{
+		return;
+	}
+	const int32 L = FMath::Clamp(Level, 0, 4);
+	switch (Group)
+	{
+	case 0: Settings->SetViewDistanceQuality(L); break;
+	case 1: Settings->SetAntiAliasingQuality(L); break;
+	case 2: Settings->SetShadowQuality(L); break;
+	case 3: Settings->SetGlobalIlluminationQuality(L); break;
+	case 4: Settings->SetReflectionQuality(L); break;
+	case 5: Settings->SetPostProcessingQuality(L); break;
+	case 6: Settings->SetTextureQuality(L); break;
+	case 7: Settings->SetVisualEffectQuality(L); break;
+	case 8: Settings->SetFoliageQuality(L); break;
+	case 9: Settings->SetShadingQuality(L); break;
+	default: return;
+	}
+	NotifyChanged();
+}
+
+int32 UGOTAMenuSettingsAdapter::GetScalabilityGroup(int32 Group) const
+{
+	const UGOTAGameUserSettings* Settings = GetSettings();
+	if (!Settings)
+	{
+		return 0;
+	}
+	switch (Group)
+	{
+	case 0: return Settings->GetViewDistanceQuality();
+	case 1: return Settings->GetAntiAliasingQuality();
+	case 2: return Settings->GetShadowQuality();
+	case 3: return Settings->GetGlobalIlluminationQuality();
+	case 4: return Settings->GetReflectionQuality();
+	case 5: return Settings->GetPostProcessingQuality();
+	case 6: return Settings->GetTextureQuality();
+	case 7: return Settings->GetVisualEffectQuality();
+	case 8: return Settings->GetFoliageQuality();
+	case 9: return Settings->GetShadingQuality();
+	default: return 0;
+	}
+}
+
+void UGOTAMenuSettingsAdapter::SetReducedMotion(bool bReduced)
+{
+	if (UGOTAGameUserSettings* Settings = GetSettings())
+	{
+		Settings->bReducedMotion = bReduced;
+		NotifyChanged();
 	}
 }
 

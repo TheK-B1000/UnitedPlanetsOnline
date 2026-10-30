@@ -6,6 +6,10 @@
 #include "Arenas/Duel/DuelGameState.h"
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
+#include "Characters/GOTAHeroDefinition.h"
+#include "Characters/GOTAHeroRegistry.h"
+#include "Engine/Texture2D.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
@@ -16,14 +20,29 @@ void UGOTADuelResultsWidget::NativeConstruct()
 	if (Btn_Rematch)
 	{
 		Btn_Rematch->SetLabel(NSLOCTEXT("GOTA", "Rematch", "REMATCH"));
-		Btn_Rematch->OnActivated.AddDynamic(this, &UGOTADuelResultsWidget::HandleRematch);
+		Btn_Rematch->OnActivated.AddUniqueDynamic(this, &UGOTADuelResultsWidget::HandleRematch);
+		Btn_Rematch->SetButtonEnabled(true);
 	}
 	if (Btn_ReturnToLobby)
 	{
-		Btn_ReturnToLobby->SetLabel(NSLOCTEXT("GOTA", "ReturnLobby", "RETURN TO LOBBY"));
-		Btn_ReturnToLobby->OnActivated.AddDynamic(this, &UGOTADuelResultsWidget::HandleReturnToLobby);
+		Btn_ReturnToLobby->SetLabel(NSLOCTEXT("GOTA", "ReturnMenu", "RETURN TO MAIN MENU"));
+		Btn_ReturnToLobby->OnActivated.AddUniqueDynamic(this, &UGOTADuelResultsWidget::HandleReturnToLobby);
+		Btn_ReturnToLobby->SetButtonEnabled(true);
 	}
 	Refresh();
+	FocusDefault();
+}
+
+void UGOTADuelResultsWidget::FocusDefault()
+{
+	if (Btn_Rematch && Btn_Rematch->IsButtonEnabled())
+	{
+		Btn_Rematch->FocusButton();
+	}
+	else if (Btn_ReturnToLobby)
+	{
+		Btn_ReturnToLobby->FocusButton();
+	}
 }
 
 void UGOTADuelResultsWidget::Refresh()
@@ -34,39 +53,66 @@ void UGOTADuelResultsWidget::Refresh()
 		return;
 	}
 
+	const APlayerController* PC = GetOwningPlayer();
+	const ADuelPlayerState* LocalPS = PC ? PC->GetPlayerState<ADuelPlayerState>() : nullptr;
+	const int32 LocalSlot = LocalPS && LocalPS->DuelSlot != INDEX_NONE ? LocalPS->DuelSlot : 0;
+	const int32 LocalScore = LocalSlot == 0 ? GS->ScorePlayer0 : GS->ScorePlayer1;
+	const int32 OpponentScore = LocalSlot == 0 ? GS->ScorePlayer1 : GS->ScorePlayer0;
+
 	if (Text_Outcome)
 	{
 		FText OutcomeText = NSLOCTEXT("GOTA", "Draw", "DRAW");
-		switch (GS->MatchOutcome)
+		const bool bLocalWon = (GS->MatchOutcome == EDuelMatchOutcome::Player0Wins && LocalSlot == 0)
+			|| (GS->MatchOutcome == EDuelMatchOutcome::Player1Wins && LocalSlot == 1);
+		const bool bLocalLost = (GS->MatchOutcome == EDuelMatchOutcome::Player0Wins && LocalSlot == 1)
+			|| (GS->MatchOutcome == EDuelMatchOutcome::Player1Wins && LocalSlot == 0);
+		if (bLocalWon)
 		{
-		case EDuelMatchOutcome::Player0Wins:
-			OutcomeText = NSLOCTEXT("GOTA", "P0Wins", "CHAMPION — FIGHTER I");
-			break;
-		case EDuelMatchOutcome::Player1Wins:
-			OutcomeText = NSLOCTEXT("GOTA", "P1Wins", "CHAMPION — FIGHTER II");
-			break;
-		case EDuelMatchOutcome::DrawByTimeout:
+			OutcomeText = NSLOCTEXT("GOTA", "Victory", "VICTORY");
+		}
+		else if (bLocalLost)
+		{
+			OutcomeText = NSLOCTEXT("GOTA", "Defeat", "DEFEAT");
+		}
+		else if (GS->MatchOutcome == EDuelMatchOutcome::DrawByTimeout)
+		{
 			OutcomeText = NSLOCTEXT("GOTA", "TimeoutDraw", "DRAW — TIME");
-			break;
-		default:
-			break;
 		}
 		Text_Outcome->SetText(OutcomeText);
 	}
 
+	// The local fighter's accepted hero (replicated id -> local definition).
+	const UGOTAHeroRegistry* Heroes = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
+	const UGOTAHeroDefinition* Hero = (LocalPS && Heroes) ? Heroes->FindHero(LocalPS->HeroId) : nullptr;
+	if (Image_Hero)
+	{
+		UTexture2D* Portrait = Hero ? Hero->Portrait.LoadSynchronous() : nullptr;
+		Image_Hero->SetVisibility(Portrait ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+		if (Portrait)
+		{
+			Image_Hero->SetBrushFromTexture(Portrait, false);
+		}
+	}
+	if (Text_HeroName)
+	{
+		Text_HeroName->SetText(Hero ? FText::Format(NSLOCTEXT("GOTA", "ResultHeroFmt", "{0}  \u2022  {1}"), Hero->DisplayName.ToUpper(), Hero->Title) : FText::GetEmpty());
+	}
+
 	if (Text_Summary)
 	{
-		Text_Summary->SetText(FText::FromString(FString::Printf(
-			TEXT("Trial of Champions  |  Best of %d  |  Final %d — %d  |  Rounds played %d"),
-			GS->BestOfRounds,
-			GS->ScorePlayer0,
-			GS->ScorePlayer1,
-			GS->CurrentRound)));
+		Text_Summary->SetText(FText::Format(
+			NSLOCTEXT("GOTA", "DuelSummaryFmt", "TRIAL OF CHAMPIONS  •  BEST OF {0}  •  FINAL {1} – {2}  •  ROUNDS PLAYED {3}"),
+			FText::AsNumber(GS->BestOfRounds), FText::AsNumber(LocalScore), FText::AsNumber(OpponentScore),
+			FText::AsNumber(GS->CurrentRound)));
 	}
 }
 
 void UGOTADuelResultsWidget::HandleRematch()
 {
+	// Lock both choices until the server acts — no double travel / double restart.
+	if (Btn_Rematch) { Btn_Rematch->SetButtonEnabled(false); }
+	if (Btn_ReturnToLobby) { Btn_ReturnToLobby->SetButtonEnabled(false); }
+
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		if (ADuelPlayerState* PS = PC->GetPlayerState<ADuelPlayerState>())
@@ -83,6 +129,9 @@ void UGOTADuelResultsWidget::HandleRematch()
 
 void UGOTADuelResultsWidget::HandleReturnToLobby()
 {
+	if (Btn_Rematch) { Btn_Rematch->SetButtonEnabled(false); }
+	if (Btn_ReturnToLobby) { Btn_ReturnToLobby->SetButtonEnabled(false); }
+
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		if (ADuelPlayerState* PS = PC->GetPlayerState<ADuelPlayerState>())

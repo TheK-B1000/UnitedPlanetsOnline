@@ -66,4 +66,19 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Lobby")
 	TObjectPtr<UGOTAMenuButtonWidget> Btn_Back;
+
+	/** Four-slot roster (host + up to three allies), projected from the session PlayerArray. */
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Lobby")
+	TObjectPtr<class UTextBlock> Text_Roster;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Lobby")
+	TObjectPtr<class UTextBlock> Text_Status;
+
+	virtual class UGOTAMenuButtonWidget* GetDefaultFocusButton() const override;
+	virtual void OnScreenActivated() override;
+	virtual void HideScreen(bool bAnimate = true) override;
+
+	/** Clients receive PlayerArray by replication with no engine event; refresh only while visible. */
+	void TickRoster();
+	FTimerHandle RosterTimer;
 };

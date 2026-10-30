@@ -21,12 +21,25 @@ public class WarOfGods : ModuleRules
 			"SlateCore",
 			"OnlineSubsystem",
 			"OnlineSubsystemUtils",
-			"NavigationSystem"
+			"NavigationSystem",
+			"AIModule"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
-			"DeveloperSettings"
+			"DeveloperSettings",
+			"MoviePlayer"
 		});
+
+		// Editor-only authoring helpers (UGOTAEditorUIBuilderLibrary). Compiled out of game targets.
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[]
+			{
+				"UnrealEd",
+				"UMGEditor",
+				"Kismet"
+			});
+		}
 	}
 }

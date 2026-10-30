@@ -17,6 +17,10 @@ class WAROFGODS_API UGOTADuelResultsWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 
+	/** Focus REMATCH for keyboard / gamepad (called after the HUD sets the UI input mode). */
+	UFUNCTION(BlueprintCallable, Category = "Duel")
+	void FocusDefault();
+
 protected:
 	UFUNCTION()
 	void HandleRematch();
@@ -31,6 +35,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
 	TObjectPtr<UTextBlock> Text_Summary;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<class UImage> Image_Hero;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<UTextBlock> Text_HeroName;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
 	TObjectPtr<UGOTAMenuButtonWidget> Btn_Rematch;

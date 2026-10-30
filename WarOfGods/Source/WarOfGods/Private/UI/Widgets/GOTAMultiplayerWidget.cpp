@@ -1,175 +1,223 @@
 // White Tiger Studios 2024
 
 #include "UI/Widgets/GOTAMultiplayerWidget.h"
+
+#include "Components/PanelWidget.h"
+#include "Components/TextBlock.h"
+#include "Engine/GameInstance.h"
+#include "Multiplayer/GotaSessionSubsystem.h"
 #include "UI/GOTALobbyViewModel.h"
 #include "UI/GOTAMenuSubsystem.h"
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
-#include "Multiplayer/GotaSessionSubsystem.h"
-#include "Engine/GameInstance.h"
-#include "Kismet/GameplayStatics.h"
 
 UGOTAMultiplayerWidget::UGOTAMultiplayerWidget()
 {
 	ScreenId = EGOTAMenuScreen::Multiplayer;
 }
 
+UGotaSessionSubsystem* UGOTAMultiplayerWidget::GetSessions() const
+{
+	const UGameInstance* GI = GetGameInstance();
+	return GI ? GI->GetSubsystem<UGotaSessionSubsystem>() : nullptr;
+}
+
+UGOTALobbyViewModel* UGOTAMultiplayerWidget::GetLobby() const
+{
+	const UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem();
+	return Subsystem ? Subsystem->GetLobbyViewModel() : nullptr;
+}
+
 void UGOTAMultiplayerWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-	if (Btn_HostGame)
+	auto Bind = [this](UGOTAMenuButtonWidget* Btn, FText Label, FText Sub)
 	{
-		Btn_HostGame->SetLabel(NSLOCTEXT("GOTA", "HostGame", "HOST GAME"));
-		Btn_HostGame->OnActivated.AddDynamic(this, &UGOTAMultiplayerWidget::HandleHost);
-	}
-	if (Btn_JoinGame)
-	{
-		Btn_JoinGame->SetLabel(NSLOCTEXT("GOTA", "JoinGame", "JOIN GAME"));
-		Btn_JoinGame->OnActivated.AddDynamic(this, &UGOTAMultiplayerWidget::HandleJoin);
-	}
-	if (Btn_FindSessions)
-	{
-		Btn_FindSessions->SetLabel(NSLOCTEXT("GOTA", "FindSessions", "FIND SESSIONS"));
-		Btn_FindSessions->OnActivated.AddDynamic(this, &UGOTAMultiplayerWidget::HandleFind);
-	}
+		if (Btn)
+		{
+			Btn->SetLabel(Label);
+			Btn->SetSubtitle(Sub);
+			TrackFocus(Btn);
+		}
+	};
+	Bind(Btn_HostGame, NSLOCTEXT("GOTA", "HostGame", "HOST GAME"), NSLOCTEXT("GOTA", "HostSub", "LAN SESSION  •  UP TO 4 WARDENS"));
+	Bind(Btn_FindSessions, NSLOCTEXT("GOTA", "FindGames", "FIND GAMES"), NSLOCTEXT("GOTA", "FindSub", "SEARCH YOUR LOCAL NETWORK"));
+	Bind(Btn_JoinGame, NSLOCTEXT("GOTA", "JoinGame", "JOIN GAME"), NSLOCTEXT("GOTA", "JoinSub", "JOIN THE SELECTED SESSION"));
+	Bind(Btn_OpenLobby, NSLOCTEXT("GOTA", "OpenLobby", "LOBBY"), NSLOCTEXT("GOTA", "LobbySub", "RETURN TO YOUR CHAMPION HALL"));
+	Bind(Btn_Back, NSLOCTEXT("GOTA", "Back", "BACK"), FText::GetEmpty());
+
+	if (Btn_HostGame) { Btn_HostGame->OnActivated.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleHost); }
+	if (Btn_FindSessions) { Btn_FindSessions->OnActivated.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleFind); }
+	if (Btn_JoinGame) { Btn_JoinGame->OnActivated.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleJoin); }
+	if (Btn_OpenLobby) { Btn_OpenLobby->OnActivated.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleOpenLobby); }
+	if (Btn_Back) { Btn_Back->OnActivated.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleBack); }
 	if (Btn_InviteFriends)
 	{
-		Btn_InviteFriends->SetLabel(NSLOCTEXT("GOTA", "InviteFriends", "INVITE FRIENDS"));
-		Btn_InviteFriends->OnActivated.AddDynamic(this, &UGOTAMultiplayerWidget::HandleInvite);
-	}
-	if (Btn_OpenLobby)
-	{
-		Btn_OpenLobby->SetLabel(NSLOCTEXT("GOTA", "OpenLobby", "CHAMPION HALL"));
-		Btn_OpenLobby->OnActivated.AddDynamic(this, &UGOTAMultiplayerWidget::HandleOpenLobby);
-	}
-	if (Btn_Back)
-	{
-		Btn_Back->SetLabel(NSLOCTEXT("GOTA", "Back", "BACK"));
-		Btn_Back->OnActivated.AddDynamic(this, &UGOTAMultiplayerWidget::HandleBack);
+		// No platform friends service — the control is not offered at all.
+		Btn_InviteFriends->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
 void UGOTAMultiplayerWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	UGotaSessionSubsystem* Sessions = nullptr;
-	if (UGameInstance* GI = GetGameInstance())
+	if (UGotaSessionSubsystem* Sessions = GetSessions())
 	{
-		Sessions = GI->GetSubsystem<UGotaSessionSubsystem>();
-	}
-
-	if (UGOTALobbyViewModel* Lobby = GetLobby())
-	{
-		const bool bInvites = Lobby->AreFriendInvitesSupported();
-		if (Btn_InviteFriends)
-		{
-			Btn_InviteFriends->SetButtonEnabled(bInvites);
-			if (!bInvites)
-			{
-				Btn_InviteFriends->SetLabel(NSLOCTEXT("GOTA", "InviteUnavailable", "INVITE (UNAVAILABLE)"));
-			}
-		}
-	}
-
-	const bool bFind = Sessions && Sessions->IsFindSessionsSupported();
-	if (Btn_FindSessions)
-	{
-		Btn_FindSessions->SetButtonEnabled(bFind);
-		if (!bFind)
-		{
-			Btn_FindSessions->SetLabel(NSLOCTEXT("GOTA", "FindUnavailable", "FIND (UNAVAILABLE)"));
-		}
+		Sessions->OnHostComplete.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleHostComplete);
+		Sessions->OnFindComplete.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleFindComplete);
+		Sessions->OnJoinComplete.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleJoinComplete);
+		Sessions->OnStatusMessage.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleStatus);
 	}
 }
 
-UGOTALobbyViewModel* UGOTAMultiplayerWidget::GetLobby() const
+void UGOTAMultiplayerWidget::NativeDestruct()
 {
-	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	if (UGotaSessionSubsystem* Sessions = GetSessions())
 	{
-		return Subsystem->GetLobbyViewModel();
+		Sessions->OnHostComplete.RemoveAll(this);
+		Sessions->OnFindComplete.RemoveAll(this);
+		Sessions->OnJoinComplete.RemoveAll(this);
+		Sessions->OnStatusMessage.RemoveAll(this);
 	}
-	return nullptr;
+	Super::NativeDestruct();
+}
+
+void UGOTAMultiplayerWidget::OnScreenActivated()
+{
+	bOperationPending = false;
+	RebuildResults();
+	RefreshButtons();
+	if (Text_Status)
+	{
+		const UGotaSessionSubsystem* Sessions = GetSessions();
+		Text_Status->SetText(Sessions && Sessions->IsSessionBackendAvailable()
+			? NSLOCTEXT("GOTA", "MPIdle", "LAN play — host a session or search your local network. Maximum party: 4 Wardens.")
+			: NSLOCTEXT("GOTA", "MPNoBackend", "No session backend is available in this build."));
+	}
+}
+
+UGOTAMenuButtonWidget* UGOTAMultiplayerWidget::GetDefaultFocusButton() const
+{
+	return Btn_HostGame;
+}
+
+void UGOTAMultiplayerWidget::SetBusy(bool bBusy)
+{
+	bOperationPending = bBusy;
+	RefreshButtons();
+}
+
+void UGOTAMultiplayerWidget::RefreshButtons()
+{
+	const UGotaSessionSubsystem* Sessions = GetSessions();
+	const bool bBackend = Sessions && Sessions->IsSessionBackendAvailable();
+	const bool bInSession = Sessions && Sessions->IsInSession();
+	if (Btn_HostGame) { Btn_HostGame->SetButtonEnabled(bBackend && !bInSession && !bOperationPending); }
+	if (Btn_FindSessions) { Btn_FindSessions->SetButtonEnabled(bBackend && !bInSession && !bOperationPending); }
+	if (Btn_JoinGame) { Btn_JoinGame->SetButtonEnabled(bBackend && !bInSession && !bOperationPending && SelectedResult != INDEX_NONE); }
+	if (Btn_OpenLobby) { Btn_OpenLobby->SetButtonEnabled(bInSession); }
+}
+
+void UGOTAMultiplayerWidget::RebuildResults()
+{
+	if (!Box_Sessions)
+	{
+		return;
+	}
+	Box_Sessions->ClearChildren();
+	SelectedResult = INDEX_NONE;
+	const UGotaSessionSubsystem* Sessions = GetSessions();
+	if (!Sessions || !EntryClass)
+	{
+		return;
+	}
+	for (const FGOTASessionResultView& View : Sessions->GetSearchResultViews())
+	{
+		UGOTAMenuButtonWidget* Entry = CreateWidget<UGOTAMenuButtonWidget>(this, EntryClass);
+		if (!Entry)
+		{
+			continue;
+		}
+		Entry->Style = EGOTAButtonStyle::ListEntry;
+		Entry->Payload = View.ResultIndex;
+		Entry->SetLabel(FText::FromString(View.HostName.ToUpper()));
+		const int32 Occupied = FMath::Max(0, View.MaxPlayers - View.OpenSlots);
+		Entry->SetSubtitle(View.bIsFull
+			? FText::Format(NSLOCTEXT("GOTA", "SessionFullFmt", "FULL  {0}/{1}  •  {2} ms"), FText::AsNumber(Occupied), FText::AsNumber(View.MaxPlayers), FText::AsNumber(View.PingMs))
+			: FText::Format(NSLOCTEXT("GOTA", "SessionOpenFmt", "{0}/{1} WARDENS  •  {2} ms"), FText::AsNumber(Occupied), FText::AsNumber(View.MaxPlayers), FText::AsNumber(View.PingMs)));
+		Entry->SetButtonEnabled(!View.bIsFull);
+		Entry->OnFocused.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleResultFocused);
+		Entry->OnActivated.AddUniqueDynamic(this, &UGOTAMultiplayerWidget::HandleResultActivated);
+		TrackFocus(Entry);
+		Box_Sessions->AddChild(Entry);
+	}
+}
+
+void UGOTAMultiplayerWidget::HandleResultFocused(UGOTAMenuButtonWidget* Button)
+{
+	SelectedResult = Button ? Button->Payload : INDEX_NONE;
+	if (Box_Sessions)
+	{
+		for (UWidget* Child : Box_Sessions->GetAllChildren())
+		{
+			if (UGOTAMenuButtonWidget* Entry = Cast<UGOTAMenuButtonWidget>(Child))
+			{
+				Entry->SetSelected(Entry == Button);
+			}
+		}
+	}
+	RefreshButtons();
+}
+
+void UGOTAMultiplayerWidget::HandleResultActivated()
+{
+	HandleJoin();
 }
 
 void UGOTAMultiplayerWidget::HandleHost()
 {
 	RequestHostGame();
-	if (UGameInstance* GI = GetGameInstance())
+	UGotaSessionSubsystem* Sessions = GetSessions();
+	if (!Sessions)
 	{
-		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
-		{
-			Sessions->SetSelectedMode(EArenaMode::PvPDuel);
-			Sessions->SetSelectedArena(EArenaId::TitansQuarry);
-			if (Sessions->HostSession(4, true))
-			{
-				if (UGOTAMenuSubsystem* Menu = GetMenuSubsystem())
-				{
-					Menu->NavigateTo(EGOTAMenuScreen::Lobby, false);
-				}
-				return;
-			}
-		}
+		return;
 	}
-	if (UGOTALobbyViewModel* Lobby = GetLobby())
+	Sessions->SetSelectedMode(EArenaMode::PvPDuel);
+	Sessions->SetSelectedArena(EArenaId::TitansQuarry);
+	SetBusy(true);
+	if (!Sessions->HostSession(4, true))
 	{
-		Lobby->SetErrorMessage(NSLOCTEXT("GOTA", "HostFailed", "Host failed — check Online Subsystem Null / PIE Listen Server."));
-	}
-}
-
-void UGOTAMultiplayerWidget::HandleJoin()
-{
-	RequestJoinGame();
-	if (UGameInstance* GI = GetGameInstance())
-	{
-		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
-		{
-			if (Sessions->JoinFirstFoundSession())
-			{
-				if (UGOTAMenuSubsystem* Menu = GetMenuSubsystem())
-				{
-					Menu->NavigateTo(EGOTAMenuScreen::Lobby, false);
-				}
-				return;
-			}
-		}
-	}
-	if (UGOTALobbyViewModel* Lobby = GetLobby())
-	{
-		Lobby->SetErrorMessage(NSLOCTEXT("GOTA", "JoinNeedFind", "Find Sessions first, or join via console: open <ip>"));
+		SetBusy(false);
 	}
 }
 
 void UGOTAMultiplayerWidget::HandleFind()
 {
 	RequestFindSessions();
-	if (UGameInstance* GI = GetGameInstance())
+	UGotaSessionSubsystem* Sessions = GetSessions();
+	if (!Sessions)
 	{
-		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
-		{
-			if (!Sessions->IsFindSessionsSupported())
-			{
-				if (UGOTALobbyViewModel* Lobby = GetLobby())
-				{
-					Lobby->SetErrorMessage(NSLOCTEXT("GOTA", "FindUnsupported", "Session discovery unavailable — use PIE multiplayer or Join by address."));
-				}
-				return;
-			}
-			Sessions->FindSessions(true);
-			return;
-		}
+		return;
+	}
+	SetBusy(true);
+	if (!Sessions->FindSessions(true))
+	{
+		SetBusy(false);
 	}
 }
 
-void UGOTAMultiplayerWidget::HandleInvite()
+void UGOTAMultiplayerWidget::HandleJoin()
 {
-	if (UGOTALobbyViewModel* Lobby = GetLobby())
+	RequestJoinGame();
+	UGotaSessionSubsystem* Sessions = GetSessions();
+	if (!Sessions || SelectedResult == INDEX_NONE)
 	{
-		if (!Lobby->AreFriendInvitesSupported())
-		{
-			Lobby->SetErrorMessage(NSLOCTEXT("GOTA", "NoInvites", "Friend invites require Online Subsystem (Steam/EOS) — not enabled."));
-			return;
-		}
+		return;
 	}
-	RequestInviteFriends();
+	SetBusy(true);
+	if (!Sessions->JoinSessionAtIndex(SelectedResult))
+	{
+		SetBusy(false);
+	}
 }
 
 void UGOTAMultiplayerWidget::HandleOpenLobby()
@@ -184,6 +232,47 @@ void UGOTAMultiplayerWidget::HandleBack()
 {
 	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
 	{
+		Subsystem->PlayUISound(EGOTAMenuSound::Back);
 		Subsystem->GoBack(false);
+	}
+}
+
+void UGOTAMultiplayerWidget::HandleHostComplete(bool bSuccess)
+{
+	// Success travels to the listen lobby (session subsystem); failure keeps us here.
+	if (!bSuccess)
+	{
+		SetBusy(false);
+		if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+		{
+			Subsystem->PlayUISound(EGOTAMenuSound::Error);
+		}
+	}
+}
+
+void UGOTAMultiplayerWidget::HandleFindComplete(int32 ResultCount)
+{
+	SetBusy(false);
+	RebuildResults();
+	RefreshButtons();
+}
+
+void UGOTAMultiplayerWidget::HandleJoinComplete(bool bSuccess)
+{
+	if (!bSuccess)
+	{
+		SetBusy(false);
+		if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+		{
+			Subsystem->PlayUISound(EGOTAMenuSound::Error);
+		}
+	}
+}
+
+void UGOTAMultiplayerWidget::HandleStatus(FText Message)
+{
+	if (Text_Status)
+	{
+		Text_Status->SetText(Message);
 	}
 }

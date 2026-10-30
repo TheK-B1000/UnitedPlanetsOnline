@@ -19,6 +19,13 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
 	int32 DuelSlot = INDEX_NONE;
 
+	/** Server-validated hero (stable id only — clients resolve art from UGOTAHeroDefinition). */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_HeroId, Category = "Duel")
+	FName HeroId;
+
+	UFUNCTION()
+	void OnRep_HeroId() {}
+
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
 	int32 RoundsWon = 0;
 

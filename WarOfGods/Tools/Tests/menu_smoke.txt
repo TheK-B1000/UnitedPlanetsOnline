@@ -1,0 +1,50 @@
+# Frontend smoke: boot -> every screen via real key events + actions -> quit modal.
+wait 8
+gota.Menu.Dump
+gota.Test.Shot 01_main
+wait 1
+gota.Test.Key Down
+gota.Test.Key Down
+wait 0.6
+gota.Menu.Dump
+gota.Test.Shot 02_main_focus_arena
+gota.Test.Key Enter
+wait 1.5
+gota.Menu.Dump
+gota.Test.Shot 03_arena
+gota.Test.Key Escape
+wait 1
+gota.Menu.Dump
+gota.Menu.Action Story
+wait 1.5
+gota.Test.Shot 04_story
+gota.Test.Key Escape
+wait 0.8
+gota.Menu.Action Multiplayer
+wait 1.5
+gota.Test.Shot 05_multiplayer
+gota.Test.Key Gamepad_FaceButton_Right
+wait 0.8
+gota.Menu.Action Settings
+wait 1.5
+gota.Test.Shot 06_settings_video
+gota.Test.Key Gamepad_RightShoulder
+wait 0.8
+gota.Test.Shot 07_settings_audio
+gota.Test.Key Escape
+wait 0.8
+gota.Menu.Action Extras
+wait 1.5
+gota.Test.Shot 08_extras
+gota.Test.Key Escape
+wait 0.8
+gota.Menu.Action Quit
+wait 1
+gota.Test.Shot 09_quit_modal
+gota.Menu.Dump
+gota.Test.Key Escape
+wait 0.8
+gota.Menu.Dump
+gota.Test.Shot 10_main_after_cancel
+wait 1
+quit

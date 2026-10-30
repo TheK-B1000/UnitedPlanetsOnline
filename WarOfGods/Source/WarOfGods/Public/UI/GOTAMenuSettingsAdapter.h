@@ -94,6 +94,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GOTA|Settings")
 	void SetFrameRateLimit(int32 Limit);
 
+	/** Engine scalability group: 0 ViewDistance 1 AA 2 Shadow 3 GI 4 Reflection 5 PostProcess 6 Texture 7 Effects 8 Foliage 9 Shading. */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|Settings")
+	void SetScalabilityGroup(int32 Group, int32 Level);
+
+	UFUNCTION(BlueprintPure, Category = "GOTA|Settings")
+	int32 GetScalabilityGroup(int32 Group) const;
+
+	UFUNCTION(BlueprintCallable, Category = "GOTA|Settings")
+	void SetReducedMotion(bool bReduced);
+
+	/** Read-only access for presenting current values. Writes go through the setters above. */
+	UFUNCTION(BlueprintPure, Category = "GOTA|Settings")
+	UGOTAGameUserSettings* GetSettingsForDisplay() const { return GetSettings(); }
+
+	/** True if the last Apply changed resolution or window mode (UI should ask to keep it). */
+	UFUNCTION(BlueprintPure, Category = "GOTA|Settings")
+	bool DidLastApplyChangeDisplay() const { return bLastApplyChangedDisplay; }
+
 	/** True when DLSS/FSR/XeSS plugins are not present — UI should hide upscaling. */
 	UFUNCTION(BlueprintPure, Category = "GOTA|Settings")
 	bool IsUpscalingSupported() const { return false; }
@@ -115,6 +133,7 @@ protected:
 	TObjectPtr<UGOTAGameUserSettings> CachedSettings;
 
 	bool bHasBaseline = false;
+	bool bLastApplyChangedDisplay = false;
 	int32 BaselineResolutionX = 0;
 	int32 BaselineResolutionY = 0;
 	int32 BaselineFullscreenMode = 0;

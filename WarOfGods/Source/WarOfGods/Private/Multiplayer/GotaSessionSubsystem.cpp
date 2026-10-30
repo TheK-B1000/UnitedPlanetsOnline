@@ -65,7 +65,7 @@ bool UGotaSessionSubsystem::IsSessionBackendAvailable() const
 
 bool UGotaSessionSubsystem::TryCallGameInstance(FName FunctionName) const
 {
-	if (FunctionName.IsNone())
+	if (FunctionName.IsNone() || !bUseBlueprintSessionEvents)
 	{
 		return false;
 	}
@@ -197,12 +197,11 @@ void UGotaSessionSubsystem::HandleCreateSessionComplete(FName InSessionName, boo
 			Lobby->SetSelectedMode(SelectedMode);
 			Lobby->UpsertPlayerSlot(0, FText::FromString(TEXT("Host")), EGOTALobbySlotState::Occupied, true, true, false);
 		}
-		PushStatus(NSLOCTEXT("GOTA", "HostOk", "LAN session ready — open Champion Hall."));
-		if (UWorld* World = GetWorld())
-		{
-			FTimerHandle LobbyRefreshTimer;
-			World->GetTimerManager().SetTimer(LobbyRefreshTimer, this, &UGotaSessionSubsystem::RefreshLobbyProjection, 1.f, true);
-		}
+		PushStatus(NSLOCTEXT("GOTA", "HostOk", "LAN session ready — opening the Champion Hall…"));
+		// Become a listen server in the frontend map so allies can connect; the menu presents
+		// the Lobby screen on arrival because a session is active.
+		const FString LobbyPackage = LobbyMenuMap.GetLongPackageName();
+		UGameplayStatics::OpenLevel(this, FName(*LobbyPackage), true, TEXT("listen"));
 	}
 	else
 	{
@@ -360,7 +359,25 @@ void UGotaSessionSubsystem::HandleJoinSessionComplete(FName InSessionName, EOnJo
 	}
 	else
 	{
-		PushError(NSLOCTEXT("GOTA", "JoinFail2", "Join session failed."));
+		FText Reason = NSLOCTEXT("GOTA", "JoinFail2", "Join session failed.");
+		switch (Result)
+		{
+		case EOnJoinSessionCompleteResult::SessionIsFull:
+			Reason = NSLOCTEXT("GOTA", "JoinFull", "That session is full (4 Wardens maximum).");
+			break;
+		case EOnJoinSessionCompleteResult::SessionDoesNotExist:
+			Reason = NSLOCTEXT("GOTA", "JoinGone", "That session no longer exists. Refresh the list.");
+			break;
+		case EOnJoinSessionCompleteResult::CouldNotRetrieveAddress:
+			Reason = NSLOCTEXT("GOTA", "JoinNoAddr", "Could not resolve the host address.");
+			break;
+		case EOnJoinSessionCompleteResult::AlreadyInSession:
+			Reason = NSLOCTEXT("GOTA", "JoinAlready", "You are already in a session. Leave it first.");
+			break;
+		default:
+			break;
+		}
+		PushError(Reason);
 	}
 	OnJoinComplete.Broadcast(bOk);
 }
@@ -392,7 +409,7 @@ void UGotaSessionSubsystem::DestroyCurrentSession()
 	}
 
 	// Legacy DestroySession is on BP_WarOfGodsMenuController, not GameInstance.
-	if (APlayerController* PC = GetGameInstance() ? GetGameInstance()->GetFirstLocalPlayerController() : nullptr)
+	if (APlayerController* PC = (bUseBlueprintSessionEvents && GetGameInstance()) ? GetGameInstance()->GetFirstLocalPlayerController() : nullptr)
 	{
 		if (UFunction* Fn = PC->FindFunction(FName(TEXT("DestroySession"))))
 		{
@@ -607,4 +624,26 @@ void UGotaSessionSubsystem::RefreshLobbyProjection()
 			bLocal,
 			bLocal ? bLocalReady : false);
 	}
+}
+
+TArray<FGOTASessionResultView> UGotaSessionSubsystem::GetSearchResultViews() const
+{
+	TArray<FGOTASessionResultView> Views;
+	if (!LastSearch.IsValid())
+	{
+		return Views;
+	}
+	for (int32 Index = 0; Index < LastSearch->SearchResults.Num(); ++Index)
+	{
+		const FOnlineSessionSearchResult& Result = LastSearch->SearchResults[Index];
+		FGOTASessionResultView View;
+		View.ResultIndex = Index;
+		View.HostName = Result.Session.OwningUserName.IsEmpty() ? TEXT("LAN HOST") : Result.Session.OwningUserName;
+		View.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
+		View.OpenSlots = Result.Session.NumOpenPublicConnections;
+		View.PingMs = Result.PingInMs;
+		View.bIsFull = View.OpenSlots <= 0;
+		Views.Add(View);
+	}
+	return Views;
 }

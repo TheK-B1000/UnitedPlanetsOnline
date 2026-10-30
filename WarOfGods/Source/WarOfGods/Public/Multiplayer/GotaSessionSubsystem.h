@@ -85,6 +85,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GOTA|Session")
 	bool IsLocalReady() const { return bLocalReady; }
 
+	/** Read-only rows for the session browser (from the last completed search). */
+	UFUNCTION(BlueprintPure, Category = "GOTA|Session")
+	TArray<FGOTASessionResultView> GetSearchResultViews() const;
+
 	/** Pull PlayerArray into LobbyViewModel (observer projection). */
 	UFUNCTION(BlueprintCallable, Category = "GOTA|Session")
 	void RefreshLobbyProjection();
@@ -112,6 +116,15 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Session")
 	int32 SoftMaxPlayers = 4;
+
+	/**
+	 * Legacy BP GameInstance / MenuController session events (CreateMPSession, JoinMpSession,
+	 * DestroySession, TravelToMap). Off: JoinMpSession takes a SessionResult struct that cannot be
+	 * passed from here, and the BP DestroySession targets a different session name. The native
+	 * Null-OSS path below drives the same OSS, so there is still only one session backend.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Session")
+	bool bUseBlueprintSessionEvents = false;
 
 protected:
 	IOnlineSessionPtr GetSessions() const;

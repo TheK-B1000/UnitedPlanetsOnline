@@ -8,8 +8,20 @@
 #include "Arenas/Duel/DuelHUD.h"
 #include "Arenas/Duel/DuelMatchDefinition.h"
 #include "Arenas/Duel/DuelPlayerState.h"
+#include "Characters/GOTAHeroDefinition.h"
+#include "Characters/GOTAHeroRegistry.h"
+#include "Engine/GameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Characters/StatsComponent.h"
+#include "Combat/GOTACombatantObserver.h"
+#include "AIController.h"
+#include "NavMesh/NavMeshBoundsVolume.h"
+#include "NavigationSystem.h"
+#include "Perception/AISense_Damage.h"
+#include "Perception/AISense_Hearing.h"
+#include "BrainComponent.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "GameFramework/GameStateBase.h"
 #include "Combat/CombatComponent.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
@@ -33,6 +45,8 @@ ADuelGameMode::ADuelGameMode()
 		FSoftObjectPath(TEXT("/Game/UI/Duel/WBP_GOTA_DuelHUD.WBP_GOTA_DuelHUD_C")));
 	DuelResultsWidgetClass = TSoftClassPtr<UUserWidget>(
 		FSoftObjectPath(TEXT("/Game/UI/Duel/WBP_GOTA_DuelResults.WBP_GOTA_DuelResults_C")));
+	AIChampionClass = TSoftClassPtr<APawn>(
+		FSoftObjectPath(TEXT("/Game/Enemies/MeleeEnemy/BP_Enemy_Melee.BP_Enemy_Melee_C")));
 }
 
 void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -43,6 +57,12 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 	ArenaMode = EArenaMode::PvPDuel;
 	SoftMaxPlayers = 2;
 	bAutoStartEncounterDirector = false;
+
+	bVersusAI = UGameplayStatics::ParseOption(Options, TEXT("Opponent")).Equals(TEXT("AI"), ESearchCase::IgnoreCase);
+	if (bVersusAI)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Duel: Fight AI mode (champion %s)"), *AIChampionClass.ToString());
+	}
 
 	if (UGameplayStatics::HasOption(Options, TEXT("BestOf")))
 	{
@@ -87,6 +107,17 @@ void ADuelGameMode::BeginPlay()
 		&ADuelGameMode::EvaluateRound,
 		0.25f,
 		true);
+
+	if (bVersusAI)
+	{
+		EnsureAIParticipant();
+		EnsureDuelNavigation();
+	}
+	// Local hosts log in before BeginPlay; start here once the arena (and its starts) exist.
+	if (bAutoStartWhenFull && GetNumPlayers() >= GetRequiredHumanPlayers())
+	{
+		RequestStartMatch();
+	}
 }
 
 void ADuelGameMode::ApplyMatchDefinition()
@@ -134,7 +165,11 @@ void ADuelGameMode::PostLogin(APlayerController* NewPlayer)
 			GetNumPlayers(), SoftMaxPlayers, static_cast<int32>(GS->DuelPhase));
 	}
 
-	if (bAutoStartWhenFull && GetNumPlayers() >= SoftMaxPlayers)
+	if (bVersusAI && GetNumPlayers() > GetRequiredHumanPlayers())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Duel Fight AI accepts one human; extra player will spectate."));
+	}
+	if (bAutoStartWhenFull && HasActorBegunPlay() && GetNumPlayers() >= GetRequiredHumanPlayers())
 	{
 		RequestStartMatch();
 	}
@@ -229,10 +264,14 @@ void ADuelGameMode::RequestStartMatch()
 	{
 		return;
 	}
-	if (bRequireBothPlayers && GetNumPlayers() < SoftMaxPlayers)
+	if (bRequireBothPlayers && GetNumPlayers() < GetRequiredHumanPlayers())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Duel waiting for %d players (have %d)"), SoftMaxPlayers, GetNumPlayers());
+		UE_LOG(LogTemp, Log, TEXT("Duel waiting for %d players (have %d)"), GetRequiredHumanPlayers(), GetNumPlayers());
 		return;
+	}
+	if (bVersusAI)
+	{
+		EnsureAIParticipant();
 	}
 
 	AssignDuelSlots();
@@ -253,6 +292,10 @@ void ADuelGameMode::RequestStartMatch()
 		{
 			PS->ResetMatchStats();
 		}
+	}
+	if (AIPlayerState)
+	{
+		AIPlayerState->ResetMatchStats();
 	}
 
 	BeginPreparingRound();
@@ -275,6 +318,10 @@ void ADuelGameMode::BeginPreparingRound()
 			PS->SetEliminatedThisRound(false);
 		}
 	}
+	if (AIPlayerState)
+	{
+		AIPlayerState->SetEliminatedThisRound(false);
+	}
 
 	GS->SetDuelPhase(EDuelPhase::PreparingRound);
 	SetCombatEnabledForAll(false);
@@ -293,6 +340,7 @@ void ADuelGameMode::BeginCountdown()
 	}
 
 	SetCombatEnabledForAll(false);
+	SetAIBrainActive(false);
 	GS->PhaseDeadlineServerTime = GS->GetServerWorldTimeSeconds() + CountdownSeconds;
 	GS->RoundEndServerTime = 0.f;
 	GS->SetDuelPhase(EDuelPhase::Countdown);
@@ -312,6 +360,8 @@ void ADuelGameMode::BeginRound()
 
 	bRoundResolving = false;
 	SetCombatEnabledForAll(true);
+	SetAIBrainActive(true);
+	AlertChampionToChallenger();
 	GS->RoundEndServerTime = GS->GetServerWorldTimeSeconds() + RoundDurationSeconds;
 	GS->PhaseDeadlineServerTime = GS->RoundEndServerTime;
 	GS->SetDuelPhase(EDuelPhase::InRound);
@@ -339,10 +389,8 @@ void ADuelGameMode::HandleRoundTimeout()
 		return;
 	}
 
-	APlayerController* PC0 = GetControllerForSlot(0);
-	APlayerController* PC1 = GetControllerForSlot(1);
-	APawn* Pawn0 = PC0 ? PC0->GetPawn() : nullptr;
-	APawn* Pawn1 = PC1 ? PC1->GetPawn() : nullptr;
+	APawn* Pawn0 = GetFighterPawn(0);
+	APawn* Pawn1 = GetFighterPawn(1);
 	const bool bAlive0 = IsPawnAlive(Pawn0);
 	const bool bAlive1 = IsPawnAlive(Pawn1);
 
@@ -390,13 +438,11 @@ void ADuelGameMode::EvaluateRound()
 		return;
 	}
 
-	APlayerController* PC0 = GetControllerForSlot(0);
-	APlayerController* PC1 = GetControllerForSlot(1);
-	const bool bAlive0 = PC0 && IsPawnAlive(PC0->GetPawn());
-	const bool bAlive1 = PC1 && IsPawnAlive(PC1->GetPawn());
+	const bool bAlive0 = IsPawnAlive(GetFighterPawn(0));
+	const bool bAlive1 = IsPawnAlive(GetFighterPawn(1));
 
-	if (ADuelPlayerState* PS0 = GetDuelPS(PC0)) { PS0->SetEliminatedThisRound(!bAlive0); }
-	if (ADuelPlayerState* PS1 = GetDuelPS(PC1)) { PS1->SetEliminatedThisRound(!bAlive1); }
+	if (ADuelPlayerState* PS0 = GetPSForSlot(0)) { PS0->SetEliminatedThisRound(!bAlive0); }
+	if (ADuelPlayerState* PS1 = GetPSForSlot(1)) { PS1->SetEliminatedThisRound(!bAlive1); }
 
 	if (bAlive0 && !bAlive1)
 	{
@@ -425,18 +471,19 @@ void ADuelGameMode::EndRound(int32 WinningSlot, bool bScored)
 	bRoundResolving = true;
 	GetWorldTimerManager().ClearTimer(RoundDurationTimerHandle);
 	SetCombatEnabledForAll(false);
+	SetAIBrainActive(false);
 	GS->SetDuelPhase(EDuelPhase::RoundEnd);
 	GS->LastRoundWinnerSlot = WinningSlot;
 
 	if (bScored && WinningSlot == 0)
 	{
 		++GS->ScorePlayer0;
-		if (ADuelPlayerState* PS = GetDuelPS(GetControllerForSlot(0)))
+		if (ADuelPlayerState* PS = GetPSForSlot(0))
 		{
 			PS->AddRoundWin();
 			PS->AddElimination();
 		}
-		if (ADuelPlayerState* PS = GetDuelPS(GetControllerForSlot(1)))
+		if (ADuelPlayerState* PS = GetPSForSlot(1))
 		{
 			PS->AddDeath();
 		}
@@ -444,12 +491,12 @@ void ADuelGameMode::EndRound(int32 WinningSlot, bool bScored)
 	else if (bScored && WinningSlot == 1)
 	{
 		++GS->ScorePlayer1;
-		if (ADuelPlayerState* PS = GetDuelPS(GetControllerForSlot(1)))
+		if (ADuelPlayerState* PS = GetPSForSlot(1))
 		{
 			PS->AddRoundWin();
 			PS->AddElimination();
 		}
-		if (ADuelPlayerState* PS = GetDuelPS(GetControllerForSlot(0)))
+		if (ADuelPlayerState* PS = GetPSForSlot(0))
 		{
 			PS->AddDeath();
 		}
@@ -507,6 +554,7 @@ void ADuelGameMode::CompleteMatch(EDuelMatchOutcome Outcome)
 	GetWorldTimerManager().ClearTimer(PhaseTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundDurationTimerHandle);
 	SetCombatEnabledForAll(false);
+	SetAIBrainActive(false);
 
 	if (ADuelGameState* GS = GetDuelGS())
 	{
@@ -547,50 +595,59 @@ void ADuelGameMode::RequestReturnToLobby()
 	{
 		return;
 	}
-	if (ADuelGameState* GS = GetDuelGS())
+	ADuelGameState* GS = GetDuelGS();
+	if (GS && GS->DuelPhase == EDuelPhase::ReturningToLobby)
+	{
+		return; // already travelling — ignore repeated presses
+	}
+	if (GS)
 	{
 		GS->SetDuelPhase(EDuelPhase::ReturningToLobby);
 	}
+	GetWorldTimerManager().ClearAllTimersForObject(this);
+	DespawnAIFighter();
 	const FString MapPackage = LobbyMap.GetLongPackageName();
 	UGameplayStatics::OpenLevel(this, FName(*MapPackage), true);
 }
 
 void ADuelGameMode::RespawnFighters()
 {
+	// Every round starts from fresh pawns so health comes from the Blueprint damage
+	// system's own defaults — C++ never writes health.
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PC = It->Get();
-		if (!PC)
+		ADuelPlayerState* PS = GetDuelPS(PC);
+		if (!PC || !PS || PS->DuelSlot == INDEX_NONE)
 		{
 			continue;
 		}
-		APawn* Pawn = PC->GetPawn();
-		if (!IsPawnAlive(Pawn))
+		RemovePawnOwnedHud(PC);
+		if (APawn* Old = PC->GetPawn())
 		{
-			RestartPlayer(PC);
-			Pawn = PC->GetPawn();
+			UnbindCombatDeath(Old);
+			PC->UnPossess();
+			Old->Destroy();
 		}
-		else if (AActor* Start = ChoosePlayerStart_Implementation(PC))
+		RestartPlayer(PC);
+		if (APawn* Pawn = PC->GetPawn())
 		{
-			Pawn->SetActorLocationAndRotation(Start->GetActorLocation(), Start->GetActorRotation());
-			if (ACharacter* Char = Cast<ACharacter>(Pawn))
+			if (AActor* Start = FindDuelStartForSlot(PS->DuelSlot))
 			{
-				if (UCharacterMovementComponent* Move = Char->GetCharacterMovement())
-				{
-					Move->StopMovementImmediately();
-				}
+				Pawn->SetActorLocationAndRotation(Start->GetActorLocation(), Start->GetActorRotation(), false, nullptr, ETeleportType::ResetPhysics);
+				PC->SetControlRotation(Start->GetActorRotation());
 			}
-		}
-
-		if (Pawn)
-		{
 			BindCombatDeath(Pawn);
 			ResetFighterForRound(Pawn);
-			if (APlayerController* Owning = Cast<APlayerController>(Pawn->GetController()))
-			{
-				Owning->SetViewTarget(Pawn);
-			}
+			PC->SetViewTarget(Pawn);
+			Pawn->OnEndPlay.AddUniqueDynamic(this, &ADuelGameMode::HandleFighterEndPlay);
+			UE_LOG(LogTemp, Log, TEXT("Duel fighter %s spawned at %s"), *GetNameSafe(Pawn), *Pawn->GetActorLocation().ToCompactString());
 		}
+	}
+
+	if (bVersusAI)
+	{
+		SpawnAIFighter();
 	}
 }
 
@@ -738,7 +795,8 @@ bool ADuelGameMode::IsPawnAlive(APawn* Pawn) const
 			return false;
 		}
 	}
-	return true;
+	// Observe BPC_DamageSystem (Blueprint health authority) — read-only.
+	return !UGOTACombatantObserver::IsCombatantDefeated(Pawn);
 }
 
 float ADuelGameMode::GetObservedHealth(APawn* Pawn) const
@@ -746,6 +804,12 @@ float ADuelGameMode::GetObservedHealth(APawn* Pawn) const
 	if (!Pawn)
 	{
 		return 0.f;
+	}
+	const FGOTACombatantVitals Vitals = UGOTACombatantObserver::ReadVitals(Pawn);
+	if (Vitals.bHasDamageSystem)
+	{
+		// Normalize so fighters with different max health compare fairly on timeout.
+		return Vitals.GetFraction() * NormalizedMaxHealth;
 	}
 	if (UStatsComponent* Stats = Pawn->FindComponentByClass<UStatsComponent>())
 	{
@@ -780,4 +844,272 @@ APlayerController* ADuelGameMode::GetControllerForSlot(int32 Slot) const
 		}
 	}
 	return nullptr;
+}
+
+// =====================================================================  Fight AI
+
+APawn* ADuelGameMode::GetFighterPawn(int32 Slot) const
+{
+	if (bVersusAI && Slot == 1)
+	{
+		return AIFighterPawn.Get();
+	}
+	const APlayerController* PC = GetControllerForSlot(Slot);
+	return PC ? PC->GetPawn() : nullptr;
+}
+
+ADuelPlayerState* ADuelGameMode::GetPSForSlot(int32 Slot) const
+{
+	if (const AGameStateBase* GS = GetGameState<AGameStateBase>())
+	{
+		for (APlayerState* PS : GS->PlayerArray)
+		{
+			ADuelPlayerState* DuelPS = Cast<ADuelPlayerState>(PS);
+			if (DuelPS && DuelPS->DuelSlot == Slot)
+			{
+				return DuelPS;
+			}
+		}
+	}
+	return nullptr;
+}
+
+AActor* ADuelGameMode::FindDuelStartForSlot(int32 Slot) const
+{
+	// Arena graybox exposes 4 starts. PvP uses opposite corners (0 and 2). Fight AI uses 1 and 2:
+	// both stand on the host map's baked navmesh, which the champion needs to path (runtime
+	// navmesh generation does not yet cover graybox-only ground — see GOTA_UPG_MENU_TEST_RESULTS).
+	const int32 PreferredStart = bVersusAI ? (Slot == 0 ? 1 : 2) : (Slot == 0 ? 0 : 2);
+	if (AArenaPlayerStart* Start = FindStartForSlot(PreferredStart))
+	{
+		return Start;
+	}
+	return FindStartForSlot(Slot);
+}
+
+void ADuelGameMode::EnsureAIParticipant()
+{
+	if (!bVersusAI || AIPlayerState)
+	{
+		return;
+	}
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AIPlayerState = GetWorld()->SpawnActor<ADuelPlayerState>(ADuelPlayerState::StaticClass(), Params);
+	if (AIPlayerState)
+	{
+		AIPlayerState->SetIsABot(true);
+		AIPlayerState->SetPlayerName(AIChampionName.ToString());
+		AIPlayerState->DuelSlot = 1;
+	}
+}
+
+void ADuelGameMode::SpawnAIFighter()
+{
+	DespawnAIFighter();
+
+	UClass* ChampionClass = AIChampionClass.LoadSynchronous();
+	AActor* Start = FindDuelStartForSlot(1);
+	AActor* WardenStart = FindDuelStartForSlot(0);
+	if (!ChampionClass || !Start)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Duel Fight AI: cannot spawn champion (class=%s start=%s)"),
+			*AIChampionClass.ToString(), *GetNameSafe(Start));
+		CompleteMatch(EDuelMatchOutcome::Draw);
+		return;
+	}
+
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	// The champion enters the Warden's lane (clear ground on baked navmesh) and faces the challenger.
+	FVector SpawnLoc = Start->GetActorLocation();
+	FRotator SpawnRot = Start->GetActorRotation();
+	if (WardenStart)
+	{
+		const FVector W = WardenStart->GetActorLocation();
+		SpawnLoc = W + FVector(0.f, W.Y > 0.f ? -AIChampionSpawnDistance : AIChampionSpawnDistance, 0.f);
+		SpawnRot = (W - SpawnLoc).Rotation();
+		SpawnRot.Pitch = 0.f;
+	}
+	APawn* Champion = GetWorld()->SpawnActor<APawn>(ChampionClass, SpawnLoc, SpawnRot, Params);
+	if (!Champion)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Duel Fight AI: SpawnActor failed"));
+		CompleteMatch(EDuelMatchOutcome::Draw);
+		return;
+	}
+	if (!Champion->GetController())
+	{
+		Champion->SpawnDefaultController();
+	}
+	AIFighterPawn = Champion;
+	BindCombatDeath(Champion);
+	Champion->OnEndPlay.AddUniqueDynamic(this, &ADuelGameMode::HandleFighterEndPlay);
+	SetAIBrainActive(false);
+	UE_LOG(LogTemp, Log, TEXT("Duel Fight AI: champion %s spawned (controller %s)"),
+		*GetNameSafe(Champion), *GetNameSafe(Champion->GetController()));
+}
+
+void ADuelGameMode::DespawnAIFighter()
+{
+	APawn* Champion = AIFighterPawn.Get();
+	AIFighterPawn.Reset();
+	if (!IsValid(Champion))
+	{
+		return;
+	}
+	UnbindCombatDeath(Champion);
+	AController* Controller = Champion->GetController();
+	Champion->Destroy();
+	if (IsValid(Controller) && !Controller->IsA<APlayerController>())
+	{
+		Controller->Destroy();
+	}
+}
+
+void ADuelGameMode::SetAIBrainActive(bool bActive)
+{
+	APawn* Champion = AIFighterPawn.Get();
+	AAIController* AIC = Champion ? Cast<AAIController>(Champion->GetController()) : nullptr;
+	if (!AIC)
+	{
+		return;
+	}
+	if (UBrainComponent* Brain = AIC->GetBrainComponent())
+	{
+		if (bActive)
+		{
+			Brain->ResumeLogic(TEXT("DuelPhase"));
+		}
+		else
+		{
+			Brain->PauseLogic(TEXT("DuelPhase"));
+		}
+	}
+	if (!bActive)
+	{
+		AIC->StopMovement();
+	}
+}
+
+void ADuelGameMode::RemovePawnOwnedHud(APlayerController* PC)
+{
+	if (!PC || !PC->IsLocalController())
+	{
+		return;
+	}
+	TArray<UUserWidget*> Widgets;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Widgets, UUserWidget::StaticClass(), true);
+	for (UUserWidget* Widget : Widgets)
+	{
+		if (Widget && Widget->GetOwningPlayer() == PC && Widget->GetClass()->GetName().StartsWith(TEXT("W_PlayerHUD")))
+		{
+			Widget->RemoveFromParent();
+		}
+	}
+}
+
+void ADuelGameMode::HandleFighterEndPlay(AActor* Actor, EEndPlayReason::Type Reason)
+{
+	const ADuelGameState* GS = GetDuelGS();
+	UE_LOG(LogTemp, Log, TEXT("Duel fighter %s left play (reason %d) at %s phase=%d"),
+		*GetNameSafe(Actor), static_cast<int32>(Reason),
+		Actor ? *Actor->GetActorLocation().ToCompactString() : TEXT("-"),
+		GS ? static_cast<int32>(GS->DuelPhase) : -1);
+}
+
+void ADuelGameMode::EnsureDuelNavigation()
+{
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (!NavSys)
+	{
+		return;
+	}
+
+	// Always add arena-wide bounds: the host map's own bounds only cover its original layout.
+	static const FName DuelNavTag(TEXT("GOTA_DuelArenaNavBounds"));
+	bool bHasBounds = false;
+	for (TActorIterator<ANavMeshBoundsVolume> It(GetWorld()); It; ++It)
+	{
+		bHasBounds |= It->ActorHasTag(DuelNavTag);
+	}
+	if (!bHasBounds)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		if (ANavMeshBoundsVolume* Bounds = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(
+			ANavMeshBoundsVolume::StaticClass(), FVector(0.f, 0.f, 200.f), FRotator::ZeroRotator, Params))
+		{
+			Bounds->Tags.Add(DuelNavTag);
+			Bounds->SetActorScale3D(FVector(50.f, 50.f, 20.f));
+			NavSys->OnNavigationBoundsUpdated(Bounds);
+		}
+	}
+
+	// ThirdPersonMap's RecastNavMesh uses Dynamic runtime generation (Tools/GOTA_ConfigureArenaNav.py),
+	// so the runtime-built arena gets navmesh once the arena-wide bounds above are registered.
+	NavSys->Build();
+	UE_LOG(LogTemp, Log, TEXT("Duel Fight AI: arena nav bounds registered, navmesh build requested (runtime generation %s)"),
+		NavSys->SupportsNavigationGeneration() ? TEXT("supported") : TEXT("NOT supported — run Tools/GOTA_ConfigureArenaNav.py"));
+}
+
+void ADuelGameMode::AlertChampionToChallenger()
+{
+	APawn* Champion = AIFighterPawn.Get();
+	APawn* Challenger = GetFighterPawn(0);
+	if (!bVersusAI || !Champion || !Challenger)
+	{
+		return;
+	}
+	const FVector ChallengerLoc = Challenger->GetActorLocation();
+	UAISense_Hearing::ReportNoiseEvent(GetWorld(), ChallengerLoc, 1.f, Challenger, 0.f, NAME_None);
+	UAISense_Damage::ReportDamageEvent(GetWorld(), Champion, Challenger, 0.f, ChallengerLoc, Champion->GetActorLocation());
+	UE_LOG(LogTemp, Log, TEXT("Duel Fight AI: champion alerted to %s"), *GetNameSafe(Challenger));
+}
+
+// =====================================================================  Hero selection (server)
+
+FString ADuelGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
+{
+	const FString Error = Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
+	ADuelPlayerState* PS = NewPlayerController ? NewPlayerController->GetPlayerState<ADuelPlayerState>() : nullptr;
+	const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
+	if (!PS || !Registry)
+	{
+		return Error;
+	}
+	const FName Requested(*UGameplayStatics::ParseOption(Options, TEXT("Hero")));
+	FText Reason;
+	if (!Requested.IsNone() && Registry->ValidateSelection(Requested, EArenaMode::PvPDuel, Reason))
+	{
+		PS->HeroId = Requested;
+	}
+	else
+	{
+		PS->HeroId = Registry->GetDefaultHero(EArenaMode::PvPDuel);
+		if (!Requested.IsNone())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Duel: hero '%s' rejected (%s) — using %s"), *Requested.ToString(), *Reason.ToString(), *PS->HeroId.ToString());
+		}
+	}
+	UE_LOG(LogTemp, Log, TEXT("Duel: %s accepted hero %s"), *GetNameSafe(NewPlayerController), *PS->HeroId.ToString());
+	return Error;
+}
+
+UClass* ADuelGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	const ADuelPlayerState* PS = InController ? InController->GetPlayerState<ADuelPlayerState>() : nullptr;
+	const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
+	if (PS && Registry && !PS->HeroId.IsNone())
+	{
+		if (const UGOTAHeroDefinition* Hero = Registry->FindHero(PS->HeroId); Hero && Hero->IsPlayable())
+		{
+			if (UClass* PawnClass = Hero->GameplayPawnClass.LoadSynchronous())
+			{
+				return PawnClass;
+			}
+		}
+	}
+	return Super::GetDefaultPawnClassForController_Implementation(InController);
 }

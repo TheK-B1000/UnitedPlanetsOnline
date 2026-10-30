@@ -1,0 +1,10 @@
+wait 7
+gota.Menu.Action Multiplayer
+wait 2
+gota.Menu.Tree Multiplayer 5
+gota.Test.Shot tree_mp
+gota.Menu.Action Quit
+wait 1
+gota.Menu.Tree Modal 6
+wait 0.5
+quit

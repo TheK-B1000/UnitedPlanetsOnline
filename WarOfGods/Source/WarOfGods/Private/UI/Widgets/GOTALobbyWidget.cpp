@@ -6,6 +6,9 @@
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
 #include "Multiplayer/GotaSessionSubsystem.h"
 #include "Engine/GameInstance.h"
+#include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 
 UGOTALobbyWidget::UGOTALobbyWidget()
 {
@@ -32,8 +35,12 @@ void UGOTALobbyWidget::NativeOnInitialized()
 	}
 	if (Btn_SelectArena)
 	{
-		Btn_SelectArena->SetLabel(NSLOCTEXT("GOTA", "SelectArena", "SELECT ARENA"));
-		Btn_SelectArena->OnActivated.AddDynamic(this, &UGOTALobbyWidget::HandleSelectArena);
+		// Only Titan's Quarry is validated for Trial of Champions; no arena picker in lobby yet.
+		Btn_SelectArena->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	for (UGOTAMenuButtonWidget* Btn : { Btn_Ready.Get(), Btn_StartMatch.Get(), Btn_Leave.Get(), Btn_Back.Get() })
+	{
+		TrackFocus(Btn);
 	}
 	if (Btn_Back)
 	{
@@ -63,6 +70,10 @@ void UGOTALobbyWidget::NativeConstruct()
 
 void UGOTALobbyWidget::NativeDestruct()
 {
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(RosterTimer);
+	}
 	if (UGOTALobbyViewModel* Lobby = GetLobby())
 	{
 		Lobby->OnLobbyUpdated.RemoveAll(this);
@@ -95,7 +106,70 @@ void UGOTALobbyWidget::HandleLobbyUpdated()
 	{
 		Btn_StartMatch->SetButtonEnabled(bCanStart);
 	}
+
+	if (const UGOTALobbyViewModel* Lobby = GetLobby())
+	{
+		if (Text_Roster)
+		{
+			FString Roster;
+			for (int32 SlotIndex = 0; SlotIndex < 4; ++SlotIndex)
+			{
+				const FGOTALobbyPlayerSlot* Found = Lobby->GetSlots().FindByPredicate(
+					[SlotIndex](const FGOTALobbyPlayerSlot& S) { return S.SlotIndex == SlotIndex; });
+				if (Found && Found->State != EGOTALobbySlotState::Empty)
+				{
+					Roster += FString::Printf(TEXT("%d   %s%s%s\n"), SlotIndex + 1, *Found->PlayerName.ToString().ToUpper(),
+						Found->bIsHost ? TEXT("   [HOST]") : TEXT(""), Found->bIsReady ? TEXT("   READY") : TEXT(""));
+				}
+				else
+				{
+					Roster += FString::Printf(TEXT("%d   OPEN SLOT\n"), SlotIndex + 1);
+				}
+			}
+			Text_Roster->SetText(FText::FromString(Roster));
+		}
+		if (Text_Status)
+		{
+			const FText Error = Lobby->GetErrorMessage();
+			Text_Status->SetText(Error.IsEmpty() ? Lobby->GetStatusMessage() : Error);
+		}
+	}
 	OnLobbyModelUpdated();
+}
+
+UGOTAMenuButtonWidget* UGOTALobbyWidget::GetDefaultFocusButton() const
+{
+	return (Btn_StartMatch && Btn_StartMatch->IsButtonEnabled()) ? Btn_StartMatch.Get() : Btn_Ready.Get();
+}
+
+void UGOTALobbyWidget::OnScreenActivated()
+{
+	TickRoster();
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(RosterTimer, this, &UGOTALobbyWidget::TickRoster, 1.f, true);
+	}
+}
+
+void UGOTALobbyWidget::HideScreen(bool bAnimate)
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(RosterTimer);
+	}
+	Super::HideScreen(bAnimate);
+}
+
+void UGOTALobbyWidget::TickRoster()
+{
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			Sessions->RefreshLobbyProjection();
+		}
+	}
+	HandleLobbyUpdated();
 }
 
 void UGOTALobbyWidget::HandleReady()
@@ -153,6 +227,12 @@ void UGOTALobbyWidget::HandleLeave()
 	if (UGOTALobbyViewModel* Lobby = GetLobby())
 	{
 		Lobby->ResetLobby();
+	}
+	// Leaving a networked lobby must drop the connection / listen socket, not just the UI.
+	if (UWorld* World = GetWorld(); World && World->GetNetMode() != NM_Standalone)
+	{
+		UGameplayStatics::OpenLevel(this, FName(TEXT("/Game/MainMenu/L_GOTA_MainMenu")), true);
+		return;
 	}
 	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
 	{

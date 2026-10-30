@@ -24,10 +24,16 @@ public:
 	TSoftClassPtr<UUserWidget> ResultsWidgetClass;
 
 protected:
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	UFUNCTION()
 	void HandleMatchOutcome(EDuelMatchOutcome Outcome);
 
+	UFUNCTION()
+	void HandlePhaseChanged(EDuelPhase NewPhase);
+
 	void ShowResults();
+	void HideResults();
 
 	UPROPERTY()
 	TObjectPtr<UUserWidget> ActiveHud;

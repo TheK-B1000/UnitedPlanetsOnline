@@ -16,7 +16,11 @@ class UUserWidget;
 
 /**
  * Trial of Champions — 1v1 best-of-N on Titan's Quarry.
- * Launch: ?game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?BestOf=3?listen
+ * PvP launch:      ?game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?BestOf=3?listen
+ * Fight AI launch: ?game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?BestOf=3?Opponent=AI
+ *
+ * Fight AI: slot 1 is an AI champion (its own AIController + a bot ADuelPlayerState for
+ * score/name). No second PlayerController is faked. Round rules are identical to PvP.
  *
  * Elimination: pawn validity + UCombatComponent::OnCharacterDied (BP must NotifyDied).
  * Does not introduce a second health / damage framework — BPC_DamageSystem remains apply owner.
@@ -34,6 +38,10 @@ public:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	/** Validates ?Hero=<id> on the server and records it on the player's state. */
+	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT("")) override;
+	/** Spawns the accepted hero's gameplay pawn (never a client-supplied class). */
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Duel")
 	void RequestStartMatch();
@@ -80,6 +88,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel")
 	FSoftObjectPath LobbyMap = FSoftObjectPath(TEXT("/Game/MainMenu/L_GOTA_MainMenu.L_GOTA_MainMenu"));
 
+	/** Champion pawn for Fight AI. Uses its own AIController and BPC_DamageSystem. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI")
+	TSoftClassPtr<APawn> AIChampionClass;
+
+	/** Distance from the Warden's start at which the champion enters (same lane, facing the Warden). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI", meta = (ClampMin = "300.0"))
+	float AIChampionSpawnDistance = 1100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI")
+	FText AIChampionName = NSLOCTEXT("GOTA", "AIChampionName", "Arena Champion");
+
+	UFUNCTION(BlueprintPure, Category = "Duel")
+	bool IsVersusAI() const { return bVersusAI; }
+
+	/** Fighter pawn currently occupying a duel slot (human or AI). */
+	UFUNCTION(BlueprintPure, Category = "Duel")
+	APawn* GetFighterPawn(int32 Slot) const;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|UI")
 	TSoftClassPtr<UUserWidget> DuelHudWidgetClass;
 
@@ -109,10 +135,29 @@ protected:
 	float GetObservedHealth(APawn* Pawn) const;
 	ADuelGameState* GetDuelGS() const;
 	ADuelPlayerState* GetDuelPS(AController* C) const;
+	ADuelPlayerState* GetPSForSlot(int32 Slot) const;
 	APlayerController* GetControllerForSlot(int32 Slot) const;
+	int32 GetRequiredHumanPlayers() const { return bVersusAI ? 1 : SoftMaxPlayers; }
+
+	// --- Fight AI ---
+	void EnsureAIParticipant();
+	void SpawnAIFighter();
+	void DespawnAIFighter();
+	void SetAIBrainActive(bool bActive);
+	/** Runtime graybox arenas have no baked navmesh — add bounds and build (same as Horde). */
+	void EnsureDuelNavigation();
+	/** Round start: make the champion aware of its challenger through its own perception (hearing + damage senses). */
+	void AlertChampionToChallenger();
+	/** Removes the per-pawn W_PlayerHUD that BP_Player adds on BeginPlay, before a respawn. */
+	void RemovePawnOwnedHud(APlayerController* PC);
+	AActor* FindDuelStartForSlot(int32 Slot) const;
 
 	UFUNCTION()
 	void HandleCombatantDied(const FCombatActorEvent& Event);
+
+	/** Diagnostics: logs when / where / why a fighter pawn leaves play. */
+	UFUNCTION()
+	void HandleFighterEndPlay(AActor* Actor, EEndPlayReason::Type Reason);
 
 	FTimerHandle PhaseTimerHandle;
 	FTimerHandle RoundWatchTimerHandle;
@@ -125,4 +170,12 @@ protected:
 	TObjectPtr<UDuelMatchDefinition> RuntimeMatchDef;
 
 	TSet<TWeakObjectPtr<UCombatComponent>> BoundCombatComponents;
+
+	bool bVersusAI = false;
+
+	UPROPERTY()
+	TObjectPtr<ADuelPlayerState> AIPlayerState;
+
+	UPROPERTY()
+	TWeakObjectPtr<APawn> AIFighterPawn;
 };
