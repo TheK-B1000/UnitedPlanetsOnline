@@ -35,9 +35,13 @@ Echo's skeleton has the full UE5 Mannequin bone set (root, pelvis, spine_01–05
    - The retargeter is `RTG_GOTA_Manny_Echo`, with IK rig `IK_GOTA_Echo`.
    - The rig has 19 chains: spine, neck, head, clavicles, arms, legs, and all ten finger chains, so the grip on the gameplay sword holds.
    - It was built by `Tools/GOTA_BuildParagonRigs.py` with `GOTA_BODIES=Echo`, using manual chains rather than the crashing auto-generation.
-3. **Hair:** `Echo_Hair` (hair cards on the same skeleton) is an extra mesh that follows Echo's pose (`SetLeaderPoseComponent`).
+3. **Hair:** `Echo_Hair` (hair cards on the same skeleton) is an extra mesh that copies Echo's pose through `UGOTACopyPoseAnimInstance` (Copy Pose From Mesh). Leader pose isn't used because it skips evaluation; this way the mesh's own Post Process Anim Blueprint `Echo_Hair_AnimBP` runs, which is Epic's rigid-body ponytail on 8 bones (`PA_Echo_Ponytail`). No new simulation was added.
 4. **Her own sword:** Echo's `M_echoSword` material slot has no material. It is assigned the pack's `M_hide`, so only the gameplay sword shows.
 5. **Gameplay sword and shield stay visible** (`bHideAttachedWeaponMeshes = false` for the Warden).
+   - `UGOTAHeroBodyComponent::FollowBodyWithWeapons` moves them from the hidden mannequin onto Echo's matching bone, keeping the mannequin socket's offset.
+   - It re-applies the same frame the Blueprint re-attaches them: equip, stance change, respawn.
+   - Melee damage is a forward sphere sweep from the character (`SphereTraceDamage`, radius 20, length 200), not a blade trace. Echo's visible hand stays 5–15 cm from the gameplay hand, inside that radius.
+   - Spells spawn at the gameplay mesh's `hand_l`, measured 6–8 cm from Echo's visible left hand.
 6. **Configuration lives in the hero definition:**
    - The `DA_Hero_UPAWarden` body fields are `BodyMesh`, `BodyRetargeter`, `BodyExtraMeshes`, `BodyHiddenMaterialSlots` and `BodyHiddenMaterial`.
    - The source of truth is `Tools/GOTA_HeroContent.py` → `BODIES["UPAWarden"]`, applied by `Tools/GOTA_BuildHeroBodies.py`.
@@ -50,18 +54,33 @@ Echo's skeleton has the full UE5 Mannequin bone set (root, pelvis, spine_01–05
 
 ## Verification
 
+Run on 2026-10-31. Test scripts are in `Tools/Tests`: `echo_magic_equipment.txt`, `echo_mp_host.txt`/`echo_mp_client.txt`, `echo_hair.txt` and `god_regress.txt`. The commands `gota.Test.Body` and `gota.Test.WatchSpawns` log hand gaps, weapon parents and spell spawn points.
+
 | Check | Result |
 |---|---|
-| Echo mesh, skeleton and physics load in 5.8, no load errors | ✅ |
-| Echo replaces the mannequin; no duplicate mannequin visible | ✅ (standalone, Titan's Quarry) |
-| Gameplay sword and shield visible on Echo, shield follows the forearm, blocks shown | ✅ (screenshots) |
-| Full Fight AI best-of-3 to the results screen, with respawn between rounds re-applying Echo | ✅ (the challenger bot lost 0–2 this run) |
-| Packaged Win64 | see report |
-| PIE / listen-server client | not yet run |
-| Magic stance and spell socket alignment | not yet checked |
+| Echo loads in 5.8, no missing dependencies | ✅ editor, PIE, standalone and packaged |
+| Packaged Win64 (`B:\Unreal\GOTA_Builds\Pass2_Paragon`) | ✅ builds from current source. Full Fight AI match to the results screen, with Echo re-applied every round |
+| Packaged materials | ✅ after fixing the Costume3 textures (see below). Before, the pants, leather and buckle were pink in cooked builds only |
+| Sword and shield on Echo's hands: idle, attack, block, stance change (Unarmed→Magic→Melee), respawn | ✅ every check shows both on the body mesh and visible, with no duplicates |
+| Sword hits | ✅ standalone vs frozen AI (220 → 200) and listen-server PvP (100 → 80) |
+| Magic | ✅ `BP_Projectile_DarkEnergy` spawns 6–8 cm from the visible left hand and hits (260 → 240 → 220; PvP 80 → 60) |
+| PIE (Titan's Quarry, ArenaGameMode) | ✅ Echo applied, gameplay mesh hidden, enemies untouched |
+| Listen server + client | ✅ both machines show Echo and her equipment on both players. The client sees the host's spell from the hand. Damage, death, respawn and match end all work |
+| Drakon / Nyx / Varoth / Rampage | ✅ unchanged: own bodies, weapons stay on their gameplay mesh, full matches. Rampage charge and slam land in the package |
+| Ponytail physics | ✅ rigid-body ponytail active (tip moves 10–30 cm in head space during combat), packaged and standalone |
+
+### Fixes made during validation
+
+- **Echo Costume3 textures:** these six were the only non-virtual textures in the set, but the cloth materials sample them as virtual.
+  - The editor tolerates the mismatch; the cook rendered them pink.
+  - `Tools/GOTA_FixThirdPartyBlueprints.py` marks them virtual, and the manifest was re-recorded.
+- **Duel slots:** `ADuelGameMode::AssignDuelSlots` re-issued slot 0 to a joining client, so both humans spawned on the same start, fighter 1 didn't exist, and every PvP round ended instantly. Taken slots are now skipped.
+- **PvP melee:** every `BP_Player` is `TeamNumber` 0, and melee skips team-mates, so swords never hurt in human-vs-human duels. Duel PvP now sets each player's team to their duel slot. Fight AI, Horde and Story are unchanged.
 
 ## Known limitations
 
-- **Ponytail physics:** the hair follows the body pose (leader pose), so the ponytail's own physics AnimBP doesn't run on it. The scarf is Chaos cloth on the body mesh.
+- **Ponytail physics:** active (see above). The scarf is Chaos cloth on the body mesh.
+- **Rampage claws** still miss (a boss reach issue, unrelated to Echo).
+- **Varoth's hands** sit about 50 cm from the gameplay hands (the known hunched-pose issue, on the roster pass list).
 - **Animation source:** Echo's own animations aren't used. She plays the existing WarOfGods sword-and-shield set through the retarget.
 - **Groom hair:** strand hair and eyebrows weren't migrated; the hair cards are used instead.

@@ -7,6 +7,7 @@
 #include "Animation/AnimInstanceProxy.h"
 #include "AnimNodes/AnimNode_RetargetPoseFromMesh.h"
 #include "AnimNodes/AnimNode_Slot.h"
+#include "AnimNodes/AnimNode_CopyPoseFromMesh.h"
 #include "GOTARetargetAnimInstance.generated.h"
 
 class UIKRetargeter;
@@ -55,4 +56,43 @@ public:
 protected:
 	virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override { return new FGOTARetargetAnimInstanceProxy(this); }
 	virtual void DestroyAnimInstanceProxy(FAnimInstanceProxy* InProxy) override { delete static_cast<FGOTARetargetAnimInstanceProxy*>(InProxy); }
+};
+
+/**
+ * Native proxy: Copy Pose From Mesh (the attached parent, same skeleton). Used for a body's extra meshes
+ * (e.g. hair cards) instead of leader pose, so the extra mesh evaluates its own animation and therefore
+ * runs its asset's Post Process Anim Blueprint (e.g. Echo_Hair_AnimBP: rigid-body ponytail).
+ */
+USTRUCT()
+struct FGOTACopyPoseAnimInstanceProxy : public FAnimInstanceProxy
+{
+	GENERATED_BODY()
+
+	FGOTACopyPoseAnimInstanceProxy() = default;
+	explicit FGOTACopyPoseAnimInstanceProxy(UAnimInstance* InAnimInstance) : FAnimInstanceProxy(InAnimInstance)
+	{
+		CopyNode.bUseAttachedParent = true;
+		CopyNode.bCopyCurves = true;
+	}
+
+	virtual bool Evaluate(FPoseContext& Output) override
+	{
+		CopyNode.Evaluate_AnyThread(Output);
+		return true;
+	}
+	virtual FAnimNode_Base* GetCustomRootNode() override { return &CopyNode; }
+	virtual void GetCustomNodes(TArray<FAnimNode_Base*>& OutNodes) override { OutNodes.Add(&CopyNode); }
+
+	FAnimNode_CopyPoseFromMesh CopyNode;
+};
+
+/** Anim instance for a hero body's extra meshes: copies the body's pose, keeps the mesh's own post-process. */
+UCLASS(Transient, NotBlueprintable)
+class WAROFGODS_API UGOTACopyPoseAnimInstance : public UAnimInstance
+{
+	GENERATED_BODY()
+
+protected:
+	virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override { return new FGOTACopyPoseAnimInstanceProxy(this); }
+	virtual void DestroyAnimInstanceProxy(FAnimInstanceProxy* InProxy) override { delete static_cast<FGOTACopyPoseAnimInstanceProxy*>(InProxy); }
 };

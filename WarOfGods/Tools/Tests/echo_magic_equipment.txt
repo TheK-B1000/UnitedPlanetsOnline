@@ -1,0 +1,70 @@
+r.MotionBlurQuality 0
+wait 5
+gota.Ability.Place 700 1
+gota.Duel.Dump
+gota.Test.WatchSpawns
+gota.Test.Body
+gota.Duel.Face 0
+gota.Duel.Call 0 UnarmedStance
+gota.Duel.Call 0 MagicStance
+wait 1.2
+gota.Test.Body
+gota.Duel.Face 0
+gota.Duel.Call 0 ShootMagicSpell
+wait 0.35
+gota.Test.Body
+gota.Test.Portrait 0 -70 260 40 45
+gota.Test.Shot 80_echo_cast
+gota.Test.Cam off
+wait 2.5
+gota.Duel.Dump
+gota.Duel.Call 0 ResetMagicSpell
+gota.Duel.Face 0
+gota.Duel.Call 0 ShootMagicSpell
+wait 0.6
+gota.Test.Portrait 0 60 300 40 45
+gota.Test.Shot 81_echo_cast
+gota.Test.Cam off
+wait 2.5
+gota.Duel.Dump
+gota.Duel.Call 0 ResetMagicSpell
+gota.Duel.Call 0 UnarmedStance
+gota.Duel.Call 0 MeleeStance
+wait 1.2
+gota.Test.Body
+gota.Test.Portrait 0 35 230 35 45
+gota.Test.Shot 82_echo_rearmed
+gota.Test.Cam off
+gota.Duel.Call 0 StartBlock
+wait 0.6
+gota.Test.Body
+gota.Test.Portrait 0 -40 230 35 45
+gota.Test.Shot 83_echo_block
+gota.Test.Cam off
+gota.Duel.Call 0 EndBlock
+wait 0.5
+gota.Ability.Place 150 1
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Duel.Call 0 MeleeAttack
+wait 0.3
+gota.Test.Body
+gota.Test.Portrait 0 -60 260 40 45
+gota.Test.Shot 84_echo_attack
+gota.Test.Cam off
+wait 1.5
+gota.Duel.Dump
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 1.8
+gota.Duel.Dump
+gota.Duel.Hurt 0 5000
+wait 9
+gota.Ability.Place 700 1
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Portrait 0 35 230 35 45
+gota.Test.Shot 85_echo_respawn
+gota.Test.Cam off
+gota.Test.WatchSpawns 0
+quit

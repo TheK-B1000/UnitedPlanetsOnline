@@ -1,0 +1,38 @@
+r.MotionBlurQuality 0
+wait 25
+gota.Duel.Dump
+gota.Test.WatchSpawns
+gota.Test.Body
+gota.Ability.Place 150 0
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 2
+gota.Duel.Dump
+gota.Ability.Place 600 0
+gota.Duel.Face 0
+gota.Duel.Call 0 UnarmedStance
+gota.Duel.Call 0 MagicStance
+wait 1.2
+gota.Duel.Call 0 ShootMagicSpell
+wait 2.5
+gota.Duel.Dump
+gota.Duel.Call 0 ResetMagicSpell
+gota.Duel.Call 0 UnarmedStance
+gota.Duel.Call 0 MeleeStance
+gota.Duel.Call 1 UnarmedStance
+gota.Duel.Call 1 MagicStance
+wait 1.5
+gota.Test.Body
+gota.Duel.Call 1 UnarmedStance
+gota.Duel.Call 1 MeleeStance
+wait 1.5
+gota.Test.Body
+gota.Duel.Hurt 1 5000
+wait 9
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Portrait 1 35 230 35 45
+gota.Test.Shot 86_mp_host_view
+gota.Test.Cam off
+wait 20
+quit

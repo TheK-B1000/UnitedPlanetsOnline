@@ -154,8 +154,11 @@ void UGOTAHeroBodyComponent::ApplyBody()
 			Extra->SetSkeletalMeshAsset(ExtraAsset);
 			Extra->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			Extra->SetCanEverAffectNavigation(false);
+			// Copy the body's pose (not leader pose) so the extra mesh's own Post Process Anim Blueprint runs:
+			// Echo_Hair's rigid-body ponytail. Only those few chain bones simulate.
+			Extra->SetAnimInstanceClass(UGOTACopyPoseAnimInstance::StaticClass());
 			Extra->RegisterComponent();
-			Extra->SetLeaderPoseComponent(Body);
+			Extra->AddTickPrerequisiteComponent(Body); // copy this frame's body pose, not last frame's
 			Character->AddInstanceComponent(Extra);
 			BodyExtras.Add(Extra);
 		}

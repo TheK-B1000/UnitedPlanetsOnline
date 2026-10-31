@@ -32,7 +32,10 @@ It prints `OK` per pack, or lists each missing or different file, and exits with
       UnrealEditor-Cmd <WindwalkerEcho.uproject> -ExecutePythonScript=<repo>/WarOfGods/Tools/GOTA_MigrateEcho.py -unattended -nop4 -nosplash
       ```
    3. This copies the two Echo meshes and all their dependencies (144 packages) with their original paths. It never overwrites existing files.
-3. **Patch the Rampage Blueprint** so it compiles and cooks under UE 5.8. This removes a dead UE4 VR node.
+3. **Run the third-party fixes.**
+   - Rampage: removes a dead UE4 VR node, so the Blueprint compiles and cooks under 5.8.
+   - Echo: marks the six Costume3 textures virtual, so the cloth doesn't render pink when cooked.
+   - The Echo manifest is recorded after this step.
    ```
    UnrealEditor-Cmd WarOfGods/WarOfGods.uproject -ExecutePythonScript=WarOfGods/Tools/GOTA_FixThirdPartyBlueprints.py -unattended -nop4 -nosplash
    ```

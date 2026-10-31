@@ -1,0 +1,26 @@
+r.MotionBlurQuality 0
+wait 5
+gota.Ability.Place 900 1
+gota.Test.Body
+gota.Test.Portrait 0 -100 220 30 30
+gota.Test.Shot 88_echo_hair_idle
+gota.Test.Cam off
+gota.Duel.Bot fight
+wait 0.5
+gota.Test.Body
+wait 0.4
+gota.Test.Body
+wait 0.4
+gota.Test.Body
+gota.Test.Portrait 0 -100 260 35 35
+gota.Test.Shot 89_echo_hair_move
+gota.Test.Cam off
+wait 0.4
+gota.Test.Body
+wait 0.7
+gota.Test.Body
+gota.Duel.Bot off
+stat unit
+wait 2
+gota.Test.Perf
+quit

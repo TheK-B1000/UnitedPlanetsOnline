@@ -288,6 +288,16 @@ void ADuelGameMode::AssignDuelSlots()
 	{
 		return;
 	}
+	// Slots already held (e.g. the host's slot 0 when a client joins) must be skipped, not re-issued.
+	TSet<int32> Taken;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const ADuelPlayerState* PS = It->Get() ? GetDuelPS(It->Get()) : nullptr;
+		if (PS && PS->DuelSlot != INDEX_NONE)
+		{
+			Taken.Add(PS->DuelSlot);
+		}
+	}
 	int32 NextSlot = 0;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
@@ -295,9 +305,14 @@ void ADuelGameMode::AssignDuelSlots()
 		{
 			if (ADuelPlayerState* PS = GetDuelPS(PC))
 			{
+				while (Taken.Contains(NextSlot))
+				{
+					++NextSlot;
+				}
 				if (PS->DuelSlot == INDEX_NONE && NextSlot < SoftMaxPlayers)
 				{
-					PS->DuelSlot = NextSlot++;
+					PS->DuelSlot = NextSlot;
+					Taken.Add(NextSlot);
 				}
 			}
 		}
@@ -1280,6 +1295,18 @@ void ADuelGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 	if (!PS && PlayerPawn && PlayerPawn->GetController())
 	{
 		PS = PlayerPawn->GetController()->GetPlayerState<ADuelPlayerState>();
+	}
+	// Human vs human: BP_Player defaults every player to TeamNumber 0, and melee (BPC_Attacks
+	// DamageAllNonTeamMembers) skips team-mates, so swords could never hit in PvP. Each duel slot is its own team.
+	if (!bVersusAI && PlayerPawn && PlayerPawn->GetController())
+	{
+		AssignDuelSlots();
+		const ADuelPlayerState* SlotPS = GetDuelPS(PlayerPawn->GetController());
+		FIntProperty* TeamProp = FindFProperty<FIntProperty>(PlayerPawn->GetClass(), TEXT("TeamNumber"));
+		if (SlotPS && SlotPS->DuelSlot != INDEX_NONE && TeamProp)
+		{
+			TeamProp->SetPropertyValue_InContainer(PlayerPawn, SlotPS->DuelSlot);
+		}
 	}
 	const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
 	if (PS && Registry && !PS->HeroId.IsNone())
