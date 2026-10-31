@@ -5,6 +5,7 @@
 #include "Arenas/ArenaEncounterDirector.h"
 #include "Arenas/ArenaGameState.h"
 #include "Arenas/ArenaGrayboxBuilder.h"
+#include "Misc/PackageName.h"
 #include "Arenas/ArenaVisualDressDefaults.h"
 #include "Arenas/ArenaVisualDressDefinition.h"
 #include "Arenas/ArenaPlayerStart.h"
@@ -182,10 +183,51 @@ void AArenaGameMode::SetGrayboxLayout(EArenaGrayboxLayout NewLayout)
 	}
 }
 
+const FName AArenaGameMode::AuthoredArenaTag(TEXT("GOTA_AuthoredArena"));
+
+bool AArenaGameMode::IsAuthoredArenaWorld(const UWorld* World)
+{
+	if (!World)
+	{
+		return false;
+	}
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		if (It->ActorHasTag(AuthoredArenaTag))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+FString AArenaGameMode::GetAuthoredArenaMap(EArenaId Arena)
+{
+	const TCHAR* Name = nullptr;
+	switch (Arena)
+	{
+	case EArenaId::TitansQuarry: Name = TEXT("TitansQuarry"); break;
+	case EArenaId::AshfallCrucible: Name = TEXT("AshfallCrucible"); break;
+	case EArenaId::FrostboundCitadel: Name = TEXT("FrostboundCitadel"); break;
+	case EArenaId::VerdantSanctuary: Name = TEXT("VerdantSanctuary"); break;
+	case EArenaId::SunscarExpanse: Name = TEXT("SunscarExpanse"); break;
+	case EArenaId::StormbreakCoast: Name = TEXT("StormbreakCoast"); break;
+	case EArenaId::ShatteredDominion: Name = TEXT("ShatteredDominion"); break;
+	default: return FString();
+	}
+	const FString Package = FString::Printf(TEXT("/Game/Arenas/Maps/L_Arena_%s"), Name);
+	return FPackageName::DoesPackageExist(Package) ? Package : FString();
+}
+
 void AArenaGameMode::EnsureGraybox()
 {
 	if (!bAutoBuildGraybox)
 	{
+		return;
+	}
+	if (IsAuthoredArenaWorld(GetWorld()))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Arena: authored level detected — runtime graybox skipped"));
 		return;
 	}
 

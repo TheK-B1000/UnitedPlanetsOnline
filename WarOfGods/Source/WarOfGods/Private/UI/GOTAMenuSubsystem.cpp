@@ -6,6 +6,7 @@
 #include "UI/GOTAMenuContentDefinition.h"
 #include "UI/GOTAMenuSettingsAdapter.h"
 #include "UI/GOTAGameUserSettings.h"
+#include "Arenas/ArenaGameMode.h"
 #include "Arenas/ArenaDefinition.h"
 #include "Multiplayer/GotaSessionSubsystem.h"
 #include "Story/GOTAStorySaveGame.h"
@@ -527,9 +528,9 @@ bool UGOTAMenuSubsystem::IsArenaRulesetAvailable(EGOTAArenaRuleset Ruleset, EAre
 		return false;
 	}
 
-	// Rulesets are validated per arena. Only Titan's Quarry has a verified Trial of Champions
-	// and Horde layout (player starts + spawn points); other grayboxes are not enabled here.
-	if (Arena != EArenaId::TitansQuarry)
+	// Rulesets are validated per arena. Titan's Quarry (graybox or authored) and any arena with an
+	// authored level (own floors, starts, baked navmesh) are enabled; bare grayboxes are not.
+	if (Arena != EArenaId::TitansQuarry && AArenaGameMode::GetAuthoredArenaMap(Arena).IsEmpty())
 	{
 		OutReason = NSLOCTEXT("GOTA", "ArenaNotValidated", "This arena has not been validated for this ruleset yet.");
 		return false;
@@ -587,7 +588,8 @@ bool UGOTAMenuSubsystem::RequestLaunchArena(EGOTAArenaRuleset Ruleset, EArenaId 
 		}
 	}
 	PrepareLoadingScreen(HeroId, Arena, ModeName);
-	return BeginGuardedTravel(DefaultArenaMap.GetLongPackageName(), Options, Busy);
+	const FString Authored = AArenaGameMode::GetAuthoredArenaMap(Arena);
+	return BeginGuardedTravel(Authored.IsEmpty() ? DefaultArenaMap.GetLongPackageName() : Authored, Options, Busy);
 }
 
 int32 UGOTAMenuSubsystem::GetFightAIDifficulty() const

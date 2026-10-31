@@ -22,6 +22,14 @@
 #include "Engine/World.h"
 #include "EdGraph/EdGraph.h"
 #include "EdGraph/EdGraphNode.h"
+#include "NavigationSystem.h"
+#include "NavMesh/NavMeshBoundsVolume.h"
+#include "Builders/CubeBuilder.h"
+#include "GameFramework/Volume.h"
+#include "Components/BrushComponent.h"
+#include "NavMesh/RecastNavMesh.h"
+#include "Editor.h"
+#include "EngineUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTAEditorUI, Log, All);
 
@@ -203,5 +211,73 @@ UFont* UGOTAEditorUIBuilderLibrary::CreateCompositeFont(const FString& PackagePa
 	Font->PostEditChange();
 	Package->MarkPackageDirty();
 	return Font;
+}
+#endif
+
+#if WITH_EDITOR
+bool UGOTAEditorUIBuilderLibrary::BuildEditorNavigation()
+{
+	UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+	if (!World)
+	{
+		return false;
+	}
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+	if (!NavSys)
+	{
+		// A freshly created level has no navigation system until something requests one.
+		FNavigationSystem::AddNavigationSystemToWorld(*World, FNavigationSystemRunMode::EditorMode);
+		NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+	}
+	if (!NavSys)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BuildEditorNavigation: no navigation system"));
+		return false;
+	}
+	// Unattended editors keep navigation build locks; release them for an explicit build.
+	NavSys->RemoveNavigationBuildLock(0xFF, UNavigationSystemV1::ELockRemovalRebuildAction::NoRebuild);
+	NavSys->ReleaseInitialBuildingLock();
+	NavSys->Build();
+	int32 Tiles = 0;
+	for (TActorIterator<ARecastNavMesh> It(World); It; ++It)
+	{
+		Tiles += It->GetNavMeshTilesCount();
+	}
+	UE_LOG(LogTemp, Log, TEXT("BuildEditorNavigation: %d navmesh tiles"), Tiles);
+	return Tiles > 0;
+}
+#endif
+
+#if WITH_EDITOR
+AActor* UGOTAEditorUIBuilderLibrary::SpawnBoxVolume(TSubclassOf<AActor> VolumeClass, FVector Center, FVector Size, FRotator Rotation, FString Label)
+{
+	UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+	if (!World || !VolumeClass || !VolumeClass->IsChildOf(AVolume::StaticClass()))
+	{
+		return nullptr;
+	}
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AVolume* Volume = World->SpawnActor<AVolume>(VolumeClass, Center, Rotation, Params);
+	if (!Volume)
+	{
+		return nullptr;
+	}
+	UCubeBuilder* Builder = NewObject<UCubeBuilder>();
+	Builder->X = Size.X;
+	Builder->Y = Size.Y;
+	Builder->Z = Size.Z;
+	Builder->Build(World, Volume);
+	Volume->GetBrushComponent()->RequestUpdateBrushCollision();
+	Volume->PostEditChange();
+	if (!Label.IsEmpty())
+	{
+		Volume->SetActorLabel(Label);
+	}
+	if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World))
+	{
+		NavSys->OnNavigationBoundsUpdated(Cast<ANavMeshBoundsVolume>(Volume));
+	}
+	return Volume;
 }
 #endif

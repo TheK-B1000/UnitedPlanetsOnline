@@ -1,0 +1,38 @@
+# Titan's Quarry composition + gameplay screenshots (authored level, Fight AI duel).
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 6
+gota.Duel.Dump
+gota.Test.Shot 80_dominion_gameplay_hud
+wait 0.5
+gota.Test.Cam -2000 0 320 -8 0 75 1
+wait 1.5
+gota.Test.Shot 81_dominion_spawn
+wait 0.5
+gota.Test.Cam 0 -1800 260 18 90 80 1
+wait 1.5
+gota.Test.Shot 82_dominion_gate
+wait 0.5
+gota.Test.Cam 0 -500 220 10 90 80 1
+wait 1.5
+gota.Test.Shot 83_dominion_centre
+wait 0.5
+gota.Test.Cam 2200 -2400 1600 -26 132 75 1
+wait 1.5
+gota.Test.Shot 84_dominion_elevated
+wait 0.5
+gota.Test.Cam -6000 -6500 11000 -40 47 70 1
+wait 1.5
+gota.Test.Shot 85_dominion_establishing
+wait 0.5
+gota.Test.Cam off
+gota.Duel.Bot fight
+wait 8
+gota.Test.Shot 86_dominion_combat
+wait 0.5
+gota.Duel.Dump
+gota.Duel.Director state
+gota.Test.Perf 12 combat
+wait 14
+gota.Test.Shot 87_dominion_statunit
+wait 0.5
+quit

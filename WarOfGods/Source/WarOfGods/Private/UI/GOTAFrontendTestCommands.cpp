@@ -3,6 +3,8 @@
 // Scripts (gota.Test.Run) survive map travel because the runner lives on the core ticker.
 
 #include "CoreMinimal.h"
+#include "RHI.h"
+#include "HAL/PlatformMemory.h"
 
 #if !UE_BUILD_SHIPPING
 
@@ -720,6 +722,97 @@ namespace GOTATest
 			*Char->GetActorLocation().ToCompactString(), *Head.ToCompactString(), *CamLoc.ToCompactString(), Mesh ? *Mesh->GetComponentLocation().ToCompactString() : TEXT("-"));
 	}
 	static FAutoConsoleCommand CmdTestPortrait(TEXT("gota.Test.Portrait"), TEXT("Art capture camera on fighter: slot yaw dist fov drop"), FConsoleCommandWithArgsDelegate::CreateStatic(&TestPortrait));
+
+	/** Composition camera: gota.Test.Cam x y z pitch yaw [fov] [hideUI 0|1]. `gota.Test.Cam off` returns to the pawn. */
+	static void TestCam(const TArray<FString>& Args)
+	{
+		UWorld* World = GetGameWorld();
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		if (!PC)
+		{
+			return;
+		}
+		if (Args.Num() > 0 && Args[0].Equals(TEXT("off"), ESearchCase::IgnoreCase))
+		{
+			PC->SetViewTarget(PC->GetPawn());
+			return;
+		}
+		if (Args.Num() < 5)
+		{
+			UE_LOG(LogGOTATest, Warning, TEXT("gota.Test.Cam x y z pitch yaw [fov] [hideUI]"));
+			return;
+		}
+		const FVector Loc(FCString::Atof(*Args[0]), FCString::Atof(*Args[1]), FCString::Atof(*Args[2]));
+		const FRotator Rot(FCString::Atof(*Args[3]), FCString::Atof(*Args[4]), 0.f);
+		static TWeakObjectPtr<ACameraActor> GCam;
+		if (!GCam.IsValid() || GCam->GetWorld() != World)
+		{
+			GCam = World->SpawnActor<ACameraActor>(Loc, Rot);
+		}
+		if (ACameraActor* Cam = GCam.Get())
+		{
+			Cam->SetActorLocationAndRotation(Loc, Rot);
+			Cam->GetCameraComponent()->SetFieldOfView(Args.Num() > 5 ? FCString::Atof(*Args[5]) : 70.f);
+			Cam->GetCameraComponent()->SetConstraintAspectRatio(false);
+			PC->SetViewTarget(Cam);
+		}
+		if (Args.Num() > 6 && FCString::Atoi(*Args[6]) != 0 && GEngine && GEngine->GameViewport)
+		{
+			GEngine->GameViewport->RemoveAllViewportWidgets();
+		}
+	}
+	static FAutoConsoleCommand CmdTestCam(TEXT("gota.Test.Cam"), TEXT("Composition camera: x y z pitch yaw [fov] [hideUI] | off"), FConsoleCommandWithArgsDelegate::CreateStatic(&TestCam));
+
+	/** Performance probe: samples frame / game / render / GPU time for N seconds, then logs averages, p95 and memory. */
+	struct FPerfProbe
+	{
+		TArray<float> Frame, Game, Render, Gpu;
+		double EndTime = 0.0;
+		FString Label;
+		FTSTicker::FDelegateHandle Handle;
+	};
+	static FPerfProbe GPerf;
+
+	static bool PerfTick(float DeltaTime)
+	{
+		GPerf.Frame.Add(DeltaTime * 1000.f);
+		GPerf.Game.Add(FPlatformTime::ToMilliseconds(GGameThreadTime));
+		GPerf.Render.Add(FPlatformTime::ToMilliseconds(GRenderThreadTime));
+		GPerf.Gpu.Add(FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles()));
+		if (FPlatformTime::Seconds() < GPerf.EndTime)
+		{
+			return true;
+		}
+		auto Stat = [](TArray<float> V, float& Avg, float& P95, float& Max)
+		{
+			V.Sort();
+			Avg = 0.f;
+			for (float X : V) { Avg += X; }
+			Avg = V.Num() ? Avg / V.Num() : 0.f;
+			P95 = V.Num() ? V[FMath::Clamp(int32(V.Num() * 0.95f), 0, V.Num() - 1)] : 0.f;
+			Max = V.Num() ? V.Last() : 0.f;
+		};
+		float fa, fp, fm, ga, gp, gm, ra, rp, rm, ua, up, um;
+		Stat(GPerf.Frame, fa, fp, fm);
+		Stat(GPerf.Game, ga, gp, gm);
+		Stat(GPerf.Render, ra, rp, rm);
+		Stat(GPerf.Gpu, ua, up, um);
+		const FPlatformMemoryStats Mem = FPlatformMemory::GetStats();
+		UE_LOG(LogGOTATest, Log, TEXT("PERF %s frames=%d frame avg %.2fms p95 %.2fms max %.2fms (%.1f fps) | game %.2f/%.2f | render %.2f/%.2f | gpu %.2f/%.2f | mem used %.0f MB"),
+			*GPerf.Label, GPerf.Frame.Num(), fa, fp, fm, fa > 0.f ? 1000.f / fa : 0.f, ga, gp, ra, rp, ua, up, Mem.UsedPhysical / (1024.0 * 1024.0));
+		GPerf.Handle.Reset();
+		return false;
+	}
+
+	static void TestPerf(const TArray<FString>& Args)
+	{
+		GPerf = FPerfProbe();
+		const float Seconds = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 10.f;
+		GPerf.Label = Args.Num() > 1 ? Args[1] : TEXT("sample");
+		GPerf.EndTime = FPlatformTime::Seconds() + Seconds;
+		GPerf.Handle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&PerfTick));
+	}
+	static FAutoConsoleCommand CmdTestPerf(TEXT("gota.Test.Perf"), TEXT("Sample performance for <seconds> [label]"), FConsoleCommandWithArgsDelegate::CreateStatic(&TestPerf));
 
 	static FAutoConsoleCommand CmdDuelState(TEXT("gota.Duel.State"), TEXT("One-line combat state for fighter <slot>."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelState));
 

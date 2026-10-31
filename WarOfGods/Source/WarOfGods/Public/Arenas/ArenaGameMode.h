@@ -60,6 +60,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Arena")
 	void SetGrayboxLayout(EArenaGrayboxLayout NewLayout);
 
+	/** Actor tag placed by Tools/GOTA_BuildArenaLevels.py on every authored arena level. */
+	static const FName AuthoredArenaTag;
+
+	/** True when the loaded level is an authored arena (its own floors, starts and baked navmesh). */
+	static bool IsAuthoredArenaWorld(const UWorld* World);
+
+	/** Authored level for an arena (/Game/Arenas/Maps/L_Arena_<Name>), or empty if none exists. */
+	static FString GetAuthoredArenaMap(EArenaId Arena);
+
 protected:
 	void ResolveSoftClasses();
 	void EnsureGraybox();

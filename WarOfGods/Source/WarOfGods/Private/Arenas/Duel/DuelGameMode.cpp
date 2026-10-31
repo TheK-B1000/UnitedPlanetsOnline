@@ -937,7 +937,9 @@ AActor* ADuelGameMode::FindDuelStartForSlot(int32 Slot) const
 	// Arena graybox exposes 4 starts. PvP uses opposite corners (0 and 2). Fight AI uses 1 and 2:
 	// both stand on the host map's baked navmesh, which the champion needs to path (runtime
 	// navmesh generation does not yet cover graybox-only ground — see GOTA_UPG_MENU_TEST_RESULTS).
-	const int32 PreferredStart = bVersusAI ? (Slot == 0 ? 1 : 2) : (Slot == 0 ? 0 : 2);
+	// Authored arenas: slots 0 and 1 face each other across the fighting floor (baked navmesh).
+	const bool bAuthored = IsAuthoredArenaWorld(GetWorld());
+	const int32 PreferredStart = bAuthored ? Slot : (bVersusAI ? (Slot == 0 ? 1 : 2) : (Slot == 0 ? 0 : 2));
 	if (AArenaPlayerStart* Start = FindStartForSlot(PreferredStart))
 	{
 		return Start;
@@ -983,7 +985,7 @@ void ADuelGameMode::SpawnAIFighter()
 	// The champion enters the Warden's lane (clear ground on baked navmesh) and faces the challenger.
 	FVector SpawnLoc = Start->GetActorLocation();
 	FRotator SpawnRot = Start->GetActorRotation();
-	if (WardenStart)
+	if (WardenStart && !IsAuthoredArenaWorld(GetWorld()))
 	{
 		const FVector W = WardenStart->GetActorLocation();
 		SpawnLoc = W + FVector(0.f, W.Y > 0.f ? -AIChampionSpawnDistance : AIChampionSpawnDistance, 0.f);
@@ -1080,9 +1082,9 @@ void ADuelGameMode::HandleFighterEndPlay(AActor* Actor, EEndPlayReason::Type Rea
 void ADuelGameMode::EnsureDuelNavigation()
 {
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-	if (!NavSys)
+	if (!NavSys || IsAuthoredArenaWorld(GetWorld()))
 	{
-		return;
+		return; // authored arenas ship their own bounds + navmesh
 	}
 
 	// Always add arena-wide bounds: the host map's own bounds only cover its original layout.

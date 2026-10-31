@@ -179,3 +179,4 @@ WarOfGods/*.png
 # Keep Source + Docs; ignore accidental Intermediate under Tools
 WarOfGods/Tools/**/__pycache__/
 
+WarOfGods/Tools/ArenaAudioSource/

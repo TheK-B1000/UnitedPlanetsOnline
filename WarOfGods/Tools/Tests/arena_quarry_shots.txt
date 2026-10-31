@@ -1,0 +1,38 @@
+# Titan's Quarry composition + gameplay screenshots (authored level, Fight AI duel).
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 6
+gota.Duel.Dump
+gota.Test.Shot 80_quarry_gameplay_hud
+wait 0.5
+gota.Test.Cam -1550 0 300 -8 0 75 1
+wait 1.5
+gota.Test.Shot 81_quarry_spawn
+wait 0.5
+gota.Test.Cam 0 -4200 420 -2 90 80 1
+wait 1.5
+gota.Test.Shot 82_quarry_gate
+wait 0.5
+gota.Test.Cam 0 -500 220 10 90 80 1
+wait 1.5
+gota.Test.Shot 83_quarry_centre
+wait 0.5
+gota.Test.Cam 1700 -1900 1250 -26 132 75 1
+wait 1.5
+gota.Test.Shot 84_quarry_elevated
+wait 0.5
+gota.Test.Cam -4200 -4600 8200 -42 47 70 1
+wait 1.5
+gota.Test.Shot 85_quarry_establishing
+wait 0.5
+gota.Test.Cam off
+gota.Duel.Bot fight
+wait 8
+gota.Test.Shot 86_quarry_combat
+wait 0.5
+gota.Duel.Dump
+gota.Duel.Director state
+gota.Test.Perf 12 combat
+wait 14
+gota.Test.Shot 87_quarry_statunit
+wait 0.5
+quit

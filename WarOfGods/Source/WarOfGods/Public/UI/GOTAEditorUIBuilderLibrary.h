@@ -55,6 +55,17 @@ public:
 	static int32 ExportBlueprintGraphs(UObject* Blueprint, const FString& OutDir);
 
 	/** Creates (or updates) a runtime-cached UFont asset from FontFace assets: {"Regular": Face,...}. */
+	/** Editor: synchronously builds the navmesh of the current editor world (saved with the level). Returns tile count > 0. */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
+	static bool BuildEditorNavigation();
+
+	/**
+	 * Editor: spawns a box-brush volume (NavMeshBoundsVolume, BlockingVolume, AudioVolume, …) in the
+	 * current editor world. Python cannot build brush geometry, so volumes are created here.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
+	static AActor* SpawnBoxVolume(TSubclassOf<AActor> VolumeClass, FVector Center, FVector Size, FRotator Rotation, FString Label);
+
 	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
 	static UFont* CreateCompositeFont(const FString& PackagePath, const FString& AssetName, const TMap<FName, UFontFace*>& Typefaces);
 #endif

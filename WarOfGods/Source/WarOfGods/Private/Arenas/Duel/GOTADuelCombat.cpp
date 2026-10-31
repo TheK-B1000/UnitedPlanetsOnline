@@ -22,6 +22,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundBase.h"
 #include "TimerManager.h"
 #include "UI/GOTAPlayerCameraManager.h"
@@ -356,8 +357,8 @@ namespace GOTADuelAssets
 		return LoadObject<USoundBase>(nullptr, Path, nullptr, LOAD_NoWarn);
 	}
 	static const TCHAR* SparksSmall = TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Sparks/P_Sparks_C.P_Sparks_C");
-	static const TCHAR* SparksBig = TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Sparks/P_Sparks_A.P_Sparks_A");
-	static const TCHAR* SparksBurst = TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Sparks/P_Sparks_D.P_Sparks_D");
+	static const TCHAR* SparksBig = TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Sparks/P_Sparks_C.P_Sparks_C");
+	static const TCHAR* SparksBurst = TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Sparks/P_Sparks_C.P_Sparks_C");
 	static const TCHAR* Clash = TEXT("/Game/Audio/axe-block.axe-block");
 	static const TCHAR* Charge = TEXT("/Game/Audio/energy-charge-up.energy-charge-up");
 	static const TCHAR* Divine = TEXT("/Game/Audio/sci-fi-explosion.sci-fi-explosion");
@@ -748,7 +749,20 @@ void UGOTADuelFighterComponent::PlayCueLocally(EGOTADuelCue Cue, AActor* Target,
 	{
 		if (UParticleSystem* PS = GOTADuelAssets::Particle(Fx))
 		{
-			UGameplayStatics::SpawnEmitterAtLocation(World, PS, Location, FRotator::ZeroRotator, FVector(0.6f), true);
+			// Small, brief impact sparks: removed after half a second so they never linger over the fight.
+			const float Scale = (Cue == EGOTADuelCue::DivineCounter || Cue == EGOTADuelCue::GuardBreak) ? 0.35f : 0.22f;
+			if (UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(World, PS, Location, FRotator::ZeroRotator, FVector(Scale), true))
+			{
+				FTimerHandle Handle;
+				TWeakObjectPtr<UParticleSystemComponent> WeakPSC = PSC;
+				World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateWeakLambda(PSC, [WeakPSC]()
+				{
+					if (WeakPSC.IsValid())
+					{
+						WeakPSC->DestroyComponent();
+					}
+				}), 0.5f, false);
+			}
 		}
 	}
 	if (Sfx)

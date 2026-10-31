@@ -28,6 +28,8 @@ public class WarOfGods : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
 			"DeveloperSettings",
+			"RHI",
+			"RenderCore",
 			"MoviePlayer"
 		});
 
