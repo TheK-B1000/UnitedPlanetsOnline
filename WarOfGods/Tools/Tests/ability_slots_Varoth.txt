@@ -1,0 +1,80 @@
+# Divine abilities for Varoth: each slot vs a frozen champion placed in range (side camera).
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 9
+gota.Duel.Momentum 0 100
+gota.Ability.Dump
+gota.Ability.Place 240 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 0 75 770 55 40
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 0.3
+gota.Test.Shot 70_ab_s0_a
+wait 0.5
+gota.Test.Shot 71_ab_s0_b
+wait 1.6
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 0.3
+gota.Ability.Dump
+gota.Test.Cam off
+wait 1.0
+gota.Ability.Place 650 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 0 75 975 55 40
+gota.Ability.Dump
+gota.Ability.Use 0 1
+wait 0.3
+gota.Test.Shot 72_ab_s1_a
+wait 0.5
+gota.Test.Shot 73_ab_s1_b
+wait 1.6
+gota.Ability.Dump
+gota.Ability.Use 0 1
+wait 0.3
+gota.Ability.Dump
+gota.Test.Cam off
+wait 1.0
+gota.Ability.Place 300 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 0 75 800 55 40
+gota.Ability.Dump
+gota.Ability.Use 0 2
+wait 0.35
+gota.Duel.Hurt 0 20
+gota.Ability.Dump
+wait 0.3
+gota.Test.Shot 74_ab_s2_a
+wait 0.5
+gota.Test.Shot 75_ab_s2_b
+wait 1.6
+gota.Ability.Dump
+gota.Ability.Use 0 2
+wait 0.3
+gota.Ability.Dump
+gota.Test.Cam off
+wait 1.0
+gota.Ability.Place 260 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 0 75 780 55 40
+gota.Ability.Dump
+gota.Ability.Use 0 3
+wait 0.3
+gota.Test.Shot 76_ab_s3_a
+wait 0.5
+gota.Test.Shot 77_ab_s3_b
+wait 1.6
+gota.Ability.Dump
+gota.Ability.Use 0 3
+wait 0.3
+gota.Ability.Dump
+gota.Test.Cam off
+wait 1.0
+gota.Ability.Place 300 0
+gota.Ability.Dump
+wait 1
+quit

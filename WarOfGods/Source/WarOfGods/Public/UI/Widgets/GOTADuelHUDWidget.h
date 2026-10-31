@@ -85,6 +85,26 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
 	TObjectPtr<UTextBlock> Text_Callout;
 
+	// ---- Divine ability bar (built at runtime; no WBP edits). Text placeholders until icon art exists.
+	void RefreshAbilityBar();
+	void BuildAbilityBar(const class UGOTAHeroAbilityComponent* Abilities);
+
+	struct FAbilitySlotWidgets
+	{
+		TWeakObjectPtr<class UBorder> Frame;
+		TWeakObjectPtr<UTextBlock> Key;
+		TWeakObjectPtr<UTextBlock> Name;
+		TWeakObjectPtr<UProgressBar> Cooldown;
+		TWeakObjectPtr<UTextBlock> State;
+	};
+	TArray<FAbilitySlotWidgets> AbilitySlots;
+	UPROPERTY(Transient)
+	TObjectPtr<class UVerticalBox> AbilityBarRoot;
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> Text_AbilityStatus;
+	TWeakObjectPtr<const class UGOTAAbilitySet> BuiltForSet;
+	double ShownDeniedTime = -1.0;
+
 	TWeakObjectPtr<ADuelGameState> BoundGameState;
 	float CalloutRemaining = 0.f;
 	EDuelPhase ShownPhase = EDuelPhase::WaitingForPlayers;

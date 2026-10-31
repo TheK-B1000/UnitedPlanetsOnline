@@ -42,6 +42,8 @@ public:
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT("")) override;
 	/** Spawns the accepted hero's gameplay pawn (never a client-supplied class). */
 	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
+	/** Applies the selected hero's cosmetic body (UGOTAHeroBodyComponent) to every spawned fighter. */
+	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Duel")
 	void RequestStartMatch();
@@ -113,6 +115,17 @@ public:
 	/** Fight AI difficulty (`?Difficulty=Recruit|Veteran|Ascendant`). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI")
 	EGOTADuelDifficulty Difficulty = EGOTADuelDifficulty::Veteran;
+
+	/** Fight AI: hero the AI champion plays (?Foe=<HeroId>; testing, non-shipping). None = Sovereign Champion. */
+	FName FoeHeroId;
+
+	/**
+	 * Boss encounter (?Boss=QuarryBehemoth): the AI opponent is BP_Boss_<Id> driven by UGOTABossComponent
+	 * with DA_Boss_<Id>. One round — boss death (or the player's) ends the encounter; the standard
+	 * Fight AI champion and its director are not used.
+	 */
+	UPROPERTY(Transient)
+	TObjectPtr<class UGOTABossDefinition> BossDefinition;
 
 	UFUNCTION(BlueprintPure, Category = "Duel|AI")
 	EGOTADuelDifficulty GetDifficulty() const { return Difficulty; }

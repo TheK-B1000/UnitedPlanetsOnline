@@ -17,6 +17,16 @@
 #include "Components/TextBlock.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "Abilities/GOTAHeroAbilityComponent.h"
+#include "Bosses/GOTABossComponent.h"
+#include "Blueprint/WidgetTree.h"
+#include "Components/Border.h"
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
 
 void UGOTADuelHUDWidget::NativeConstruct()
 {
@@ -69,6 +79,48 @@ void UGOTADuelHUDWidget::HandleCombatCue(EGOTADuelCue Cue, AActor* Source, AActo
 	case EGOTADuelCue::PhaseTwo: ShowCallout(NSLOCTEXT("GOTA", "CuePhaseTwo", "THE SOVEREIGN CHAMPION ASCENDS"), Danger, 2.0f); break;
 	case EGOTADuelCue::SurgeTelegraph: ShowCallout(NSLOCTEXT("GOTA", "CueSurge", "SOVEREIGN SURGE  —  EVADE!"), Danger, 1.4f); break;
 	case EGOTADuelCue::DivineCounter: ShowCallout(NSLOCTEXT("GOTA", "CueDivineCounter", "DIVINE COUNTER"), Gold, 1.3f); break;
+	case EGOTADuelCue::BossTelegraph:
+	case EGOTADuelCue::BossPhaseTwo:
+	case EGOTADuelCue::BossTitle:
+	case EGOTADuelCue::BossDefeated:
+	{
+		const UGOTABossComponent* B = Source ? Source->FindComponentByClass<UGOTABossComponent>() : nullptr;
+		const FText T = B ? B->GetLastTelegraph() : FText::GetEmpty();
+		if (Cue == EGOTADuelCue::BossTitle)
+		{
+			ShowCallout(T.ToUpper(), Gold, 2.6f);
+		}
+		else if (Cue == EGOTADuelCue::BossPhaseTwo)
+		{
+			ShowCallout(NSLOCTEXT("GOTA", "BossFury", "UNCHAINED FURY"), Danger, 2.2f);
+		}
+		else if (Cue == EGOTADuelCue::BossDefeated)
+		{
+			ShowCallout(FText::Format(NSLOCTEXT("GOTA", "BossFallen", "{0} FALLS"), T.ToUpper()), Gold, 2.5f);
+		}
+		else if (!T.IsEmpty())
+		{
+			ShowCallout(T, Danger, 1.0f);
+		}
+		break;
+	}
+	case EGOTADuelCue::AbilityUsed:
+	{
+		// Readable counterplay: name the ENEMY's ability as it winds up; own casts only for ultimates.
+		const UGOTAHeroAbilityComponent* A = Source ? Source->FindComponentByClass<UGOTAHeroAbilityComponent>() : nullptr;
+		const FGOTAAbilityDef* Def = A ? A->GetAbility(A->GetLastCastSlot()) : nullptr;
+		const APawn* LocalPawn = GetOwningPlayerPawn();
+		if (Def && Source != LocalPawn)
+		{
+			ShowCallout(FText::Format(NSLOCTEXT("GOTA", "CueEnemyAbility", "{0}{1}"), Def->DisplayName,
+				Def->bUltimate ? NSLOCTEXT("GOTA", "CueEnemyUlt", "  -  EVADE!") : FText::GetEmpty()), Def->bUltimate ? Danger : Muted, Def->bUltimate ? 1.4f : 0.9f);
+		}
+		else if (Def && Def->bUltimate)
+		{
+			ShowCallout(Def->DisplayName, Gold, 1.3f);
+		}
+		break;
+	}
 	case EGOTADuelCue::CounterDenied:
 		ShowCallout(Target ? NSLOCTEXT("GOTA", "CueCounterRange", "TOO FAR FOR A DIVINE COUNTER")
 			: NSLOCTEXT("GOTA", "CueCounterMomentum", "NOT ENOUGH DIVINE MOMENTUM"), Muted, 0.9f);
@@ -102,7 +154,19 @@ void UGOTADuelHUDWidget::RefreshCombatLayer(float InDeltaTime)
 			: FText::Format(NSLOCTEXT("GOTA", "MomentumValue", "DIVINE MOMENTUM  {0}"), FText::AsNumber(FMath::FloorToInt(Fighter ? Fighter->GetMomentum() : 0.f))));
 		Text_Momentum->SetColorAndOpacity(FSlateColor(bReady ? FLinearColor(1.f, 0.82f, 0.48f, 1.f) : FLinearColor(0.56f, 0.6f, 0.68f, 1.f)));
 	}
-	if (Text_ChampionState)
+	RefreshAbilityBar();
+	const ADuelGameState* PhaseGS = GetDuelGS();
+	const UGOTABossComponent* Boss = (PhaseGS && PhaseGS->ChampionPawn) ? PhaseGS->ChampionPawn->FindComponentByClass<UGOTABossComponent>() : nullptr;
+	if (Text_ChampionState && Boss)
+	{
+		const bool bFury = Boss->GetPhase() >= 2;
+		const bool bDead = Boss->GetState() == EGOTABossState::Dead;
+		Text_ChampionState->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Text_ChampionState->SetText(bDead ? NSLOCTEXT("GOTA", "BossDown", "DEFEATED")
+			: (bFury ? NSLOCTEXT("GOTA", "BossPhase2Line", "PHASE II  -  UNCHAINED FURY") : NSLOCTEXT("GOTA", "BossPhase1Line", "PHASE I")));
+		Text_ChampionState->SetColorAndOpacity(FSlateColor(bFury ? FLinearColor(1.f, 0.36f, 0.26f, 1.f) : FLinearColor(1.f, 0.82f, 0.48f, 1.f)));
+	}
+	else if (Text_ChampionState)
 	{
 		const ADuelGameState* GS = GetDuelGS();
 		const bool bChampion = GS && GS->ChampionPawn && GS->ChampionPhase > 0;
@@ -118,6 +182,164 @@ void UGOTADuelHUDWidget::RefreshCombatLayer(float InDeltaTime)
 			Text_ChampionState->SetText(FText::FromString(State));
 			Text_ChampionState->SetColorAndOpacity(FSlateColor(GS->bChampionGuardBroken ? FLinearColor(1.f, 0.82f, 0.48f, 1.f)
 				: (GS->ChampionPhase >= 2 ? FLinearColor(1.f, 0.36f, 0.26f, 1.f) : FLinearColor(0.56f, 0.6f, 0.68f, 1.f))));
+		}
+	}
+}
+
+void UGOTADuelHUDWidget::BuildAbilityBar(const UGOTAHeroAbilityComponent* Abilities)
+{
+	UCanvasPanel* Canvas = WidgetTree ? Cast<UCanvasPanel>(WidgetTree->RootWidget) : nullptr;
+	if (AbilityBarRoot)
+	{
+		AbilityBarRoot->RemoveFromParent();
+		AbilityBarRoot = nullptr;
+	}
+	AbilitySlots.Reset();
+	BuiltForSet = Abilities ? Abilities->GetAbilitySet() : nullptr;
+	if (!Canvas || !Abilities || Abilities->GetNumAbilities() == 0)
+	{
+		return;
+	}
+	const FSlateFontInfo Font = Text_Momentum ? Text_Momentum->GetFont() : FSlateFontInfo();
+	auto MakeText = [this, &Font](int32 Size, const FLinearColor& Color, const FString& Str)
+	{
+		UTextBlock* T = WidgetTree->ConstructWidget<UTextBlock>();
+		FSlateFontInfo F = Font;
+		F.Size = Size;
+		T->SetFont(F);
+		T->SetColorAndOpacity(FSlateColor(Color));
+		T->SetText(FText::FromString(Str));
+		T->SetJustification(ETextJustify::Center);
+		return T;
+	};
+
+	AbilityBarRoot = WidgetTree->ConstructWidget<UVerticalBox>();
+	UHorizontalBox* Row = WidgetTree->ConstructWidget<UHorizontalBox>();
+	static const TCHAR* Keys[] = { TEXT("E"), TEXT("R"), TEXT("C"), TEXT("V") };
+	for (int32 i = 0; i < Abilities->GetNumAbilities() && i < 4; ++i)
+	{
+		const FGOTAAbilityDef* Def = Abilities->GetAbility(i);
+		UBorder* Frame = WidgetTree->ConstructWidget<UBorder>();
+		Frame->SetBrushColor(FLinearColor(0.02f, 0.025f, 0.035f, 0.78f));
+		Frame->SetPadding(FMargin(10.f, 6.f));
+		UVerticalBox* Col = WidgetTree->ConstructWidget<UVerticalBox>();
+		UTextBlock* Key = MakeText(12, FLinearColor(1.f, 0.82f, 0.48f, 1.f), Keys[i]);
+		UTextBlock* Name = MakeText(11, FLinearColor(0.9f, 0.92f, 0.95f, 1.f),
+			(Def->ShortLabel.IsEmpty() ? Def->DisplayName : Def->ShortLabel).ToString().ToUpper());
+		UProgressBar* Bar = WidgetTree->ConstructWidget<UProgressBar>();
+		Bar->SetFillColorAndOpacity(FLinearColor(1.f, 0.82f, 0.48f, 1.f));
+		UTextBlock* State = MakeText(10, FLinearColor(0.56f, 0.6f, 0.68f, 1.f), TEXT(""));
+		Col->AddChildToVerticalBox(Key)->SetHorizontalAlignment(HAlign_Center);
+		Col->AddChildToVerticalBox(Name)->SetHorizontalAlignment(HAlign_Center);
+		UVerticalBoxSlot* BarSlot = Col->AddChildToVerticalBox(Bar);
+		BarSlot->SetPadding(FMargin(0.f, 3.f, 0.f, 2.f));
+		Col->AddChildToVerticalBox(State)->SetHorizontalAlignment(HAlign_Center);
+		Frame->SetContent(Col);
+		UHorizontalBoxSlot* HSlot = Row->AddChildToHorizontalBox(Frame);
+		HSlot->SetPadding(FMargin(5.f, 0.f));
+		HSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+		FAbilitySlotWidgets W;
+		W.Frame = Frame;
+		W.Key = Key;
+		W.Name = Name;
+		W.Cooldown = Bar;
+		W.State = State;
+		AbilitySlots.Add(W);
+	}
+	Text_AbilityStatus = MakeText(12, FLinearColor(1.f, 0.82f, 0.48f, 1.f), TEXT(""));
+	AbilityBarRoot->AddChildToVerticalBox(Text_AbilityStatus)->SetHorizontalAlignment(HAlign_Center);
+	AbilityBarRoot->AddChildToVerticalBox(Row);
+	UCanvasPanelSlot* CSlot = Canvas->AddChildToCanvas(AbilityBarRoot);
+	CSlot->SetAnchors(FAnchors(0.5f, 1.f));
+	CSlot->SetAlignment(FVector2D(0.5f, 1.f));
+	CSlot->SetPosition(FVector2D(0.f, -24.f));
+	CSlot->SetSize(FVector2D(620.f, 96.f));
+}
+
+void UGOTADuelHUDWidget::RefreshAbilityBar()
+{
+	const APawn* LocalPawn = GetOwningPlayerPawn();
+	const UGOTAHeroAbilityComponent* A = LocalPawn ? LocalPawn->FindComponentByClass<UGOTAHeroAbilityComponent>() : nullptr;
+	if ((A ? A->GetAbilitySet() : nullptr) != BuiltForSet.Get() || (!A && AbilityBarRoot))
+	{
+		BuildAbilityBar(A);
+	}
+	if (!A || AbilitySlots.Num() == 0)
+	{
+		return;
+	}
+	const int32 Active = A->GetActiveSlot();
+	for (int32 i = 0; i < AbilitySlots.Num(); ++i)
+	{
+		const FGOTAAbilityDef* Def = A->GetAbility(i);
+		FAbilitySlotWidgets& W = AbilitySlots[i];
+		if (!Def || !W.Cooldown.IsValid())
+		{
+			continue;
+		}
+		const float Remaining = A->GetCooldownRemaining(i);
+		const bool bReady = A->IsSlotReady(i);
+		const bool bCooling = Remaining > 0.f;
+		W.Cooldown->SetPercent(bCooling ? 1.f - Remaining / FMath::Max(Def->Cooldown, 0.01f) : 1.f);
+		const FLinearColor ReadyColor = Def->bUltimate ? FLinearColor(1.f, 0.36f, 0.26f, 1.f) : FLinearColor(1.f, 0.82f, 0.48f, 1.f);
+		W.Cooldown->SetFillColorAndOpacity(bReady ? ReadyColor : FLinearColor(0.3f, 0.32f, 0.38f, 1.f));
+		FString State;
+		if (i == Active)
+		{
+			State = TEXT("CASTING");
+		}
+		else if (bCooling)
+		{
+			State = FString::Printf(TEXT("%.1fs"), Remaining);
+		}
+		else if (!bReady && Def->MomentumCost > 0.f)
+		{
+			State = FString::Printf(TEXT("NEEDS %d MOMENTUM"), FMath::RoundToInt(Def->MomentumCost));
+		}
+		else
+		{
+			State = Def->bUltimate ? TEXT("ULTIMATE READY") : TEXT("READY");
+		}
+		W.State->SetText(FText::FromString(State));
+		W.State->SetColorAndOpacity(FSlateColor(bReady || i == Active ? ReadyColor : FLinearColor(0.56f, 0.6f, 0.68f, 1.f)));
+		W.Frame->SetBrushColor(i == Active ? FLinearColor(0.25f, 0.18f, 0.06f, 0.9f)
+			: (Def->bUltimate && bReady ? FLinearColor(0.22f, 0.05f, 0.03f, 0.85f) : FLinearColor(0.02f, 0.025f, 0.035f, 0.78f)));
+		W.Name->SetRenderOpacity(bReady || i == Active ? 1.f : 0.55f);
+	}
+	if (Text_AbilityStatus)
+	{
+		FString Status;
+		switch (A->GetStatus())
+		{
+		case EGOTAStatus::Unbreakable: Status = TEXT("UNBREAKABLE"); break;
+		case EGOTAStatus::Veiled: Status = TEXT("VEILED"); break;
+		case EGOTAStatus::Dread: Status = TEXT("DREAD  -  SLOWED"); break;
+		default: break;
+		}
+		const float Left = A->GetStatusRemaining();
+		Text_AbilityStatus->SetText(Status.IsEmpty() || Left <= 0.f ? FText::GetEmpty() : FText::FromString(FString::Printf(TEXT("%s  %.1fs"), *Status, Left)));
+	}
+	// Server refusals (cooldown / momentum / range / line of sight ...).
+	double When = 0.0;
+	const EGOTAAbilityDenied Denied = A->GetLastDenied(When);
+	if (Denied != EGOTAAbilityDenied::None && When > ShownDeniedTime)
+	{
+		ShownDeniedTime = When;
+		FText Msg;
+		switch (Denied)
+		{
+		case EGOTAAbilityDenied::Cooldown: Msg = NSLOCTEXT("GOTA", "AbDenyCd", "ABILITY ON COOLDOWN"); break;
+		case EGOTAAbilityDenied::Momentum: Msg = NSLOCTEXT("GOTA", "AbDenyMom", "NOT ENOUGH DIVINE MOMENTUM"); break;
+		case EGOTAAbilityDenied::NoTarget: Msg = NSLOCTEXT("GOTA", "AbDenyTarget", "NO TARGET"); break;
+		case EGOTAAbilityDenied::OutOfRange: Msg = NSLOCTEXT("GOTA", "AbDenyRange", "OUT OF RANGE"); break;
+		case EGOTAAbilityDenied::NoLineOfSight: Msg = NSLOCTEXT("GOTA", "AbDenyLOS", "NO LINE OF SIGHT"); break;
+		case EGOTAAbilityDenied::NoSafeDestination: Msg = NSLOCTEXT("GOTA", "AbDenyDest", "NO SAFE DESTINATION"); break;
+		case EGOTAAbilityDenied::Busy: Msg = NSLOCTEXT("GOTA", "AbDenyBusy", "BUSY"); break;
+		default: break;
+		}
+		if (!Msg.IsEmpty())
+		{
+			ShowCallout(Msg, FLinearColor(0.7f, 0.72f, 0.78f, 1.f), 0.8f);
 		}
 	}
 }
@@ -248,9 +470,18 @@ void UGOTADuelHUDWidget::RefreshFromGameState()
 		Text_LocalName->SetText(Menu ? Menu->GetProfileView().DisplayName
 			: (PC->PlayerState ? FText::FromString(PC->PlayerState->GetPlayerName().ToUpper()) : FText::GetEmpty()));
 	}
+	const ADuelGameState* BossGS = GetDuelGS();
+	const UGOTABossComponent* BossComp = (BossGS && BossGS->ChampionPawn) ? BossGS->ChampionPawn->FindComponentByClass<UGOTABossComponent>() : nullptr;
 	if (Text_OpponentName)
 	{
-		Text_OpponentName->SetText(OpponentPS ? FText::FromString(OpponentPS->GetPlayerName().ToUpper()) : FText::GetEmpty());
+		if (BossComp && BossComp->GetDefinition())
+		{
+			Text_OpponentName->SetText(BossComp->GetDefinition()->DisplayName.ToUpper());
+		}
+		else
+		{
+			Text_OpponentName->SetText(OpponentPS ? FText::FromString(OpponentPS->GetPlayerName().ToUpper()) : FText::GetEmpty());
+		}
 	}
 	// Health is read from the Blueprint damage system (read-only observer).
 	if (Bar_LocalHealth)

@@ -372,7 +372,7 @@ namespace GOTATest
 			It->ExportTextItem_InContainer(Value, DS, nullptr, nullptr, PPF_None);
 			UE_LOG(LogGOTATest, Log, TEXT("  prop %s : %s = %s"), *It->GetName(), *It->GetCPPType(), *Value.Left(120));
 		}
-		for (UClass* C = Pawn->GetClass(); C && C->ClassGeneratedBy; C = C->GetSuperClass())
+		for (UClass* C = Pawn->GetClass(); C && C->HasAnyClassFlags(CLASS_CompiledFromBlueprint); C = C->GetSuperClass())
 		{
 			for (TFieldIterator<FProperty> It(C, EFieldIteratorFlags::ExcludeSuper); It; ++It)
 			{
@@ -933,11 +933,11 @@ namespace GOTATest
 		TArray<UObject*> Targets = { Pawn, Pawn->GetController() };
 		for (UActorComponent* C : Pawn->GetComponents())
 		{
-			if (C && C->GetClass()->ClassGeneratedBy) { Targets.Add(C); }
+			if (C && C->GetClass()->HasAnyClassFlags(CLASS_CompiledFromBlueprint)) { Targets.Add(C); }
 		}
 		for (UObject* Obj : Targets)
 		{
-			for (UClass* C = Obj ? Obj->GetClass() : nullptr; C && C->ClassGeneratedBy; C = C->GetSuperClass())
+			for (UClass* C = Obj ? Obj->GetClass() : nullptr; C && C->HasAnyClassFlags(CLASS_CompiledFromBlueprint); C = C->GetSuperClass())
 			{
 				for (TFieldIterator<UFunction> It(C, EFieldIteratorFlags::ExcludeSuper); It; ++It)
 				{

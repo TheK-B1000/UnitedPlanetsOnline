@@ -1,0 +1,7 @@
+wait 8
+gota.Duel.Inspect 0
+gota.Duel.Inspect 1
+gota.Duel.Funcs 0
+gota.Duel.Funcs 1
+wait 1
+quit

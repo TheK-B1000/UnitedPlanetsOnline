@@ -51,7 +51,36 @@ A dev-only showroom level (`/Game/Arenas/Dev/L_ArchShowroom`, not cooked; `Tools
 
 ## Performance (uncapped, 15 s live combat, RTX 5070)
 
-See `GOTA_ARENA_PERFORMANCE.md` for the method. Results are filled in by the clean measurement pass below.
+See `GOTA_ARENA_PERFORMANCE.md` for the method.
+
+**Status (2026-10-31): not yet valid. Pass 2 has no confirmed frame-time result.**
+
+**Why the attempts so far don't count:**
+- The first attempts overlapped other editor processes.
+- The clean run was spoiled by a local LLM (Ollama `qwen3:14b`), which held about 10.5 GB of the 12 GB VRAM and kept the GPU about 31% busy.
+- From Frostbound onward, frame times were 90–450 ms because of that contention.
+
+**Partial evidence:** Quarry and Ashfall ran before the contention peaked.
+- Quarry: GPU 5.83 ms against a 6.37 ms baseline.
+- Ashfall: GPU 6.75 ms against a 6.69 ms baseline.
+- So these two show no sign of a GPU regression.
+
+**To finish:**
+1. Re-run `perf_all` with nothing else using the GPU (`ollama ps` empty).
+2. Use the same settings: 1600×900, `r.VSync 0`, `t.MaxFPS 0`, `Tools/Tests/arena_<key>_perf.txt`.
+
+**Architecture and materials after the 2026-10-31 repository recovery:** verified intact in all seven arenas from the recaptured after-shots, including the first Dominion after-set.
+
+**Packaged build (2026-10-31): two shipping bugs found and fixed.**
+- **Nanite flag.** The arena master materials lacked *Used with Nanite*, so cooked games drew every arena surface with the default material. The editor hides this by setting the flag on the fly.
+  - Fixed on the assets with `Tools/GOTA_FixNaniteUsage.py`.
+  - `GOTA_ArenaMaterials.py` now sets the flag on new masters.
+- **Cook list.** C++ soft-loads some content that the cooker never discovered: the duel champion (`/Game/Enemies`), the Horde UI, the player, the framework and the spark VFX.
+  - Without the champion, the duel stayed in countdown forever.
+  - Fixed with `DirectoriesToAlwaysCook` entries in `DefaultGame.ini`.
+- **Result:** the rebuilt package (`B:\Unreal\GOTA_Builds\Pass2_Paragon`) plays a full Fight AI match with correct materials.
+
+**Note:** Titan's Quarry logs 12 missing `/Game/Geometry/SM_Quarry_*` references. These appear in the original baseline logs too, so they pre-date Pass 2 and the recovery. The map renders without them.
 
 ## Free asset candidates
 

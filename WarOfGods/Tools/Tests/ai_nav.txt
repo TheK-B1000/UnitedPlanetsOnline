@@ -1,0 +1,6 @@
+wait 3
+gota.Ability.Nav
+wait 6
+gota.Ability.Nav
+gota.Duel.AIState
+quit

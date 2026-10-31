@@ -30,7 +30,9 @@ public class WarOfGods : ModuleRules
 			"DeveloperSettings",
 			"RHI",
 			"RenderCore",
-			"MoviePlayer"
+			"MoviePlayer",
+			"IKRig", // runtime retargeting of Paragon prototype bodies (UGOTARetargetAnimInstance)
+			"AnimGraphRuntime" // montage slot on the body (hero ability animation)
 		});
 
 		// Editor-only authoring helpers (UGOTAEditorUIBuilderLibrary). Compiled out of game targets.

@@ -302,8 +302,14 @@ def invisible_ring(radius, height, count=28, thickness=80.0):
 
 
 def nav_bounds(center, size):
-    a = B.spawn_box_volume(unreal.NavMeshBoundsVolume, center, size, R(), "NavMeshBounds_Arena")
+    # Spawn through the editor actor factory (it creates a saved cube brush) and scale it. A brush built
+    # onto a bare SpawnActor volume is NOT persisted: Pass 2 saved zero-size bounds and no navmesh.
+    a = unreal.get_editor_subsystem(unreal.EditorActorSubsystem).spawn_actor_from_class(unreal.NavMeshBoundsVolume, center)
     if a:
+        o, e = a.get_actor_bounds(False)
+        base = max(e.x * 2, 1.0)
+        a.set_actor_scale3d(V(size.x / base, size.y / base, size.z / base))
+        a.set_actor_label("NavMeshBounds_Arena")
         a.set_folder_path("Gameplay")
     return a
 

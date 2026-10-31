@@ -119,6 +119,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Duel|Combat")
 	bool IsChampion() const { return bIsChampion; }
 
+	UFUNCTION(BlueprintPure, Category = "Duel|Combat")
+	APawn* GetOpponent() const { return Opponent.Get(); }
+
 	/** Local input (Q / gamepad Y) → server. */
 	UFUNCTION(BlueprintCallable, Category = "Duel|Combat")
 	void RequestDivineCounter();

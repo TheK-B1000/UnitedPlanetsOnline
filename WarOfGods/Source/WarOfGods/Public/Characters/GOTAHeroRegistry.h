@@ -40,6 +40,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GOTA|Heroes")
 	FName GetLocalSelection() const { return LocalSelection; }
 
+	/**
+	 * May the server spawn this hero? Playable heroes always; In Development heroes only in
+	 * non-shipping builds with gota.Heroes.AllowInDevelopment 1 (or ?DevHeroes=1 on the URL), for testing.
+	 */
+	static bool IsHeroSpawnable(const UGOTAHeroDefinition* Def);
+
 	/** First playable hero for the mode (used as the default selection). */
 	UFUNCTION(BlueprintPure, Category = "GOTA|Heroes")
 	FName GetDefaultHero(EArenaMode Mode) const;

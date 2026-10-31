@@ -1183,6 +1183,19 @@ def import_hero_textures():
     log("Imported %d hero textures" % len(files))
 
 
+def apply_hero_body(da, HC, hero_id):
+    """Prototype body + availability from GOTA_HeroContent.BODIES (also used by GOTA_BuildHeroBodies.py)."""
+    b = HC.BODIES[hero_id]
+    da.set_editor_property("body_mesh", unreal.load_asset(b["mesh"]))
+    da.set_editor_property("body_retargeter", unreal.load_asset(b["retargeter"]))
+    da.set_editor_property("body_scale", float(b["scale"]))
+    da.set_editor_property("body_source_note", unreal.Text(b["note"]))
+    da.set_editor_property("gameplay_pawn_class", unreal.load_class(None, "/Game/Player/BP_Player.BP_Player_C"))
+    status = getattr(unreal.GOTAHeroAvailability, b["status"])
+    da.set_editor_property("availability", status)
+    da.set_editor_property("unavailable_reason", unreal.Text("" if b["status"] == "PLAYABLE" else HC.IN_DEVELOPMENT_REASON))
+
+
 def build_hero_definitions():
     import sys
     sys.path.insert(0, os.path.join(PROJECT, "Tools"))
@@ -1231,6 +1244,8 @@ def build_hero_definitions():
             da.set_editor_property("thumbnail", EAL.load_asset(HERO_TEX + "/T_GOTA_%s_Thumbnail" % entry["id"]))
             da.set_editor_property("availability", unreal.GOTAHeroAvailability.PREVIEW_ONLY)
             da.set_editor_property("unavailable_reason", text(HC.PREVIEW_REASON))
+            if entry["id"] in getattr(HC, "BODIES", {}):
+                apply_hero_body(da, HC, entry["id"])
         EAL.save_asset(path)
 
     for entry in HC.HEROES:

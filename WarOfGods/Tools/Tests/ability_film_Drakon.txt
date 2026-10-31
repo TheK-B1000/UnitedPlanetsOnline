@@ -1,0 +1,28 @@
+wait 9
+gota.Ability.Place 220 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 0 75 760 55 40
+wait 0.5
+gota.Test.Shot 70_ab_idle
+wait 0.3
+gota.Ability.Slomo 0.1
+gota.Ability.Use 0 0
+wait 0.2
+gota.Test.Shot 71_ab_f0
+wait 0.2
+gota.Test.Shot 72_ab_f1
+wait 0.2
+gota.Test.Shot 73_ab_f2
+wait 0.2
+gota.Test.Shot 74_ab_f3
+wait 0.2
+gota.Test.Shot 75_ab_f4
+wait 0.2
+gota.Test.Shot 76_ab_f5
+wait 0.2
+gota.Test.Shot 77_ab_f6
+gota.Ability.Slomo 1
+wait 1
+gota.Ability.Dump
+quit

@@ -28,7 +28,11 @@ def recreate_material(name):
     path = ROOT + "/" + name
     if EAL.does_asset_exist(path):
         EAL.delete_asset(path)
-    return TOOLS.create_asset(name, ROOT, unreal.Material, unreal.MaterialFactoryNew())
+    mat = TOOLS.create_asset(name, ROOT, unreal.Material, unreal.MaterialFactoryNew())
+    # Arena meshes are Nanite. The editor sets this flag on the fly, but cooked builds don't:
+    # without it, packaged games render every arena surface with the default material.
+    mat.set_editor_property("used_with_nanite", True)
+    return mat
 
 
 def node(mat, cls, x, y):

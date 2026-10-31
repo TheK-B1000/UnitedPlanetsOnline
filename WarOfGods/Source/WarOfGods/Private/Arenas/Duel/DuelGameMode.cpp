@@ -11,6 +11,10 @@
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Characters/GOTAHeroDefinition.h"
 #include "Characters/GOTAHeroRegistry.h"
+#include "Characters/GOTAHeroBodyComponent.h"
+#include "Abilities/GOTAHeroAbilityComponent.h"
+#include "Bosses/GOTABossComponent.h"
+#include "Bosses/GOTABossTypes.h"
 #include "Engine/GameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Characters/StatsComponent.h"
@@ -61,11 +65,48 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 	bAutoStartEncounterDirector = false;
 
 	bVersusAI = UGameplayStatics::ParseOption(Options, TEXT("Opponent")).Equals(TEXT("AI"), ESearchCase::IgnoreCase);
+#if !UE_BUILD_SHIPPING
+	// Testing only: ?DevHeroes=1 lets In Development heroes spawn (see UGOTAHeroRegistry::IsHeroSpawnable).
+	if (UGameplayStatics::GetIntOption(Options, TEXT("DevHeroes"), 0) != 0)
+	{
+		if (IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("gota.Heroes.AllowInDevelopment")))
+		{
+			CVar->Set(1, ECVF_SetByCode);
+			UE_LOG(LogTemp, Warning, TEXT("Duel: DevHeroes=1 — In Development heroes may spawn (testing only)"));
+		}
+	}
+#endif
 	if (bVersusAI)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Duel: Fight AI mode (champion %s)"), *AIChampionClass.ToString());
 	}
 
+#if !UE_BUILD_SHIPPING
+	// Testing: the AI champion plays a hero (body + divine abilities) — ?Foe=Varoth.
+	FoeHeroId = FName(*UGameplayStatics::ParseOption(Options, TEXT("Foe")));
+	if (!FoeHeroId.IsNone())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Duel: AI champion plays hero %s (testing)"), *FoeHeroId.ToString());
+	}
+#endif
+	// Boss encounter: ?Boss=<Id> -> /Game/Bosses/BP_Boss_<Id> + /Game/Bosses/DA_Boss_<Id>.
+	{
+		const FString BossId = UGameplayStatics::ParseOption(Options, TEXT("Boss"));
+		if (!BossId.IsEmpty())
+		{
+			BossDefinition = LoadObject<UGOTABossDefinition>(nullptr, *FString::Printf(TEXT("/Game/Bosses/DA_Boss_%s.DA_Boss_%s"), *BossId, *BossId));
+			if (BossDefinition)
+			{
+				bVersusAI = true;
+				AIChampionClass = TSoftClassPtr<APawn>(FSoftObjectPath(FString::Printf(TEXT("/Game/Bosses/BP_Boss_%s.BP_Boss_%s_C"), *BossId, *BossId)));
+				UE_LOG(LogTemp, Log, TEXT("Duel: BOSS encounter %s (%s)"), *BossId, *AIChampionClass.ToString());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Duel: unknown boss '%s' — falling back to the standard Fight AI"), *BossId);
+			}
+		}
+	}
 	if (UGameplayStatics::HasOption(Options, TEXT("Difficulty")))
 	{
 		Difficulty = FGOTAChampionProfile::ParseDifficulty(UGameplayStatics::ParseOption(Options, TEXT("Difficulty")), Difficulty);
@@ -93,6 +134,13 @@ void ADuelGameMode::BeginPlay()
 	}
 
 	ApplyMatchDefinition();
+	if (BossDefinition)
+	{
+		// A boss encounter is one fight: boss death (or the player's) ends it. No best-of-three.
+		BestOfRounds = 1;
+		RoundsToWin = 1;
+		RoundDurationSeconds = 600.f;
+	}
 
 	if (ADuelGameState* GS = GetDuelGS())
 	{
@@ -686,6 +734,18 @@ void ADuelGameMode::InitDuelCombat()
 		// Blueprint remains the only thing that changes health during the round.
 		const FGOTAChampionProfile Profile = FGOTAChampionProfile::ForDifficulty(Difficulty);
 		FGOTABlueprintCombat::ConfigureHealth(Fighters[0], Profile.ChallengerMaxHealth);
+		if (BossDefinition)
+		{
+			// Boss: its own definition drives body, health and brain; no Sovereign Champion director.
+			UGOTABossComponent::ApplyToPawn(Fighters[1], BossDefinition);
+			FGOTABlueprintCombat::ConfigureHealth(Fighters[1], BossDefinition->MaxHealth);
+			if (ADuelGameState* GS = GetDuelGS())
+			{
+				GS->ChampionPawn = Fighters[1];
+			}
+		}
+		else
+		{
 		FGOTABlueprintCombat::ConfigureHealth(Fighters[1], Profile.ChampionMaxHealth);
 		UGOTAChampionDirectorComponent* Director = Fighters[1]->FindComponentByClass<UGOTAChampionDirectorComponent>();
 		if (!Director)
@@ -694,10 +754,30 @@ void ADuelGameMode::InitDuelCombat()
 			Director->RegisterComponent();
 		}
 		Director->InitDirector(Fighters[0], Difficulty);
+		if (!FoeHeroId.IsNone())
+		{
+			const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
+			if (const UGOTAHeroDefinition* Foe = Registry ? Registry->FindHero(FoeHeroId) : nullptr)
+			{
+				UGOTAHeroBodyComponent::ApplyToPawn(Fighters[1], Foe);
+				UGOTAHeroAbilityComponent::ApplyToPawn(Fighters[1], FoeHeroId);
+			}
+		}
+		// Hero durability: scale the spawn-time health of fighters that play a hero (before any damage).
+		const float BaseHealth[2] = { Profile.ChallengerMaxHealth, Profile.ChampionMaxHealth };
+		for (int32 i = 0; i < 2; ++i)
+		{
+			const UGOTAHeroAbilityComponent* Ab = Fighters[i]->FindComponentByClass<UGOTAHeroAbilityComponent>();
+			if (Ab && Ab->GetAbilitySet() && !FMath::IsNearlyEqual(Ab->GetAbilitySet()->MaxHealthScale, 1.f))
+			{
+				FGOTABlueprintCombat::ConfigureHealth(Fighters[i], BaseHealth[i] * Ab->GetAbilitySet()->MaxHealthScale);
+			}
+		}
 		if (ADuelGameState* GS = GetDuelGS())
 		{
 			GS->ChampionPawn = Fighters[1];
 		}
+		} // boss / champion
 	}
 	if (Comps[0]) { Comps[0]->InitFighter(false, Fighters[1]); }
 	if (Comps[1]) { Comps[1]->InitFighter(bVersusAI, Fighters[0]); }
@@ -1182,7 +1262,7 @@ UClass* ADuelGameMode::GetDefaultPawnClassForController_Implementation(AControll
 	const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
 	if (PS && Registry && !PS->HeroId.IsNone())
 	{
-		if (const UGOTAHeroDefinition* Hero = Registry->FindHero(PS->HeroId); Hero && Hero->IsPlayable())
+		if (const UGOTAHeroDefinition* Hero = Registry->FindHero(PS->HeroId); Hero && UGOTAHeroRegistry::IsHeroSpawnable(Hero))
 		{
 			if (UClass* PawnClass = Hero->GameplayPawnClass.LoadSynchronous())
 			{
@@ -1191,6 +1271,23 @@ UClass* ADuelGameMode::GetDefaultPawnClassForController_Implementation(AControll
 		}
 	}
 	return Super::GetDefaultPawnClassForController_Implementation(InController);
+}
+
+void ADuelGameMode::SetPlayerDefaults(APawn* PlayerPawn)
+{
+	Super::SetPlayerDefaults(PlayerPawn);
+	const ADuelPlayerState* PS = PlayerPawn ? PlayerPawn->GetPlayerState<ADuelPlayerState>() : nullptr;
+	if (!PS && PlayerPawn && PlayerPawn->GetController())
+	{
+		PS = PlayerPawn->GetController()->GetPlayerState<ADuelPlayerState>();
+	}
+	const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
+	if (PS && Registry && !PS->HeroId.IsNone())
+	{
+		UGOTAHeroBodyComponent::ApplyToPawn(PlayerPawn, Registry->FindHero(PS->HeroId));
+		// Divine abilities resolved from the accepted (server-validated) HeroId — never from the client.
+		UGOTAHeroAbilityComponent::ApplyToPawn(PlayerPawn, PS->HeroId);
+	}
 }
 
 void ADuelGameMode::EquipFighterLoadout(APawn* Pawn)
