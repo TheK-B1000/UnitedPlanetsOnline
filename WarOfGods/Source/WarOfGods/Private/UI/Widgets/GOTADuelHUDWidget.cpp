@@ -18,6 +18,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
+#include "Bosses/GOTABossComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
@@ -78,6 +79,31 @@ void UGOTADuelHUDWidget::HandleCombatCue(EGOTADuelCue Cue, AActor* Source, AActo
 	case EGOTADuelCue::PhaseTwo: ShowCallout(NSLOCTEXT("GOTA", "CuePhaseTwo", "THE SOVEREIGN CHAMPION ASCENDS"), Danger, 2.0f); break;
 	case EGOTADuelCue::SurgeTelegraph: ShowCallout(NSLOCTEXT("GOTA", "CueSurge", "SOVEREIGN SURGE  —  EVADE!"), Danger, 1.4f); break;
 	case EGOTADuelCue::DivineCounter: ShowCallout(NSLOCTEXT("GOTA", "CueDivineCounter", "DIVINE COUNTER"), Gold, 1.3f); break;
+	case EGOTADuelCue::BossTelegraph:
+	case EGOTADuelCue::BossPhaseTwo:
+	case EGOTADuelCue::BossTitle:
+	case EGOTADuelCue::BossDefeated:
+	{
+		const UGOTABossComponent* B = Source ? Source->FindComponentByClass<UGOTABossComponent>() : nullptr;
+		const FText T = B ? B->GetLastTelegraph() : FText::GetEmpty();
+		if (Cue == EGOTADuelCue::BossTitle)
+		{
+			ShowCallout(T.ToUpper(), Gold, 2.6f);
+		}
+		else if (Cue == EGOTADuelCue::BossPhaseTwo)
+		{
+			ShowCallout(NSLOCTEXT("GOTA", "BossFury", "UNCHAINED FURY"), Danger, 2.2f);
+		}
+		else if (Cue == EGOTADuelCue::BossDefeated)
+		{
+			ShowCallout(FText::Format(NSLOCTEXT("GOTA", "BossFallen", "{0} FALLS"), T.ToUpper()), Gold, 2.5f);
+		}
+		else if (!T.IsEmpty())
+		{
+			ShowCallout(T, Danger, 1.0f);
+		}
+		break;
+	}
 	case EGOTADuelCue::AbilityUsed:
 	{
 		// Readable counterplay: name the ENEMY's ability as it winds up; own casts only for ultimates.
@@ -129,7 +155,18 @@ void UGOTADuelHUDWidget::RefreshCombatLayer(float InDeltaTime)
 		Text_Momentum->SetColorAndOpacity(FSlateColor(bReady ? FLinearColor(1.f, 0.82f, 0.48f, 1.f) : FLinearColor(0.56f, 0.6f, 0.68f, 1.f)));
 	}
 	RefreshAbilityBar();
-	if (Text_ChampionState)
+	const ADuelGameState* PhaseGS = GetDuelGS();
+	const UGOTABossComponent* Boss = (PhaseGS && PhaseGS->ChampionPawn) ? PhaseGS->ChampionPawn->FindComponentByClass<UGOTABossComponent>() : nullptr;
+	if (Text_ChampionState && Boss)
+	{
+		const bool bFury = Boss->GetPhase() >= 2;
+		const bool bDead = Boss->GetState() == EGOTABossState::Dead;
+		Text_ChampionState->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Text_ChampionState->SetText(bDead ? NSLOCTEXT("GOTA", "BossDown", "DEFEATED")
+			: (bFury ? NSLOCTEXT("GOTA", "BossPhase2Line", "PHASE II  -  UNCHAINED FURY") : NSLOCTEXT("GOTA", "BossPhase1Line", "PHASE I")));
+		Text_ChampionState->SetColorAndOpacity(FSlateColor(bFury ? FLinearColor(1.f, 0.36f, 0.26f, 1.f) : FLinearColor(1.f, 0.82f, 0.48f, 1.f)));
+	}
+	else if (Text_ChampionState)
 	{
 		const ADuelGameState* GS = GetDuelGS();
 		const bool bChampion = GS && GS->ChampionPawn && GS->ChampionPhase > 0;
@@ -433,9 +470,18 @@ void UGOTADuelHUDWidget::RefreshFromGameState()
 		Text_LocalName->SetText(Menu ? Menu->GetProfileView().DisplayName
 			: (PC->PlayerState ? FText::FromString(PC->PlayerState->GetPlayerName().ToUpper()) : FText::GetEmpty()));
 	}
+	const ADuelGameState* BossGS = GetDuelGS();
+	const UGOTABossComponent* BossComp = (BossGS && BossGS->ChampionPawn) ? BossGS->ChampionPawn->FindComponentByClass<UGOTABossComponent>() : nullptr;
 	if (Text_OpponentName)
 	{
-		Text_OpponentName->SetText(OpponentPS ? FText::FromString(OpponentPS->GetPlayerName().ToUpper()) : FText::GetEmpty());
+		if (BossComp && BossComp->GetDefinition())
+		{
+			Text_OpponentName->SetText(BossComp->GetDefinition()->DisplayName.ToUpper());
+		}
+		else
+		{
+			Text_OpponentName->SetText(OpponentPS ? FText::FromString(OpponentPS->GetPlayerName().ToUpper()) : FText::GetEmpty());
+		}
 	}
 	// Health is read from the Blueprint damage system (read-only observer).
 	if (Bar_LocalHealth)

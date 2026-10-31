@@ -13,6 +13,8 @@
 #include "Characters/GOTAHeroRegistry.h"
 #include "Characters/GOTAHeroBodyComponent.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
+#include "Bosses/GOTABossComponent.h"
+#include "Bosses/GOTABossTypes.h"
 #include "Engine/GameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Characters/StatsComponent.h"
@@ -87,6 +89,24 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 		UE_LOG(LogTemp, Warning, TEXT("Duel: AI champion plays hero %s (testing)"), *FoeHeroId.ToString());
 	}
 #endif
+	// Boss encounter: ?Boss=<Id> -> /Game/Bosses/BP_Boss_<Id> + /Game/Bosses/DA_Boss_<Id>.
+	{
+		const FString BossId = UGameplayStatics::ParseOption(Options, TEXT("Boss"));
+		if (!BossId.IsEmpty())
+		{
+			BossDefinition = LoadObject<UGOTABossDefinition>(nullptr, *FString::Printf(TEXT("/Game/Bosses/DA_Boss_%s.DA_Boss_%s"), *BossId, *BossId));
+			if (BossDefinition)
+			{
+				bVersusAI = true;
+				AIChampionClass = TSoftClassPtr<APawn>(FSoftObjectPath(FString::Printf(TEXT("/Game/Bosses/BP_Boss_%s.BP_Boss_%s_C"), *BossId, *BossId)));
+				UE_LOG(LogTemp, Log, TEXT("Duel: BOSS encounter %s (%s)"), *BossId, *AIChampionClass.ToString());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Duel: unknown boss '%s' — falling back to the standard Fight AI"), *BossId);
+			}
+		}
+	}
 	if (UGameplayStatics::HasOption(Options, TEXT("Difficulty")))
 	{
 		Difficulty = FGOTAChampionProfile::ParseDifficulty(UGameplayStatics::ParseOption(Options, TEXT("Difficulty")), Difficulty);
@@ -114,6 +134,13 @@ void ADuelGameMode::BeginPlay()
 	}
 
 	ApplyMatchDefinition();
+	if (BossDefinition)
+	{
+		// A boss encounter is one fight: boss death (or the player's) ends it. No best-of-three.
+		BestOfRounds = 1;
+		RoundsToWin = 1;
+		RoundDurationSeconds = 600.f;
+	}
 
 	if (ADuelGameState* GS = GetDuelGS())
 	{
@@ -707,6 +734,18 @@ void ADuelGameMode::InitDuelCombat()
 		// Blueprint remains the only thing that changes health during the round.
 		const FGOTAChampionProfile Profile = FGOTAChampionProfile::ForDifficulty(Difficulty);
 		FGOTABlueprintCombat::ConfigureHealth(Fighters[0], Profile.ChallengerMaxHealth);
+		if (BossDefinition)
+		{
+			// Boss: its own definition drives body, health and brain; no Sovereign Champion director.
+			UGOTABossComponent::ApplyToPawn(Fighters[1], BossDefinition);
+			FGOTABlueprintCombat::ConfigureHealth(Fighters[1], BossDefinition->MaxHealth);
+			if (ADuelGameState* GS = GetDuelGS())
+			{
+				GS->ChampionPawn = Fighters[1];
+			}
+		}
+		else
+		{
 		FGOTABlueprintCombat::ConfigureHealth(Fighters[1], Profile.ChampionMaxHealth);
 		UGOTAChampionDirectorComponent* Director = Fighters[1]->FindComponentByClass<UGOTAChampionDirectorComponent>();
 		if (!Director)
@@ -738,6 +777,7 @@ void ADuelGameMode::InitDuelCombat()
 		{
 			GS->ChampionPawn = Fighters[1];
 		}
+		} // boss / champion
 	}
 	if (Comps[0]) { Comps[0]->InitFighter(false, Fighters[1]); }
 	if (Comps[1]) { Comps[1]->InitFighter(bVersusAI, Fighters[0]); }

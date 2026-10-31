@@ -58,7 +58,12 @@ enum class EGOTADuelCue : uint8
 	DivineCounter,
 	CounterDenied,
 	/** A hero divine ability was cast (Source = caster; HUD reads the name from its ability component). */
-	AbilityUsed
+	AbilityUsed,
+	/** Boss encounter (text carried by the boss component's multicast). */
+	BossTelegraph,
+	BossPhaseTwo,
+	BossTitle,
+	BossDefeated
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnDuelCombatCue, EGOTADuelCue, Cue, AActor*, Source, AActor*, Target);
