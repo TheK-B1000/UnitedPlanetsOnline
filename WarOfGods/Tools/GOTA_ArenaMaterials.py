@@ -55,8 +55,18 @@ def param_texobj(mat, name, default_path, x, y, normal=False):
     tex = EAL.load_asset(default_path)
     if tex:
         n.set_editor_property("texture", tex)
+    vt = bool(tex) and bool(tex.get_editor_property("virtual_texture_streaming"))
     if normal:
-        n.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+        n.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_VIRTUAL_NORMAL if vt else unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+    elif vt:
+        comp = tex.get_editor_property("compression_settings")
+        if comp == unreal.TextureCompressionSettings.TC_MASKS:
+            st = unreal.MaterialSamplerType.SAMPLERTYPE_VIRTUAL_MASKS
+        elif bool(tex.get_editor_property("srgb")):
+            st = unreal.MaterialSamplerType.SAMPLERTYPE_VIRTUAL_COLOR
+        else:
+            st = unreal.MaterialSamplerType.SAMPLERTYPE_VIRTUAL_LINEAR_COLOR
+        n.set_editor_property("sampler_type", st)
     return n
 
 
@@ -79,11 +89,16 @@ def vec3_from_scalar(mat, s, x, y):
     return s
 
 
-def build_surface_master():
-    mat = recreate_material("M_GOTA_ArenaSurface")
-    albedo = param_texobj(mat, "Albedo", "/Game/Megascans/Surfaces/Quarry_Rock_Cliff_01/T_Quarry_Rock_Cliff_01_A", -1600, -300)
-    normal = param_texobj(mat, "Normal", "/Game/Megascans/Surfaces/Quarry_Rock_Cliff_01/T_Quarry_Rock_Cliff_01_N", -1600, 200, normal=True)
-    rough = param_texobj(mat, "Roughness", "/Game/Megascans/Surfaces/Quarry_Rock_Cliff_01/T_Quarry_Rock_Cliff_01_R", -1600, 600)
+def build_surface_master(name="M_GOTA_ArenaSurface", defaults=None):
+    """defaults: (albedo, normal, roughness) — their virtual-texture status sets the sampler types,
+    so M_GOTA_ArenaSurfaceVT is the same graph built around virtual textures."""
+    defaults = defaults or ("/Game/Megascans/Surfaces/Quarry_Rock_Cliff_01/T_Quarry_Rock_Cliff_01_A",
+                            "/Game/Megascans/Surfaces/Quarry_Rock_Cliff_01/T_Quarry_Rock_Cliff_01_N",
+                            "/Game/Megascans/Surfaces/Quarry_Rock_Cliff_01/T_Quarry_Rock_Cliff_01_R")
+    mat = recreate_material(name)
+    albedo = param_texobj(mat, "Albedo", defaults[0], -1600, -300)
+    normal = param_texobj(mat, "Normal", defaults[1], -1600, 200, normal=True)
+    rough = param_texobj(mat, "Roughness", defaults[2], -1600, 600)
     tile = param_scalar(mat, "TileSize", 300.0, -1600, 900)
     macro = param_scalar(mat, "MacroScale", 7.0, -1600, 1000)
     macro_k = param_scalar(mat, "MacroStrength", 0.55, -1600, 1100)
@@ -153,8 +168,8 @@ def build_surface_master():
     MEL.connect_material_property(metal, "", unreal.MaterialProperty.MP_METALLIC)
 
     MEL.recompile_material(mat)
-    EAL.save_asset(ROOT + "/M_GOTA_ArenaSurface")
-    log("M_GOTA_ArenaSurface built (%d expressions)" % MEL.get_num_material_expressions(mat))
+    EAL.save_asset(ROOT + "/" + name)
+    log("%s built (%d expressions)" % (name, MEL.get_num_material_expressions(mat)))
     return mat
 
 
@@ -241,6 +256,15 @@ FAMILIES = {
     "UPGAlloy":      (SC + "T_Metal_Aluminum_D", SC + "T_Tech_Panel_N", SC + "T_Metal_Aluminum_D", ZERO, 500, (0.88, 0.9, 0.94), 0.0, 0.3, 0.95, 0.15),
 }
 
+# Virtual-texture families (Megascans Icelandic 8K + Megascans/Rock) for M_GOTA_ArenaSurfaceVT.
+VT_FAMILIES = {
+    "ObsidianVT":   (S + "Icelandic_Lava_Rocks_smvmacab/T_Icelandic_Lava_Rocks_smvmacab_8K_D", S + "Icelandic_Lava_Rocks_smvmacab/T_Icelandic_Lava_Rocks_smvmacab_8K_N", S + "Icelandic_Lava_Rocks_smvmacab/T_IcelandicLavaRocks_smvmacab_8K_ORDp", ORD_G, 300, (0.42, 0.4, 0.44), 0.7, 0.1, 0.0, 0.4),
+    "CrackedRockVT":(S + "Icelandic_Smooth_Cracked_Rock_sm2jefdp/T_Icelandic_Smooth_Cracked_Rock_sm2jefdp_8K_D", S + "Icelandic_Smooth_Cracked_Rock_sm2jefdp/T_Icelandic_Smooth_Cracked_Rock_sm2jefdp_8K_N", S + "Icelandic_Smooth_Cracked_Rock_sm2jefdp/T_IcelandicSmoothCrackedRock_sm2jefdp_8K_ORDp", ORD_G, 360, (1.0, 0.95, 0.88), 0.7, 0.2, 0.0, 0.45),
+    "MossRockVT":   (S + "Icelandic_RockyMoss/T_RockyMoss_8k_D", S + "Icelandic_RockyMoss/T_RockyMoss_8k_N", S + "Icelandic_RockyMoss/T_RockyMoss_8k_ORD", ORD_G, 380, (1.0, 1.0, 0.95), 0.7, 0.2, 0.0, 0.5),
+    "RockyVT":      (S + "Icelandic_Rocky_Surface_slumdask/T_Icelandic_Rocky_Surface_slumdask_8K_D", S + "Icelandic_Rocky_Surface_slumdask/T_Icelandic_Rocky_Surface_slumdask_8K_N", S + "Icelandic_Rocky_Surface_slumdask/T_IcelandicRockySurface_slumdask_8K_ORDp", ORD_G, 380, (0.9, 0.92, 0.95), 0.7, 0.2, 0.0, 0.5),
+    # Megascans/Rock roughness maps use a different compression than the ORD masks, so they cannot share a slot.
+}
+
 EMISSIVE = {
     # name: (color, strength, tile, pan speed, power, base color)
     "Lava":       ((1.0, 0.28, 0.03), 6.0, 520.0, 0.012, 2.2, (0.03, 0.01, 0.005)),
@@ -260,8 +284,10 @@ def make_mi(name, parent):
     return mi, path
 
 
-def build_instances(surface, emissive):
-    for name, (a, n, r, ch, tile, tint, rs, rb, metal, macro) in FAMILIES.items():
+def build_instances(surface, emissive, families=None, emissive_set=None):
+    families = FAMILIES if families is None else families
+    emissive_set = EMISSIVE if emissive_set is None else emissive_set
+    for name, (a, n, r, ch, tile, tint, rs, rb, metal, macro) in families.items():
         mi, path = make_mi(name, surface)
         for pname, tex in (("Albedo", a), ("Normal", n), ("Roughness", r)):
             t = EAL.load_asset(tex)
@@ -277,7 +303,7 @@ def build_instances(surface, emissive):
         MEL.set_material_instance_scalar_parameter_value(mi, "Metallic", metal)
         MEL.set_material_instance_scalar_parameter_value(mi, "MacroStrength", macro)
         EAL.save_asset(path)
-    for name, (col, k, tile, speed, power, base) in EMISSIVE.items():
+    for name, (col, k, tile, speed, power, base) in emissive_set.items():
         mi, path = make_mi(name, emissive)
         MEL.set_material_instance_vector_parameter_value(mi, "EmissiveColor", unreal.LinearColor(col[0], col[1], col[2], 1))
         MEL.set_material_instance_vector_parameter_value(mi, "BaseColor", unreal.LinearColor(base[0], base[1], base[2], 1))
@@ -286,12 +312,17 @@ def build_instances(surface, emissive):
         MEL.set_material_instance_scalar_parameter_value(mi, "PanSpeed", speed)
         MEL.set_material_instance_scalar_parameter_value(mi, "PatternPower", power)
         EAL.save_asset(path)
-    log("instances: %d surface + %d emissive" % (len(FAMILIES), len(EMISSIVE)))
+    log("instances: %d surface + %d emissive" % (len(families), len(emissive_set)))
 
 
 def main():
     if not EAL.does_directory_exist(ROOT):
         EAL.make_directory(ROOT)
+    if os.environ.get("GOTA_VT_ONLY") == "1":
+        vt = VT_FAMILIES["CrackedRockVT"]
+        master = build_surface_master("M_GOTA_ArenaSurfaceVT", (vt[0], vt[1], vt[2]))
+        build_instances(master, None, VT_FAMILIES, {})
+        return
     rebuild = os.environ.get("GOTA_REBUILD_MASTERS") == "1"
     surface = build_surface_master() if rebuild or not EAL.does_asset_exist(ROOT + "/M_GOTA_ArenaSurface") else EAL.load_asset(ROOT + "/M_GOTA_ArenaSurface")
     emissive = build_emissive_master() if rebuild or not EAL.does_asset_exist(ROOT + "/M_GOTA_ArenaEmissive") else EAL.load_asset(ROOT + "/M_GOTA_ArenaEmissive")

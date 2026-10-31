@@ -68,7 +68,7 @@ def build_quarry():
     # Central seal: a sunken ring of darker cut stone with the old surveyor's energy ring (flush, readable).
     K.cyl(V(0, 0, -99), 520, 100.5, "QuarryBlock", collision="NoCollision", label="CentreSeal", folder="Gameplay/Floor")
     K.ring_of_boxes(540, 72, (48, 5, 3), 0.4, "GoldEnergy", folder="Dressing/CentreSeal", label="SealGlow", skip=lambda d: int(d / 5) % 3 == 0)
-    K.flagstone_floor(1745, 545, 4, ["Paving", "QuarryBlock", "Paving"], rng)
+    K.flagstone_floor(1745, 545, 4, ["Paving", "CrackedRockVT", "Paving"], rng)
 
     # ---------------- Layer 2 — architecture & landscape
     # Ring of colossal columns just outside the boundary (frames combat, never blocks it).
@@ -117,12 +117,8 @@ def build_quarry():
     titan = V(0, 6200, 700)
     K.box(V(titan.x, titan.y, titan.z + 300), (3600, 2400, 600), "QuarryBlock", folder="Dressing/Titan")
     K.box(V(titan.x, titan.y, titan.z + 720), (3000, 2000, 240), "QuarryBlock", folder="Dressing/Titan")
-    for s in (-1, 1):
-        fx = titan.x + s * 680
-        K.box(V(fx, titan.y - 250, titan.z + 980), (700, 1250, 280), "QuarryStone", folder="Dressing/Titan")             # feet
-        K.cyl(V(fx, titan.y, titan.z + 840), 330, 2300 if s < 0 else 3100, "QuarryBlock", folder="Dressing/Titan")       # shins
-        K.cyl(V(fx, titan.y + 40, titan.z + 840 + (2300 if s < 0 else 3100)), 370, 160, "QuarryStone", folder="Dressing/Titan")  # fracture
-    K.box(V(titan.x, titan.y + 120, titan.z + 1500), (1700, 260, 1100), "QuarryBlock", rot=R(0, 0, 0), folder="Dressing/Titan")  # robe hem
+    # The broken colossus: lower half of a robed titan, snapped at the waist (Pass 2 sculpted mesh).
+    K.arch_mesh("ColossusBroken", V(titan.x, titan.y, titan.z + 870), 180, (6.6, 6.6, 7.2), "QuarryBlock", folder="Dressing/Titan")
     # Fallen head of the Titan, half-buried at the foot of the bench.
     K.sphere(V(-2600, 4300, 300), 900, "QuarryBlock", scale=(1.0, 0.9, 1.15), label="Titan_Head")
     K.box(V(-2600, 3550, 520), (700, 260, 520), "QuarryBlock", rot=R(0, 8, -6), folder="Dressing/Titan")  # brow/nose block
@@ -138,11 +134,7 @@ def build_quarry():
     t1, t2 = V(5600, -2600, 700), V(5600, 2600, 700)
     for t in (t1, t2):
         K.lattice_tower(t, 700, 5200, rust, levels=7)
-    K.beam(V(t1.x - 500, t1.y, 5900), V(t2.x - 500, t2.y, 5900), 260, iron)
-    K.beam(V(t1.x + 100, t1.y, 5900), V(t2.x + 100, t2.y, 5900), 200, iron)
-    for k in range(9):
-        y = t1.y + (t2.y - t1.y) * (k + 0.5) / 9
-        K.beam(V(t1.x - 500, y, 5900), V(t1.x + 100, y + 280, 5900), 60, rust)
+    K.arch_mesh("Truss", V(t1.x - 200, 0, 5700), 90, (1.0, 1.5, 1.2), iron, folder="Dressing/Machinery")
     # Boom reaching over the quarry floor.
     K.beam(V(t1.x - 500, 0, 5900), V(2600, 0, 4700), 220, iron)
     K.box(V(2600, 0, 4600), (300, 400, 280), iron, folder="Dressing/Machinery")
@@ -177,8 +169,7 @@ def build_quarry():
     for k in range(4):
         for s in (-1, 1):
             p = V(s * 1350, -5600 - k * 1400, -25)
-            K.box(V(p.x, p.y, p.z + 900), (260, 260, 1800), "QuarryBlock", folder="Dressing/Road")
-            K.box(V(p.x, p.y, p.z + 1840), (300, 300, 80), "UPGAlloy", folder="Dressing/Road")
+            K.arch_mesh("Obelisk", p, 0, (0.85, 0.85, 0.7), "QuarryBlock", folder="Dressing/Road")
             K.box(V(p.x - s * 132, p.y, p.z + 1100), (6, 120, 900), "UPGEnergy", folder="Dressing/Road")
 
     # Distant refinery silhouettes (layered background, south).
@@ -242,20 +233,12 @@ def build_ashfall():
         deg = i * (360 / 32.0) + 360 / 64.0
         if gate_open(deg):
             continue
-        p = K.polar(5600, deg, 1100)
-        K.box(p, (2 * math.pi * 5600 / 32 * 1.04, 650, 3100), "Obsidian", rot=R(0, deg + 90, 0), folder="Dressing/Fortress")
-        cap = K.polar(5600, deg, 2700)
-        K.box(cap, (2 * math.pi * 5600 / 32 * 1.06, 820, 120), "Basalt", rot=R(0, deg + 90, 0), folder="Dressing/Fortress")
-        for m in (-1, 1):
-            mp = K.polar(5390, deg + m * 2.4, 2880)
-            K.box(mp, (260, 160, 240), "Obsidian", rot=R(0, deg + 90, 0), folder="Dressing/Fortress")
+        K.arch_mesh("Wall", K.polar(5600, deg, -450), deg + 90, (2 * math.pi * 5600 / 32 * 1.04 / 1000.0, 1.05, 2.0), "Obsidian",
+                    folder="Dressing/Fortress")
     for i in range(8):
         deg = i * 45 + 22.5
         p = K.polar(5650, deg, -450)
-        K.box(V(p.x, p.y, p.z + 2350), (1000, 1000, 4700), "Obsidian", rot=R(0, deg, 0), folder="Dressing/Towers")
-        K.box(V(p.x, p.y, p.z + 4760), (1200, 1200, 140), "Basalt", rot=R(0, deg, 0), folder="Dressing/Towers")
-        for cx, cy in ((-430, -430), (430, -430), (430, 430), (-430, 430)):
-            K.box(V(p.x + cx, p.y + cy, p.z + 5000), (240, 240, 360), "Obsidian", rot=R(0, deg, 0), folder="Dressing/Towers")
+        K.arch_mesh("TowerSquare", p, deg, (1.12, 1.12, 1.45), "Obsidian", folder="Dressing/Towers")
         K.box(K.polar(5130, deg, 3200), (6, 160, 1900), "LavaCrack", rot=R(0, deg + 90, 0), folder="Dressing/Towers")
     K.gate(K.polar(5450, 90, -450), 90, 2000, 4600, "Obsidian", trim="Basalt", energy="LavaCrack")
 
@@ -286,8 +269,7 @@ def build_ashfall():
     for i in range(8):
         deg = i * 45
         p = K.polar(2460, deg, -25)
-        K.cyl(p, 75, 240, "Obsidian", folder="Dressing/Braziers")
-        K.cyl(V(p.x, p.y, p.z + 240), 125, 50, "Iron", folder="Dressing/Braziers")
+        K.arch_mesh("Brazier", p, i * 45, (1.0, 1.0, 1.0), "Iron", folder="Dressing/Braziers")
         K.fx("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Fire/P_Fire_Small.P_Fire_Small", V(p.x, p.y, p.z + 290), 0.8, "Brazier%d" % i)
         K.point_light(V(p.x, p.y, p.z + 420), (1.0, 0.45, 0.15), 2200, 1200, "BrazierLight%d" % i)
 
@@ -302,13 +284,12 @@ def build_ashfall():
         p = K.polar(4100, deg, -480)
         K.mesh(GEO + "SM_Lava_RockMound_S_02.SM_Lava_RockMound_S_02", p, R(0, deg, 0), (2.2, 2.2, 2.6), folder="Dressing/Obelisks")
         tilt = 0 if k % 2 == 0 else rng.uniform(8, 18)
-        K.box(V(p.x, p.y, p.z + 1500), (300, 300, 2600 if tilt == 0 else 1500), "Obsidian", rot=R(tilt, deg, 0), folder="Dressing/Obelisks")
+        K.arch_mesh("Obelisk", V(p.x, p.y, p.z + 250), deg, (1.0, 1.0, 1.0 if tilt == 0 else 0.6), "Obsidian", folder="Dressing/Obelisks", pitch=tilt)
         K.box(V(p.x, p.y, p.z + 1500), (8, 140, 2000 if tilt == 0 else 1100), "LavaCrack", rot=R(tilt, deg, 0), folder="Dressing/Obelisks")
 
     # The Crucible itself: a colossal iron cauldron slung between two towers, pouring molten metal.
     c = K.polar(4300, 125, 3000)
-    K.cyl(V(c.x, c.y, c.z), 700, 900, "RustIron", folder="Dressing/Crucible")
-    K.cyl(V(c.x, c.y, c.z + 880), 740, 60, "Iron", folder="Dressing/Crucible")
+    K.arch_mesh("Crucible", V(c.x, c.y, c.z), 35, (1.0, 1.0, 1.0), "RustIron", folder="Dressing/Crucible")
     K.cyl(V(c.x, c.y, c.z + 820), 640, 40, "Lava", folder="Dressing/Crucible", cast_shadow=False)
     for tdeg in (112.5, 157.5):
         K.chain(K.polar(5650, tdeg, 4700), V(c.x, c.y, c.z + 920), "Iron", link=110, sag=0.05)
@@ -357,7 +338,7 @@ def build_frostbound():
     # Layer 1 — the citadel's inner court. Snow is a surface finish only: same collision / friction.
     gameplay_floor(1750, "FrostStone", "FrostStone", "Snow", 9000, 2350)
     K.cyl(V(0, 0, -99), 520, 100.5, "Ice", label="CentreSeal", folder="Gameplay/Floor")
-    K.flagstone_floor(1745, 545, 4, ["FrostStone", "FrostStone", "Snow"], rng)
+    K.flagstone_floor(1745, 545, 4, ["RockyVT", "FrostStone", "Snow"], rng)
     K.ring_of_boxes(540, 72, (48, 5, 3), 0.4, "UPGEnergy", folder="Dressing/CentreSeal", skip=lambda d: int(d / 5) % 3 == 0)
 
     # Layer 2 — citadel walls with snow caps, round towers with snow roofs, south gate.
@@ -366,12 +347,9 @@ def build_frostbound():
         deg = i * 10 + 5
         if gate_open(deg):
             continue
-        p = K.polar(3700, deg, 700)
-        K.box(p, (2 * math.pi * 3700 / 36 * 1.05, 520, 1500), "FrostStone", rot=R(0, deg + 90, 0), folder="Dressing/Walls")
-        K.box(K.polar(3700, deg, 1460), (2 * math.pi * 3700 / 36 * 1.07, 600, 60), "Snow", rot=R(0, deg + 90, 0), folder="Dressing/Walls")
-        if i % 2 == 0:
-            K.box(K.polar(3480, deg, 1600), (220, 140, 260), "FrostStone", rot=R(0, deg + 90, 0), folder="Dressing/Walls")
-        else:
+        K.arch_mesh("Wall", K.polar(3700, deg, -25), deg + 90, (2 * math.pi * 3700 / 36 * 1.06 / 1000.0, 0.85, 0.95), "FrostStone",
+                    folder="Dressing/Walls")
+        if i % 2 == 1:
             K.box(K.polar(3390, deg, 450), (260, 220, 950), "FrostStone", rot=R(-14, deg + 180, 0), folder="Dressing/Buttresses")
             K.box(K.polar(3330, deg, 960), (280, 240, 40), "Snow", rot=R(-14, deg + 180, 0), folder="Dressing/Buttresses")
     for i in range(8):
@@ -379,10 +357,7 @@ def build_frostbound():
         if gate_open(deg):
             continue
         p = K.polar(3750, deg, -25)
-        K.cyl(p, 520, 2900, "FrostStone", folder="Dressing/Towers")
-        K.cyl(V(p.x, p.y, p.z + 2900), 600, 120, "FrostStone", folder="Dressing/Towers")
-        for m in range(8):
-            K.box(K.polar(570, m * 45, p.z + 3080, p.x, p.y), (180, 140, 240), "FrostStone", rot=R(0, m * 45 + 90, 0), folder="Dressing/Towers")
+        K.arch_mesh("TowerRound", p, deg, (1.04, 1.04, 0.95), "FrostStone", folder="Dressing/Towers")
         K.box(K.polar(3220, deg, 1900), (6, 70, 900), "UPGEnergy", rot=R(0, deg + 90, 0), folder="Dressing/Towers")
     K.gate(K.polar(3700, 270, -25), 90, 1800, 3400, "FrostStone", trim="Snow", energy="UPGEnergy")
 
@@ -391,12 +366,9 @@ def build_frostbound():
         deg = k * 60 + 30
         p = K.polar(3050, deg, -25)
         face = deg + 180
-        K.box(V(p.x, p.y, p.z + 200), (520, 520, 400), "FrostStone", rot=R(0, face, 0), folder="Dressing/Statues")
-        K.box(V(p.x, p.y, p.z + 1000), (360, 240, 1200), "FrostStone", rot=R(0, face, 0), folder="Dressing/Statues")
-        K.box(V(p.x, p.y, p.z + 1690), (520, 260, 200), "FrostStone", rot=R(0, face, 0), folder="Dressing/Statues")
-        K.sphere(V(p.x, p.y, p.z + 1930), 150, "Ice")
-        K.box(V(p.x, p.y, p.z + 1250), (60, 140, 1900), "Ice", rot=R(0, face, 0), folder="Dressing/Statues")
-        K.box(V(p.x, p.y, p.z + 1820), (370, 250, 60), "Snow", rot=R(0, face, 0), folder="Dressing/Statues")
+        K.box(V(p.x, p.y, p.z + 200), (560, 560, 400), "FrostStone", rot=R(0, face, 0), folder="Dressing/Statues")
+        K.arch_mesh("Colossus", V(p.x, p.y, p.z + 430), face - 90, (1.75, 1.75, 1.75), "FrostStone", folder="Dressing/Statues")
+        K.box(V(p.x, p.y, p.z + 1300), (40, 120, 1700), "Ice", rot=R(0, face, 0), folder="Dressing/Statues")
 
     # Glacier beyond the walls: jagged ice cliffs, frozen falls and snow-buried rock.
     for i in range(46):
@@ -473,7 +445,7 @@ def build_verdant():
     # Layer 1 — the old ceremonial floor, reclaimed by moss at the edges. Sightlines kept clear.
     gameplay_floor(1750, "TempleStone", "MossStone", "ForestGround", 9000, 2350)
     K.cyl(V(0, 0, -99), 520, 100.5, "MossStone", label="CentreSeal", folder="Gameplay/Floor")
-    K.flagstone_floor(1745, 545, 4, ["TempleStone", "TempleStone", "MossStone"], rng)
+    K.flagstone_floor(1745, 545, 4, ["TempleStone", "TempleStone", "MossRockVT"], rng)
     K.ring_of_boxes(540, 72, (48, 5, 3), 0.4, "GoldEnergy", folder="Dressing/CentreSeal", skip=lambda d: int(d / 5) % 2 == 0)
 
     # Layer 2 — overgrown colonnade, the north temple, roots, vines, waterfall, forest.
@@ -482,7 +454,7 @@ def build_verdant():
         if 255 < deg < 285:
             continue
         p = K.polar(2750, deg, -25)
-        K.column(p, 120, 1500 + rng.uniform(-100, 200), "TempleStone", capital="MossStone", broken=(i % 4 == 2), rng=rng)
+        K.column(p, 120, 1500 + rng.uniform(-100, 200), "MossRockVT" if i % 3 == 0 else "TempleStone", capital="MossStone", broken=(i % 4 == 2), rng=rng)
         if i % 2 == 0:
             for v in range(3):
                 vp = K.polar(2750 + rng.uniform(-90, 90), deg + rng.uniform(-2, 2), 900)
@@ -502,9 +474,8 @@ def build_verdant():
     # Guardian statues flanking the temple stairs.
     for s in (-1, 1):
         p = V(s * 1300, 3500, -25)
-        K.box(V(p.x, p.y, p.z + 300), (600, 600, 600), "TempleStone", folder="Dressing/Statues")
-        K.box(V(p.x, p.y, p.z + 1300), (380, 300, 1400), "MossStone", folder="Dressing/Statues")
-        K.sphere(V(p.x, p.y, p.z + 2150), 190, "TempleStone")
+        K.box(V(p.x, p.y, p.z + 300), (640, 640, 600), "TempleStone", folder="Dressing/Statues")
+        K.arch_mesh("Colossus", V(p.x, p.y, p.z + 630), 180, (2.0, 2.0, 2.0), "MossStone", folder="Dressing/Statues")
     # Waterfall over a mossy cliff in the north-east, feeding a stream around the ring.
     cliff = K.polar(6200, 40, -25)
     K.mesh(msa("Massive_Nordic_Coastal_Cliff_veqnci0db", "S_Massive_Nordic_Coastal_Cliff_veqnci0db_high_Var1"), cliff, R(0, 220, 0), (1.6, 1.6, 1.6), "MossStone", folder="Dressing/Waterfall")
@@ -589,20 +560,15 @@ def build_sunscar():
     K.gate(gate, -90, 1900, 3800, "Sandstone", trim="Paving", energy="GoldEnergy")
     for s in (-1, 1):
         c = V(s * 2600, 4300, -25)
-        K.box(V(c.x, c.y, c.z + 450), (1500, 1700, 900), "Sandstone", folder="Dressing/Colossi")   # throne base
-        K.box(V(c.x, c.y + 380, c.z + 1500), (1300, 500, 1300), "Sandstone", folder="Dressing/Colossi")  # torso
-        K.box(V(c.x, c.y - 300, c.z + 1050), (1200, 900, 280), "Sandstone", folder="Dressing/Colossi")  # lap
-        for lx in (-280, 280):
-            K.box(V(c.x + lx, c.y - 700, c.z + 500), (360, 300, 1000), "Sandstone", folder="Dressing/Colossi")  # shins
-        K.box(V(c.x, c.y + 380, c.z + 2500), (620, 560, 700), "Paving", folder="Dressing/Colossi")  # head (weathered)
-        K.box(V(c.x, c.y + 380, c.z + 2950), (800, 700, 200), "Sandstone", folder="Dressing/Colossi")
+        K.box(V(c.x, c.y, c.z + 120), (2000, 2200, 240), "Sandstone", folder="Dressing/Colossi")
+        K.arch_mesh("SeatedColossus", V(c.x, c.y, c.z + 240), 0, (2.6, 2.6, 2.6), "Sandstone", folder="Dressing/Colossi")
     for i in range(30):
         deg = i * 12 + 6
         if 70 < deg < 110:
             continue
         h = rng.uniform(600, 1900)
-        p = K.polar(4700, deg, h / 2 - 60)
-        K.box(p, (2 * math.pi * 4700 / 30 * 0.98, 520, h), "Sandstone", rot=R(0, deg + 90, rng.uniform(-2, 2)), folder="Dressing/Fortifications")
+        K.arch_mesh("WallRuin" if i % 3 else "Wall", K.polar(4700, deg, -80), deg + 90,
+                    (2 * math.pi * 4700 / 30 * 0.98 / 1000.0, 0.9, h / 1100.0), "Sandstone", folder="Dressing/Fortifications")
     dunes = [GEO + "Custom/SM_Sand_01.SM_Sand_01", GEO + "Custom/SM_Sand_02.SM_Sand_02"]
     K.scatter(dunes, V(0, 0, 0), 3600, 7600, 30, rng, z=-60, scale=(3.0, 6.5), folder="Dressing/Dunes", material="Sand",
               avoid=lambda p: abs(p.x) < 1500 and p.y > 2800)
@@ -661,7 +627,7 @@ def build_stormbreak():
     # Layer 1 — fortress platform on a sea stack. Wet look is material-only (same friction).
     gameplay_floor(1750, "CoastStone", "WetRock", "WetRock", 3150, 2350)
     K.cyl(V(0, 0, -99), 520, 100.5, "WetRock", label="CentreSeal", folder="Gameplay/Floor")
-    K.flagstone_floor(1745, 545, 4, ["CoastStone", "WetRock", "CoastStone"], rng)
+    K.flagstone_floor(1745, 545, 4, ["RockyVT", "WetRock", "CoastStone"], rng)
     K.ring_of_boxes(540, 72, (48, 5, 3), 0.4, "UPGEnergy", folder="Dressing/CentreSeal", skip=lambda d: int(d / 5) % 3 == 0)
 
     # Layer 2 — battlements, broken towers, the UPA beacon, the great bridge, sea stacks and harbour.
@@ -669,25 +635,22 @@ def build_stormbreak():
         deg = i * 12 + 6
         if 80 < deg < 100:
             continue
-        p = K.polar(3000, deg, 150)
-        K.box(p, (2 * math.pi * 3000 / 30 * 1.03, 300, 360), "CoastStone", rot=R(0, deg + 90, 0), folder="Dressing/Battlements")
-        if i % 2 == 0:
-            K.box(K.polar(3000, deg, 420), (200, 300, 180), "CoastStone", rot=R(0, deg + 90, 0), folder="Dressing/Battlements")
+        K.arch_mesh("Wall", K.polar(3000, deg, -30), deg + 90, (2 * math.pi * 3000 / 30 * 1.04 / 1000.0, 0.55, 0.38), "CoastStone",
+                    folder="Dressing/Battlements")
     for k, deg in enumerate((30, 150, 210, 330)):
         p = K.polar(3050, deg, -25)
         h = 2600 if k % 2 == 0 else 1300
-        K.cyl(p, 520, h, "CoastStone", folder="Dressing/Towers")
+        K.arch_mesh("TowerRound", p, deg, (1.04, 1.04, h / 3340.0), "CoastStone", folder="Dressing/Towers")
         if k % 2 == 1:
             for j in range(5):
                 q = K.polar(rng.uniform(300, 700), rng.uniform(0, 360), -25, p.x, p.y)
                 K.box(V(q.x, q.y, q.z + 100), (rng.uniform(150, 300), rng.uniform(120, 260), rng.uniform(100, 220)), "CoastStone",
                       rot=R(rng.uniform(-20, 20), rng.uniform(0, 360), rng.uniform(-20, 20)), folder="Dressing/Towers")
-        else:
-            K.cyl(V(p.x, p.y, p.z + h), 600, 120, "CoastStone", folder="Dressing/Towers")
+
     beacon = K.polar(3100, 270, -25)
-    K.cyl(beacon, 420, 5200, "CoastStone", folder="Dressing/Beacon")
-    K.cyl(V(beacon.x, beacon.y, beacon.z + 5200), 520, 400, "UPGAlloy", folder="Dressing/Beacon")
-    K.cyl(V(beacon.x, beacon.y, beacon.z + 5600), 160, 300, "UPGEnergy", folder="Dressing/Beacon", cast_shadow=False)
+    K.arch_mesh("TowerRound", beacon, 0, (0.86, 0.86, 1.56), "CoastStone", folder="Dressing/Beacon")
+    K.arch_mesh("Lantern", V(beacon.x, beacon.y, beacon.z + 5200), 0, (0.7, 0.7, 0.7), "UPGAlloy", folder="Dressing/Beacon")
+    K.cyl(V(beacon.x, beacon.y, beacon.z + 5290), 230, 300, "UPGEnergy", folder="Dressing/Beacon", cast_shadow=False)
     K.point_light(V(beacon.x, beacon.y, beacon.z + 5900), (0.55, 0.75, 1.0), 15000, 5000, "BeaconLight")
     # The great bridge north to the mainland, on tall arches rising from the sea.
     for k in range(10):
@@ -801,19 +764,14 @@ def build_dominion():
     for i in range(6):
         deg = i * 60
         p = K.polar(3500, deg, -25)
-        K.box(V(p.x, p.y, p.z + 1600), (1200, 1200, 3200), "QuarryBlock", rot=R(0, deg, 0), folder="Dressing/Monuments")
-        K.box(V(p.x, p.y, p.z + 4400), (900, 900, 2400), "UPGAlloy", rot=R(0, deg, 0), folder="Dressing/Monuments")
-        K.box(V(p.x, p.y, p.z + 5700), (1100, 1100, 200), "UPGAlloy", rot=R(0, deg, 0), folder="Dressing/Monuments")
+        K.arch_mesh("Monument", p, deg, (0.9, 0.9, 0.95), "QuarryBlock", folder="Dressing/Monuments")
+        K.arch_mesh("MonumentUpper", V(p.x, p.y, p.z + 3200), deg, (0.9, 0.9, 0.9), "UPGAlloy", folder="Dressing/Monuments")
         inward = K.polar(3500 - 460, deg, -25)
         K.box(V(inward.x, inward.y, inward.z + 3900), (8, 300, 2600), "UPGEnergy", rot=R(0, deg, 0), folder="Dressing/Monuments")
         K.box(V(p.x, p.y, p.z + 3240), (1300, 1300, 80), "GoldEnergy", rot=R(0, deg, 0), folder="Dressing/Monuments")
     # The Sovereign Ring: a colossal floating halo over the arena, with a light column — the central landmark.
-    for k in range(36):
-        a = k * 10
-        p = K.polar(2600, a, 7200)
-        K.box(p, (480, 380, 320), "UPGAlloy", rot=R(0, a + 90, 0), folder="Dressing/SovereignRing")
-        if k % 3 == 0:
-            K.box(K.polar(2400, a, 7200), (380, 8, 200), "UPGEnergy", rot=R(0, a + 90, 0), folder="Dressing/SovereignRing")
+    K.arch_mesh("SovereignRing", V(0, 0, 7200), 0, (1.0, 1.0, 1.0), "UPGAlloy", folder="Dressing/SovereignRing")
+    K.arch_mesh("SovereignRingGlow", V(0, 0, 7200), 0, (1.0, 1.0, 1.0), "UPGEnergy", folder="Dressing/SovereignRing", cast_shadow=False)
     K.cyl(V(0, 0, 7400), 90, 60000, "UPGEnergy", folder="Dressing/SovereignRing", cast_shadow=False)
     K.point_light(V(0, 0, 6800), (0.6, 0.78, 1.0), 20000, 6000, "RingLight")
 
@@ -889,7 +847,35 @@ def build_dominion():
     return K.finalize("ShatteredDominion", V(0, 0, 0), V(6200, 6200, 1400), "/Game/Arenas/Maps/L_Arena_ShatteredDominion")
 
 
-ARENAS = {"Dominion": build_dominion, "Quarry": build_quarry, "Ashfall": build_ashfall, "Frostbound": build_frostbound,
+# ============================================================================ DEV: architecture showroom (not cooked)
+ARCH = "/Game/Arenas/Shared/Architecture/SM_GOTA_Arch_"
+
+
+def arch(name):
+    return ARCH + name + "." + "SM_GOTA_Arch_" + name
+
+
+def build_showroom():
+    K.open_fresh_level("/Game/Arenas/Dev/L_ArchShowroom")
+    K.box(V(0, 0, -50), (60000, 20000, 100), "Paving", collision="BlockAll", folder="Gameplay/Floor")
+    row = [("Column", "QuarryStone", 1.0), ("ColumnBroken", "QuarryStone", 1.0), ("ColumnDrum", "QuarryStone", 1.0),
+           ("TowerRound", "FrostStone", 0.8), ("TowerSquare", "Obsidian", 0.7), ("Wall", "CoastStone", 1.0),
+           ("WallRuin", "CoastStone", 1.0), ("Gate", "Sandstone", 0.7), ("Obelisk", "Obsidian", 0.8),
+           ("Colossus", "QuarryBlock", 2.0), ("ColossusBroken", "QuarryBlock", 2.0), ("SeatedColossus", "Sandstone", 2.0),
+           ("Brazier", "Iron", 2.0), ("Crucible", "RustIron", 0.6), ("Monument", "QuarryBlock", 0.6),
+           ("MonumentUpper", "UPGAlloy", 0.6), ("GantryTower", "RustIron", 0.5), ("Lantern", "UPGAlloy", 0.8),
+           ("BridgeArch", "WetRock", 0.5)]
+    x = -24000
+    for name, m, s in row:
+        K.mesh(arch(name), V(x, 0, 0), R(0, -90, 0), (s, s, s), m, folder="Dressing/Showroom", label=name)
+        x += 2600
+    K.mesh(arch("SovereignRing"), V(0, 9000, 2500), R(70, 0, 0), (0.6, 0.6, 0.6), "UPGAlloy", folder="Dressing/Showroom")
+    K.lighting(sun_pitch=-35, sun_yaw=210, sun_color=(1.0, 0.92, 0.8), sun_lux=10.0, fog_density=0.005, clouds=False)
+    K.post_process(exposure_bias=0.4)
+    return K.finalize("Showroom", V(0, 0, 0), V(2000, 2000, 400), "/Game/Arenas/Dev/L_ArchShowroom")
+
+
+ARENAS = {"Showroom": build_showroom, "Dominion": build_dominion, "Quarry": build_quarry, "Ashfall": build_ashfall, "Frostbound": build_frostbound,
           "Verdant": build_verdant, "Sunscar": build_sunscar, "Stormbreak": build_stormbreak}
 
 

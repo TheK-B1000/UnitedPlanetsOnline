@@ -158,52 +158,51 @@ def facing(src, dst):
     return math.degrees(math.atan2(dst.y - src.y, dst.x - src.x))
 
 
+# ------------------------------------------------------------------ Pass 2: procedural architecture meshes
+ARCH = "/Game/Arenas/Shared/Architecture/SM_GOTA_Arch_"
+
+
+def arch_path(name):
+    return ARCH + name + ".SM_GOTA_Arch_" + name
+
+
+def arch_mesh(name, loc, yaw=0.0, scale=(1, 1, 1), material="QuarryStone", folder="Dressing/Architecture", pitch=0.0, roll=0.0, **kw):
+    """Places a Geometry-Script architecture piece (Tools/GOTA_BuildArchitecture.py). Decorative, no collision."""
+    return mesh(arch_path(name), loc, R(pitch, yaw, roll), scale, material, "NoCollision", folder=folder, **kw)
+
+
 # ------------------------------------------------------------------ kitbash architecture
 def column(base, radius, height, material, capital=None, broken=False, rng=None, folder="Dressing/Columns", collision="NoCollision"):
-    """Plinth + shaft (+ capital). Broken columns lose their top; the fallen drums lie beside them."""
-    capital = capital or material
-    box(V(base.x, base.y, base.z + radius * 0.35), (radius * 2.6, radius * 2.6, radius * 0.7), material, folder=folder, collision=collision)
-    box(V(base.x, base.y, base.z + radius * 0.85), (radius * 2.25, radius * 2.25, radius * 0.3), material, folder=folder, collision=collision)
-    shaft_h = height if not broken else height * (0.35 + (rng.random() * 0.25 if rng else 0.2))
-    cyl(V(base.x, base.y, base.z + radius), radius, shaft_h, material, folder=folder, collision=collision)
+    """Fluted column with attic base and capital (Pass 2 mesh). Broken columns lose their top; drums lie beside them."""
+    rng = rng or random.Random(1)
+    sxy = radius / 100.0
+    sz = (height + radius * 1.4) / 1296.0
+    yaw = rng.uniform(0, 360)
     if not broken:
-        box(V(base.x, base.y, base.z + radius + height + radius * 0.25), (radius * 2.5, radius * 2.5, radius * 0.5), capital, folder=folder, collision=collision)
-    else:
-        rng = rng or random.Random(1)
-        yaw = rng.uniform(0, 360)
-        for i in range(2):
-            d = radius * (3.0 + i * 2.3)
-            p = polar(d, yaw + rng.uniform(-15, 15), base.z + radius * 0.95, base.x, base.y)
-            cyl(V(p.x, p.y, p.z - radius), radius, radius * 2.1, material, rot=R(90, yaw + 90 + rng.uniform(-20, 20), 0), folder=folder, collision=collision)
+        arch_mesh("Column", V(base.x, base.y, base.z + radius * 0.5 * sxy), yaw, (sxy, sxy, sz), material, folder)
+        return
+    arch_mesh("ColumnBroken", V(base.x, base.y, base.z + radius * 0.5 * sxy), yaw, (sxy, sxy, sz), material, folder)
+    for i in range(2):
+        d = radius * (3.0 + i * 2.3)
+        p = polar(d, yaw + rng.uniform(-15, 15), base.z + radius * 0.95, base.x, base.y)
+        arch_mesh("ColumnDrum", V(p.x, p.y, p.z), yaw + 90 + rng.uniform(-20, 20), (sxy, sxy, sxy), material, folder,
+                  pitch=90.0, roll=rng.uniform(0, 360))
 
 
 def arch(center, yaw, span, height, depth, thick, material, folder="Dressing/Arches"):
-    """Two piers and a lintel."""
-    dx = math.cos(math.radians(yaw + 90)) * (span / 2.0 + thick / 2.0)
-    dy = math.sin(math.radians(yaw + 90)) * (span / 2.0 + thick / 2.0)
-    for s in (-1, 1):
-        box(V(center.x + dx * s, center.y + dy * s, center.z + height / 2.0), (depth, thick, height), material, rot=R(0, yaw, 0), folder=folder)
-    box(V(center.x, center.y, center.z + height + thick * 0.4), (depth * 1.1, span + thick * 2.4, thick * 0.8), material, rot=R(0, yaw, 0), folder=folder)
+    """Arched pier (Pass 2 mesh): semicircular opening across `yaw`."""
+    # Mesh is 4559 tall (spring 4000 + crown); fit its top to the old lintel line (height + 0.6 thick).
+    arch_mesh("BridgeArch", center, yaw, (depth / 1000.0, (span + thick * 2) / 1430.0, (height + thick * 0.6) / 4559.0), material, folder)
 
 
 def gate(center, yaw, width, height, material, trim=None, energy=None, folder="Dressing/Gate"):
-    """Monumental gate: stepped pylons, deep lintel, optional energy inlay facing the arena."""
-    trim = trim or material
-    side = width / 2.0
-    ux, uy = math.cos(math.radians(yaw + 90)), math.sin(math.radians(yaw + 90))
-    fx, fy = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
-    pw = width * 0.32
-    for s in (-1, 1):
-        px, py = center.x + ux * (side + pw / 2.0) * s, center.y + uy * (side + pw / 2.0) * s
-        box(V(px, py, center.z + height * 0.5), (pw * 1.1, pw, height), material, rot=R(0, yaw, 0), folder=folder)
-        box(V(px, py, center.z + height * 0.06), (pw * 1.45, pw * 1.3, height * 0.12), trim, rot=R(0, yaw, 0), folder=folder)
-        box(V(px, py, center.z + height + pw * 0.2), (pw * 0.8, pw * 0.75, pw * 0.4), trim, rot=R(0, yaw, 0), folder=folder)
-        if energy:
-            box(V(px - fx * pw * 0.56, py - fy * pw * 0.56, center.z + height * 0.55), (6, pw * 0.12, height * 0.7), energy, rot=R(0, yaw, 0), folder=folder)
-    box(V(center.x, center.y, center.z + height + pw * 0.35), (pw * 1.25, width + pw * 2.2, pw * 0.7), trim, rot=R(0, yaw, 0), folder=folder)
-    box(V(center.x, center.y, center.z + height - pw * 0.1), (pw * 1.0, width + pw * 0.4, pw * 0.35), material, rot=R(0, yaw, 0), folder=folder)
+    """Monumental gate (Pass 2 mesh): stepped pylons, relief bands, deep lintel, arched opening; optional energy inlay."""
+    arch_mesh("Gate", center, yaw + 90, (width / 1600.0, 1.0, height / 3400.0), material, folder)
     if energy:
-        box(V(center.x - fx * pw * 0.52, center.y - fy * pw * 0.52, center.z + height + pw * 0.35), (6, width * 0.8, pw * 0.08), energy, rot=R(0, yaw, 0), folder=folder)
+        fx_, fy_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+        off = 330.0
+        box(V(center.x - fx_ * off, center.y - fy_ * off, center.z + height * 1.06), (6, width * 0.7, 18), energy,
+            rot=R(0, yaw, 0), folder=folder, cast_shadow=False)
 
 
 def stairs(start, yaw, width, steps, rise, run, material, folder="Dressing/Stairs", collision="NoCollision"):
@@ -225,38 +224,25 @@ def beam(p0, p1, thick, material, folder="Dressing/Machinery", collision="NoColl
 
 
 def lattice_tower(base, width, height, material, levels=6, folder="Dressing/Machinery"):
-    """Four legs with cross bracing — mining gantry / observation mast."""
-    h = width / 2.0
-    corners = [(-h, -h), (h, -h), (h, h), (-h, h)]
-    for cx, cy in corners:
-        beam(V(base.x + cx, base.y + cy, base.z), V(base.x + cx * 0.75, base.y + cy * 0.75, base.z + height), width * 0.09, material, folder)
-    for lv in range(1, levels + 1):
-        z0 = base.z + height * (lv - 1) / levels
-        z1 = base.z + height * lv / levels
-        k0 = 1.0 - 0.25 * (lv - 1) / levels
-        k1 = 1.0 - 0.25 * lv / levels
-        for i in range(4):
-            a, b2 = corners[i], corners[(i + 1) % 4]
-            beam(V(base.x + a[0] * k1, base.y + a[1] * k1, z1), V(base.x + b2[0] * k1, base.y + b2[1] * k1, z1), width * 0.06, material, folder)
-            beam(V(base.x + a[0] * k0, base.y + a[1] * k0, z0), V(base.x + b2[0] * k1, base.y + b2[1] * k1, z1), width * 0.04, material, folder)
+    """Lattice gantry tower (Pass 2 merged mesh)."""
+    arch_mesh("GantryTower", base, 0.0, (width / 700.0, width / 700.0, height / 5200.0), material, folder)
 
 
 def chain(p0, p1, material, link=60.0, sag=0.08, folder="Dressing/Chains"):
-    """Hanging chain: alternating flattened links along a sagging curve."""
+    """Hanging chain of real torus links (Pass 2), alternating 90° along a sagging curve."""
     d = math.sqrt((p1.x - p0.x) ** 2 + (p1.y - p0.y) ** 2 + (p1.z - p0.z) ** 2)
-    n = max(2, int(d / link))
-    pts = []
-    for i in range(n + 1):
-        t = i / float(n)
-        pts.append(V(p0.x + (p1.x - p0.x) * t, p0.y + (p1.y - p0.y) * t, p0.z + (p1.z - p0.z) * t - math.sin(math.pi * t) * d * sag))
+    n = max(2, int(d / (link * 0.85)))
+    sc = link / 100.0
     for i in range(n):
-        a, b2 = pts[i], pts[i + 1]
+        t0, t1 = i / float(n), (i + 1) / float(n)
+        a = V(p0.x + (p1.x - p0.x) * t0, p0.y + (p1.y - p0.y) * t0, p0.z + (p1.z - p0.z) * t0 - math.sin(math.pi * t0) * d * sag)
+        b2 = V(p0.x + (p1.x - p0.x) * t1, p0.y + (p1.y - p0.y) * t1, p0.z + (p1.z - p0.z) * t1 - math.sin(math.pi * t1) * d * sag)
         dx, dy, dz = b2.x - a.x, b2.y - a.y, b2.z - a.z
-        L = math.sqrt(dx * dx + dy * dy + dz * dz)
         yaw = math.degrees(math.atan2(dy, dx))
         pitch = math.degrees(math.atan2(dz, math.sqrt(dx * dx + dy * dy)))
-        box(V((a.x + b2.x) / 2, (a.y + b2.y) / 2, (a.z + b2.z) / 2), (L * 1.15, link * 0.12, link * 0.42), material,
-            rot=R(pitch, yaw, 90.0 if i % 2 else 0.0), folder=folder, cast_shadow=False)
+        # link mesh is long along Y: rotate so Y follows the chain direction
+        arch_mesh("ChainLink", V((a.x + b2.x) / 2, (a.y + b2.y) / 2, (a.z + b2.z) / 2), yaw - 90, (sc * 1.5, sc * 1.5, sc * 1.5),
+                  material, folder, pitch=0.0, roll=pitch + (90.0 if i % 2 else 0.0), cast_shadow=False)
 
 
 def ring_of_boxes(radius, count, size, z, material, start_deg=0.0, end_deg=360.0, folder="Dressing", collision="NoCollision", skip=None, jitter=None, rng=None, hidden=False, label=None):
