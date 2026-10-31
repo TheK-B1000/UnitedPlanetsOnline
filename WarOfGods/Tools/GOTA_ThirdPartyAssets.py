@@ -65,7 +65,9 @@ def verify():
             continue
         missing, changed, ok = [], [], 0
         for line in open(mpath):
-            digest, size, rel = line.rstrip("\n").split("  ", 2)
+            if not line.strip():
+                continue
+            digest, size, rel = line.rstrip("\r\n").split("  ", 2)
             full = os.path.join(CONTENT, rel)
             if not os.path.exists(full):
                 missing.append(rel)
