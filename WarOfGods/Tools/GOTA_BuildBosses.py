@@ -57,7 +57,7 @@ def window(start, end, damage, bone="hand_r", radius=120.0):
 ATTACKS = [
     dict(id="ClawCombo", name="Claw Combo", kind=K.MELEE, anims=["Attack_Melee_A", "Attack_Melee_B", "Attack_Melee_C"], rate=1.0,
          windows=[(0.36, 0.52, 9, "hand_r"), (1.33, 1.49, 9, "hand_l"), (2.30, 2.48, 11, "hand_r")],
-         min=0, max=300, cooldown=3.0, w1=1.0, w2=1.0, track=0.30, recovery=1.0, rec2=0.7, block=True,
+         min=0, max=260, cooldown=3.0, w1=1.0, w2=1.0, track=0.30, recovery=1.0, rec2=0.7, block=True,  # max 260: swipe arc reach ~250
          impact_fx=VFX + "Hit/P_Concrete", fx_scale=1.4, cast_sfx=RS + "Rampage_Effort_Attack", impact_sfx="/Game/Audio/axe-block", kick=1.0),
     dict(id="BehemothCharge", name="Behemoth Charge", kind=K.CHARGE, anims=["Ability_Energize"], rate=1.15,
          windows=[(0.75, 0.75, 18, "root")], speed=1650, seconds=1.0, knock=950,
@@ -80,11 +80,13 @@ ATTACKS = [
 def build_definition():
     name = "DA_Boss_QuarryBehemoth"
     path = OUT + "/" + name
-    if EAL.does_asset_exist(path):
-        EAL.delete_asset(path)
-    f = unreal.DataAssetFactory()
-    f.set_editor_property("data_asset_class", unreal.GOTABossDefinition)
-    da = unreal.AssetToolsHelpers.get_asset_tools().create_asset(name, OUT, unreal.GOTABossDefinition, f)
+    # Update in place: the boss Blueprint references this asset, so deleting it fails (and create_asset then
+    # returns None), which silently left the old values in place.
+    da = EAL.load_asset(path) if EAL.does_asset_exist(path) else None
+    if not da:
+        f = unreal.DataAssetFactory()
+        f.set_editor_property("data_asset_class", unreal.GOTABossDefinition)
+        da = unreal.AssetToolsHelpers.get_asset_tools().create_asset(name, OUT, unreal.GOTABossDefinition, f)
     da.set_editor_property("boss_id", "QuarryBehemoth")
     da.set_editor_property("display_name", unreal.Text("The Quarry Behemoth"))
     da.set_editor_property("mesh", asset(R + "Meshes/Rampage"))
@@ -134,7 +136,7 @@ def build_definition():
         attacks.append(at)
         P(" attack", a["id"], "anims", [bool(x) for x in at.get_editor_property("animations")], "fx", bool(at.get_editor_property("impact_fx")))
     da.set_editor_property("attacks", attacks)
-    EAL.save_asset(path)
+    EAL.save_asset(path, only_if_is_dirty=False)
     P("definition saved", path)
 
 

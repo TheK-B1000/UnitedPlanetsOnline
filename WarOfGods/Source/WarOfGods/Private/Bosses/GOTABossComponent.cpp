@@ -578,8 +578,18 @@ void UGOTABossComponent::ResolveWindow(const FGOTABossAttack& A, const FGOTABoss
 		FVector ToTarget = Target->GetActorLocation() - Claw;
 		const float Vertical = FMath::Abs(ToTarget.Z);
 		ToTarget.Z = 0.f;
-		if (ToTarget.Size() <= Win.Radius + TargetRadius && Vertical < 200.f && HasLineOfSight(Char, Target))
+		// Swipe arc: Rampage's Paragon swipes are animated for point-blank range (the claws stay near his own body),
+		// so the window also strikes anything in front of him within capsule + claw reach - the same rule as Grab.
+		FVector FromBody = Target->GetActorLocation() - Char->GetActorLocation();
+		FromBody.Z = 0.f;
+		const float Facing = FVector::DotProduct(FromBody.GetSafeNormal(), Char->GetActorForwardVector());
+		const float ArcReach = Char->GetCapsuleComponent()->GetScaledCapsuleRadius() + Win.Radius + TargetRadius;
+		const bool bClawContact = ToTarget.Size() <= Win.Radius + TargetRadius;
+		const bool bArcContact = FromBody.Size() <= ArcReach && Facing >= 0.35f;
+		if ((bClawContact || bArcContact) && Vertical < 200.f && HasLineOfSight(Char, Target))
 		{
+			UE_LOG(LogGOTABoss, Log, TEXT("Boss %s window %d hit (%s): body %.0f, reach %.0f, facing %.2f"), *A.AttackId.ToString(), WindowIndex,
+				bClawContact ? TEXT("claw") : TEXT("swipe arc"), FromBody.Size(), ArcReach, Facing);
 			ResolvedWindows.Add(WindowIndex);
 			const bool bLanded = DamageTarget(Target, A, Win.Damage);
 			bAttackLanded |= bLanded;

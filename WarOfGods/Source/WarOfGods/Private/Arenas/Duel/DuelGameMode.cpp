@@ -12,6 +12,7 @@
 #include "Characters/GOTAHeroDefinition.h"
 #include "Characters/GOTAHeroRegistry.h"
 #include "Characters/GOTAHeroBodyComponent.h"
+#include "Characters/GOTAEnemyDefinition.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Bosses/GOTABossComponent.h"
 #include "Bosses/GOTABossTypes.h"
@@ -95,6 +96,13 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 		if (!BossId.IsEmpty())
 		{
 			BossDefinition = LoadObject<UGOTABossDefinition>(nullptr, *FString::Printf(TEXT("/Game/Bosses/DA_Boss_%s.DA_Boss_%s"), *BossId, *BossId));
+			if (BossDefinition && !BossDefinition->Mesh.LoadSynchronous())
+			{
+				// A boss is never shown as the mannequin frame: without its body the encounter is unavailable.
+				UE_LOG(LogTemp, Error, TEXT("Duel: boss '%s' body %s is not installed - boss encounter unavailable (Docs/GOTA_THIRD_PARTY_ASSETS.md)"),
+					*BossId, *BossDefinition->Mesh.ToString());
+				BossDefinition = nullptr;
+			}
 			if (BossDefinition)
 			{
 				bVersusAI = true;
@@ -1099,6 +1107,18 @@ void ADuelGameMode::SpawnAIFighter()
 		Champion->SpawnDefaultController();
 	}
 	AIFighterPawn = Champion;
+	// Fight AI champion wears the elite champion body (bosses bring their own body via UGOTABossComponent).
+	if (!BossDefinition)
+	{
+		const UGOTAEnemyRegistry* Enemies = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAEnemyRegistry>() : nullptr;
+		if (const UGOTAEnemyDefinition* Def = Enemies ? Enemies->FindEnemy(TEXT("Enemy_Champion")) : nullptr)
+		{
+			if (!UGOTAHeroBodyComponent::ApplyToPawn(Champion, Def))
+			{
+				UE_LOG(LogTemp, Error, TEXT("Duel Fight AI: champion body %s could not be applied"), *Def->BodyMesh.ToString());
+			}
+		}
+	}
 	BindCombatDeath(Champion);
 	Champion->OnEndPlay.AddUniqueDynamic(this, &ADuelGameMode::HandleFighterEndPlay);
 	SetAIBrainActive(false);

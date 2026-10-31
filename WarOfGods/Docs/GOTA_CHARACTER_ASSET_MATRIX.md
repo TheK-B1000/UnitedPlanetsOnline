@@ -112,3 +112,39 @@ Rigs were built with `Tools/GOTA_BuildParagonRigs.py` (`GOTA_BODIES=Kwang,Aurora
 | Ayla | — | — | — | No installed asset fits | Missing Asset (preview only) |
 
 Gameplay sword and shield stay hidden for all god bodies (`bHideAttachedWeaponMeshes`). Each body shows its own weapon. Damage is the frame's forward sweep, unchanged.
+
+### Stage 6–7: enemy bodies and the Horde (2026-10-31)
+
+Enemies keep their combat pawns (AI, attacks, montages and hit windows on the hidden mannequin frame) and now wear real bodies through the same runtime retarget as the gods.
+- **Definitions:** `UGOTAEnemyDefinition` assets in `/Game/Enemies/Data` (primary asset type `GOTAEnemy`, never in hero selection), built by `Tools/GOTA_BuildEnemyBodies.py`.
+- **Applying them:** `UGOTAEnemyBodySubsystem` dresses each enemy server-side when it spawns, matching its exact class. That covers Fight AI, Horde, Story and level-placed enemies.
+- **Replication:** clients rebuild the body from the replicated ID.
+- **Missing assets:** a body that fails to load is logged as an error, never a silent fallback.
+
+| Archetype | Pawn | Body | Hand gap | Verified |
+|---|---|---|---|---|
+| Elite champion (Fight AI opponent) | BP_Enemy_Melee, dressed by `ADuelGameMode` | Paragon Feng Mao (glaive) | 17–19 cm | Full Fight AI rounds: fights, dies, respawns as Feng Mao |
+| Melee soldier | BP_Enemy_Melee | Lane Melee minion (Dawn) | ~40 cm (pose) | Horde waves 1–5, every spawn dressed |
+| Ranged soldier | BP_Enemy_Ranged | Lane Ranged minion (Dawn) | 35–42 cm (pose) | Horde waves 2+ |
+| Heavy brute (Horde boss wave) | BP_Enemy_Boss | Lane Super minion (Dawn) | ~50 cm (pose) | Horde final wave |
+| Magic caster | BP_Enemy_Mage | Its own `SKM_Mage` (not a mannequin) | — | Unchanged |
+| Quarry Behemoth | BP_Boss_QuarryBehemoth | Rampage, own skeleton | — | Charge, slam, grasp and claws all land (below) |
+| Training dummy | — | UE mannequin | — | No dummy actor exists; the mannequin's only role is the hidden combat frame |
+
+**Minion hand gaps** don't change with scale: their arms are posed wider than the frame's. Their own blades and guns show, and the frame's sword is hidden. Enemy damage is unchanged.
+
+**Mannequin fallbacks removed or flagged:**
+- The Fight AI opponent and all Horde soldiers no longer render as mannequins.
+- A `?Boss=` encounter whose body isn't installed is refused with an error; the duel falls back to the standard Fight AI (Feng Mao), never a mannequin boss.
+- A god or enemy body that fails to load logs an error naming the missing asset.
+
+**Horde fix (pre-existing bug):** `AHordeEncounterDirector::HandleEnemyEndPlay` wasn't a `UFUNCTION`, so its `OnEndPlay` binding failed on every spawn ("Unable to bind delegate"). It's now bound.
+
+### Stage 8: Rampage claw reach (2026-10-31)
+
+- **Cause:** Rampage's Paragon swipes are animated for point-blank range. At the windows his hands sit between 87 cm behind and 13 cm in front of his centre, while he attacked from 273–280 cm, so every claw window missed.
+- **Fix:** each claw window keeps its hand-bone sphere and also strikes a target in front of him (facing ≥ 0.35) within capsule + claw radius (260 cm). That's the same rule as his Grab. Claw Combo's maximum start range is 300 → 260 cm, so he steps in first.
+- **Unchanged:** damage (9 / 9 / 11), timings and cooldowns.
+- **Result** (`Tools/Tests/boss_claw.txt`): 8 of 8 claw windows hit from 177–246 cm, including one true claw-bone contact. Charge, Earthshaker and Crushing Grasp land too.
+- **Dodging** works by geometry (step out of the arc or behind him); it hasn't been verified live.
+- **Data fix:** `Tools/GOTA_BuildBosses.py` deleted and recreated the boss definition, but the delete fails while the boss Blueprint references it, so the script had stopped early and boss data changes weren't saving. It now updates the asset in place.

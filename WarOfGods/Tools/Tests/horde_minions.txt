@@ -1,0 +1,57 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Horde.SkipPrep
+wait 5
+gota.Test.LookAt Enemy_Melee 300 20
+wait 0.5
+gota.Test.Shot 70_minion_melee
+gota.Test.LookAt Enemy_Melee 300 -60 1
+wait 0.5
+gota.Test.Shot 71_minion_melee
+gota.Test.LookAt
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 5
+gota.Test.LookAt Enemy_Ranged 300 20
+wait 0.5
+gota.Test.Shot 72_minion_ranged
+gota.Test.BodyScale 1.0
+wait 0.3
+gota.Test.Body
+gota.Test.BodyScale 0.9
+wait 0.3
+gota.Test.Body
+gota.Test.BodyScale 1.1
+wait 0.3
+gota.Test.Body
+gota.Test.BodyScale 1.2
+wait 0.3
+gota.Test.Body
+gota.Test.BodyScale 1.0
+gota.Test.LookAt
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 6
+gota.Horde.Dump
+gota.Test.Body
+gota.Test.LookAt Enemy_Boss 420 20
+wait 0.5
+gota.Test.Shot 73_horde_brute
+gota.Test.LookAt Enemy_Mage 300 20
+wait 0.5
+gota.Test.Shot 74_horde_mage
+quit

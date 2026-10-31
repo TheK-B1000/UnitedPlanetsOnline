@@ -26,6 +26,10 @@ BODIES = {
     "Aurora": "/Game/ParagonAurora/Characters/Heroes/Aurora/Meshes/Aurora",
     "Gideon": "/Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon",
     "Steel": "/Game/ParagonSteel/Characters/Heroes/Steel/Meshes/Steel",
+    # Enemy roster bodies (Docs/GOTA_CHARACTER_ASSET_MATRIX.md). Melee and Ranged lane minions share a skeleton.
+    "MinionLane": "/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Melee_Dawn",
+    "MinionSuper": "/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Super_Dawn",
+    "FengMao": "/Game/ParagonFengMao/Characters/Heroes/FengMao/Meshes/FengMao_GDC",
 }
 # UE5 Mannequin layout (Echo): full spine/neck and finger chains so hand grips on the gameplay sword hold.
 CHAINS_UE5 = [

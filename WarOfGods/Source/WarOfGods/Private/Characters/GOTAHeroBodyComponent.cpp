@@ -3,6 +3,7 @@
 #include "Characters/GOTAHeroBodyComponent.h"
 #include "Characters/GOTAHeroDefinition.h"
 #include "Characters/GOTAHeroRegistry.h"
+#include "Characters/GOTAEnemyDefinition.h"
 #include "Characters/GOTARetargetAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -103,6 +104,14 @@ void UGOTAHeroBodyComponent::ApplyBody()
 	const UGameInstance* GI = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
 	const UGOTAHeroRegistry* Registry = GI ? GI->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
 	const UGOTAHeroDefinition* Hero = Registry ? Registry->FindHero(HeroId) : nullptr;
+	if (!Hero && GI)
+	{
+		// Enemy bodies use the same fields and path, from their own registry (never hero selection).
+		if (const UGOTAEnemyRegistry* Enemies = GI->GetSubsystem<UGOTAEnemyRegistry>())
+		{
+			Hero = Enemies->FindEnemy(HeroId);
+		}
+	}
 	if (!Character || !Character->GetMesh() || !Hero)
 	{
 		return;
@@ -111,7 +120,8 @@ void UGOTAHeroBodyComponent::ApplyBody()
 	UIKRetargeter* Retargeter = Hero->BodyRetargeter.LoadSynchronous();
 	if (!BodyAsset || !Retargeter)
 	{
-		UE_LOG(LogGOTAHeroBody, Warning, TEXT("Hero %s: body or retargeter failed to load — keeping the pawn mesh"), *HeroId.ToString());
+		UE_LOG(LogGOTAHeroBody, Error, TEXT("Hero %s: body or retargeter failed to load (%s) - the combat frame is showing; install the asset (Docs/GOTA_THIRD_PARTY_ASSETS.md)"),
+			*HeroId.ToString(), *Hero->BodyMesh.ToString());
 		return;
 	}
 

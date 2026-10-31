@@ -14,6 +14,8 @@
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
 #include "HAL/IConsoleManager.h"
+#include "Camera/CameraActor.h"
+#include "GameFramework/PlayerController.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTABodyTest, Log, All);
 
@@ -118,12 +120,12 @@ namespace GOTABodyTest
 						Points += FString::Printf(TEXT("%s@%.0f "), *N.ToString(), BodyMesh ? FVector::Dist(SM->GetSocketLocation(N), BodyMesh->GetBoneLocation(TEXT("hand_r"))) : -1.f);
 					}
 				}
-				bool bVisible = false;
+				bool bVisible = !A->IsHidden();
 				TArray<UPrimitiveComponent*> Prims;
 				A->GetComponents<UPrimitiveComponent>(Prims);
 				for (UPrimitiveComponent* P : Prims)
 				{
-					bVisible |= P->IsVisible() && !P->bHiddenInGame;
+					bVisible = bVisible && (P->IsVisible() && !P->bHiddenInGame);
 				}
 				UE_LOG(LogGOTABodyTest, Log, TEXT("  WEAPON [%s] %s parent=%s socket=%s onBody=%d visible=%d rootToSocket=%.1f traceSockets(dist to visible hand_r)=[%s]"),
 					NetName(W), *A->GetName(), *GetNameSafe(Parent), *Socket.ToString(), Parent && Parent == BodyMesh ? 1 : 0, bVisible ? 1 : 0,
@@ -198,6 +200,46 @@ namespace GOTABodyTest
 		UE_LOG(LogGOTABodyTest, Log, TEXT("BodyScale %.2f"), S);
 	}
 	static FAutoConsoleCommand CmdBodyScale(TEXT("gota.Test.BodyScale"), TEXT("Rescale visible hero bodies (tuning)."), FConsoleCommandWithArgsDelegate::CreateStatic(&BodyScale));
+
+	/** gota.Test.LookAt <ClassSubstring> [dist=260] [yaw=30] [n=0]: view the n-th matching character from the front (0 args = player view). */
+	static TWeakObjectPtr<ACameraActor> GLookCam;
+	static void LookAt(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		APlayerController* PC = W ? W->GetFirstPlayerController() : nullptr;
+		if (!PC)
+		{
+			return;
+		}
+		if (Args.Num() == 0)
+		{
+			PC->SetViewTarget(PC->GetPawn());
+			return;
+		}
+		const float Dist = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 260.f;
+		const float Yaw = Args.Num() > 2 ? FCString::Atof(*Args[2]) : 30.f;
+		int32 Skip = Args.Num() > 3 ? FCString::Atoi(*Args[3]) : 0;
+		for (TActorIterator<ACharacter> It(W); It; ++It)
+		{
+			if (!It->GetClass()->GetName().Contains(Args[0]) || Skip-- > 0)
+			{
+				continue;
+			}
+			const FVector Target = It->GetActorLocation() + FVector(0, 0, 40);
+			const FRotator Facing(0.f, It->GetActorRotation().Yaw + 180.f - Yaw, 0.f);
+			const FVector CamLoc = Target - Facing.Vector() * Dist + FVector(0, 0, 30);
+			if (!GLookCam.IsValid())
+			{
+				GLookCam = W->SpawnActor<ACameraActor>(CamLoc, FRotator::ZeroRotator);
+			}
+			GLookCam->SetActorLocation(CamLoc);
+			GLookCam->SetActorRotation((Target - CamLoc).Rotation());
+			PC->SetViewTarget(GLookCam.Get());
+			UE_LOG(LogGOTABodyTest, Log, TEXT("LookAt %s at %s"), *It->GetName(), *It->GetActorLocation().ToCompactString());
+			return;
+		}
+	}
+	static FAutoConsoleCommand CmdLookAt(TEXT("gota.Test.LookAt"), TEXT("Camera on a character: <ClassSubstring> [dist] [yaw] [n]."), FConsoleCommandWithArgsDelegate::CreateStatic(&LookAt));
 
 	static FAutoConsoleCommand CmdBody(TEXT("gota.Test.Body"), TEXT("Log hero bodies, hand gaps and kept weapons on this machine."), FConsoleCommandWithArgsDelegate::CreateStatic(&Body));
 	static FAutoConsoleCommand CmdSpawns(TEXT("gota.Test.WatchSpawns"), TEXT("Log actors spawned by characters (0 = stop)."), FConsoleCommandWithArgsDelegate::CreateStatic(&WatchSpawns));
