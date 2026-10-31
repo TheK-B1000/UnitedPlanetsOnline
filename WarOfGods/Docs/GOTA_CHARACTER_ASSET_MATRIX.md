@@ -148,3 +148,40 @@ Enemies keep their combat pawns (AI, attacks, montages and hit windows on the hi
 - **Result** (`Tools/Tests/boss_claw.txt`): 8 of 8 claw windows hit from 177–246 cm, including one true claw-bone contact. Charge, Earthshaker and Crushing Grasp land too.
 - **Dodging** works by geometry (step out of the arc or behind him); it hasn't been verified live.
 - **Data fix:** `Tools/GOTA_BuildBosses.py` deleted and recreated the boss definition, but the delete fails while the boss Blueprint references it, so the script had stopped early and boss data changes weren't saving. It now updates the asset in place.
+
+### Multiplayer and packaged validation (2026-10-31)
+
+| Check | Result |
+|---|---|
+| Listen server + client, Horde (`horde_mp_host.txt` / `horde_mp_client.txt`) | ✅ The client rebuilds every minion body from the replicated ID (`remote`) and sees Echo on both players |
+| Packaged Win64, Fight AI full match | ✅ Feng Mao champion every round, Echo won 2–1, match completed |
+| Packaged, Zephyr (DevHeroes) | ✅ Kwang body, hands 5–8 cm; Feng Mao opponent |
+| Packaged, Horde | ✅ 32 enemies dressed across waves 1–5 and the boss wave; no delegate error |
+| Packaged, Quarry Behemoth | ✅ Rampage body; 12 of 12 claw windows hit |
+
+## Status summary
+
+| Character | Asset | Status |
+|---|---|---|
+| UPA Warden (default player) | Windwalker Echo | **Playable**, Packaged Tested |
+| Drakon | Greystone | Integrated, Combat Tested, Packaged Tested; In Development |
+| Nyx | Countess | Integrated, Combat Tested; In Development |
+| Varoth | Sevarog @ 0.68 | Integrated, Combat Tested; In Development. Hands now 6–9 cm |
+| Zephyr | Kwang | Integrated, Combat Tested, Packaged Tested; In Development (no abilities) |
+| Lysara | Aurora | Integrated, Combat Tested; In Development (no abilities) |
+| Kairos | Gideon | Integrated, Combat Tested; In Development (no abilities; the card's blade isn't shown) |
+| Orion | Steel @ 0.75, shield hidden | Integrated, Combat Tested; In Development (hands about 30 cm off, needs IK) |
+| Ayla | — | **Missing Asset**. Needs a dedicated model with silver-white hair, cybernetic arms and machine components |
+| Fight AI champion | Feng Mao | Integrated, Packaged Tested |
+| Melee, ranged and heavy enemies | Lane minions (Dawn) | Integrated, Packaged Tested (Horde) |
+| Magic caster | SKM_Mage | Existing real mesh |
+| Quarry Behemoth | Rampage | Claws fixed, Packaged Tested. Phase II, death and results still need a full-encounter pass |
+
+## Remaining asset requirements
+
+- **Ayla:** a dedicated character model. No installed pack resembles her.
+- **Orion:** IK hand goals in the Steel retargeter. The card's gravity lance has no asset.
+- **Kairos:** the card's chrono blade has no asset.
+- **Lane minions:** hand-pose offsets (35–50 cm). These are cosmetic; their own weapons are shown.
+- **Minions:** no Anim Blueprints or montages ship with them. If enemies ever move off the shared combat frame, those must be built.
+- **Training dummy:** no dedicated actor exists. Add one only if a mode needs it; it's the one place the mannequin may appear.
