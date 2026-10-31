@@ -8,6 +8,8 @@
 #include "GOTAHeroDefinition.generated.h"
 
 class UTexture2D;
+class USkeletalMesh;
+class UIKRetargeter;
 
 /** Whether a hero can actually be played. Never inferred from the existence of artwork. */
 UENUM(BlueprintType)
@@ -142,4 +144,29 @@ public:
 	/** Why the hero is not playable (shown verbatim in the selection UI). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
 	FText UnavailableReason;
+
+	// ---------------------------------------------------------------- Body (cosmetic, prototype)
+	/**
+	 * Visible body worn over the gameplay pawn. The pawn's own mesh stays hidden but keeps animating,
+	 * so combat (montages, hit windows, notifies) is unchanged; this mesh follows it through
+	 * BodyRetargeter. Empty = the pawn's own mesh is shown. Paragon meshes here are PROTOTYPE bodies.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
+	TSoftObjectPtr<USkeletalMesh> BodyMesh;
+
+	/** Retargeter from the pawn's skeleton to BodyMesh (Tools/GOTA_BuildParagonRigs.py). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
+	TSoftObjectPtr<UIKRetargeter> BodyRetargeter;
+
+	/** Uniform scale of the body relative to the pawn mesh. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body", meta = (ClampMin = "0.3", ClampMax = "2.0"))
+	float BodyScale = 1.f;
+
+	/** Hide meshes attached to the pawn (e.g. the shared prototype sword) when the body carries its own weapon. Cosmetic only — collision is untouched. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
+	bool bHideAttachedWeaponMeshes = true;
+
+	/** Where the body comes from, for credits/QA (e.g. "Paragon: Greystone (prototype)"). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
+	FText BodySourceNote;
 };

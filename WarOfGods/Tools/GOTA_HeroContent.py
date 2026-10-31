@@ -102,6 +102,26 @@ HEROES = [
          weapon="Gravity Lance", accent=(0.3, 0.55, 1.0)),
 ]
 
+# Prototype bodies (free Epic Paragon assets) worn over the BP_Player combat frame through a runtime
+# IK retargeter (Tools/GOTA_BuildParagonRigs.py, UGOTAHeroBodyComponent). These are PROTOTYPE bodies,
+# not final god designs, and do not change combat. A hero stays IN_DEVELOPMENT until a full duel
+# (selection, spawn, combat, animation, damage, match end) has been verified with it.
+# Paragon licence: use in Unreal projects is allowed; never use the Paragon name to market the game.
+PARAGON_RIGS = "/Game/Heroes/Paragon/Rigs"
+BODIES = {
+    "Drakon": dict(mesh="/Game/ParagonGreystone/Characters/Heroes/Greystone/Meshes/Greystone",
+                   retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Greystone", scale=1.0,
+                   note="Paragon: Greystone (prototype body)", status="IN_DEVELOPMENT"),
+    "Nyx": dict(mesh="/Game/ParagonCountess/Characters/Heroes/Countess/Meshes/SM_Countess",
+                retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Countess", scale=1.0,
+                note="Paragon: Countess (prototype body)", status="IN_DEVELOPMENT"),
+    "Varoth": dict(mesh="/Game/ParagonSevarog/Characters/Heroes/Sevarog/Meshes/Sevarog",
+                   retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Sevarog", scale=1.0,
+                   note="Paragon: Sevarog (prototype body)", status="IN_DEVELOPMENT"),
+}
+IN_DEVELOPMENT_REASON = ("In development: prototype body over the shared combat frame. Not yet verified "
+                         "through a full match, so it cannot be selected.")
+
 PREVIEW_REASON = ("No gameplay character exists for this hero yet (no mesh, animation or combat setup in the project). "
                   "Preview only — it will not be substituted with another fighter.")
 

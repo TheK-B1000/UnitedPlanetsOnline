@@ -39,6 +39,10 @@
 			"Enabled": true
 		},
 		{
+			"Name": "IKRig",
+			"Enabled": true
+		},
+		{
 			"Name": "GeometryScripting",
 			"Enabled": true,
 			"TargetAllowList": [

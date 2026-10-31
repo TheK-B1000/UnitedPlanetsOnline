@@ -8,16 +8,18 @@
 | Hero | Card | Portrait / thumbnail | Card data in DA | Faction stated | Ability icons | Weapon art | 3D mesh | Anim BP | Combat setup | Selectable | PIE / MP validated |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Ayla — Desert Storm | ✅ | ✅ | ✅ (5 abilities) | ✅ UPA · Ascendant · Mobility/Elemental/Precision | pending | pending | ❌ | ❌ | ❌ | Preview only | — |
-| Drakon — Warfall Titan | ✅ | ✅ | ✅ (4) | ❌ not on card | pending | pending | ❌ | ❌ | ❌ | Preview only | — |
+| Drakon — Warfall Titan | ✅ | ✅ | ✅ (4) | ❌ not on card | pending | pending | 🟡 prototype: Paragon Greystone | retargeted from BP_Player | shared Warden kit | In Development | Standalone full match ✅ (dev switch) |
 | Lysara — Astral Sovereign | ✅ | ✅ | ✅ (5) | ❌ | pending | pending | ❌ | ❌ | ❌ | Preview only | — |
 | Kairos — Chronos Warden | ✅ | ✅ | ✅ (5) | ❌ | pending | pending | ❌ | ❌ | ❌ | Preview only | — |
 | Zephyr — Wind Rebellion | ✅ | ✅ | ✅ (5) | ❌ | pending | pending | ❌ | ❌ | ❌ | Preview only | — |
-| Varoth — Inferno Colossus | ✅ | ✅ | ✅ (5) | ❌ | pending | pending | ❌ | ❌ | ❌ | Preview only | — |
-| Nyx — Shadow Weaver | ✅ | ✅ | ✅ (5) | ✅ UPA · Ascendant · Intelligence/Stealth/Control | pending | pending | ❌ | ❌ | ❌ | Preview only | — |
+| Varoth — Inferno Colossus | ✅ | ✅ | ✅ (5) | ❌ | pending | pending | 🟡 prototype: Paragon Sevarog | retargeted (pose needs tuning) | shared Warden kit | In Development | Standalone full match ✅ (dev switch) |
+| Nyx — Shadow Weaver | ✅ | ✅ | ✅ (5) | ✅ UPA · Ascendant · Intelligence/Stealth/Control | pending | pending | 🟡 prototype: Paragon Countess | retargeted from BP_Player | shared Warden kit | In Development | Standalone full match ✅ (dev switch) |
 | Orion — Starforge Sentinel | ✅ | ✅ | ✅ (5) | ❌ | pending | pending | ❌ | ❌ | ❌ | Preview only | — |
 | **UPA Warden (Prototype)** | — | Warden crop | partial (no card stats) | UPA · Warden | — | — | ✅ `BP_Player` | ✅ | ✅ existing | **Playable** | Standalone ✅ (Fight AI) |
 
-**Audit finding:** the project has no skeletal mesh, animation set, weapon or combat configuration for any of the eight heroes. Existing characters are the UE mannequins (`BP_Player`), the Paragon heroes (Rampage, Feng Mao, Gideon, Sparrow), `SKM_Mage` and BossyEnemy. Per the brief, none of these is substituted for a roster hero. The heroes are previewable, and SELECT HERO explains why it's disabled.
+**Update (2026-10-31):** Drakon, Nyx and Varoth now wear Paragon prototype bodies over the BP_Player combat frame. See `GOTA_PARAGON_INTEGRATION.md`. They stay In Development until each has its own moveset and abilities and has been verified in multiplayer.
+
+**Original audit finding:** the project has no skeletal mesh, animation set, weapon or combat configuration for any of the eight heroes. Existing characters are the UE mannequins (`BP_Player`), the Paragon heroes (Rampage, Feng Mao, Gideon, Sparrow), `SKM_Mage` and BossyEnemy. Per the brief, none of these is substituted for a roster hero. The heroes are previewable, and SELECT HERO explains why it's disabled.
 
 **Pending derivatives (agreed):** ability icons and weapon art stay in the source cards for now, because their positions differ per card. `FGOTAHeroAbilityInfo::Icon` exists for when they are cut.
 

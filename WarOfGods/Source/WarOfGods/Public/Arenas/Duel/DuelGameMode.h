@@ -42,6 +42,8 @@ public:
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT("")) override;
 	/** Spawns the accepted hero's gameplay pawn (never a client-supplied class). */
 	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
+	/** Applies the selected hero's cosmetic body (UGOTAHeroBodyComponent) to every spawned fighter. */
+	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Duel")
 	void RequestStartMatch();

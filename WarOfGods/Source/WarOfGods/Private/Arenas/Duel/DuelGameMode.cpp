@@ -11,6 +11,7 @@
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Characters/GOTAHeroDefinition.h"
 #include "Characters/GOTAHeroRegistry.h"
+#include "Characters/GOTAHeroBodyComponent.h"
 #include "Engine/GameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Characters/StatsComponent.h"
@@ -61,6 +62,17 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 	bAutoStartEncounterDirector = false;
 
 	bVersusAI = UGameplayStatics::ParseOption(Options, TEXT("Opponent")).Equals(TEXT("AI"), ESearchCase::IgnoreCase);
+#if !UE_BUILD_SHIPPING
+	// Testing only: ?DevHeroes=1 lets In Development heroes spawn (see UGOTAHeroRegistry::IsHeroSpawnable).
+	if (UGameplayStatics::GetIntOption(Options, TEXT("DevHeroes"), 0) != 0)
+	{
+		if (IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("gota.Heroes.AllowInDevelopment")))
+		{
+			CVar->Set(1, ECVF_SetByCode);
+			UE_LOG(LogTemp, Warning, TEXT("Duel: DevHeroes=1 — In Development heroes may spawn (testing only)"));
+		}
+	}
+#endif
 	if (bVersusAI)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Duel: Fight AI mode (champion %s)"), *AIChampionClass.ToString());
@@ -1182,7 +1194,7 @@ UClass* ADuelGameMode::GetDefaultPawnClassForController_Implementation(AControll
 	const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
 	if (PS && Registry && !PS->HeroId.IsNone())
 	{
-		if (const UGOTAHeroDefinition* Hero = Registry->FindHero(PS->HeroId); Hero && Hero->IsPlayable())
+		if (const UGOTAHeroDefinition* Hero = Registry->FindHero(PS->HeroId); Hero && UGOTAHeroRegistry::IsHeroSpawnable(Hero))
 		{
 			if (UClass* PawnClass = Hero->GameplayPawnClass.LoadSynchronous())
 			{
@@ -1191,6 +1203,21 @@ UClass* ADuelGameMode::GetDefaultPawnClassForController_Implementation(AControll
 		}
 	}
 	return Super::GetDefaultPawnClassForController_Implementation(InController);
+}
+
+void ADuelGameMode::SetPlayerDefaults(APawn* PlayerPawn)
+{
+	Super::SetPlayerDefaults(PlayerPawn);
+	const ADuelPlayerState* PS = PlayerPawn ? PlayerPawn->GetPlayerState<ADuelPlayerState>() : nullptr;
+	if (!PS && PlayerPawn && PlayerPawn->GetController())
+	{
+		PS = PlayerPawn->GetController()->GetPlayerState<ADuelPlayerState>();
+	}
+	const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
+	if (PS && Registry && !PS->HeroId.IsNone())
+	{
+		UGOTAHeroBodyComponent::ApplyToPawn(PlayerPawn, Registry->FindHero(PS->HeroId));
+	}
 }
 
 void ADuelGameMode::EquipFighterLoadout(APawn* Pawn)

@@ -3,8 +3,33 @@
 #include "Characters/GOTAHeroRegistry.h"
 #include "Characters/GOTAHeroDefinition.h"
 #include "Engine/AssetManager.h"
+#include "HAL/IConsoleManager.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTAHeroes, Log, All);
+
+#if !UE_BUILD_SHIPPING
+static TAutoConsoleVariable<int32> CVarGOTAAllowInDevelopmentHeroes(
+	TEXT("gota.Heroes.AllowInDevelopment"), 0,
+	TEXT("1 = In Development heroes with a gameplay pawn may be spawned (testing only; never in shipping)."));
+#endif
+
+bool UGOTAHeroRegistry::IsHeroSpawnable(const UGOTAHeroDefinition* Def)
+{
+	if (!Def)
+	{
+		return false;
+	}
+	if (Def->IsPlayable())
+	{
+		return true;
+	}
+#if !UE_BUILD_SHIPPING
+	return CVarGOTAAllowInDevelopmentHeroes.GetValueOnGameThread() != 0
+		&& Def->Availability == EGOTAHeroAvailability::InDevelopment && !Def->GameplayPawnClass.IsNull();
+#else
+	return false;
+#endif
+}
 
 void UGOTAHeroRegistry::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -74,7 +99,7 @@ bool UGOTAHeroRegistry::ValidateSelection(FName HeroId, EArenaMode Mode, FText& 
 		OutReason = NSLOCTEXT("GOTA", "HeroUnknown", "Unknown hero.");
 		return false;
 	}
-	if (!Def->IsPlayable())
+	if (!IsHeroSpawnable(Def))
 	{
 		OutReason = Def->UnavailableReason.IsEmpty()
 			? NSLOCTEXT("GOTA", "HeroNotPlayable", "This hero does not have a playable character yet.")
@@ -100,7 +125,7 @@ FName UGOTAHeroRegistry::GetDefaultHero(EArenaMode Mode) const
 	FText Ignored;
 	for (const UGOTAHeroDefinition* Def : GetHeroes())
 	{
-		if (Def && ValidateSelection(Def->HeroId, Mode, Ignored))
+		if (Def && Def->IsPlayable() && ValidateSelection(Def->HeroId, Mode, Ignored))
 		{
 			return Def->HeroId;
 		}
