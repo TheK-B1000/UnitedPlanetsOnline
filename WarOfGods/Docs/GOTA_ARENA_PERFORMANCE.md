@@ -32,6 +32,26 @@
 - **Memory** is process-wide (editor-hosted `-game`) and includes editor modules. It is not a shipping budget.
 - **Non-Nanite virtual shadow map overflow** (seen in the first Quarry pass) disappeared after the kitbash primitives moved to Nanite copies.
 
+## Uncapped baseline (VSync off, `t.MaxFPS 0`; `Tools/Tests/arena_<key>_perf.txt`, 15 s of live combat)
+
+Measured 2026-10-31 before Environment Pass 2. This is the reference for regression checks.
+
+| Arena | Frame avg / p95 / max (ms) | FPS | Game thread avg | Render thread avg | GPU avg / p95 |
+|---|---|---|---|---|---|
+| Titan's Quarry | 8.88 / 9.88 / 13.60 | 112.6 | 3.85 | 8.87 | 6.37 / 7.10 |
+| Ashfall Crucible | 8.91 / 10.36 / 15.76 | 112.3 | 3.95 | 8.89 | 6.69 / 7.35 |
+| Frostbound Citadel | 8.21 / 9.22 / 13.82 | 121.8 | 3.65 | 8.20 | 5.79 / 6.40 |
+| Verdant Sanctuary | 11.05 / 12.84 / 25.92 | 90.5 | 3.67 | 11.03 | 10.25 / 11.88 |
+| Sunscar Expanse | 8.46 / 9.60 / 15.72 | 118.2 | 3.50 | 8.45 | 5.95 / 6.35 |
+| Stormbreak Coast | 8.52 / 9.93 / 15.09 | 117.4 | 3.43 | 8.50 | 6.51 / 7.06 |
+| Shattered Dominion | 8.98 / 10.37 / 16.89 | 111.4 | 3.61 | 8.96 | 7.08 / 7.91 |
+
+**Bottleneck: the render thread (CPU), not the GPU.**
+- Frame time tracks render-thread time (8.2–9.0 ms) while the GPU finishes in 5.8–7.1 ms.
+- Probable cost: per-actor draw submission. There are 400–1,200 individual StaticMeshActors per level.
+- Merging repeated pieces into instanced or merged meshes is the main lever.
+- Verdant is the exception: there the GPU is the limit (foliage, volumetrics).
+
 ## Not measured yet (honest)
 
 - **No Unreal Insights traces.** Draw-call counts, shadow cost and texture-streaming pool usage are not broken down per pass.
