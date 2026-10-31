@@ -102,6 +102,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body") float CapsuleHalfHeight = 115.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body") float MeshYaw = -90.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body") float MeshScale = 1.f;
+	/** Montage slot in the boss's anim blueprint (Paragon blueprints use "UpperBody", not "DefaultSlot"). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body") FName MontageSlot = TEXT("UpperBody");
 
 	// --- movement / combat stats ---
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats") float MaxHealth = 900.f;

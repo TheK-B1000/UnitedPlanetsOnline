@@ -76,7 +76,7 @@ protected:
 	void Multicast_StopAnimation(float BlendOut);
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void Multicast_Impact(int32 AttackIndex, FVector_NetQuantize Location, bool bLanded);
+	void Multicast_Impact(int32 InAttackIndex, FVector_NetQuantize Location, bool bLanded);
 
 	/** Cosmetic cue for every peer's HUD/camera (EGOTADuelCue as uint8). */
 	UFUNCTION(NetMulticast, Reliable)
