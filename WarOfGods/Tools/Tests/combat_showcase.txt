@@ -1,0 +1,32 @@
+wait 5
+gota.Duel.Momentum 0 60
+wait 0.3
+gota.Test.Shot 70_hud_momentum_ready
+wait 0.3
+gota.Duel.Director guardbreak
+wait 0.1
+gota.Test.Shot 71_guard_broken
+wait 0.5
+gota.Duel.Face 0
+gota.Duel.Counter 0
+wait 0.1
+gota.Test.Shot 72_divine_counter
+wait 0.5
+gota.Duel.Director phase2
+wait 0.1
+gota.Test.Shot 73_phase_two
+wait 0.5
+gota.Duel.Director state
+wait 3
+gota.Duel.Director surge
+wait 0.1
+gota.Test.Shot 74_sovereign_surge
+wait 0.3
+gota.Duel.Director state
+gota.Duel.Bot fight
+wait 20
+gota.Duel.Director state
+gota.Test.Shot 75_phase_two_fight
+wait 0.3
+gota.Duel.Bot off
+quit

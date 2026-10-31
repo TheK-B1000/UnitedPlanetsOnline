@@ -903,12 +903,25 @@ def build_duel_hud():
     hslot(score_box, v=unreal.VerticalAlignment.V_ALIGN_CENTER)
     t.text("Text_Score", "ScoreBox", "0  —  0", FONT_DISPLAY, 30, GOLD_BRIGHT, "Bold", 60, unreal.TextJustify.CENTER)
     fighter("R", "Text_OpponentName", "Bar_OpponentHealth", True)
+    # Divine Momentum (challenger) under the local bar; champion difficulty / phase / guard under the opponent's.
+    mb = t.sizebox("LMomentumBox", "LCol", 330, 6)
+    vslot(mb, padding=(0, 5, 0, 0))
+    m = t.add(unreal.ProgressBar, "Bar_Momentum", "LMomentumBox")
+    m.set_fill_color_and_opacity(BLUE)
+    m.set_percent(0.0)
+    vslot(t.text("Text_Momentum", "LCol", "DIVINE MOMENTUM", FONT_BODY, 10, MUTED, "SemiBold", 200), padding=(0, 3, 0, 0))
+    vslot(t.text("Text_ChampionState", "RCol", "", FONT_BODY, 10, MUTED, "SemiBold", 200, unreal.TextJustify.RIGHT), padding=(0, 5, 0, 0), h=unreal.HorizontalAlignment.H_ALIGN_RIGHT)
     vslot(t.text("Text_Timer", "Top", "90", FONT_DISPLAY, 22, TEXT, "SemiBold", 60, unreal.TextJustify.CENTER), padding=(0, 6, 0, 0), h=unreal.HorizontalAlignment.H_ALIGN_CENTER)
 
     mid = t.add(unreal.VerticalBox, "Center", "Canvas")
     t.canvas(mid, (0.5, 0.36, 0.5, 0.36), (0, 0, 900, 260), (0.5, 0.5), autosize=True)
     vslot(t.text("Text_Phase", "Center", "PREPARE YOURSELF", FONT_DISPLAY, 34, GOLD_BRIGHT, "Bold", 200, unreal.TextJustify.CENTER), h=unreal.HorizontalAlignment.H_ALIGN_CENTER)
     vslot(t.text("Text_Countdown", "Center", "3", FONT_DISPLAY, 110, TEXT, "Bold", 0, unreal.TextJustify.CENTER), h=unreal.HorizontalAlignment.H_ALIGN_CENTER)
+    # Combat callouts (PERFECT PARRY, GUARD BROKEN, SOVEREIGN SURGE ...), driven by the duel cue delegate.
+    co = t.text("Text_Callout", "Canvas", "", FONT_DISPLAY, 30, GOLD_BRIGHT, "Bold", 240, unreal.TextJustify.CENTER)
+    t.canvas(co, (0.5, 0.64, 0.5, 0.64), (0, 0, 1100, 60), (0.5, 0.5), autosize=True)
+    hint = t.text("Text_ControlsHint", "Canvas", "LMB ATTACK   ·   RMB BLOCK (PARRY ON IMPACT)   ·   ALT + MOVE DODGE   ·   Q DIVINE COUNTER", FONT_BODY, 10, MUTED, "SemiBold", 200, unreal.TextJustify.CENTER)
+    t.canvas(hint, (0.5, 1, 0.5, 1), (0, -28, 1200, 24), (0.5, 1), autosize=True)
     return finish(wbp, path)
 
 
@@ -1290,6 +1303,8 @@ def build_hero_select():
     vslot(t.text("WeaponHeader", "ProfileCol", "WEAPON STYLE", FONT_DISPLAY, 16, GOLD, "SemiBold", 200))
     vslot(t.text("Text_Weapon", "ProfileCol", "", FONT_DISPLAY, 17, TEXT, "Regular", 40), padding=(0, 2, 0, 14))
     vslot(t.text("Text_Availability", "ProfileCol", "", FONT_BODY, 11, GOLD, "SemiBold", 100, wrap=True), padding=(0, 0, 0, 12))
+    # Fight AI: champion difficulty on its own row so the action row never overflows the panel.
+    vslot(action(t, "Btn_Difficulty", "ProfileCol", "CHAMPION: VETERAN"), padding=(0, 0, 0, 12), h=unreal.HorizontalAlignment.H_ALIGN_LEFT)
     acts = t.add(unreal.HorizontalBox, "Actions", "ProfileCol")
     vslot(acts)
     hslot(action(t, "Btn_Back", "Actions", "BACK"), padding=(0, 0, 14, 0))
@@ -1337,6 +1352,15 @@ def build_loading_screen():
 
 def main():
     log("=== GOTA UPG frontend build ===")
+    only = os.environ.get("GOTA_BUILD_ONLY", "").strip()
+    if only:
+        # e.g. GOTA_BUILD_ONLY=build_duel_hud,build_duel_results — rebuild selected assets only.
+        # Fonts are always resolved first: every widget text references the composite fonts.
+        import_fonts()
+        for name in [n.strip() for n in only.split(",") if n.strip()]:
+            globals()[name]()
+        log("=== complete (only: %s) ===" % only)
+        return
     import_textures()
     import_fonts()
     import_audio()

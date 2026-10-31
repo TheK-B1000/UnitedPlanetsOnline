@@ -5,6 +5,7 @@
 #include "Arenas/ArenaPlayerStart.h"
 #include "Arenas/Duel/DuelFighterInterface.h"
 #include "Arenas/Duel/DuelGameState.h"
+#include "Arenas/Duel/GOTADuelCombat.h"
 #include "Arenas/Duel/DuelHUD.h"
 #include "Arenas/Duel/DuelMatchDefinition.h"
 #include "Arenas/Duel/DuelPlayerState.h"
@@ -15,6 +16,7 @@
 #include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "AIController.h"
+#include "EnvironmentQuery/EQSTestingPawn.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
 #include "NavigationSystem.h"
 #include "Perception/AISense_Damage.h"
@@ -64,6 +66,11 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 		UE_LOG(LogTemp, Log, TEXT("Duel: Fight AI mode (champion %s)"), *AIChampionClass.ToString());
 	}
 
+	if (UGameplayStatics::HasOption(Options, TEXT("Difficulty")))
+	{
+		Difficulty = FGOTAChampionProfile::ParseDifficulty(UGameplayStatics::ParseOption(Options, TEXT("Difficulty")), Difficulty);
+	}
+
 	if (UGameplayStatics::HasOption(Options, TEXT("BestOf")))
 	{
 		const int32 BestOf = FCString::Atoi(*UGameplayStatics::ParseOption(Options, TEXT("BestOf")));
@@ -98,6 +105,7 @@ void ADuelGameMode::BeginPlay()
 		GS->ScorePlayer1 = 0;
 		GS->MatchOutcome = EDuelMatchOutcome::None;
 		GS->bCombatEnabled = false;
+		GS->Difficulty = Difficulty;
 		GS->SetDuelPhase(EDuelPhase::WaitingForPlayers);
 	}
 
@@ -112,6 +120,7 @@ void ADuelGameMode::BeginPlay()
 	{
 		EnsureAIParticipant();
 		EnsureDuelNavigation();
+		RemoveDeveloperPawns();
 	}
 	// Local hosts log in before BeginPlay; start here once the arena (and its starts) exist.
 	if (bAutoStartWhenFull && GetNumPlayers() >= GetRequiredHumanPlayers())
@@ -627,7 +636,7 @@ void ADuelGameMode::RespawnFighters()
 		{
 			UnbindCombatDeath(Old);
 			PC->UnPossess();
-			Old->Destroy();
+			DestroyFighter(Old);
 		}
 		RestartPlayer(PC);
 		if (APawn* Pawn = PC->GetPawn())
@@ -639,6 +648,7 @@ void ADuelGameMode::RespawnFighters()
 			}
 			BindCombatDeath(Pawn);
 			ResetFighterForRound(Pawn);
+			EquipFighterLoadout(Pawn);
 			PC->SetViewTarget(Pawn);
 			Pawn->OnEndPlay.AddUniqueDynamic(this, &ADuelGameMode::HandleFighterEndPlay);
 			UE_LOG(LogTemp, Log, TEXT("Duel fighter %s spawned at %s"), *GetNameSafe(Pawn), *Pawn->GetActorLocation().ToCompactString());
@@ -649,6 +659,54 @@ void ADuelGameMode::RespawnFighters()
 	{
 		SpawnAIFighter();
 	}
+	InitDuelCombat();
+}
+
+void ADuelGameMode::InitDuelCombat()
+{
+	APawn* Fighters[2] = { GetFighterPawn(0), GetFighterPawn(1) };
+	UGOTADuelFighterComponent* Comps[2] = { nullptr, nullptr };
+	for (int32 i = 0; i < 2; ++i)
+	{
+		if (!Fighters[i])
+		{
+			continue;
+		}
+		Comps[i] = Fighters[i]->FindComponentByClass<UGOTADuelFighterComponent>();
+		if (!Comps[i])
+		{
+			Comps[i] = NewObject<UGOTADuelFighterComponent>(Fighters[i], TEXT("GOTA_DuelFighter"));
+			Comps[i]->SetIsReplicated(true);
+			Comps[i]->RegisterComponent();
+		}
+	}
+	if (bVersusAI && Fighters[0] && Fighters[1])
+	{
+		// Spawn-time tuning of each fighter's own BPC_DamageSystem (before any damage). The
+		// Blueprint remains the only thing that changes health during the round.
+		const FGOTAChampionProfile Profile = FGOTAChampionProfile::ForDifficulty(Difficulty);
+		FGOTABlueprintCombat::ConfigureHealth(Fighters[0], Profile.ChallengerMaxHealth);
+		FGOTABlueprintCombat::ConfigureHealth(Fighters[1], Profile.ChampionMaxHealth);
+		UGOTAChampionDirectorComponent* Director = Fighters[1]->FindComponentByClass<UGOTAChampionDirectorComponent>();
+		if (!Director)
+		{
+			Director = NewObject<UGOTAChampionDirectorComponent>(Fighters[1], TEXT("GOTA_ChampionDirector"));
+			Director->RegisterComponent();
+		}
+		Director->InitDirector(Fighters[0], Difficulty);
+		if (ADuelGameState* GS = GetDuelGS())
+		{
+			GS->ChampionPawn = Fighters[1];
+		}
+	}
+	if (Comps[0]) { Comps[0]->InitFighter(false, Fighters[1]); }
+	if (Comps[1]) { Comps[1]->InitFighter(bVersusAI, Fighters[0]); }
+}
+
+UGOTAChampionDirectorComponent* ADuelGameMode::GetChampionDirector() const
+{
+	const APawn* Champion = AIFighterPawn.Get();
+	return Champion ? Champion->FindComponentByClass<UGOTAChampionDirectorComponent>() : nullptr;
 }
 
 void ADuelGameMode::ResetFighterForRound(APawn* Pawn)
@@ -961,7 +1019,7 @@ void ADuelGameMode::DespawnAIFighter()
 	}
 	UnbindCombatDeath(Champion);
 	AController* Controller = Champion->GetController();
-	Champion->Destroy();
+	DestroyFighter(Champion);
 	if (IsValid(Controller) && !Controller->IsA<APlayerController>())
 	{
 		Controller->Destroy();
@@ -1065,6 +1123,25 @@ void ADuelGameMode::AlertChampionToChallenger()
 	const FVector ChallengerLoc = Challenger->GetActorLocation();
 	UAISense_Hearing::ReportNoiseEvent(GetWorld(), ChallengerLoc, 1.f, Challenger, 0.f, NAME_None);
 	UAISense_Damage::ReportDamageEvent(GetWorld(), Champion, Challenger, 0.f, ChallengerLoc, Champion->GetActorLocation());
+	// Commit the champion to its challenger through its own controller API (AIC_Enemy_Base).
+	if (AController* AIC = Champion->GetController())
+	{
+		if (UFunction* Engage = AIC->FindFunction(ChampionEngageFunction))
+		{
+			uint8* Params = static_cast<uint8*>(FMemory_Alloca(Engage->ParmsSize));
+			FMemory::Memzero(Params, Engage->ParmsSize);
+			Engage->InitializeStruct(Params);
+			for (TFieldIterator<FProperty> P(Engage); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
+			{
+				if (FObjectProperty* Obj = CastField<FObjectProperty>(*P))
+				{
+					Obj->SetObjectPropertyValue_InContainer(Params, Challenger);
+				}
+			}
+			AIC->ProcessEvent(Engage, Params);
+			Engage->DestroyStruct(Params);
+		}
+	}
 	UE_LOG(LogTemp, Log, TEXT("Duel Fight AI: champion alerted to %s"), *GetNameSafe(Challenger));
 }
 
@@ -1112,4 +1189,50 @@ UClass* ADuelGameMode::GetDefaultPawnClassForController_Implementation(AControll
 		}
 	}
 	return Super::GetDefaultPawnClassForController_Implementation(InController);
+}
+
+void ADuelGameMode::EquipFighterLoadout(APawn* Pawn)
+{
+	if (!Pawn || FighterLoadoutFunction.IsNone())
+	{
+		return;
+	}
+	UFunction* Fn = Pawn->FindFunction(FighterLoadoutFunction);
+	if (Fn && Fn->ParmsSize == 0)
+	{
+		Pawn->ProcessEvent(Fn, nullptr);
+		UE_LOG(LogTemp, Log, TEXT("Duel: %s equipped via %s"), *GetNameSafe(Pawn), *FighterLoadoutFunction.ToString());
+	}
+}
+
+void ADuelGameMode::RemoveDeveloperPawns()
+{
+	TArray<AActor*> ToRemove;
+	for (TActorIterator<AEQSTestingPawn> It(GetWorld()); It; ++It)
+	{
+		ToRemove.Add(*It);
+	}
+	for (AActor* Actor : ToRemove)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Duel Fight AI: removed developer actor %s (was a perception target)"), *GetNameSafe(Actor));
+		Actor->Destroy();
+	}
+}
+
+void ADuelGameMode::DestroyFighter(APawn* Pawn)
+{
+	if (!IsValid(Pawn))
+	{
+		return;
+	}
+	TArray<AActor*> Attached;
+	Pawn->GetAttachedActors(Attached, true, true);
+	for (AActor* Actor : Attached)
+	{
+		if (IsValid(Actor) && !Actor->IsA<APawn>())
+		{
+			Actor->Destroy();
+		}
+	}
+	Pawn->Destroy();
 }

@@ -9,6 +9,7 @@
 #include "Arenas/Duel/DuelGameMode.h"
 #include "Arenas/Duel/DuelGameState.h"
 #include "Arenas/Duel/DuelPlayerState.h"
+#include "Arenas/Duel/GOTADuelCombat.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/PanelWidget.h"
@@ -22,6 +23,19 @@
 #include "GameFramework/WorldSettings.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "GameFramework/Character.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
+#include "Camera/CameraActor.h"
+#include "Engine/SpotLight.h"
+#include "Components/SpotLightComponent.h"
+#include "Engine/StaticMeshActor.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Camera/CameraComponent.h"
+#include "Engine/GameViewportClient.h"
+#include "Animation/AnimNotifies/AnimNotify.h"
+#include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "Containers/Ticker.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
@@ -106,7 +120,11 @@ namespace GOTATest
 				UE_LOG(LogGOTATest, Log, TEXT("[script] > %s"), *Line);
 				if (UWorld* World = GetGameWorld())
 				{
-					GEngine->Exec(World, *Line);
+					// Viewport commands (HighResShot …) only exist on the game viewport client.
+					if (!(GEngine->GameViewport && GEngine->GameViewport->Exec(World, *Line, *GLog)))
+					{
+						GEngine->Exec(World, *Line);
+					}
 				}
 			}
 			if (Index >= Lines.Num())
@@ -348,7 +366,19 @@ namespace GOTATest
 		}
 		for (TFieldIterator<FProperty> It(DS->GetClass(), EFieldIteratorFlags::ExcludeSuper); It; ++It)
 		{
-			UE_LOG(LogGOTATest, Log, TEXT("  prop %s : %s"), *It->GetName(), *It->GetCPPType());
+			FString Value;
+			It->ExportTextItem_InContainer(Value, DS, nullptr, nullptr, PPF_None);
+			UE_LOG(LogGOTATest, Log, TEXT("  prop %s : %s = %s"), *It->GetName(), *It->GetCPPType(), *Value.Left(120));
+		}
+		for (UClass* C = Pawn->GetClass(); C && C->ClassGeneratedBy; C = C->GetSuperClass())
+		{
+			for (TFieldIterator<FProperty> It(C, EFieldIteratorFlags::ExcludeSuper); It; ++It)
+			{
+				if (It->IsA<FMulticastDelegateProperty>()) { continue; }
+				FString Value;
+				It->ExportTextItem_InContainer(Value, Pawn, nullptr, nullptr, PPF_None);
+				UE_LOG(LogGOTATest, Log, TEXT("  pawn[%s] %s : %s = %s"), *C->GetName(), *It->GetName(), *It->GetCPPType(), *Value.Left(100));
+			}
 		}
 		for (TFieldIterator<UFunction> It(DS->GetClass(), EFieldIteratorFlags::ExcludeSuper); It; ++It)
 		{
@@ -360,6 +390,338 @@ namespace GOTATest
 			UE_LOG(LogGOTATest, Log, TEXT("  func %s(%s)"), *It->GetName(), *Params);
 		}
 	}
+
+	static FString ReadBoolProp(UObject* Obj, const TCHAR* Name)
+	{
+		const FBoolProperty* P = Obj ? FindFProperty<FBoolProperty>(Obj->GetClass(), Name) : nullptr;
+		return P ? (P->GetPropertyValue_InContainer(Obj) ? TEXT("1") : TEXT("0")) : TEXT("-");
+	}
+
+	/** One-line combat state of a fighter: health, block flags, active montage. */
+	static void DuelState(const TArray<FString>& Args)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		const int32 Slot = Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0;
+		APawn* Pawn = GM ? GM->GetFighterPawn(Slot) : nullptr;
+		if (!Pawn)
+		{
+			return;
+		}
+		UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Pawn);
+		const FGOTACombatantVitals V = UGOTACombatantObserver::ReadVitals(Pawn);
+		FString Montage = TEXT("-");
+		if (const ACharacter* Char = Cast<ACharacter>(Pawn))
+		{
+			if (UAnimInstance* Anim = Char->GetMesh() ? Char->GetMesh()->GetAnimInstance() : nullptr)
+			{
+				if (UAnimMontage* M = Anim->GetCurrentActiveMontage())
+				{
+					Montage = FString::Printf(TEXT("%s@%.2f/%s"), *M->GetName(), Anim->Montage_GetPosition(M), *Anim->Montage_GetCurrentSection(M).ToString());
+				}
+			}
+		}
+		APawn* Other = GM->GetFighterPawn(Slot == 0 ? 1 : 0);
+		const UGOTADuelFighterComponent* FC = Pawn->FindComponentByClass<UGOTADuelFighterComponent>();
+		UE_LOG(LogGOTATest, Log, TEXT("STATE s%d t=%.2f hp=%.0f mom=%.0f inv=%s blk=%s parryWin=%s react=%s atk=%s montage=%s dist=%.0f"), Slot,
+			Pawn->GetWorld()->GetTimeSeconds(), V.Health, FC ? FC->GetMomentum() : -1.f, *ReadBoolProp(DS, TEXT("IsInvincible")), *ReadBoolProp(DS, TEXT("IsBlocking")),
+			*ReadBoolProp(Pawn, TEXT("IsWithinParryWindow")), *ReadBoolProp(Pawn, TEXT("IsReactingToBlock")),
+			*ReadBoolProp(Pawn, TEXT("Attacking")), *Montage,
+			Other ? FVector::Dist(Other->GetActorLocation(), Pawn->GetActorLocation()) : -1.f);
+	}
+	/** Sovereign Champion director: `state` or force `block|sidestep|guardbreak|phase2|surge`. */
+	static void DuelDirector(const TArray<FString>& Args)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		UGOTAChampionDirectorComponent* D = GM ? GM->GetChampionDirector() : nullptr;
+		if (!D)
+		{
+			UE_LOG(LogGOTATest, Warning, TEXT("Director: none"));
+			return;
+		}
+		if (Args.Num() > 0 && !Args[0].Equals(TEXT("state"), ESearchCase::IgnoreCase))
+		{
+			D->DebugForce(Args[0]);
+		}
+		UE_LOG(LogGOTATest, Log, TEXT("DIRECTOR %s"), *D->DescribeState());
+	}
+	static FAutoConsoleCommand CmdDuelDirector(TEXT("gota.Duel.Director"), TEXT("Champion director: state | block | sidestep | guardbreak | phase2 | surge"), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelDirector));
+
+	static UGOTADuelFighterComponent* FighterComp(int32 Slot)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		APawn* Pawn = GM ? GM->GetFighterPawn(Slot) : nullptr;
+		return Pawn ? Pawn->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr;
+	}
+
+	/** Same path as pressing Q: Divine Counter for fighter <slot>. */
+	static void DuelCounter(const TArray<FString>& Args)
+	{
+		if (UGOTADuelFighterComponent* F = FighterComp(Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0))
+		{
+			F->RequestDivineCounter();
+			UE_LOG(LogGOTATest, Log, TEXT("Counter requested (momentum now %.0f)"), F->GetMomentum());
+		}
+	}
+	static FAutoConsoleCommand CmdDuelCounter(TEXT("gota.Duel.Counter"), TEXT("Request a Divine Counter for fighter <slot> (as if Q was pressed)."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelCounter));
+
+	static void DuelMomentum(const TArray<FString>& Args)
+	{
+		if (UGOTADuelFighterComponent* F = FighterComp(Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0))
+		{
+			F->GrantMomentum(Args.Num() > 1 ? FCString::Atof(*Args[1]) : 50.f, TEXT("test grant"));
+		}
+	}
+	static FAutoConsoleCommand CmdDuelMomentum(TEXT("gota.Duel.Momentum"), TEXT("Test: grant <amount> Divine Momentum to fighter <slot>."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelMomentum));
+
+	/** Call a Blueprint function with one numeric argument (e.g. DodgeInDirection 400). */
+	static void DuelCallF(const TArray<FString>& Args)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		APawn* Pawn = (GM && Args.Num() > 2) ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		const bool bOk = Pawn && FGOTABlueprintCombat::Call(Pawn, FName(*Args[1]), nullptr, FString(), FCString::Atod(*Args[2]));
+		UE_LOG(LogGOTATest, Log, TEXT("CallF %s(%s) on %s -> %d"), Args.Num() > 1 ? *Args[1] : TEXT("?"), Args.Num() > 2 ? *Args[2] : TEXT("?"), *GetNameSafe(Pawn), bOk ? 1 : 0);
+	}
+	static FAutoConsoleCommand CmdDuelCallF(TEXT("gota.Duel.CallF"), TEXT("Call BP function <slot> <Function> <number>."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelCallF));
+
+	/**
+	 * Test-only challenger bot (no second human, no extra PlayerController): drives the Warden through
+	 * the same Blueprint functions its input calls. Modes: off | parry | dodge | fight.
+	 * It reads the champion's montage timing — acceptable for a test driver, never used by the AI.
+	 */
+	struct FDuelTestBot
+	{
+		int32 Slot = 0;
+		FString Mode = TEXT("off");
+		float BlockLead = 0.25f;
+		float DodgeLead = 0.22f;
+		double NextAttack = 0.0;
+		double LastDefend = -10.0;
+		int32 Blocks = 0, Dodges = 0, Attacks = 0, Counters = 0;
+		FTSTicker::FDelegateHandle Handle;
+	};
+	static FDuelTestBot GDuelBot;
+
+	static void BotFace(APawn* Me, const FVector& Dir)
+	{
+		FRotator R = Dir.Rotation();
+		R.Pitch = 0.f;
+		Me->SetActorRotation(R);
+		if (AController* C = Me->GetController())
+		{
+			C->SetControlRotation(R);
+		}
+	}
+
+	static bool DuelBotTick(float)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		ADuelGameState* GS = GM ? GM->GetGameState<ADuelGameState>() : nullptr;
+		APawn* Me = GM ? GM->GetFighterPawn(GDuelBot.Slot) : nullptr;
+		APawn* Opp = GM ? GM->GetFighterPawn(GDuelBot.Slot == 0 ? 1 : 0) : nullptr;
+		if (!GS || !Me || !Opp || GS->DuelPhase != EDuelPhase::InRound)
+		{
+			return true;
+		}
+		const double Now = Me->GetWorld()->GetTimeSeconds();
+		const FVector ToOpp = (Opp->GetActorLocation() - Me->GetActorLocation());
+		const float Dist = ToOpp.Size2D();
+		float Pos = 0.f;
+		UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Opp, &Pos);
+		const bool bOppAttacking = FGOTABlueprintCombat::GetBool(Opp, TEXT("Attacking"));
+		const float Impact = FGOTABlueprintCombat::FindNextImpactTime(M, Pos);
+		const float Lead = (M && Impact >= 0.f) ? Impact - Pos : -1.f;
+		const bool bUnblockable = M && M->GetName().Contains(TEXT("GroundSmash"));
+		const FString& Mode = GDuelBot.Mode;
+
+		if (bOppAttacking && Lead >= 0.f && Now - GDuelBot.LastDefend > 0.7)
+		{
+			const bool bWantDodge = Mode == TEXT("dodge") || (Mode == TEXT("fight") && bUnblockable);
+			const bool bWantBlock = !bWantDodge && (Mode == TEXT("parry") || Mode == TEXT("fight"));
+			if (bWantBlock && Lead <= GDuelBot.BlockLead && Dist < 400.f)
+			{
+				BotFace(Me, ToOpp);
+				FGOTABlueprintCombat::Call(Me, TEXT("StartBlock"));
+				GDuelBot.LastDefend = Now;
+				++GDuelBot.Blocks;
+				UE_LOG(LogGOTATest, Log, TEXT("BOT block (lead %.2f, %s)"), Lead, *GetNameSafe(M));
+				return true;
+			}
+			if (bWantDodge && Lead <= GDuelBot.DodgeLead && Dist < 700.f)
+			{
+				BotFace(Me, -ToOpp);
+				FGOTABlueprintCombat::Call(Me, TEXT("DodgeInDirection"), nullptr, FString(), 300.0);
+				GDuelBot.LastDefend = Now;
+				++GDuelBot.Dodges;
+				UE_LOG(LogGOTATest, Log, TEXT("BOT dodge (lead %.2f, %s)"), Lead, *GetNameSafe(M));
+				return true;
+			}
+		}
+		if (Mode == TEXT("fight"))
+		{
+			UGOTADuelFighterComponent* F = Me->FindComponentByClass<UGOTADuelFighterComponent>();
+			if (F && F->CanDivineCounter() && Dist < 300.f && !bOppAttacking)
+			{
+				F->RequestDivineCounter();
+				++GDuelBot.Counters;
+				UE_LOG(LogGOTATest, Log, TEXT("BOT divine counter"));
+			}
+			else if (Dist > 190.f)
+			{
+				BotFace(Me, ToOpp);
+				Me->AddMovementInput(ToOpp.GetSafeNormal2D(), 1.f);
+			}
+			else if (Now >= GDuelBot.NextAttack && !bOppAttacking && Now - GDuelBot.LastDefend > 0.5)
+			{
+				BotFace(Me, ToOpp);
+				FGOTABlueprintCombat::Call(Me, TEXT("MeleeAttack"));
+				GDuelBot.NextAttack = Now + 0.85;
+				++GDuelBot.Attacks;
+			}
+		}
+		return true;
+	}
+
+	static void DuelBot(const TArray<FString>& Args)
+	{
+		GDuelBot.Mode = Args.Num() > 0 ? Args[0].ToLower() : TEXT("off");
+		GDuelBot.Slot = Args.Num() > 1 ? FCString::Atoi(*Args[1]) : 0;
+		if (Args.Num() > 2) { GDuelBot.BlockLead = FCString::Atof(*Args[2]); }
+		if (GDuelBot.Mode == TEXT("off"))
+		{
+			if (GDuelBot.Handle.IsValid())
+			{
+				FTSTicker::GetCoreTicker().RemoveTicker(GDuelBot.Handle);
+				GDuelBot.Handle.Reset();
+			}
+			UE_LOG(LogGOTATest, Log, TEXT("BOT off (blocks=%d dodges=%d attacks=%d counters=%d)"), GDuelBot.Blocks, GDuelBot.Dodges, GDuelBot.Attacks, GDuelBot.Counters);
+			return;
+		}
+		if (!GDuelBot.Handle.IsValid())
+		{
+			GDuelBot.Handle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&DuelBotTick));
+		}
+		UE_LOG(LogGOTATest, Log, TEXT("BOT mode=%s slot=%d blockLead=%.2f"), *GDuelBot.Mode, GDuelBot.Slot, GDuelBot.BlockLead);
+	}
+	static FAutoConsoleCommand CmdDuelBot(TEXT("gota.Duel.Bot"), TEXT("Test challenger bot: off|parry|dodge|fight [slot] [blockLead]"), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelBot));
+
+	/** Lists a montage's notifies (name, class, time, duration) — e.g. to read ParryWindow timing. */
+	static void DuelNotifies(const TArray<FString>& Args)
+	{
+		UAnimMontage* M = Args.Num() > 0 ? LoadObject<UAnimMontage>(nullptr, *Args[0]) : nullptr;
+		if (!M)
+		{
+			UE_LOG(LogGOTATest, Warning, TEXT("Notifies: cannot load %s"), Args.Num() > 0 ? *Args[0] : TEXT("?"));
+			return;
+		}
+		UE_LOG(LogGOTATest, Log, TEXT("NOTIFIES %s length=%.2f rate=%.2f"), *M->GetName(), M->GetPlayLength(), M->RateScale);
+		for (const FAnimNotifyEvent& N : M->Notifies)
+		{
+			UE_LOG(LogGOTATest, Log, TEXT("  %s cls=%s state=%s t=%.3f dur=%.3f"), *N.NotifyName.ToString(),
+				*GetNameSafe(N.Notify ? N.Notify->GetClass() : nullptr), *GetNameSafe(N.NotifyStateClass ? N.NotifyStateClass->GetClass() : nullptr),
+				N.GetTriggerTime(), N.GetDuration());
+		}
+	}
+	static FAutoConsoleCommand CmdDuelNotifies(TEXT("gota.Duel.Notifies"), TEXT("List notifies of montage <object path>."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelNotifies));
+
+	/**
+	 * Art capture: frames fighter <slot> with a portrait camera (shallow depth of field) and hides all UI,
+	 * so `HighResShot` produces a real in-engine hero portrait. Args: slot yawOffset distance fov height.
+	 */
+	static void TestPortrait(const TArray<FString>& Args)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		const int32 Slot = Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0;
+		UWorld* GameWorld = GetGameWorld();
+		APlayerController* PC = GameWorld ? GameWorld->GetFirstPlayerController() : nullptr;
+		// Duel: the slot's fighter. Any other mode: the local player's pawn.
+		ACharacter* Char = GM ? Cast<ACharacter>(GM->GetFighterPawn(Slot)) : (PC ? Cast<ACharacter>(PC->GetPawn()) : nullptr);
+		if (!Char || !PC)
+		{
+			UE_LOG(LogGOTATest, Warning, TEXT("Portrait: no fighter %d"), Slot);
+			return;
+		}
+		const float Yaw = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 25.f;
+		const float Dist = Args.Num() > 2 ? FCString::Atof(*Args[2]) : 230.f;
+		const float Fov = Args.Num() > 3 ? FCString::Atof(*Args[3]) : 32.f;
+		const float Drop = Args.Num() > 4 ? FCString::Atof(*Args[4]) : 35.f;
+		USkeletalMeshComponent* Mesh = Char->GetMesh();
+		const FVector Head = (Mesh && Mesh->DoesSocketExist(TEXT("head"))) ? Mesh->GetSocketLocation(TEXT("head")) : Char->GetActorLocation() + FVector(0, 0, 70);
+		const FVector Target = Head - FVector(0, 0, Drop);
+		const FVector Fwd = Char->GetActorForwardVector().RotateAngleAxis(Yaw, FVector::UpVector);
+		const FVector CamLoc = Target + Fwd * Dist + FVector(0, 0, 6);
+		UWorld* W = Char->GetWorld();
+		if (Args.Num() > 5 && FCString::Atoi(*Args[5]) != 0)
+		{
+			// Studio (art capture only, never gameplay): freeze world time so the pose holds,
+			// hide the opponent, dark backdrop behind the subject, warm key / cool rim / fill.
+			UGameplayStatics::SetGlobalTimeDilation(W, 0.0001f);
+			if (APawn* Other = GM ? GM->GetFighterPawn(Slot == 0 ? 1 : 0) : nullptr)
+			{
+				if (AAIController* AIC = Cast<AAIController>(Other->GetController()))
+				{
+					AIC->StopMovement();
+					if (UBrainComponent* Brain = AIC->GetBrainComponent()) { Brain->PauseLogic(TEXT("Portrait")); }
+				}
+				Other->SetActorHiddenInGame(true);
+				Other->SetActorEnableCollision(false);
+				Other->SetActorLocation(Other->GetActorLocation() + FVector(0, 0, -5000));
+			}
+			const FVector Back = -Char->GetActorForwardVector().RotateAngleAxis(Yaw, FVector::UpVector);
+			AStaticMeshActor* Wall = W->SpawnActor<AStaticMeshActor>(Target + Back * 420.f, Back.Rotation());
+			if (Wall)
+			{
+				Wall->SetMobility(EComponentMobility::Movable);
+				Wall->GetStaticMeshComponent()->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")));
+				Wall->SetActorScale3D(FVector(0.2f, 60.f, 60.f));
+				if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial")))
+				{
+					UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Base, Wall);
+					MID->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.006f, 0.008f, 0.02f));
+					Wall->GetStaticMeshComponent()->SetMaterial(0, MID);
+				}
+			}
+			auto Light = [W, Target](const FVector& From, const FLinearColor& Color, float Intensity, float Cone)
+			{
+				if (ASpotLight* L = W->SpawnActor<ASpotLight>(From, (Target - From).Rotation()))
+				{
+					L->SpotLightComponent->SetMobility(EComponentMobility::Movable);
+					L->SpotLightComponent->SetLightColor(Color);
+					L->SpotLightComponent->SetIntensity(Intensity);
+					L->SpotLightComponent->SetOuterConeAngle(Cone);
+					L->SpotLightComponent->SetAttenuationRadius(2000.f);
+				}
+			};
+			const FVector Fw = Char->GetActorForwardVector();
+			const FVector Rt = Char->GetActorRightVector();
+			Light(Target + Fw * 260.f - Rt * 220.f + FVector(0, 0, 160), FLinearColor(1.f, 0.78f, 0.52f), 60000.f, 30.f);   // warm key
+			Light(Target - Fw * 230.f + Rt * 200.f + FVector(0, 0, 120), FLinearColor(0.45f, 0.65f, 1.f), 90000.f, 28.f);  // cool rim
+			Light(Target + Fw * 300.f + Rt * 260.f + FVector(0, 0, -20), FLinearColor(0.6f, 0.7f, 1.f), 9000.f, 40.f);     // fill
+		}
+		ACameraActor* Cam = W->SpawnActor<ACameraActor>(CamLoc, (Target - CamLoc).Rotation());
+		if (!Cam)
+		{
+			return;
+		}
+		UCameraComponent* CC = Cam->GetCameraComponent();
+		CC->SetFieldOfView(Fov);
+		CC->SetConstraintAspectRatio(false);
+		CC->PostProcessSettings.bOverride_DepthOfFieldFocalDistance = true;
+		CC->PostProcessSettings.DepthOfFieldFocalDistance = Dist;
+		CC->PostProcessSettings.bOverride_DepthOfFieldFstop = true;
+		CC->PostProcessSettings.DepthOfFieldFstop = 1.4f;
+		CC->PostProcessSettings.bOverride_DepthOfFieldSensorWidth = true;
+		CC->PostProcessSettings.DepthOfFieldSensorWidth = 36.f;
+		PC->SetViewTarget(Cam);
+		if (GEngine && GEngine->GameViewport)
+		{
+			GEngine->GameViewport->RemoveAllViewportWidgets();
+		}
+		UE_LOG(LogGOTATest, Log, TEXT("Portrait camera on %s (yaw %.0f dist %.0f fov %.0f) actor=%s head=%s cam=%s mesh=%s"), *GetNameSafe(Char), Yaw, Dist, Fov,
+			*Char->GetActorLocation().ToCompactString(), *Head.ToCompactString(), *CamLoc.ToCompactString(), Mesh ? *Mesh->GetComponentLocation().ToCompactString() : TEXT("-"));
+	}
+	static FAutoConsoleCommand CmdTestPortrait(TEXT("gota.Test.Portrait"), TEXT("Art capture camera on fighter: slot yaw dist fov drop"), FConsoleCommandWithArgsDelegate::CreateStatic(&TestPortrait));
+
+	static FAutoConsoleCommand CmdDuelState(TEXT("gota.Duel.State"), TEXT("One-line combat state for fighter <slot>."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelState));
 
 	/** Damage through the Blueprint damage system's own TakeDamage function (real path). */
 	static void DuelHurt(const TArray<FString>& Args)
@@ -466,6 +828,78 @@ namespace GOTATest
 			}
 		}
 	}
+	/** Audit: list Blueprint-defined functions (with params) on a fighter, its components and controller. */
+	static void DuelFuncs(const TArray<FString>& Args)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		APawn* Pawn = GM ? GM->GetFighterPawn(Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0) : nullptr;
+		if (!Pawn)
+		{
+			return;
+		}
+		TArray<UObject*> Targets = { Pawn, Pawn->GetController() };
+		for (UActorComponent* C : Pawn->GetComponents())
+		{
+			if (C && C->GetClass()->ClassGeneratedBy) { Targets.Add(C); }
+		}
+		for (UObject* Obj : Targets)
+		{
+			for (UClass* C = Obj ? Obj->GetClass() : nullptr; C && C->ClassGeneratedBy; C = C->GetSuperClass())
+			{
+				for (TFieldIterator<UFunction> It(C, EFieldIteratorFlags::ExcludeSuper); It; ++It)
+				{
+					if (It->GetName().StartsWith(TEXT("ExecuteUbergraph")) || It->GetName().StartsWith(TEXT("BndEvt"))) { continue; }
+					FString Params;
+					for (TFieldIterator<FProperty> P(*It); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
+					{
+						Params += FString::Printf(TEXT("%s:%s "), *P->GetName(), *P->GetCPPType());
+					}
+					UE_LOG(LogGOTATest, Log, TEXT("  fn %s::%s(%s)"), *C->GetName(), *It->GetName(), *Params);
+				}
+			}
+		}
+	}
+	static FAutoConsoleCommand CmdDuelFuncs(TEXT("gota.Duel.Funcs"), TEXT("List BP functions on a fighter + components + controller."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelFuncs));
+
+	/** Test driver: rotate a fighter (and its controller) to face its opponent. */
+	static void DuelFace(const TArray<FString>& Args)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		const int32 Slot = Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0;
+		APawn* Me = GM ? GM->GetFighterPawn(Slot) : nullptr;
+		APawn* Other = GM ? GM->GetFighterPawn(Slot == 0 ? 1 : 0) : nullptr;
+		if (!Me || !Other)
+		{
+			return;
+		}
+		FRotator Rot = (Other->GetActorLocation() - Me->GetActorLocation()).Rotation();
+		Rot.Pitch = 0.f;
+		Me->SetActorRotation(Rot);
+		if (AController* C = Me->GetController())
+		{
+			C->SetControlRotation(Rot);
+		}
+	}
+	static FAutoConsoleCommand CmdDuelFace(TEXT("gota.Duel.Face"), TEXT("Face fighter <slot> toward its opponent."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelFace));
+
+	/** Test driver: call a parameterless Blueprint function on a fighter (the same functions its input events call). */
+	static void DuelCall(const TArray<FString>& Args)
+	{
+		ADuelGameMode* GM = GetDuelGM();
+		APawn* Pawn = (GM && Args.Num() > 1) ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		UFunction* Fn = Pawn ? Pawn->FindFunction(FName(*Args[1])) : nullptr;
+		if (!Fn || Fn->ParmsSize != 0)
+		{
+			UE_LOG(LogGOTATest, Warning, TEXT("Call: %s not found or takes params"), Args.Num() > 1 ? *Args[1] : TEXT("?"));
+			return;
+		}
+		Pawn->ProcessEvent(Fn, nullptr);
+		const FGOTACombatantVitals Self = UGOTACombatantObserver::ReadVitals(Pawn);
+		const float Dist = FVector::Dist(Pawn->GetActorLocation(), GM->GetFighterPawn(FCString::Atoi(*Args[0]) == 0 ? 1 : 0) ? GM->GetFighterPawn(FCString::Atoi(*Args[0]) == 0 ? 1 : 0)->GetActorLocation() : FVector::ZeroVector);
+		UE_LOG(LogGOTATest, Log, TEXT("Call %s on %s (hp=%.0f dist=%.0f)"), *Args[1], *GetNameSafe(Pawn), Self.Health, Dist);
+	}
+	static FAutoConsoleCommand CmdDuelCall(TEXT("gota.Duel.Call"), TEXT("Call parameterless BP function <slot> <Function> on a fighter."), FConsoleCommandWithArgsDelegate::CreateStatic(&DuelCall));
+
 	static FAutoConsoleCommand CmdProbe(TEXT("gota.Test.Probe"), TEXT("Trace down at <x> <y>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Probe));
 
 	static void DuelAIState(const TArray<FString>&)

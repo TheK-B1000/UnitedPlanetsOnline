@@ -45,3 +45,13 @@ Goal: one authoritative outcome path for multiplayer without a second damage fra
 1. On lethal in `BPC_DamageSystem` (server): `Combat->NotifyDied(Killer, Tags)` then Destroy or Disable.
 2. After each HP change: `Stats->ObserveHealth(Current, Max)`.
 3. Optional: implement `IDuelFighterInterface` on `BP_Player` for `ResetForDuelRound` / `SetDuelCombatEnabled`.
+
+## Combat Milestone 01 addendum (Trial of Champions vs AI)
+
+- **Divine Momentum** is C++-owned (`UStatsComponent::AddDivineMomentum` / `ConsumeDivineMomentum`, server). It's earned only from outcomes the Blueprint already resolved: `BPC_DamageSystem.OnBlocked`, the `IsInvincible` dodge window, and opponent health deltas.
+- **Divine Counter damage** goes through the champion's own `BPC_DamageSystem::TakeDamage` (`FGOTABlueprintCombat::ApplyDamage`). It is not a second damage path.
+- **Spawn-time configuration** (`FGOTABlueprintCombat::ConfigureHealth`): per-difficulty `MaxHealth`/`Health` is written into each fighter's damage system once, before the round goes live. During a round, only the Blueprint changes health.
+- **Flags written by C++**, all existing BP variables used as the BP intends:
+  - `IsInvincible` during the 0.6 s Divine Counter and the 1.4 s phase-II ascension.
+  - `BlockChance` per difficulty.
+- **Cosmetic cues** (sparks, sound, hit-stop, camera) are multicast after resolution and never decide outcomes.

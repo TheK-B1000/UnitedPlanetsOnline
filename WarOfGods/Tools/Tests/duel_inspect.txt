@@ -1,19 +1,4 @@
 wait 2
-gota.Duel.Dump
-wait 4
-gota.Duel.Dump
-gota.Test.Shot 30_champion_engaging
-wait 0.5
-wait 4
-gota.Duel.Dump
-wait 6
-gota.Duel.Dump
-gota.Test.Shot 31_champion_attacking
-wait 0.5
-wait 10
-gota.Duel.Dump
-wait 15
-gota.Duel.Dump
-wait 15
-gota.Duel.Dump
+gota.Duel.Funcs 0
+gota.Duel.Funcs 1
 quit

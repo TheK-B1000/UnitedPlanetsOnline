@@ -1,0 +1,80 @@
+wait 4
+gota.Duel.Dump
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Dump
+gota.Test.Shot 51_warden_attacking
+wait 0.4
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Face 0
+gota.Duel.Call 0 MeleeAttack
+wait 0.8
+gota.Duel.Dump
+wait 12
+gota.Duel.Dump
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+wait 4
+gota.Duel.Dump
+gota.Test.Shot 52_warden_blocking
+wait 0.4
+wait 4
+gota.Duel.Dump
+gota.Duel.Call 0 EndBlock
+wait 4
+gota.Duel.Dump
+quit

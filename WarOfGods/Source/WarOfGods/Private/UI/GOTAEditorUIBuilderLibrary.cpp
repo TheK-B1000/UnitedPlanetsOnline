@@ -14,6 +14,9 @@
 #include "UObject/Package.h"
 #include "UObject/SavePackage.h"
 #include "WidgetBlueprint.h"
+#include "EdGraphUtilities.h"
+#include "Misc/FileHelper.h"
+#include "Engine/Blueprint.h"
 #include "Engine/LevelScriptBlueprint.h"
 #include "Engine/Level.h"
 #include "Engine/World.h"
@@ -137,6 +140,38 @@ int32 UGOTAEditorUIBuilderLibrary::ClearLevelScriptGraphs(UObject* WorldObject)
 	FKismetEditorUtilities::CompileBlueprint(Script);
 	Level->MarkPackageDirty();
 	return Removed;
+}
+
+int32 UGOTAEditorUIBuilderLibrary::ExportBlueprintGraphs(UObject* BlueprintObject, const FString& OutDir)
+{
+	UBlueprint* BP = Cast<UBlueprint>(BlueprintObject);
+	if (!BP)
+	{
+		return 0;
+	}
+	TArray<UEdGraph*> Graphs;
+	BP->GetAllGraphs(Graphs);
+	int32 Written = 0;
+	for (UEdGraph* Graph : Graphs)
+	{
+		if (!Graph)
+		{
+			continue;
+		}
+		TSet<UObject*> Nodes;
+		for (UEdGraphNode* Node : Graph->Nodes)
+		{
+			Nodes.Add(Node);
+		}
+		FString Text;
+		FEdGraphUtilities::ExportNodesToText(Nodes, Text);
+		const FString File = OutDir / FString::Printf(TEXT("%s__%s.txt"), *BP->GetName(), *Graph->GetName());
+		if (FFileHelper::SaveStringToFile(Text, *File))
+		{
+			++Written;
+		}
+	}
+	return Written;
 }
 
 UFont* UGOTAEditorUIBuilderLibrary::CreateCompositeFont(const FString& PackagePath, const FString& AssetName, const TMap<FName, UFontFace*>& Typefaces)

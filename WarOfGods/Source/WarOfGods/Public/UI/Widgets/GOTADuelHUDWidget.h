@@ -28,6 +28,14 @@ protected:
 	UFUNCTION()
 	void HandleScoreChanged(int32 Score0, int32 Score1, int32 RoundIndex);
 
+	/** Combat callouts (PERFECT PARRY, GUARD BROKEN, SOVEREIGN SURGE ...). Cosmetic only. */
+	UFUNCTION()
+	void HandleCombatCue(EGOTADuelCue Cue, AActor* Source, AActor* Target);
+
+	void ShowCallout(const FText& Text, const FLinearColor& Color, float Seconds);
+	void BindGameState();
+	void RefreshCombatLayer(float InDeltaTime);
+
 	void RefreshFromGameState();
 	ADuelGameState* GetDuelGS() const;
 	APawn* ResolveOpponentPawn(APlayerState*& OutOpponentPS) const;
@@ -64,4 +72,21 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
 	TObjectPtr<UProgressBar> Bar_OpponentHealth;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<UProgressBar> Bar_Momentum;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<UTextBlock> Text_Momentum;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<UTextBlock> Text_ChampionState;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "Duel")
+	TObjectPtr<UTextBlock> Text_Callout;
+
+	TWeakObjectPtr<ADuelGameState> BoundGameState;
+	float CalloutRemaining = 0.f;
+	EDuelPhase ShownPhase = EDuelPhase::WaitingForPlayers;
+	double ShownPhaseSince = 0.0;
 };

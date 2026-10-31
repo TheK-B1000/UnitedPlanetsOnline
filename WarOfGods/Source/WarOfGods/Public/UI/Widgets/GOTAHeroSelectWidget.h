@@ -48,6 +48,9 @@ protected:
 	void HandleConfirm();
 	UFUNCTION()
 	void HandleBack();
+	UFUNCTION()
+	void HandleDifficulty();
+	void RefreshDifficultyLabel();
 
 	// Left — single large character illustration + identity
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Heroes") TObjectPtr<UImage> Image_Portrait;
@@ -76,6 +79,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Heroes") TObjectPtr<UPanelWidget> Box_Roster;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Heroes") TObjectPtr<UGOTAMenuButtonWidget> Btn_Confirm;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Heroes") TObjectPtr<UGOTAMenuButtonWidget> Btn_Back;
+	/** Fight AI only: cycles the Sovereign Champion's difficulty. */
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional), Category = "GOTA|Heroes") TObjectPtr<UGOTAMenuButtonWidget> Btn_Difficulty;
 
 	UPROPERTY()
 	TArray<TObjectPtr<UGOTAMenuButtonWidget>> Tiles;

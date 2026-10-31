@@ -69,6 +69,10 @@ public:
 	UPROPERTY(config, BlueprintReadWrite, Category = "Settings|Display")
 	bool bVSyncEnabled = true;
 
+	/** Trial of Champions (Fight AI) difficulty: 0 Recruit, 1 Veteran, 2 Ascendant. */
+	UPROPERTY(config, BlueprintReadWrite, Category = "Settings|Gameplay", meta = (ClampMin = "0", ClampMax = "2"))
+	int32 FightAIDifficulty = 1;
+
 	/** Skips menu tweens, backdrop drift and camera blends. */
 	UPROPERTY(config, BlueprintReadWrite, Category = "Settings|Accessibility")
 	bool bReducedMotion = false;

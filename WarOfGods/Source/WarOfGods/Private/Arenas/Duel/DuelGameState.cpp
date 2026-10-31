@@ -23,6 +23,10 @@ void ADuelGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ADuelGameState, bCombatEnabled);
 	DOREPLIFETIME(ADuelGameState, MatchOutcome);
 	DOREPLIFETIME(ADuelGameState, LastRoundWinnerSlot);
+	DOREPLIFETIME(ADuelGameState, ChampionPawn);
+	DOREPLIFETIME(ADuelGameState, Difficulty);
+	DOREPLIFETIME(ADuelGameState, ChampionPhase);
+	DOREPLIFETIME(ADuelGameState, bChampionGuardBroken);
 }
 
 void ADuelGameState::SetDuelPhase(EDuelPhase NewPhase)

@@ -1,0 +1,420 @@
+wait 4
+gota.Duel.Bot fight
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Test.Shot 612_fight
+wait 0.3
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Test.Shot 624_fight
+wait 0.3
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Test.Shot 636_fight
+wait 0.3
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Test.Shot 648_fight
+wait 0.3
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Test.Shot 660_fight
+wait 0.3
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Test.Shot 672_fight
+wait 0.3
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Test.Shot 684_fight
+wait 0.3
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Test.Shot 696_fight
+wait 0.3
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+wait 3
+gota.Duel.State 0
+gota.Duel.Director state
+gota.Duel.Dump
+gota.Duel.Bot off
+quit

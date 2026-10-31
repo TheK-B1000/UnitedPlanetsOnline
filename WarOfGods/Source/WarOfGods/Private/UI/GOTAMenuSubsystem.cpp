@@ -564,7 +564,9 @@ bool UGOTAMenuSubsystem::RequestLaunchArena(EGOTAArenaRuleset Ruleset, EArenaId 
 	FText ModeName;
 	if (Ruleset == EGOTAArenaRuleset::FightAI)
 	{
-		Options = FString::Printf(TEXT("game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=%s?BestOf=3?Opponent=AI"), *ArenaToken);
+		static const TCHAR* DifficultyTokens[] = { TEXT("Recruit"), TEXT("Veteran"), TEXT("Ascendant") };
+		Options = FString::Printf(TEXT("game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=%s?BestOf=3?Opponent=AI?Difficulty=%s"),
+			*ArenaToken, DifficultyTokens[GetFightAIDifficulty()]);
 		Busy = NSLOCTEXT("GOTA", "LoadingFightAI", "Entering Titan's Quarry — Trial of Champions…");
 		ModeName = NSLOCTEXT("GOTA", "ModeTrial", "TRIAL OF CHAMPIONS");
 	}
@@ -586,6 +588,24 @@ bool UGOTAMenuSubsystem::RequestLaunchArena(EGOTAArenaRuleset Ruleset, EArenaId 
 	}
 	PrepareLoadingScreen(HeroId, Arena, ModeName);
 	return BeginGuardedTravel(DefaultArenaMap.GetLongPackageName(), Options, Busy);
+}
+
+int32 UGOTAMenuSubsystem::GetFightAIDifficulty() const
+{
+	const UGOTAGameUserSettings* Settings = UGOTAGameUserSettings::GetGOTAGameUserSettings();
+	return Settings ? FMath::Clamp(Settings->FightAIDifficulty, 0, 2) : 1;
+}
+
+int32 UGOTAMenuSubsystem::CycleFightAIDifficulty()
+{
+	UGOTAGameUserSettings* Settings = UGOTAGameUserSettings::GetGOTAGameUserSettings();
+	if (!Settings)
+	{
+		return 1;
+	}
+	Settings->FightAIDifficulty = (FMath::Clamp(Settings->FightAIDifficulty, 0, 2) + 1) % 3;
+	Settings->SaveSettings();
+	return Settings->FightAIDifficulty;
 }
 
 void UGOTAMenuSubsystem::BeginArenaHeroSelection(EGOTAArenaRuleset Ruleset, EArenaId Arena)

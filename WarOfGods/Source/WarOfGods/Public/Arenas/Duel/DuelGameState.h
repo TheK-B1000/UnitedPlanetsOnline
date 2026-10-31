@@ -50,6 +50,24 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel")
 	int32 LastRoundWinnerSlot = INDEX_NONE;
 
+	/** Fight AI: the champion pawn (AI pawns have no PlayerState link for the HUD). */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel|AI")
+	TObjectPtr<APawn> ChampionPawn;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel|AI")
+	EGOTADuelDifficulty Difficulty = EGOTADuelDifficulty::Veteran;
+
+	/** 0 = no champion, 1 = phase I, 2 = phase II (ascended). */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel|AI")
+	uint8 ChampionPhase = 0;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Duel|AI")
+	bool bChampionGuardBroken = false;
+
+	/** Local, cosmetic: fired on every peer when a combat cue arrives (HUD callouts). */
+	UPROPERTY(BlueprintAssignable, Category = "Duel")
+	FOnDuelCombatCue OnDuelCombatCue;
+
 	UPROPERTY(BlueprintAssignable, Category = "Duel")
 	FOnDuelPhaseChanged OnDuelPhaseChanged;
 

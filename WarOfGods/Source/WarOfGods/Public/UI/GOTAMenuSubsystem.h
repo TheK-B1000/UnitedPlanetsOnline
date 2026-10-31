@@ -149,6 +149,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GOTA|Menu|Arena")
 	void BeginArenaHeroSelection(EGOTAArenaRuleset Ruleset, EArenaId Arena);
 
+	/** Fight AI difficulty (persisted in GameUserSettings): 0 Recruit, 1 Veteran, 2 Ascendant. */
+	UFUNCTION(BlueprintPure, Category = "GOTA|Menu|Arena")
+	int32 GetFightAIDifficulty() const;
+
+	/** Recruit → Veteran → Ascendant → Recruit. Returns the new value. */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|Menu|Arena")
+	int32 CycleFightAIDifficulty();
+
+	UFUNCTION(BlueprintPure, Category = "GOTA|Menu|Arena")
+	EGOTAArenaRuleset GetPendingRuleset() const { return PendingRuleset; }
+
 	/** Called by Hero Select CONFIRM: launches the pending ruleset/arena with the selected hero. */
 	UFUNCTION(BlueprintCallable, Category = "GOTA|Menu|Arena")
 	bool LaunchPendingArena();

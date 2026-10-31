@@ -1,0 +1,10 @@
+wait 2
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Shield_Block.Montage_Shield_Block
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Shield_Block_React.Montage_Shield_Block_React
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Sword_Slash.Montage_Sword_Slash
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Sword_SpinningAttack.Montage_Sword_SpinningAttack
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Melee_GroundSmash.Montage_Melee_GroundSmash
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Sword_Jump_Attack.Montage_Sword_Jump_Attack
+gota.Duel.Notifies /Game/Animations/Melee/Montage_SwordCombo.Montage_SwordCombo
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Stagger.Montage_Stagger
+quit

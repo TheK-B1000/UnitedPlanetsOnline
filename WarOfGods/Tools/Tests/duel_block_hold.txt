@@ -1,0 +1,302 @@
+wait 4
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+gota.Duel.State 0
+gota.Duel.State 1
+wait 0.15
+quit

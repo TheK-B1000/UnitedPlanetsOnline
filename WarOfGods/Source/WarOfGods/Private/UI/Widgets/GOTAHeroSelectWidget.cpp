@@ -47,10 +47,17 @@ void UGOTAHeroSelectWidget::NativeOnInitialized()
 		Btn_Back->OnActivated.AddUniqueDynamic(this, &UGOTAHeroSelectWidget::HandleBack);
 		TrackFocus(Btn_Back);
 	}
+	if (Btn_Difficulty)
+	{
+		Btn_Difficulty->OnActivated.AddUniqueDynamic(this, &UGOTAHeroSelectWidget::HandleDifficulty);
+		TrackFocus(Btn_Difficulty);
+		RefreshDifficultyLabel();
+	}
 }
 
 void UGOTAHeroSelectWidget::OnScreenActivated()
 {
+	RefreshDifficultyLabel();
 	if (Tiles.Num() == 0)
 	{
 		RebuildRoster();
@@ -147,6 +154,23 @@ void UGOTAHeroSelectWidget::ShowHero(FName HeroId)
 	SetStat(Bar_Defense, Text_Defense, Hero->CardStats.Defense);
 	SetStat(Bar_Mobility, Text_Mobility, Hero->CardStats.Mobility);
 	SetStat(Bar_Technique, Text_Technique, Hero->CardStats.Technique);
+	// Heroes without card statistics (the prototype frame) show no empty bars.
+	const bool bHasStats = Hero->CardStats.Attack + Hero->CardStats.Defense + Hero->CardStats.Mobility + Hero->CardStats.Technique > 0;
+	for (const TCHAR* Row : { TEXT("Row_Attack"), TEXT("Row_Defense"), TEXT("Row_Mobility"), TEXT("Row_Technique") })
+	{
+		if (UWidget* W = GetWidgetFromName(Row))
+		{
+			W->SetVisibility(bHasStats ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
+		}
+	}
+	if (UWidget* Header = GetWidgetFromName(TEXT("AbilitiesHeader")))
+	{
+		Header->SetVisibility(Hero->Abilities.Num() > 0 ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
+	}
+	if (Text_Abilities)
+	{
+		Text_Abilities->SetVisibility(Hero->Abilities.Num() > 0 ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
+	}
 	if (Text_Biography) { Text_Biography->SetText(Hero->Biography); }
 	if (Text_Abilities)
 	{
@@ -206,6 +230,32 @@ void UGOTAHeroSelectWidget::HandleConfirm()
 	Registry->SetLocalSelection(PreviewHero);
 	Menu->PlayUISound(EGOTAMenuSound::Confirm);
 	Menu->LaunchPendingArena();
+}
+
+void UGOTAHeroSelectWidget::RefreshDifficultyLabel()
+{
+	const UGOTAMenuSubsystem* Menu = GetMenuSubsystem();
+	if (!Btn_Difficulty || !Menu)
+	{
+		return;
+	}
+	const bool bFightAI = Menu->GetPendingRuleset() == EGOTAArenaRuleset::FightAI;
+	Btn_Difficulty->SetVisibility(bFightAI ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	static const FText Names[] = {
+		NSLOCTEXT("GOTA", "DiffBtnRecruit", "CHAMPION: RECRUIT"),
+		NSLOCTEXT("GOTA", "DiffBtnVeteran", "CHAMPION: VETERAN"),
+		NSLOCTEXT("GOTA", "DiffBtnAscendant", "CHAMPION: ASCENDANT") };
+	Btn_Difficulty->SetLabel(Names[FMath::Clamp(Menu->GetFightAIDifficulty(), 0, 2)]);
+}
+
+void UGOTAHeroSelectWidget::HandleDifficulty()
+{
+	if (UGOTAMenuSubsystem* Menu = GetMenuSubsystem())
+	{
+		Menu->CycleFightAIDifficulty();
+		Menu->PlayUISound(EGOTAMenuSound::Focus);
+		RefreshDifficultyLabel();
+	}
 }
 
 void UGOTAHeroSelectWidget::HandleBack()

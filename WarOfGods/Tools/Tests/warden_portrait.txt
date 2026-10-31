@@ -1,0 +1,14 @@
+# Art capture: in-engine UPA Warden portraits (duel map, round live, game paused, studio backdrop + lights).
+#   UnrealEditor.exe WarOfGods.uproject "<duel URL>" -game -ResX=1920 -ResY=1080 -ExecCmds="gota.Test.Run Tools/Tests/warden_portrait.txt"
+wait 2.5
+gota.Duel.Dump
+gota.Duel.Director state
+gota.Test.Portrait 0 22 250 24 6 1
+wait 1.5
+HighResShot 2
+wait 1.5
+gota.Test.Portrait 0 22 560 28 55 0
+wait 1.5
+HighResShot 2
+wait 2
+quit

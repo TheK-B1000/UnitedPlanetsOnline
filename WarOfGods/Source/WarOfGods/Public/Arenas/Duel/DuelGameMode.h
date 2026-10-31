@@ -92,12 +92,33 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI")
 	TSoftClassPtr<APawn> AIChampionClass;
 
+	/**
+	 * Blueprint function on the fighter pawn that equips its melee weapon (BP_Player::MeleeStance —
+	 * the same path as pressing 1). Called at every round start so fighters never begin unarmed.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|Fighters")
+	FName FighterLoadoutFunction = TEXT("MeleeStance");
+
+	/** Blueprint function on the champion's AIController that commits it to a target (AIC_Enemy_Base). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI")
+	FName ChampionEngageFunction = TEXT("SetStateAsAttacking");
+
 	/** Distance from the Warden's start at which the champion enters (same lane, facing the Warden). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI", meta = (ClampMin = "300.0"))
 	float AIChampionSpawnDistance = 1100.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI")
-	FText AIChampionName = NSLOCTEXT("GOTA", "AIChampionName", "Arena Champion");
+	FText AIChampionName = NSLOCTEXT("GOTA", "AIChampionName", "Sovereign Champion");
+
+	/** Fight AI difficulty (`?Difficulty=Recruit|Veteran|Ascendant`). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI")
+	EGOTADuelDifficulty Difficulty = EGOTADuelDifficulty::Veteran;
+
+	UFUNCTION(BlueprintPure, Category = "Duel|AI")
+	EGOTADuelDifficulty GetDifficulty() const { return Difficulty; }
+
+	/** The Sovereign Champion's director (server). */
+	class UGOTAChampionDirectorComponent* GetChampionDirector() const;
 
 	UFUNCTION(BlueprintPure, Category = "Duel")
 	bool IsVersusAI() const { return bVersusAI; }
@@ -148,6 +169,14 @@ protected:
 	void EnsureDuelNavigation();
 	/** Round start: make the champion aware of its challenger through its own perception (hearing + damage senses). */
 	void AlertChampionToChallenger();
+	/** Arms a fighter through its own Blueprint loadout function (no new combat code). */
+	void EquipFighterLoadout(APawn* Pawn);
+	/** Removes developer-only actors (EQS testing pawns) that perception would treat as targets. */
+	void RemoveDeveloperPawns();
+	/** Destroys a fighter and everything attached to it (weapons/shields would otherwise litter the arena). */
+	void DestroyFighter(APawn* Pawn);
+	/** Adds the duel combat layer (momentum, cues, champion director) to this round's fighters. */
+	void InitDuelCombat();
 	/** Removes the per-pawn W_PlayerHUD that BP_Player adds on BeginPlay, before a respawn. */
 	void RemovePawnOwnedHud(APlayerController* PC);
 	AActor* FindDuelStartForSlot(int32 Slot) const;

@@ -50,6 +50,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
 	static int32 ClearLevelScriptGraphs(UObject* World);
 
+	/** Audit: writes every graph of a Blueprint as node text (same format as copy/paste) into OutDir. */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
+	static int32 ExportBlueprintGraphs(UObject* Blueprint, const FString& OutDir);
+
 	/** Creates (or updates) a runtime-cached UFont asset from FontFace assets: {"Regular": Face,...}. */
 	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
 	static UFont* CreateCompositeFont(const FString& PackagePath, const FString& AssetName, const TMap<FName, UFontFace*>& Typefaces);

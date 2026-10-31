@@ -31,4 +31,18 @@ public:
 	AGOTAPlayerCameraManager();
 
 	virtual void ProcessViewRotation(float DeltaTime, FRotator& OutViewRotation, FRotator& OutDeltaRot) override;
+
+	/**
+	 * Short procedural impact on the local view (combat hits/parries). Purely local and cosmetic.
+	 * Scaled by Camera Shake Intensity; disabled by Reduced Motion.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|Camera")
+	void AddImpactKick(float Strength);
+
+protected:
+	virtual void UpdateViewTarget(FTViewTarget& OutVT, float DeltaTime) override;
+
+	float KickStrength = 0.f;
+	float KickAge = 0.f;
+	float KickSeed = 0.f;
 };

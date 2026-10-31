@@ -1,6 +1,6 @@
 # Gods of the Arena — Implementation Roadmap
 
-**Updated:** 2026-10-27 (Playable Integration 01 — freeze new features)  
+**Updated:** 2026-10-30 (Combat Milestone 01 — Trial of Champions: Sovereign Champion)  
 **Engine:** UE 5.8 ONLY  
 **Branch:** `feature/gota-cinematic-frontend`
 
@@ -14,6 +14,28 @@
 
 **Active milestone:** Playable Integration 01 — Titan's Quarry proving ground.  
 Track: `Docs/GOTA_PLAYABLE_INTEGRATION_RESULTS.md`. **No new features** until Gates 1–4 pass.
+
+---
+
+## Combat Milestone 01 — Player vs AI duel (2026-10-30)
+
+North-star items, actual status. Evidence: `GOTA_AI_DUEL_TEST_RESULTS.md`; design: `GOTA_AI_DUEL_DESIGN.md`; numbers: `GOTA_COMBAT_TUNING.md`.
+
+| North-star item | Status |
+|---|---|
+| One hero, one weapon, one arena | **Done** — UPA Warden (BP_Player, sword + shield), Titan's Quarry |
+| One intelligent enemy | **Done** — Sovereign Champion: BT_Enemy_Melee plus a server director (fair wind-up reads, guard chain, shield-overload weak point, phase II, Sovereign Surge). Recruit, Veteran and Ascendant profiles. |
+| Perfect parry | **Done** — the Blueprint's own `ParryWindow`, recognised in C++ (momentum and cue) |
+| Perfect dodge | **Done** — BP dodge i-frames timed against the attack's impact notify |
+| One divine counter | **Done** — Divine Momentum (UStatsComponent) → Q → server-validated, damage through `BPC_DamageSystem` |
+| Same encounter over the network | **Partial** — listen-server host verified; remote client not tested |
+
+Still open:
+- Lock-on input wiring.
+- Remote-client duel test.
+- Sustained-hold block (optional montage loop; design doc §5).
+- Distinct champion art.
+- Runtime graybox navmesh root cause (the AI duel spawns on baked navmesh).
 
 ---
 
@@ -45,10 +67,10 @@ Audit docs, UE 5.8 upgrade, flat Source layout, Lockon/Combat/Stats shells, prof
 | Combat design spec | Done — `GOTA_COMBAT_DESIGN.md` |
 | GAS ADR | Done — defer — `ADR_GAS_ADOPTION.md` |
 | Editor open / CompileAllBlueprints | In progress / operator |
-| BP graph capture (attack/parry/dodge) | Pending editor |
-| Wire Notify* inside `BPC_Attacks` / `BP_Player` | Pending editor (bootstrap cannot invent outcomes) |
+| BP graph capture (attack/parry/dodge) | Done — `Tools/GOTA_ExportCombatGraphs.py` → `Saved/GraphAudit`, traced with `Tools/GOTA_GraphFlow.py` |
+| Wire Notify* inside `BPC_Attacks` / `BP_Player` | Superseded for the duel — C++ binds `BPC_DamageSystem.OnBlocked` directly (layout-checked); no BP edit needed |
 | Lock-on IA wiring verification | Pending editor |
-| Listen-server smoke test | Pending |
+| Listen-server smoke test | Host-side done (Fight AI with `?listen`); remote client pending |
 
 **BP wiring checklist (editor, minimal):**
 
