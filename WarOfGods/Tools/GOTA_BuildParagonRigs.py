@@ -21,6 +21,11 @@ BODIES = {
     "Sevarog": "/Game/ParagonSevarog/Characters/Heroes/Sevarog/Meshes/Sevarog",
     # Windwalker Echo (Epic sample, migrated by Tools/GOTA_MigrateEcho.py): UE5 Mannequin bone layout.
     "Echo": "/Game/EchoContent/Characters/Echo/Meshes/Echo",
+    # Roster pass (prototype bodies): Zephyr, Lysara, Kairos, Orion.
+    "Kwang": "/Game/ParagonKwang/Characters/Heroes/Kwang/Meshes/Kwang_GDC",
+    "Aurora": "/Game/ParagonAurora/Characters/Heroes/Aurora/Meshes/Aurora",
+    "Gideon": "/Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon",
+    "Steel": "/Game/ParagonSteel/Characters/Heroes/Steel/Meshes/Steel",
 }
 # UE5 Mannequin layout (Echo): full spine/neck and finger chains so hand grips on the gameplay sword hold.
 CHAINS_UE5 = [

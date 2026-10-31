@@ -178,6 +178,27 @@ namespace GOTABodyTest
 		}
 	}
 
+	/** gota.Test.BodyScale <scale>: rescale every visible hero body on this machine (tuning only), then log gaps. */
+	static void BodyScale(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		const float S = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 1.f;
+		if (!W || S <= 0.f)
+		{
+			return;
+		}
+		for (TActorIterator<ACharacter> It(W); It; ++It)
+		{
+			UGOTAHeroBodyComponent* Comp = It->FindComponentByClass<UGOTAHeroBodyComponent>();
+			if (USkeletalMeshComponent* BodyMesh = Comp ? Comp->GetBodyMesh() : nullptr)
+			{
+				BodyMesh->SetRelativeScale3D(FVector(S));
+			}
+		}
+		UE_LOG(LogGOTABodyTest, Log, TEXT("BodyScale %.2f"), S);
+	}
+	static FAutoConsoleCommand CmdBodyScale(TEXT("gota.Test.BodyScale"), TEXT("Rescale visible hero bodies (tuning)."), FConsoleCommandWithArgsDelegate::CreateStatic(&BodyScale));
+
 	static FAutoConsoleCommand CmdBody(TEXT("gota.Test.Body"), TEXT("Log hero bodies, hand gaps and kept weapons on this machine."), FConsoleCommandWithArgsDelegate::CreateStatic(&Body));
 	static FAutoConsoleCommand CmdSpawns(TEXT("gota.Test.WatchSpawns"), TEXT("Log actors spawned by characters (0 = stop)."), FConsoleCommandWithArgsDelegate::CreateStatic(&WatchSpawns));
 }

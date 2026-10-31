@@ -18,6 +18,27 @@ importlib.reload(HC)
 EAL = unreal.EditorAssetLibrary
 log = []
 
+HIDDEN_SLOT_MATERIAL = "/Game/Heroes/Materials/M_GOTA_HiddenSlot"
+
+
+def ensure_hidden_material():
+    """Project-owned invisible material for hiding body material slots (masked, opacity mask 0)."""
+    if EAL.does_asset_exist(HIDDEN_SLOT_MATERIAL):
+        return
+    folder, name = HIDDEN_SLOT_MATERIAL.rsplit("/", 1)
+    mat = unreal.AssetToolsHelpers.get_asset_tools().create_asset(name, folder, unreal.Material, unreal.MaterialFactoryNew())
+    mat.set_editor_property("blend_mode", unreal.BlendMode.BLEND_MASKED)
+    mat.set_editor_property("used_with_skeletal_mesh", True)
+    zero = unreal.MaterialEditingLibrary.create_material_expression(mat, unreal.MaterialExpressionConstant, -300, 0)
+    zero.set_editor_property("r", 0.0)
+    unreal.MaterialEditingLibrary.connect_material_property(zero, "", unreal.MaterialProperty.MP_OPACITY_MASK)
+    unreal.MaterialEditingLibrary.recompile_material(mat)
+    EAL.save_asset(HIDDEN_SLOT_MATERIAL)
+    log.append("created " + HIDDEN_SLOT_MATERIAL)
+
+
+ensure_hidden_material()
+
 for hero_id, b in HC.BODIES.items():
     path = "/Game/Heroes/Data/DA_Hero_" + hero_id
     da = EAL.load_asset(path)
