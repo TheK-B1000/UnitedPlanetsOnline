@@ -1,0 +1,74 @@
+// White Tiger Studios 2024
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Combat/CombatTimingTypes.h"
+#include "Events/CombatEvents.h"
+#include "Subsystems/WorldSubsystem.h"
+#include "CombatBootstrapSubsystem.generated.h"
+
+class APawn;
+class UCombatComponent;
+class UCombatTimingComponent;
+
+/**
+ * Ensures combat C++ components exist on player pawns without requiring a BP parent change.
+ * Stats stay in observation mode by default so Blueprint damage remains authoritative.
+ */
+UCLASS()
+class WAROFGODS_API UCombatBootstrapSubsystem : public UWorldSubsystem
+{
+	GENERATED_BODY()
+
+public:
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
+	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
+
+	UPROPERTY(EditAnywhere, Category = "Combat|Bootstrap")
+	bool bAutoAttachComponents = true;
+
+	/** When false, StatsComponent refuses mutations (BP damage remains source of truth). */
+	UPROPERTY(EditAnywhere, Category = "Combat|Bootstrap")
+	bool bEnableAuthoritativeStats = false;
+
+	UPROPERTY(EditAnywhere, Category = "Combat|Bootstrap")
+	bool bLogCombatEvents = true;
+
+protected:
+	UFUNCTION()
+	void HandlePawnPossessed(APawn* OldPawn, APawn* NewPawn);
+
+	UFUNCTION()
+	void HandleAttackStarted(const FCombatActorEvent& Event);
+
+	UFUNCTION()
+	void HandleHitConfirmed(const FCombatHitEvent& Event);
+
+	UFUNCTION()
+	void HandleBlockSucceeded(const FCombatDefenseEvent& Event);
+
+	UFUNCTION()
+	void HandleParrySucceeded(const FCombatDefenseEvent& Event);
+
+	UFUNCTION()
+	void HandlePerfectParry(const FCombatDefenseEvent& Event);
+
+	UFUNCTION()
+	void HandlePerfectDodge(const FCombatDefenseEvent& Event);
+
+	UFUNCTION()
+	void HandleDefenseResolved(const FCombatDefenseResolveResult& Result);
+
+	void HandleActorSpawned(AActor* Spawned);
+	void BindPlayerController(APlayerController* PC);
+	void EnsureComponentsOnPawn(APawn* Pawn);
+	void BindCombatLogging(UCombatComponent* Combat);
+	void BindTimingLogging(UCombatTimingComponent* Timing);
+
+	FDelegateHandle ActorSpawnedHandle;
+	TSet<TWeakObjectPtr<UCombatComponent>> LoggingBound;
+	TSet<TWeakObjectPtr<UCombatTimingComponent>> TimingLoggingBound;
+};

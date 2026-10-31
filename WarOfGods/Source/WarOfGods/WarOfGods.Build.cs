@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// White Tiger Studios 2024
 
 using UnrealBuildTool;
 
@@ -7,17 +7,41 @@ public class WarOfGods : ModuleRules
 	public WarOfGods(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore",
+			"EnhancedInput",
+			"GameplayTags",
+			"UMG",
+			"Slate",
+			"SlateCore",
+			"OnlineSubsystem",
+			"OnlineSubsystemUtils",
+			"NavigationSystem",
+			"AIModule"
+		});
 
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"DeveloperSettings",
+			"RHI",
+			"RenderCore",
+			"MoviePlayer"
+		});
 
-		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
+		// Editor-only authoring helpers (UGOTAEditorUIBuilderLibrary). Compiled out of game targets.
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[]
+			{
+				"UnrealEd",
+				"UMGEditor",
+				"Kismet"
+			});
+		}
 	}
 }

@@ -1,0 +1,65 @@
+# Arena Environment Pass 2: replace prototype geometry, upgrade materials
+
+**Goal.** Replace the most visible primitive landmarks with detailed architecture, fix the Megascans material gap, and keep gameplay collision, navigation and frame time intact.
+
+## What was built
+
+### 1. Procedural architecture library (`Tools/GOTA_BuildArchitecture.py`, Geometry Script, free)
+
+The library holds 23 Nanite static meshes in `/Game/Arenas/Shared/Architecture/SM_GOTA_Arch_*`, all built in-editor from code: no purchased or downloaded assets. It uses these techniques:
+- Revolved profiles: column bases, entasis shafts, capitals, statue robes, brazier, crucible, lantern.
+- Boolean cuts: column fluting, crenels, slit windows, drain slits, gate arch, bridge arch, ring panel grooves.
+- Plane cuts: broken columns, ruined walls, the broken colossus.
+- Uniform remesh plus two octaves of Perlin displacement: erosion and chipped edges.
+
+| Piece | Used in |
+|---|---|
+| Column / ColumnBroken / ColumnDrum | Quarry, Verdant (colonnade + temple), Sunscar, Dominion regions; every `K.column` call |
+| TowerRound | Frostbound towers, Stormbreak towers + beacon shaft |
+| TowerSquare | Ashfall fortress towers |
+| Wall / WallRuin | Ashfall fortress ring, Frostbound curtain walls, Sunscar fortifications, Stormbreak battlements |
+| Gate | Every `K.gate` call (Quarry, Ashfall, Frostbound, Sunscar) |
+| Obelisk | Quarry survey pylons, Ashfall obelisks |
+| Colossus / ColossusBroken | Titan colossus (Quarry), Frostbound wardens, Verdant guardians |
+| SeatedColossus | Sunscar gate colossi |
+| Brazier, Crucible | Ashfall |
+| SovereignRing (+Glow), Monument (+Upper) | Shattered Dominion |
+| GantryTower, Truss, ChainLink | Quarry gantry, all chains |
+| Lantern | Stormbreak beacon |
+| BridgeArch | Every `K.arch` call (Quarry bridge, Frostbound arch, Stormbreak bridge piers) |
+
+A dev-only showroom level (`/Game/Arenas/Dev/L_ArchShowroom`, not cooked; `Tools/Tests/arch_showroom_shots.txt`) displays the library.
+
+### 2. Virtual-texture surface master
+
+- `M_GOTA_ArenaSurfaceVT` uses the same world-aligned graph as the main surface master, but with virtual-texture samplers. Each slot's sampler type comes from its texture's compression: Color, Linear Color or Masks.
+- It unlocks the Megascans Icelandic 8K surfaces: `ObsidianVT`, `CrackedRockVT`, `MossRockVT`, `RockyVT`.
+- These are now used for the Quarry, Verdant, Frostbound and Stormbreak flagstones, and for a third of Verdant's columns.
+- `Megascans/Rock` stays excluded: its roughness maps use a different compression class from the ORD masks, so they can't share a sampler slot.
+
+### 3. Gameplay safety
+
+- **Layers.** Every swapped piece is in the Dressing layer (`NoCollision`, outside the boundary). The floor, curb, boundary, starts, Horde spawns and nav bounds are unchanged.
+- **Builds.** All seven levels rebuild with `nav=True` and no missing assets.
+- **Testing.** Every arena loads in game and runs the AI duel.
+
+## Before / after
+
+- **Before:** `Saved/Screenshots/GOTA/Before_Pass2/8x_<arena>_*.png`.
+- **After:** `Saved/Screenshots/GOTA/8x_<arena>_*.png`.
+- Both sets were taken from the same composition cameras (`Tools/Tests/arena_<key>_shots.txt`).
+
+## Performance (uncapped, 15 s live combat, RTX 5070)
+
+See `GOTA_ARENA_PERFORMANCE.md` for the method. Results are filled in by the clean measurement pass below.
+
+## Free asset candidates
+
+These are for figurative statues that procedural modelling can't match. See `GOTA_ARENA_FREE_ASSET_CANDIDATES.md`.
+
+## Still not AAA (honest)
+
+- **Statues** are stylised robed figures (revolve + noise): no faces, hands or sculpted drapery. Real sculpts from the free Infinity Blade packs (if confirmed free) or Megascans would be the upgrade.
+- **Seated colossi** are still blocky up close.
+- **No decals**, no terrain blending under structures, no vertex-painted moss or dirt.
+- **VFX** (lava flow, heat haze, waterfall, snowfall, rain) were not upgraded in this pass.

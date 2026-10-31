@@ -1,0 +1,63 @@
+# Arena -> Fight AI end-to-end (real UI path for launch / rematch / return).
+wait 7
+gota.Menu.Action Arena
+wait 1.5
+gota.Test.Shot 20_arena_screen
+wait 0.4
+gota.Test.Key Enter
+wait 0.2
+gota.Test.Shot 21_busy_modal
+wait 6
+gota.Duel.Dump
+# Round 1: the champion is free to engage the idle Warden (real AI + damage path)
+wait 5
+gota.Duel.Dump
+gota.Test.Shot 22_round1_engage
+wait 0.4
+wait 5
+gota.Duel.Dump
+wait 5
+gota.Duel.Dump
+gota.Test.Shot 23_round1_late
+wait 0.4
+wait 8
+gota.Duel.Dump
+wait 8
+gota.Duel.Dump
+# Finish deterministically through the BP damage system where the AI has not already decided it
+gota.Duel.Hurt 1 5000
+wait 10
+gota.Duel.Dump
+gota.Duel.Hurt 1 5000
+wait 10
+gota.Duel.Hurt 1 5000
+wait 5
+gota.Duel.Dump
+gota.Test.Shot 25_results
+wait 0.5
+# Rematch via results UI (REMATCH focused by default)
+gota.Test.Key Enter
+wait 7
+gota.Duel.Dump
+gota.Test.Shot 26_rematch
+wait 0.4
+gota.Duel.Hurt 1 5000
+wait 10
+gota.Duel.Hurt 1 5000
+wait 10
+gota.Duel.Hurt 1 5000
+wait 5
+gota.Duel.Dump
+# Return to main menu via results UI
+gota.Test.Key Right
+gota.Test.Key Enter
+wait 25
+gota.Menu.Dump
+gota.Test.Shot 28_back_in_menu
+wait 0.5
+gota.Menu.Action Arena
+wait 1.5
+gota.Menu.Dump
+gota.Test.Shot 29_arena_again
+wait 0.5
+quit

@@ -1,6 +1,23 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// White Tiger Studios 2024
 
 #include "WarOfGods.h"
+#include "Arenas/ArenaConsoleCommands.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, WarOfGods, "WarOfGods" );
+class FWarOfGodsModule : public FDefaultGameModuleImpl
+{
+public:
+	virtual void StartupModule() override
+	{
+		FDefaultGameModuleImpl::StartupModule();
+		FArenaConsoleCommands::Register();
+	}
+
+	virtual void ShutdownModule() override
+	{
+		FArenaConsoleCommands::Unregister();
+		FDefaultGameModuleImpl::ShutdownModule();
+	}
+};
+
+IMPLEMENT_PRIMARY_GAME_MODULE(FWarOfGodsModule, WarOfGods, "WarOfGods");

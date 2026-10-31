@@ -1,0 +1,10 @@
+# Uncapped performance baseline (VSync off, no frame cap) during live combat.
+r.VSync 0
+t.MaxFPS 0
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 6
+gota.Duel.Bot fight
+wait 6
+gota.Test.Perf 15 uncapped_quarry
+wait 17
+quit

@@ -1,0 +1,44 @@
+# Arena -> Hero Select -> (Ayla refused: preview only) -> UPA Warden prototype -> duel with hero identity
+wait 7
+gota.Menu.Action Arena
+wait 1.5
+gota.Test.Key Enter
+wait 1.5
+gota.Menu.Dump
+gota.Test.Shot 40_heroselect_ayla
+wait 0.5
+gota.Test.Key Enter
+wait 0.5
+gota.Menu.Dump
+gota.Test.Key Right
+wait 0.6
+gota.Test.Shot 41_heroselect_drakon
+wait 0.5
+gota.Test.Key Right
+gota.Test.Key Right
+gota.Test.Key Right
+gota.Test.Key Right
+gota.Test.Key Right
+wait 0.6
+gota.Test.Shot 42_heroselect_nyx
+wait 0.5
+gota.Test.Key Right
+gota.Test.Key Right
+wait 0.6
+gota.Test.Shot 43_heroselect_warden
+wait 0.5
+gota.Test.Key Enter
+wait 0.3
+gota.Test.Key Enter
+wait 8
+gota.Duel.Dump
+gota.Test.Shot 44_duel_hud_hero
+wait 0.5
+gota.Duel.Hurt 1 5000
+wait 10
+gota.Duel.Hurt 1 5000
+wait 5
+gota.Duel.Dump
+gota.Test.Shot 45_results_hero
+wait 0.5
+quit

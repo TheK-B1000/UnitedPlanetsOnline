@@ -1,0 +1,39 @@
+wait 3
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+wait 1.5
+gota.Duel.Face 0
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Face 0
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Face 0
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Face 0
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Face 0
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Face 0
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Face 0
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Test.Shot 52_warden_blocking
+wait 0.4
+gota.Duel.Call 0 EndBlock
+wait 1.5
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Dump
+wait 1.5
+gota.Duel.Dump
+quit

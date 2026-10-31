@@ -1,0 +1,114 @@
+wait 4
+gota.Duel.Bot fight
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+wait 3
+gota.Duel.Dump
+gota.Duel.Bot off
+quit

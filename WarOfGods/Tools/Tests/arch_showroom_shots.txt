@@ -1,0 +1,24 @@
+# Dev: architecture library showroom (left → right as listed in build_showroom).
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 4
+gota.Test.Cam -21000 -4200 900 -4 70 60 1
+wait 2
+gota.Test.Shot 90_arch_a
+wait 0.5
+gota.Test.Cam -10000 -4600 1100 -4 70 60 1
+wait 2
+gota.Test.Shot 91_arch_b
+wait 0.5
+gota.Test.Cam 2000 -5000 1300 -4 70 60 1
+wait 2
+gota.Test.Shot 92_arch_c
+wait 0.5
+gota.Test.Cam 15000 -5600 1500 -4 70 60 1
+wait 2
+gota.Test.Shot 93_arch_d
+wait 0.5
+gota.Test.Cam 0 3000 2500 0 90 60 1
+wait 2
+gota.Test.Shot 94_arch_ring
+wait 0.5
+quit

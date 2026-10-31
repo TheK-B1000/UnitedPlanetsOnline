@@ -1,0 +1,8 @@
+wait 3
+gota.Duel.Face 0
+gota.Duel.Call 0 StartBlock
+wait 0.5
+gota.Duel.Inspect 0
+wait 2
+gota.Duel.Inspect 0
+quit

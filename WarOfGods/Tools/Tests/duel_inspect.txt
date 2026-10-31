@@ -1,0 +1,4 @@
+wait 2
+gota.Duel.Funcs 0
+gota.Duel.Funcs 1
+quit
