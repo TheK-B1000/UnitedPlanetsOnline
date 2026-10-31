@@ -1,6 +1,8 @@
 // White Tiger Studios 2024
 
 #include "Arenas/ArenaGameMode.h"
+#include "Characters/GOTAHeroBodyComponent.h"
+#include "Arenas/Duel/DuelPlayerState.h"
 
 #include "Arenas/ArenaEncounterDirector.h"
 #include "Arenas/ArenaGameState.h"
@@ -344,4 +346,17 @@ void AArenaGameMode::PostLogin(APlayerController* NewPlayer)
 		}
 		UE_LOG(LogTemp, Log, TEXT("Arena PostLogin players=%d/%d"), NumPlayers, SoftMaxPlayers);
 	}
+}
+
+void AArenaGameMode::SetPlayerDefaults(APawn* PlayerPawn)
+{
+	Super::SetPlayerDefaults(PlayerPawn);
+	// Cosmetic only: the hero's body over the same gameplay pawn. Duel passes the server-accepted HeroId;
+	// modes without hero selection (Horde) get the default prototype hero's body.
+	const ADuelPlayerState* PS = PlayerPawn ? PlayerPawn->GetPlayerState<ADuelPlayerState>() : nullptr;
+	if (!PS && PlayerPawn && PlayerPawn->GetController())
+	{
+		PS = PlayerPawn->GetController()->GetPlayerState<ADuelPlayerState>();
+	}
+	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, PS ? PS->HeroId : NAME_None);
 }

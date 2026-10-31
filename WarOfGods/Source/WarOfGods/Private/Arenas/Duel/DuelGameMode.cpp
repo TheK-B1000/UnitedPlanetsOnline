@@ -1284,7 +1284,6 @@ void ADuelGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 	const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
 	if (PS && Registry && !PS->HeroId.IsNone())
 	{
-		UGOTAHeroBodyComponent::ApplyToPawn(PlayerPawn, Registry->FindHero(PS->HeroId));
 		// Divine abilities resolved from the accepted (server-validated) HeroId — never from the client.
 		UGOTAHeroAbilityComponent::ApplyToPawn(PlayerPawn, PS->HeroId);
 	}

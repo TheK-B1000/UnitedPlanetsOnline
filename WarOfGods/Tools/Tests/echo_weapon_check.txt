@@ -1,0 +1,43 @@
+r.MotionBlurQuality 0
+wait 6
+gota.Duel.Dump
+gota.Test.Portrait 0 35 230 35 45
+wait 0.4
+gota.Test.Shot 90_god_front
+gota.Test.Portrait 0 -60 240 35 45
+wait 0.4
+gota.Test.Shot 91_god_side
+gota.Test.Cam off
+gota.Duel.Bot fight
+wait 1.5
+gota.Test.Portrait 0 -50 300 40 45
+wait 0.2
+gota.Test.Shot 92_god_combat
+gota.Test.Cam off
+wait 1.5
+gota.Test.Portrait 0 40 300 40 45
+wait 0.2
+gota.Test.Shot 93_god_combat
+gota.Test.Cam off
+wait 1.5
+gota.Test.Portrait 0 -50 300 40 45
+wait 0.2
+gota.Test.Shot 94_god_combat
+gota.Test.Cam off
+wait 1.5
+gota.Test.Portrait 0 40 300 40 45
+wait 0.2
+gota.Test.Shot 95_god_combat
+gota.Test.Cam off
+wait 1.5
+gota.Test.Portrait 0 -50 300 40 45
+wait 0.2
+gota.Test.Shot 96_god_combat
+gota.Test.Cam off
+wait 1.5
+gota.Test.Portrait 0 40 300 40 45
+wait 0.2
+gota.Test.Shot 97_god_combat
+gota.Test.Cam off
+gota.Duel.Bot off
+quit

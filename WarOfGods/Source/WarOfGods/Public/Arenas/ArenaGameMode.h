@@ -22,6 +22,10 @@ class WAROFGODS_API AArenaGameMode : public AGameModeBase
 	GENERATED_BODY()
 
 public:
+	/** Dresses every spawned player pawn in its hero body (accepted HeroId, or the default prototype hero). */
+	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
+
+public:
 	AArenaGameMode();
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;

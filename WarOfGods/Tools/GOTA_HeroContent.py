@@ -115,6 +115,13 @@ BODIES = {
     "Nyx": dict(mesh="/Game/ParagonCountess/Characters/Heroes/Countess/Meshes/SM_Countess",
                 retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Countess", scale=1.0,
                 note="Paragon: Countess (prototype body)", status="IN_DEVELOPMENT"),
+    # Default prototype player: Windwalker Echo (Epic sample) over the same BP_Player frame. Keeps the
+    # gameplay sword + shield (hide_weapons=False) and hides Echo's own sword material slot.
+    "UPAWarden": dict(mesh="/Game/EchoContent/Characters/Echo/Meshes/Echo",
+                      retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Echo", scale=1.0,
+                      note="Windwalker Echo (Epic Games sample)", status="PLAYABLE", hide_weapons=False,
+                      extras=["/Game/EchoContent/Characters/Echo/Meshes/Echo_Hair"],
+                      hidden_slots=["M_echoSword"], hidden_material="/Game/EchoContent/Characters/Echo/Materials/M_hide"),
     "Varoth": dict(mesh="/Game/ParagonSevarog/Characters/Heroes/Sevarog/Meshes/Sevarog",
                    retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Sevarog", scale=1.0,
                    note="Paragon: Sevarog (prototype body)", status="IN_DEVELOPMENT"),

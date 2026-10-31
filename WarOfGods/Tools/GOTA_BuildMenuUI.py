@@ -1190,6 +1190,11 @@ def apply_hero_body(da, HC, hero_id):
     da.set_editor_property("body_retargeter", unreal.load_asset(b["retargeter"]))
     da.set_editor_property("body_scale", float(b["scale"]))
     da.set_editor_property("body_source_note", unreal.Text(b["note"]))
+    da.set_editor_property("hide_attached_weapon_meshes", bool(b.get("hide_weapons", True)))
+    da.set_editor_property("body_extra_meshes", [unreal.load_asset(x) for x in b.get("extras", [])])
+    da.set_editor_property("body_hidden_material_slots", list(b.get("hidden_slots", [])))
+    if b.get("hidden_material"):
+        da.set_editor_property("body_hidden_material", unreal.load_asset(b["hidden_material"]))
     da.set_editor_property("gameplay_pawn_class", unreal.load_class(None, "/Game/Player/BP_Player.BP_Player_C"))
     status = getattr(unreal.GOTAHeroAvailability, b["status"])
     da.set_editor_property("availability", status)
@@ -1239,6 +1244,8 @@ def build_hero_definitions():
             da.set_editor_property("availability", unreal.GOTAHeroAvailability.PLAYABLE)
             da.set_editor_property("gameplay_pawn_class", unreal.load_class(None, "/Game/Player/BP_Player.BP_Player_C"))
             da.set_editor_property("unavailable_reason", text(""))
+            if entry["id"] in getattr(HC, "BODIES", {}):
+                apply_hero_body(da, HC, entry["id"])
         else:
             da.set_editor_property("portrait", EAL.load_asset(HERO_TEX + "/T_GOTA_%s_Portrait" % entry["id"]))
             da.set_editor_property("thumbnail", EAL.load_asset(HERO_TEX + "/T_GOTA_%s_Thumbnail" % entry["id"]))

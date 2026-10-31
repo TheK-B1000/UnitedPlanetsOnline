@@ -28,6 +28,9 @@ public:
 	/** Server: adds (or reuses) the component on Pawn and assigns the hero. Returns null if the hero has no body. */
 	static UGOTAHeroBodyComponent* ApplyToPawn(APawn* Pawn, const UGOTAHeroDefinition* Hero);
 
+	/** Server: body for HeroId, or for the default (prototype) hero when HeroId is None (modes without hero selection). */
+	static UGOTAHeroBodyComponent* ApplyForHeroOrDefault(APawn* Pawn, FName HeroId);
+
 	void SetHeroId(FName InHeroId);
 	FName GetHeroId() const { return HeroId; }
 
@@ -47,12 +50,16 @@ protected:
 	void ApplyBody();
 	void RemoveBody();
 	void HideAttachedWeaponMeshes();
+	void FollowBodyWithWeapons();
 
 	UPROPERTY(ReplicatedUsing = OnRep_HeroId)
 	FName HeroId;
 
 	UPROPERTY(Transient)
 	TObjectPtr<USkeletalMeshComponent> Body;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<USkeletalMeshComponent>> BodyExtras;
 
 	/** The pawn mesh we hid (restored if the body is removed). */
 	TWeakObjectPtr<USkeletalMeshComponent> SourceMesh;

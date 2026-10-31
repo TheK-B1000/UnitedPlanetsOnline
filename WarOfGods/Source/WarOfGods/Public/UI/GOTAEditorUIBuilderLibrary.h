@@ -60,6 +60,13 @@ public:
 	static bool BuildEditorNavigation();
 
 	/**
+	 * Removes call nodes whose target function no longer exists (e.g. engine APIs removed since the asset
+	 * was made), recompiles and saves the Blueprint. Returns the number of nodes removed (-1 on failure).
+	 */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
+	static int32 RemoveDeadFunctionCalls(UBlueprint* Blueprint, FName FunctionName);
+
+	/**
 	 * Editor: spawns a box-brush volume (NavMeshBoundsVolume, BlockingVolume, AudioVolume, …) in the
 	 * current editor world. Python cannot build brush geometry, so volumes are created here.
 	 */

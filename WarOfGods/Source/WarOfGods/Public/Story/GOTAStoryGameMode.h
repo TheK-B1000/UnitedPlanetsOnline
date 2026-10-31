@@ -30,6 +30,10 @@ class WAROFGODS_API AGOTAStoryGameMode : public AGameModeBase
 	GENERATED_BODY()
 
 public:
+	/** Story uses the default prototype hero's body (cosmetic; same gameplay pawn). */
+	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
+
+public:
 	AGOTAStoryGameMode();
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;

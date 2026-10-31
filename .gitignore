@@ -199,3 +199,6 @@ WarOfGods/*.png
 WarOfGods/Tools/**/__pycache__/
 
 WarOfGods/Tools/ArenaAudioSource/
+
+# Windwalker Echo (Epic sample, migrated by Tools/GOTA_MigrateEcho.py) - third-party, large
+WarOfGods/Content/EchoContent/
