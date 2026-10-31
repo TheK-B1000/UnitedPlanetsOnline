@@ -19,6 +19,6 @@ void FGOTARetargetAnimInstanceProxy::PreUpdate(UAnimInstance* InAnimInstance, fl
 
 bool FGOTARetargetAnimInstanceProxy::Evaluate(FPoseContext& Output)
 {
-	RetargetNode.Evaluate_AnyThread(Output);
+	SlotNode.Evaluate_AnyThread(Output);
 	return true;
 }

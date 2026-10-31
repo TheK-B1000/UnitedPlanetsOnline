@@ -1,0 +1,9 @@
+wait 9
+gota.Ability.AnimDebug 1
+gota.Ability.Place 450 1
+wait 0.5
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 1
+gota.Ability.Dump
+quit

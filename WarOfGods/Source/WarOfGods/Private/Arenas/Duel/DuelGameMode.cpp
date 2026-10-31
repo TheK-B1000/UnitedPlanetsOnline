@@ -12,6 +12,7 @@
 #include "Characters/GOTAHeroDefinition.h"
 #include "Characters/GOTAHeroRegistry.h"
 #include "Characters/GOTAHeroBodyComponent.h"
+#include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Engine/GameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Characters/StatsComponent.h"
@@ -78,6 +79,14 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 		UE_LOG(LogTemp, Log, TEXT("Duel: Fight AI mode (champion %s)"), *AIChampionClass.ToString());
 	}
 
+#if !UE_BUILD_SHIPPING
+	// Testing: the AI champion plays a hero (body + divine abilities) — ?Foe=Varoth.
+	FoeHeroId = FName(*UGameplayStatics::ParseOption(Options, TEXT("Foe")));
+	if (!FoeHeroId.IsNone())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Duel: AI champion plays hero %s (testing)"), *FoeHeroId.ToString());
+	}
+#endif
 	if (UGameplayStatics::HasOption(Options, TEXT("Difficulty")))
 	{
 		Difficulty = FGOTAChampionProfile::ParseDifficulty(UGameplayStatics::ParseOption(Options, TEXT("Difficulty")), Difficulty);
@@ -706,6 +715,25 @@ void ADuelGameMode::InitDuelCombat()
 			Director->RegisterComponent();
 		}
 		Director->InitDirector(Fighters[0], Difficulty);
+		if (!FoeHeroId.IsNone())
+		{
+			const UGOTAHeroRegistry* Registry = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
+			if (const UGOTAHeroDefinition* Foe = Registry ? Registry->FindHero(FoeHeroId) : nullptr)
+			{
+				UGOTAHeroBodyComponent::ApplyToPawn(Fighters[1], Foe);
+				UGOTAHeroAbilityComponent::ApplyToPawn(Fighters[1], FoeHeroId);
+			}
+		}
+		// Hero durability: scale the spawn-time health of fighters that play a hero (before any damage).
+		const float BaseHealth[2] = { Profile.ChallengerMaxHealth, Profile.ChampionMaxHealth };
+		for (int32 i = 0; i < 2; ++i)
+		{
+			const UGOTAHeroAbilityComponent* Ab = Fighters[i]->FindComponentByClass<UGOTAHeroAbilityComponent>();
+			if (Ab && Ab->GetAbilitySet() && !FMath::IsNearlyEqual(Ab->GetAbilitySet()->MaxHealthScale, 1.f))
+			{
+				FGOTABlueprintCombat::ConfigureHealth(Fighters[i], BaseHealth[i] * Ab->GetAbilitySet()->MaxHealthScale);
+			}
+		}
 		if (ADuelGameState* GS = GetDuelGS())
 		{
 			GS->ChampionPawn = Fighters[1];
@@ -1217,6 +1245,8 @@ void ADuelGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 	if (PS && Registry && !PS->HeroId.IsNone())
 	{
 		UGOTAHeroBodyComponent::ApplyToPawn(PlayerPawn, Registry->FindHero(PS->HeroId));
+		// Divine abilities resolved from the accepted (server-validated) HeroId — never from the client.
+		UGOTAHeroAbilityComponent::ApplyToPawn(PlayerPawn, PS->HeroId);
 	}
 }
 

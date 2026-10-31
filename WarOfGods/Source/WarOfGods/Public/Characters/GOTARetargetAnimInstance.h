@@ -6,14 +6,17 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimInstanceProxy.h"
 #include "AnimNodes/AnimNode_RetargetPoseFromMesh.h"
+#include "AnimNodes/AnimNode_Slot.h"
 #include "GOTARetargetAnimInstance.generated.h"
 
 class UIKRetargeter;
 
 /**
- * Native proxy whose whole graph is one Retarget Pose From Mesh node. The pose is copied from
- * the parent skeletal mesh (the hidden combat Mannequin), so every combat montage, notify and
- * hit window keeps running on the original skeleton and the visible body simply follows it.
+ * Native proxy: DefaultSlot( Retarget Pose From Mesh ). The pose is copied from the parent skeletal
+ * mesh (the hidden combat Mannequin), so every combat montage, notify and hit window keeps running on
+ * the original skeleton and the visible body follows it. Hero-specific animation (divine abilities)
+ * plays as a montage in DefaultSlot directly on the body's own skeleton and overrides the copied pose
+ * while it runs — gameplay timing comes from the server ability timeline, not from these montages.
  */
 USTRUCT()
 struct FGOTARetargetAnimInstanceProxy : public FAnimInstanceProxy
@@ -21,14 +24,21 @@ struct FGOTARetargetAnimInstanceProxy : public FAnimInstanceProxy
 	GENERATED_BODY()
 
 	FGOTARetargetAnimInstanceProxy() = default;
-	explicit FGOTARetargetAnimInstanceProxy(UAnimInstance* InAnimInstance) : FAnimInstanceProxy(InAnimInstance) {}
+	explicit FGOTARetargetAnimInstanceProxy(UAnimInstance* InAnimInstance) : FAnimInstanceProxy(InAnimInstance) { LinkNodes(); }
+
+	void LinkNodes()
+	{
+		SlotNode.SlotName = FName(TEXT("DefaultSlot"));
+		SlotNode.Source.SetLinkNode(&RetargetNode);
+	}
 
 	virtual void PreUpdate(UAnimInstance* InAnimInstance, float DeltaSeconds) override;
 	virtual bool Evaluate(FPoseContext& Output) override;
-	virtual FAnimNode_Base* GetCustomRootNode() override { return &RetargetNode; }
-	virtual void GetCustomNodes(TArray<FAnimNode_Base*>& OutNodes) override { OutNodes.Add(&RetargetNode); }
+	virtual FAnimNode_Base* GetCustomRootNode() override { return &SlotNode; }
+	virtual void GetCustomNodes(TArray<FAnimNode_Base*>& OutNodes) override { OutNodes.Add(&SlotNode); OutNodes.Add(&RetargetNode); }
 
 	FAnimNode_RetargetPoseFromMesh RetargetNode;
+	FAnimNode_Slot SlotNode;
 };
 
 /** Anim instance for a hero's prototype body. Set Retargeter after creation; no Blueprint needed. */

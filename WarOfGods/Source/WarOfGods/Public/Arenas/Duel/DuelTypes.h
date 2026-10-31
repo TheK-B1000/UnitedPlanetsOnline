@@ -56,7 +56,9 @@ enum class EGOTADuelCue : uint8
 	PhaseTwo,
 	SurgeTelegraph,
 	DivineCounter,
-	CounterDenied
+	CounterDenied,
+	/** A hero divine ability was cast (Source = caster; HUD reads the name from its ability component). */
+	AbilityUsed
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnDuelCombatCue, EGOTADuelCue, Cue, AActor*, Source, AActor*, Target);

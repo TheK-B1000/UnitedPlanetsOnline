@@ -1,0 +1,16 @@
+wait 9
+gota.Ability.AnimDebug 1
+gota.Ability.Place 220 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+gota.Ability.Dump
+wait 0.1
+gota.Ability.Dump
+wait 0.2
+gota.Ability.Dump
+wait 0.3
+gota.Ability.Dump
+wait 0.5
+gota.Ability.Dump
+quit

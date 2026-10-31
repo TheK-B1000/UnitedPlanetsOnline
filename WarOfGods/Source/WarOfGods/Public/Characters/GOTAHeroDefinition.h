@@ -166,6 +166,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
 	bool bHideAttachedWeaponMeshes = true;
 
+	/** Divine abilities (slots E/R/C + ultimate V). Empty = no hero abilities (shared kit only). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
+	TSoftObjectPtr<class UGOTAAbilitySet> AbilitySet;
+
 	/** Where the body comes from, for credits/QA (e.g. "Paragon: Greystone (prototype)"). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
 	FText BodySourceNote;

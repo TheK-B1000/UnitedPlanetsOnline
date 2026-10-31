@@ -1,0 +1,9 @@
+wait 9
+gota.Test.Shot 70_ab_vis_before
+gota.Ability.Dump
+gota.Ability.Place 300 1
+wait 0.5
+gota.Test.Shot 71_ab_vis_after
+gota.Ability.Dump
+wait 0.5
+quit

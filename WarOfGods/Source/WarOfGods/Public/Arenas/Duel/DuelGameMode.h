@@ -116,6 +116,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Duel|AI")
 	EGOTADuelDifficulty Difficulty = EGOTADuelDifficulty::Veteran;
 
+	/** Fight AI: hero the AI champion plays (?Foe=<HeroId>; testing, non-shipping). None = Sovereign Champion. */
+	FName FoeHeroId;
+
 	UFUNCTION(BlueprintPure, Category = "Duel|AI")
 	EGOTADuelDifficulty GetDifficulty() const { return Difficulty; }
 
