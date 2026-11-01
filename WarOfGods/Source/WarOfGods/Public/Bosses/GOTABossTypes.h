@@ -66,6 +66,8 @@ struct WAROFGODS_API FGOTABossAttack
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") float Recovery = 0.9f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") float RecoveryScalePhase2 = 0.7f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") bool bCanBeBlocked = true;
+	/** A block timed into the defender's parry window deflects it: the boss recoils (ParryStaggerSeconds). Needs bCanBeBlocked. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") bool bCanBeParried = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") FString HitResponse = TEXT("Stagger");
 	/** Charge: speed and max duration of the rush; Slam: radius; Grab/Charge: knockback speed. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") float ChargeSpeed = 1500.f;
@@ -120,12 +122,28 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats") float StaggerWindow = 3.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats") float PhaseTwoHealthFraction = 0.5f;
 
+	// --- reactions to the player's defence / payoff (combat vertical slice) ---
+	/** Perfect parry: the attack is cut off and the boss recoils, open to punishment. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Reactions") float ParryStaggerSeconds = 1.6f;
+	/** Divine Counter: the boss is stunned (Stun start + loop), the big punish window. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Reactions") float CounterStunSeconds = 2.6f;
+	/** Divine Counter damage against this boss (it has far more health than a duel champion). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Reactions") float DivineCounterDamage = 90.f;
+	/** Light hit reaction (upper body) on landed hits while chasing / recovering, at most this often. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Reactions") float FlinchCooldown = 0.9f;
+
 	// --- set pieces ---
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UAnimSequenceBase> IntroAnim;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UAnimSequenceBase> PhaseTwoAnim;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UAnimSequenceBase> DeathAnim;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UAnimSequenceBase> HitReactAnim;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UAnimSequenceBase> ChargeLoopAnim;
+	/** Recoil after a perfect parry. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UAnimSequenceBase> ParriedAnim;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UAnimSequenceBase> StunStartAnim;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UAnimSequenceBase> StunLoopAnim;
+	/** Directional flinches: front, back, left, right. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TArray<TSoftObjectPtr<UAnimSequenceBase>> FlinchAnims;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<USoundBase> RoarSound;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UParticleSystem> PhaseTwoFX;
 

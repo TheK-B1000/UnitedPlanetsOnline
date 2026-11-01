@@ -54,10 +54,12 @@ def window(start, end, damage, bone="hand_r", radius=120.0):
 
 
 # Prototype balance (player Veteran health 130). Damage is conservative; every attack is blockable or dodgeable.
+# Combat vertical slice: the claws are the parry test (a block timed into the parry window cuts the combo off and
+# opens him up); charge, slam and grasp are unblockable and must be dodged (telegraphed).
 ATTACKS = [
     dict(id="ClawCombo", name="Claw Combo", kind=K.MELEE, anims=["Attack_Melee_A", "Attack_Melee_B", "Attack_Melee_C"], rate=1.0,
          windows=[(0.36, 0.52, 9, "hand_r"), (1.33, 1.49, 9, "hand_l"), (2.30, 2.48, 11, "hand_r")],
-         min=0, max=260, cooldown=3.0, w1=1.0, w2=1.0, track=0.30, recovery=1.0, rec2=0.7, block=True,  # max 260: swipe arc reach ~250
+         min=0, max=260, cooldown=3.0, w1=1.0, w2=1.0, track=0.30, recovery=1.0, rec2=0.7, block=True, parry=True,  # max 260: swipe arc reach ~250
          impact_fx=VFX + "Hit/P_Concrete", fx_scale=1.4, cast_sfx=RS + "Rampage_Effort_Attack", impact_sfx="/Game/Audio/axe-block", kick=1.0),
     dict(id="BehemothCharge", name="Behemoth Charge", kind=K.CHARGE, anims=["Ability_Energize"], rate=1.15,
          windows=[(0.75, 0.75, 18, "root")], speed=1650, seconds=1.0, knock=950,
@@ -97,11 +99,15 @@ def build_definition():
     for k, v in dict(capsule_radius=105.0, capsule_half_height=112.0, mesh_yaw=-90.0, mesh_scale=1.0, max_health=900.0,
                      walk_speed=430.0, walk_speed_phase2=540.0, turn_rate_degrees=220.0, engage_distance=230.0,
                      attack_gap=1.5, attack_gap_phase2=0.9, stagger_threshold=70.0, stagger_window=3.0,
-                     phase_two_health_fraction=0.5).items():
+                     phase_two_health_fraction=0.5,
+                     # reactions (combat vertical slice): parry recoil, Divine Counter stun + damage, flinch rate
+                     parry_stagger_seconds=1.6, counter_stun_seconds=2.6, divine_counter_damage=90.0, flinch_cooldown=0.9).items():
         da.set_editor_property(k, v)
     for k, a in dict(intro_anim="Emote_Master_Roar_T3", phase_two_anim="Ability_Enrage_Start", death_anim="Death_A",
-                     hit_react_anim="HitReact_Front", charge_loop_anim="Sprint_Quad_Fwd").items():
+                     hit_react_anim="HitReact_Front", charge_loop_anim="Sprint_Quad_Fwd",
+                     parried_anim="KnockBack", stun_start_anim="Stun_Start", stun_loop_anim="Stun_Idle").items():
         da.set_editor_property(k, asset(RA + a))
+    da.set_editor_property("flinch_anims", [asset(RA + n) for n in ("HitReact_Front", "HitReact_Back", "HitReact_Left", "HitReact_Right")])
     da.set_editor_property("roar_sound", asset(RS + "Rampage_Effort_Ability_Ultimate_Grow"))
     da.set_editor_property("phase_two_fx", asset(VFX + "Explosion/P_Explosion_Smoke"))
     attacks = []
@@ -122,6 +128,7 @@ def build_definition():
         at.set_editor_property("recovery", float(a["recovery"]))
         at.set_editor_property("recovery_scale_phase2", float(a["rec2"]))
         at.set_editor_property("can_be_blocked", bool(a["block"]))
+        at.set_editor_property("can_be_parried", bool(a.get("parry", False)))
         at.set_editor_property("charge_speed", float(a.get("speed", 1500)))
         at.set_editor_property("charge_seconds", float(a.get("seconds", 1.0)))
         at.set_editor_property("slam_radius", float(a.get("radius", 450)))
@@ -136,7 +143,8 @@ def build_definition():
         attacks.append(at)
         P(" attack", a["id"], "anims", [bool(x) for x in at.get_editor_property("animations")], "fx", bool(at.get_editor_property("impact_fx")))
     da.set_editor_property("attacks", attacks)
-    EAL.save_asset(path, only_if_is_dirty=False)
+    if not EAL.save_asset(path, only_if_is_dirty=False):
+        raise RuntimeError("could not save %s (is a game or editor holding it open?)" % path)
     P("definition saved", path)
 
 

@@ -1,0 +1,19 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+wait 2
+gota.Duel.Bot fight
+wait 30
+gota.Duel.State 0
+gota.Boss.Dump
+wait 30
+gota.Duel.State 0
+gota.Boss.Dump
+wait 30
+gota.Duel.State 0
+gota.Boss.Dump
+wait 30
+gota.Duel.State 0
+gota.Boss.Dump
+gota.Duel.Bot off
+quit

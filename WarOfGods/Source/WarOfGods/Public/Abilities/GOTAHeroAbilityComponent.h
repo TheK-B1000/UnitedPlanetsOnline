@@ -68,6 +68,13 @@ public:
 	EGOTAStatus GetStatus() const { return ActiveStatus; }
 	float GetStatusRemaining() const;
 	float GetStatusMagnitude() const { return StatusMagnitude; }
+
+	/**
+	 * Server: plays ability Slot's cast presentation (body animation, FX, sound) on every peer with no gameplay
+	 * effect, then its impact presentation on Target after ImpactDelay. Used by the Divine Counter so the payoff
+	 * is the hero's own strike. False if the slot has no ability.
+	 */
+	bool PlayPresentation(int32 Slot, AActor* Target, float ImpactDelay);
 	FName GetHeroId() const { return HeroId; }
 	/** Last refusal reported to this client (for the HUD), and when it happened. */
 	EGOTAAbilityDenied GetLastDenied(double& OutWhen) const { OutWhen = LastDeniedTime; return LastDenied; }
@@ -107,6 +114,9 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_CastCancelled(uint8 Slot);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Presentation(uint8 Slot, AActor* Target, float ImpactDelay);
 
 	UFUNCTION()
 	void OnRep_HeroId();

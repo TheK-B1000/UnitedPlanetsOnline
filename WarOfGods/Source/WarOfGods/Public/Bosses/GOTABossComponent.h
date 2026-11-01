@@ -20,7 +20,8 @@ enum class EGOTABossState : uint8
 	Recovering,  // punish window after an attack
 	Staggered,   // hit reaction
 	Transition,  // phase II roar (invulnerable)
-	Dead
+	Dead,
+	Stunned      // Divine Counter payoff: long, fully open punish window
 };
 
 /**
@@ -57,6 +58,26 @@ public:
 	FText GetLastTelegraph() const { return LastTelegraph; }
 	FString DescribeState() const;
 
+	bool IsAttacking() const { return State == EGOTABossState::Attacking; }
+	/** The attack in progress, or null. */
+	const FGOTABossAttack* GetCurrentAttack() const
+	{
+		const UGOTABossDefinition* Def = Definition.Get();
+		return (State == EGOTABossState::Attacking && Def && Def->Attacks.IsValidIndex(AttackIndex)) ? &Def->Attacks[AttackIndex] : nullptr;
+	}
+	/** Staggered, recoiling from a parry, or stunned by a Divine Counter. */
+	bool IsOpen() const { return State == EGOTABossState::Staggered || State == EGOTABossState::Stunned; }
+
+	/**
+	 * Server: the next damaging moment of the current attack. OutLead is real seconds until it (0 while a charge is
+	 * already rushing). False when the boss is not attacking or every window has resolved.
+	 */
+	bool GetIncomingImpact(float& OutLead, bool& bOutBlockable, bool& bOutParryable) const;
+	/** Server: the challenger perfect-parried the current attack: it is cut off and the boss recoils. */
+	void NotifyParried(AActor* By);
+	/** Server: a Divine Counter is landing. Stuns the boss and returns the damage it should take. */
+	float NotifyDivineCounter(AActor* By);
+
 	/** Server: begin the intro cinematic now (called when the first round goes live). */
 	void StartIntro();
 	/** Skip the intro (local host input or test command). */
@@ -91,6 +112,9 @@ protected:
 	void EndAttack(bool bHitSomething);
 	void BeginPhaseTwo();
 	void BeginStagger();
+	/** Cuts the current attack off (no further hit windows, movement restored). */
+	void AbortAttack();
+	void PlayFlinch(double Now);
 	void Die();
 	void EndIntro();
 	void ResolveWindow(const FGOTABossAttack& Attack, const FGOTABossHitWindow& Window, int32 WindowIndex, APawn* Target);
@@ -149,6 +173,11 @@ protected:
 	float TrackedHealth = -1.f;
 	TArray<TPair<double, float>> RecentDamage;
 	double LastMoveRequest = 0.0;
+	double NextFlinchTime = 0.0;
+	double StunLoopAt = -1.0;
+	int32 Parries = 0;
+	int32 Counters = 0;
+	int32 Flinches = 0;
 	float BaseWalkSpeed = 420.f;
 	FName ForcedAttack;
 };

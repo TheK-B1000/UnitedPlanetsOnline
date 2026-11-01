@@ -12,6 +12,9 @@
 #include "Arenas/Duel/DuelGameState.h"
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
+#include "Bosses/GOTABossComponent.h"
+#include "Bosses/GOTABossTypes.h"
+#include "Components/CapsuleComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/PanelWidget.h"
@@ -501,6 +504,9 @@ namespace GOTATest
 		double LastDefend = -10.0;
 		int32 Blocks = 0, Dodges = 0, Attacks = 0, Counters = 0;
 		FTSTicker::FDelegateHandle Handle;
+		/** Boss fights: the attack the bot already answered (one answer per hit window). */
+		FName AnsweredAttack;
+		float AnsweredLead = -1.f;
 	};
 	static FDuelTestBot GDuelBot;
 
@@ -513,6 +519,29 @@ namespace GOTATest
 		{
 			C->SetControlRotation(R);
 		}
+	}
+
+	/** Calls a Blueprint function whose single parameter is an FVector (e.g. BP_Player::DodgeToLocation). */
+	static bool BotCallVector(UObject* Obj, FName Function, const FVector& Value)
+	{
+		UFunction* Fn = Obj ? Obj->FindFunction(Function) : nullptr;
+		if (!Fn)
+		{
+			return false;
+		}
+		uint8* Params = static_cast<uint8*>(FMemory_Alloca(Fn->ParmsSize));
+		FMemory::Memzero(Params, Fn->ParmsSize);
+		Fn->InitializeStruct(Params);
+		for (TFieldIterator<FProperty> P(Fn); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
+		{
+			if (FStructProperty* SP = CastField<FStructProperty>(*P); SP && SP->Struct == TBaseStructure<FVector>::Get())
+			{
+				*SP->ContainerPtrToValuePtr<FVector>(Params) = Value;
+			}
+		}
+		Obj->ProcessEvent(Fn, Params);
+		Fn->DestroyStruct(Params);
+		return true;
 	}
 
 	static bool DuelBotTick(float)
@@ -528,6 +557,72 @@ namespace GOTATest
 		const double Now = Me->GetWorld()->GetTimeSeconds();
 		const FVector ToOpp = (Opp->GetActorLocation() - Me->GetActorLocation());
 		const float Dist = ToOpp.Size2D();
+
+		// Boss fights: the boss's attacks run on its own timeline (hit windows), not montage notifies.
+		if (const UGOTABossComponent* Boss = Opp->FindComponentByClass<UGOTABossComponent>())
+		{
+			const FString& BMode = GDuelBot.Mode;
+			float BLead = -1.f;
+			bool bBlockable = false, bParryable = false;
+			const bool bIncoming = Boss->GetIncomingImpact(BLead, bBlockable, bParryable);
+			const FGOTABossAttack* Attack = Boss->GetCurrentAttack();
+			if (bIncoming && Now - GDuelBot.LastDefend > 0.45)
+			{
+				const bool bWantDodge = BMode == TEXT("dodge") || ((BMode == TEXT("fight")) && !bParryable);
+				const bool bWantBlock = !bWantDodge && bBlockable && (BMode == TEXT("parry") || BMode == TEXT("fight"));
+				if (bWantBlock && BLead <= GDuelBot.BlockLead && Dist < 520.f)
+				{
+					BotFace(Me, ToOpp);
+					FGOTABlueprintCombat::Call(Me, TEXT("StartBlock"));
+					GDuelBot.LastDefend = Now;
+					++GDuelBot.Blocks;
+					UE_LOG(LogGOTATest, Log, TEXT("BOT block vs boss (lead %.2f, %s, parryable=%d)"), BLead, Attack ? *Attack->AttackId.ToString() : TEXT("?"), bParryable ? 1 : 0);
+					return true;
+				}
+				if (bWantDodge && BLead <= GDuelBot.DodgeLead && Dist < 1300.f)
+				{
+					// A charge is sidestepped; slams, grabs and claws are escaped backwards. The Blueprint dodge takes its
+					// direction from movement input, which a bot does not have, so it dodges to an explicit point.
+					const bool bCharge = Attack && Attack->Kind == EGOTABossAttackKind::Charge;
+					const FVector Dir = (bCharge ? FVector::CrossProduct(ToOpp, FVector::UpVector) : -ToOpp).GetSafeNormal2D();
+					BotFace(Me, Dir);
+					BotCallVector(Me, TEXT("DodgeToLocation"), Me->GetActorLocation() + Dir * 380.f);
+					GDuelBot.LastDefend = Now;
+					++GDuelBot.Dodges;
+					UE_LOG(LogGOTATest, Log, TEXT("BOT dodge vs boss (lead %.2f, %s)"), BLead, Attack ? *Attack->AttackId.ToString() : TEXT("?"));
+					return true;
+				}
+			}
+			if (BMode != TEXT("fight"))
+			{
+				return true;
+			}
+			const ACharacter* BossChar = Cast<ACharacter>(Opp);
+			const float Gap = Dist - (BossChar && BossChar->GetCapsuleComponent() ? BossChar->GetCapsuleComponent()->GetScaledCapsuleRadius() : 40.f);
+			UGOTADuelFighterComponent* F = Me->FindComponentByClass<UGOTADuelFighterComponent>();
+			if (F && F->CanDivineCounter() && Gap < 300.f && (Boss->IsOpen() || !Boss->IsAttacking()) && Now - GDuelBot.LastDefend > 0.3)
+			{
+				BotFace(Me, ToOpp);
+				F->RequestDivineCounter();
+				++GDuelBot.Counters;
+				GDuelBot.NextAttack = Now + 0.9;
+				UE_LOG(LogGOTATest, Log, TEXT("BOT divine counter vs boss (%s)"), *Boss->DescribeState());
+			}
+			else if (Gap > 150.f)
+			{
+				BotFace(Me, ToOpp);
+				Me->AddMovementInput(ToOpp.GetSafeNormal2D(), 1.f);
+			}
+			else if (Now >= GDuelBot.NextAttack && (!Boss->IsAttacking() || (bIncoming && BLead > 0.9f)) && Now - GDuelBot.LastDefend > 0.5)
+			{
+				BotFace(Me, ToOpp);
+				FGOTABlueprintCombat::Call(Me, TEXT("MeleeAttack"));
+				GDuelBot.NextAttack = Now + 0.75;
+				++GDuelBot.Attacks;
+			}
+			return true;
+		}
+
 		float Pos = 0.f;
 		UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Opp, &Pos);
 		const bool bOppAttacking = FGOTABlueprintCombat::GetBool(Opp, TEXT("Attacking"));

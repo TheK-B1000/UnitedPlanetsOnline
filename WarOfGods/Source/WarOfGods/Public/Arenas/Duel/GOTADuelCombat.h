@@ -119,6 +119,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Duel|Combat")
 	bool IsChampion() const { return bIsChampion; }
 
+	/**
+	 * Server: a perfect dodge against a boss attack is honoured to the impact it was timed against (the Blueprint
+	 * dodge's own i-frames last 0.2 s, shorter than the perfect window). Bosses check this before dealing damage.
+	 */
+	bool IsDodgeProtected() const;
+
 	UFUNCTION(BlueprintPure, Category = "Duel|Combat")
 	APawn* GetOpponent() const { return Opponent.Get(); }
 
@@ -144,6 +150,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Duel|Momentum") float DivineCounterCost = 50.f;
 	UPROPERTY(EditAnywhere, Category = "Duel|Momentum") float DivineCounterDamage = 25.f;
 	UPROPERTY(EditAnywhere, Category = "Duel|Momentum") float DivineCounterRange = 380.f;
+	/** Seconds from the counter's start to its blow (the hero's strike animation connects). Invulnerable throughout. */
+	UPROPERTY(EditAnywhere, Category = "Duel|Momentum") float DivineCounterImpactDelay = 0.3f;
 	/** Dodge counts as perfect when started at most this long before the attack's impact notify. */
 	UPROPERTY(EditAnywhere, Category = "Duel|Momentum") float PerfectDodgeLeadSeconds = 0.35f;
 	UPROPERTY(EditAnywhere, Category = "Duel|Feel") float HitStopBlockSeconds = 0.05f;
@@ -192,6 +200,11 @@ protected:
 	double DodgeResolveTime = 0.0;
 	float HealthAtDodge = 0.f;
 	double CounterInvulnEndTime = 0.0;
+	bool bCounterPending = false;
+	double DodgeProtectedUntil = 0.0;
+
+	/** Server: the Divine Counter's blow, DivineCounterImpactDelay after it starts. */
+	void LandDivineCounter(float Damage);
 };
 
 /** Server-only brain layer on the AI champion, on top of AIC_Enemy_Base / BT_Enemy_Melee. */

@@ -1191,6 +1191,34 @@ void UGOTAHeroAbilityComponent::Multicast_BeginCast_Implementation(uint8 Slot)
 	PlayCastPresentation(Slot);
 }
 
+bool UGOTAHeroAbilityComponent::PlayPresentation(int32 Slot, AActor* Target, float ImpactDelay)
+{
+	if (!GetOwner() || !GetOwner()->HasAuthority() || !GetAbility(Slot))
+	{
+		return false;
+	}
+	Multicast_Presentation(static_cast<uint8>(Slot), Target, ImpactDelay);
+	return true;
+}
+
+void UGOTAHeroAbilityComponent::Multicast_Presentation_Implementation(uint8 Slot, AActor* Target, float ImpactDelay)
+{
+	PlayCastPresentation(Slot);
+	if (GetNetMode() == NM_DedicatedServer || !GetWorld())
+	{
+		return;
+	}
+	TWeakObjectPtr<AActor> WeakTarget = Target;
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateWeakLambda(this, [this, Slot, WeakTarget]()
+	{
+		if (AActor* T = WeakTarget.Get())
+		{
+			PlayImpactPresentation(Slot, T->GetActorLocation(), T);
+		}
+	}), FMath::Max(ImpactDelay, 0.01f), false);
+}
+
 void UGOTAHeroAbilityComponent::Multicast_Impact_Implementation(uint8 Slot, FVector_NetQuantize Location, AActor* Target, uint8 HitIndex)
 {
 	PlayImpactPresentation(Slot, Location, HitIndex == 255 ? nullptr : Target);

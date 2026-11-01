@@ -165,7 +165,12 @@ void UGOTABossComponent::ApplyBody()
 		Preloaded.Add(A.CastSound.LoadSynchronous());
 		Preloaded.Add(A.ImpactSound.LoadSynchronous());
 	}
-	for (const TSoftObjectPtr<UAnimSequenceBase>* S : { &Def->IntroAnim, &Def->PhaseTwoAnim, &Def->DeathAnim, &Def->HitReactAnim, &Def->ChargeLoopAnim })
+	for (const TSoftObjectPtr<UAnimSequenceBase>& S : Def->FlinchAnims)
+	{
+		Preloaded.Add(S.LoadSynchronous());
+	}
+	for (const TSoftObjectPtr<UAnimSequenceBase>* S : { &Def->IntroAnim, &Def->PhaseTwoAnim, &Def->DeathAnim, &Def->HitReactAnim, &Def->ChargeLoopAnim,
+		&Def->ParriedAnim, &Def->StunStartAnim, &Def->StunLoopAnim })
 	{
 		Preloaded.Add(S->LoadSynchronous());
 	}
@@ -182,7 +187,8 @@ FString UGOTABossComponent::DescribeState() const
 	return FString::Printf(TEXT("boss=%s state=%s phase=%d attack=%s hp=%.0f/%.0f at=%s"), Def ? *Def->BossId.ToString() : TEXT("?"),
 		*StaticEnum<EGOTABossState>()->GetNameStringByValue(static_cast<int64>(State)), Phase,
 		(Def && Def->Attacks.IsValidIndex(AttackIndex)) ? *Def->Attacks[AttackIndex].AttackId.ToString() : TEXT("-"), V.Health, V.MaxHealth,
-		GetOwner() ? *GetOwner()->GetActorLocation().ToCompactString() : TEXT("-"));
+		GetOwner() ? *GetOwner()->GetActorLocation().ToCompactString() : TEXT("-"))
+		+ FString::Printf(TEXT(" parried=%d countered=%d flinches=%d"), Parries, Counters, Flinches);
 }
 
 // ============================================================================ server brain
@@ -274,10 +280,16 @@ void UGOTABossComponent::TickServer(float DeltaTime)
 	if (TrackedHealth >= 0.f && V.Health < TrackedHealth - 0.1f)
 	{
 		RecentDamage.Add(TPair<double, float>(Now, TrackedHealth - V.Health));
+		if (State == EGOTABossState::Chase || State == EGOTABossState::Recovering)
+		{
+			PlayFlinch(Now);
+		}
 	}
 	TrackedHealth = V.Health;
 	RecentDamage.RemoveAll([&](const TPair<double, float>& D) { return Now - D.Key > Def->StaggerWindow; });
-	if (Phase == 1 && V.MaxHealth > 0.f && V.Health / V.MaxHealth <= Def->PhaseTwoHealthFraction && State != EGOTABossState::Transition)
+	// Phase II waits for a stun to finish: the Divine Counter's punish window is never cut short by the roar.
+	if (Phase == 1 && V.MaxHealth > 0.f && V.Health / V.MaxHealth <= Def->PhaseTwoHealthFraction && State != EGOTABossState::Transition
+		&& State != EGOTABossState::Stunned)
 	{
 		BeginPhaseTwo();
 		return;
@@ -295,6 +307,10 @@ void UGOTABossComponent::TickServer(float DeltaTime)
 			LastAttackEnd = Now;
 		}
 		return;
+	}
+	if (State == EGOTABossState::Staggered || State == EGOTABossState::Stunned)
+	{
+		RecentDamage.Reset(); // punishment taken while open never chains into a second stagger afterwards
 	}
 	float Recent = 0.f;
 	for (const TPair<double, float>& D : RecentDamage)
@@ -325,6 +341,26 @@ void UGOTABossComponent::TickServer(float DeltaTime)
 		break;
 	case EGOTABossState::Attacking:
 		TickAttack(Target, Now);
+		break;
+	case EGOTABossState::Stunned:
+		if (StunLoopAt > 0.0 && Now >= StunLoopAt && Now < StateUntil)
+		{
+			StunLoopAt = -1.0;
+			if (UAnimSequenceBase* Loop = Def->StunLoopAnim.Get())
+			{
+				Multicast_PlaySequence(Loop, 1.f, false, 8);
+			}
+		}
+		if (Now >= StateUntil)
+		{
+			StunLoopAt = -1.0;
+			Multicast_StopAnimation(0.3f);
+			SetMoveLocked(false);
+			State = EGOTABossState::Recovering; // brief settle before he re-engages
+			StateUntil = Now + 0.35;
+			LastAttackEnd = Now + 0.35;
+			UE_LOG(LogGOTABoss, Log, TEXT("Boss recovers from stun"));
+		}
 		break;
 	case EGOTABossState::Recovering:
 	case EGOTABossState::Staggered:
@@ -494,7 +530,10 @@ void UGOTABossComponent::TickAttack(APawn* Target, double Now)
 					ResolvedWindows.Add(0);
 					const float Dmg = A.HitWindows.Num() > 0 ? A.HitWindows[0].Damage : 20.f;
 					bAttackLanded = DamageTarget(Target, A, Dmg);
-					Knock(Target, A.Knockback, 350.f);
+					if (bAttackLanded)
+					{
+						Knock(Target, A.Knockback, 350.f); // a dodged charge passes through
+					}
 					Multicast_Impact(AttackIndex, Target->GetActorLocation(), bAttackLanded);
 					ChargeEnd = Now; // stop on impact
 				}
@@ -521,6 +560,10 @@ void UGOTABossComponent::TickAttack(APawn* Target, double Now)
 		if (Clock >= Win.Start && Clock <= Win.End + 0.05f && !ResolvedWindows.Contains(w))
 		{
 			ResolveWindow(A, Win, w, Target);
+			if (State != EGOTABossState::Attacking)
+			{
+				return; // perfect-parried inside the window: the attack is over
+			}
 		}
 		else if (Clock > Win.End + 0.05f && !ResolvedWindows.Contains(w))
 		{
@@ -653,7 +696,14 @@ void UGOTABossComponent::ResolveWindow(const FGOTABossAttack& A, const FGOTABoss
 bool UGOTABossComponent::DamageTarget(APawn* Target, const FGOTABossAttack& A, float Amount)
 {
 	// The victim's own BPC_DamageSystem decides block / parry / i-frames: the single health authority.
-	const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Target, GetOwner(), Amount, A.bCanBeBlocked, false, A.HitResponse);
+	// A perfect dodge timed against this impact is honoured even past the Blueprint's short i-frames.
+	if (const UGOTADuelFighterComponent* Fighter = Target->FindComponentByClass<UGOTADuelFighterComponent>(); Fighter && Fighter->IsDodgeProtected())
+	{
+		UE_LOG(LogGOTABoss, Log, TEXT("Boss %s on %s: perfect-dodged"), *A.AttackId.ToString(), *GetNameSafe(Target));
+		return false;
+	}
+	// A parry there reaches us through the challenger's UGOTADuelFighterComponent::HandleBlocked -> NotifyParried.
+	const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Target, GetOwner(), Amount, A.bCanBeBlocked, A.bCanBeBlocked && A.bCanBeParried, A.HitResponse);
 	UE_LOG(LogGOTABoss, Log, TEXT("Boss %s hit %s for %.1f (landed=%d)"), *A.AttackId.ToString(), *GetNameSafe(Target), Amount, bLanded ? 1 : 0);
 	return bLanded;
 }
@@ -704,6 +754,154 @@ void UGOTABossComponent::BeginStagger()
 		Multicast_PlaySequence(React, 1.f, false, 1);
 	}
 	UE_LOG(LogGOTABoss, Log, TEXT("Boss staggered"));
+}
+
+void UGOTABossComponent::AbortAttack()
+{
+	const UGOTABossDefinition* Def = Definition.Get();
+	if (ACharacter* Char = Cast<ACharacter>(GetOwner()))
+	{
+		if (bCharging || ChargeEnd > 0.0)
+		{
+			Char->GetCharacterMovement()->StopMovementImmediately();
+		}
+		Char->GetCharacterMovement()->MaxWalkSpeed = Def ? (Phase >= 2 ? Def->WalkSpeedPhase2 : Def->WalkSpeed) : BaseWalkSpeed;
+		Char->GetCharacterMovement()->bOrientRotationToMovement = true;
+	}
+	bCharging = false;
+	ChargeEnd = -1.0;
+	ChainRemaining = 0;
+	AttackIndex = INDEX_NONE;
+	LastTelegraph = FText::GetEmpty();
+	ResolvedWindows.Reset();
+}
+
+bool UGOTABossComponent::GetIncomingImpact(float& OutLead, bool& bOutBlockable, bool& bOutParryable) const
+{
+	const UGOTABossDefinition* Def = Definition.Get();
+	if (State != EGOTABossState::Attacking || !Def || !Def->Attacks.IsValidIndex(AttackIndex))
+	{
+		return false;
+	}
+	const FGOTABossAttack& A = Def->Attacks[AttackIndex];
+	bOutBlockable = A.bCanBeBlocked;
+	bOutParryable = A.bCanBeBlocked && A.bCanBeParried;
+	if (A.Kind == EGOTABossAttackKind::Charge)
+	{
+		if (ResolvedWindows.Contains(0))
+		{
+			return false;
+		}
+		if (bCharging)
+		{
+			const AActor* Target = FindTarget();
+			const float Dist = Target ? FVector::Dist2D(Target->GetActorLocation(), GetOwner()->GetActorLocation()) : 0.f;
+			OutLead = Dist / FMath::Max(A.ChargeSpeed, 1.f);
+			return true;
+		}
+	}
+	const float Clock = AttackClock(GetWorld()->GetTimeSeconds());
+	const float Rate = FMath::Max(A.PlayRate, 0.1f);
+	for (int32 w = 0; w < A.HitWindows.Num(); ++w)
+	{
+		if (!ResolvedWindows.Contains(w) && Clock <= A.HitWindows[w].End + 0.05f)
+		{
+			OutLead = FMath::Max(A.HitWindows[w].Start - Clock, 0.f) / Rate;
+			return true;
+		}
+	}
+	return false;
+}
+
+void UGOTABossComponent::NotifyParried(AActor* By)
+{
+	const UGOTABossDefinition* Def = Definition.Get();
+	if (!Def || !GetOwner()->HasAuthority() || State != EGOTABossState::Attacking || !Def->Attacks.IsValidIndex(AttackIndex)
+		|| !Def->Attacks[AttackIndex].bCanBeParried)
+	{
+		return;
+	}
+	const FName Id = Def->Attacks[AttackIndex].AttackId;
+	AbortAttack();
+	++Parries;
+	const double Now = GetWorld()->GetTimeSeconds();
+	State = EGOTABossState::Staggered;
+	StateUntil = Now + Def->ParryStaggerSeconds;
+	LastAttackEnd = StateUntil;
+	SetBrainMoving(nullptr, false);
+	SetMoveLocked(true);
+	UAnimSequenceBase* Recoil = Def->ParriedAnim.Get() ? Def->ParriedAnim.Get() : Def->HitReactAnim.Get();
+	if (Recoil)
+	{
+		Multicast_PlaySequence(Recoil, 1.f, false, 1);
+	}
+	RecentDamage.Reset();
+	UE_LOG(LogGOTABoss, Log, TEXT("Boss PARRIED by %s: %s cut off, open for %.1fs"), *GetNameSafe(By), *Id.ToString(), Def->ParryStaggerSeconds);
+}
+
+float UGOTABossComponent::NotifyDivineCounter(AActor* By)
+{
+	const UGOTABossDefinition* Def = Definition.Get();
+	if (!Def || !GetOwner()->HasAuthority())
+	{
+		return 25.f;
+	}
+	// The roar, the intro and death are never interrupted; the counter still deals its damage.
+	if (State == EGOTABossState::Transition || State == EGOTABossState::Intro || State == EGOTABossState::Dead)
+	{
+		return Def->DivineCounterDamage;
+	}
+	const TCHAR* Cut = State == EGOTABossState::Attacking ? TEXT(" (attack interrupted)") : TEXT("");
+	AbortAttack();
+	++Counters;
+	const double Now = GetWorld()->GetTimeSeconds();
+	State = EGOTABossState::Stunned;
+	StateUntil = Now + Def->CounterStunSeconds;
+	LastAttackEnd = StateUntil;
+	SetBrainMoving(nullptr, false);
+	SetMoveLocked(true);
+	if (By)
+	{
+		FaceTowards(By->GetActorLocation(), 0.f, true);
+	}
+	UAnimSequenceBase* Start = Def->StunStartAnim.Get();
+	if (Start)
+	{
+		Multicast_PlaySequence(Start, 1.f, false, 1);
+	}
+	StunLoopAt = Now + (Start ? Start->GetPlayLength() - 0.05 : 0.0);
+	RecentDamage.Reset();
+	UE_LOG(LogGOTABoss, Log, TEXT("Boss STUNNED by Divine Counter from %s for %.1fs%s"), *GetNameSafe(By), Def->CounterStunSeconds, Cut);
+	return Def->DivineCounterDamage;
+}
+
+void UGOTABossComponent::PlayFlinch(double Now)
+{
+	const UGOTABossDefinition* Def = Definition.Get();
+	if (!Def || Now < NextFlinchTime || Def->FlinchAnims.Num() == 0)
+	{
+		return;
+	}
+	// Direction from the challenger (the only one hitting him in a duel): front / back / left / right.
+	int32 Index = 0;
+	if (const APawn* Target = FindTarget())
+	{
+		const FVector To = (Target->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal2D();
+		const float Fwd = FVector::DotProduct(To, GetOwner()->GetActorForwardVector());
+		const float Right = FVector::DotProduct(To, GetOwner()->GetActorRightVector());
+		Index = FMath::Abs(Fwd) >= FMath::Abs(Right) ? (Fwd >= 0.f ? 0 : 1) : (Right < 0.f ? 2 : 3);
+	}
+	UAnimSequenceBase* Seq = Def->FlinchAnims.IsValidIndex(Index) ? Def->FlinchAnims[Index].Get() : nullptr;
+	if (!Seq)
+	{
+		Seq = Def->FlinchAnims[0].Get();
+	}
+	if (Seq)
+	{
+		NextFlinchTime = Now + Def->FlinchCooldown;
+		++Flinches;
+		Multicast_PlaySequence(Seq, 1.25f, false, 1);
+	}
 }
 
 void UGOTABossComponent::BeginPhaseTwo()

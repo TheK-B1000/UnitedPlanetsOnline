@@ -1,0 +1,71 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+wait 3
+gota.Duel.Bot parry
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+gota.Duel.Face 0
+gota.Boss.Attack ClawCombo
+wait 1.0
+gota.Boss.Dump
+gota.Duel.State 0
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+gota.Duel.Face 0
+gota.Boss.Attack ClawCombo
+wait 1.0
+gota.Boss.Dump
+gota.Duel.State 0
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+gota.Duel.Face 0
+gota.Boss.Attack ClawCombo
+wait 1.0
+gota.Boss.Dump
+gota.Duel.State 0
+wait 3
+gota.Duel.Bot dodge
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 200 0
+gota.Boss.Attack Earthshaker
+wait 4
+gota.Duel.State 0
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 900 0
+gota.Boss.Attack BehemothCharge
+wait 4.5
+gota.Duel.State 0
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+gota.Boss.Attack CrushingGrasp
+wait 4
+gota.Duel.State 0
+gota.Duel.Bot off
+gota.Duel.Momentum 0 100
+gota.Boss.PlaceTarget 220 0
+gota.Duel.Face 0
+wait 0.5
+gota.Duel.Counter 0
+wait 0.2
+gota.Test.Shot slice_counter_a
+wait 0.4
+gota.Test.Shot slice_counter_b
+wait 1.0
+gota.Boss.Dump
+gota.Test.Shot slice_counter_stun
+wait 3
+gota.Boss.Dump
+gota.Duel.Momentum 0 100
+gota.Boss.PlaceTarget 200 0
+gota.Boss.Attack ClawCombo
+wait 0.15
+gota.Duel.Counter 0
+wait 1
+gota.Boss.Dump
+wait 3
+gota.Duel.State 0
+gota.Boss.Dump
+quit

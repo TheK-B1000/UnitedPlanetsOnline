@@ -8,7 +8,11 @@
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "Arenas/Duel/DuelGameMode.h"
 #include "Arenas/Duel/DuelGameState.h"
+#include "Abilities/GOTAHeroAbilityComponent.h"
+#include "Abilities/GOTAAbilityTypes.h"
+#include "Bosses/GOTABossComponent.h"
 #include "BrainComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Components/InputComponent.h"
@@ -515,10 +519,27 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 	const bool bInvincible = FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible"));
 	if (bInvincible && !bWasInvincible && Now > CounterInvulnEndTime)
 	{
+		const float Dist = FVector::Dist(Opp->GetActorLocation(), GetOwner()->GetActorLocation());
+		if (const UGOTABossComponent* Boss = Opp->FindComponentByClass<UGOTABossComponent>())
+		{
+			// Boss: lead to the next unresolved hit window (already in real seconds).
+			float Lead = -1.f;
+			bool bBlockable = false, bParryable = false;
+			const bool bIncoming = Boss->GetIncomingImpact(Lead, bBlockable, bParryable);
+			UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge i-frames vs boss: incoming=%d lead=%.2f dist=%.0f"), bIncoming ? 1 : 0, Lead, Dist);
+			if (bIncoming && Lead <= PerfectDodgeLeadSeconds && Dist < 1100.f)
+			{
+				bDodgeArmed = true;
+				HealthAtDodge = OwnHealth;
+				DodgeResolveTime = Now + Lead + 0.25;
+				DodgeProtectedUntil = Now + Lead + 0.12;
+			}
+		}
+		else
+		{
 		float Pos = 0.f;
 		UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Opp, &Pos);
 		const bool bOppAttacking = FGOTABlueprintCombat::GetBool(Opp, TEXT("Attacking"));
-		const float Dist = FVector::Dist(Opp->GetActorLocation(), GetOwner()->GetActorLocation());
 		const float Impact = FGOTABlueprintCombat::FindNextImpactTime(M, Pos);
 		const float Lead = Impact - Pos;
 		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge i-frames: oppAttacking=%d montage=%s pos=%.2f impact=%.2f lead=%.2f dist=%.0f"),
@@ -528,6 +549,7 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 			bDodgeArmed = true;
 			HealthAtDodge = OwnHealth;
 			DodgeResolveTime = Now + FMath::Max(Lead, 0.f) / FMath::Max(M->RateScale, 0.1f) + 0.2;
+		}
 		}
 	}
 	bWasInvincible = bInvincible;
@@ -546,6 +568,11 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 	LastOpponentHealth = OppHealth;
 }
 
+bool UGOTADuelFighterComponent::IsDodgeProtected() const
+{
+	return GetWorld() && GetWorld()->GetTimeSeconds() < DodgeProtectedUntil;
+}
+
 void UGOTADuelFighterComponent::HandleBlocked(bool bCanBeParried, AActor* DamageCauser)
 {
 	if (!GetOwner() || !GetOwner()->HasAuthority() || !IsRoundLive())
@@ -559,6 +586,10 @@ void UGOTADuelFighterComponent::HandleBlocked(bool bCanBeParried, AActor* Damage
 	{
 		GrantMomentum(PerfectParryMomentum, TEXT("perfect parry"));
 		EmitCue(EGOTADuelCue::PerfectParry, DamageCauser);
+		if (UGOTABossComponent* Boss = DamageCauser ? DamageCauser->FindComponentByClass<UGOTABossComponent>() : nullptr)
+		{
+			Boss->NotifyParried(GetOwner());
+		}
 	}
 	else
 	{
@@ -609,8 +640,12 @@ void UGOTADuelFighterComponent::Server_RequestDivineCounter_Implementation()
 		Client_CounterDenied(0);
 		return;
 	}
-	if (!IsValid(Opp) || UGOTACombatantObserver::IsCombatantDefeated(Opp)
-		|| FVector::Dist(Opp->GetActorLocation(), Owner->GetActorLocation()) > DivineCounterRange)
+	UGOTABossComponent* Boss = IsValid(Opp) ? Opp->FindComponentByClass<UGOTABossComponent>() : nullptr;
+	const ACharacter* OppChar = Cast<ACharacter>(Opp);
+	// A boss's bulk extends the reach: measured to his capsule edge rather than his centre.
+	const float Reach = DivineCounterRange + ((Boss && OppChar && OppChar->GetCapsuleComponent()) ? OppChar->GetCapsuleComponent()->GetScaledCapsuleRadius() - 40.f : 0.f);
+	if (bCounterPending || !IsValid(Opp) || UGOTACombatantObserver::IsCombatantDefeated(Opp)
+		|| FVector::Dist(Opp->GetActorLocation(), Owner->GetActorLocation()) > Reach)
 	{
 		Client_CounterDenied(1);
 		return;
@@ -635,7 +670,8 @@ void UGOTADuelFighterComponent::Server_RequestDivineCounter_Implementation()
 	}
 	UActorComponent* DS = DamageSystem.Get();
 	const double Now = GetWorld()->GetTimeSeconds();
-	CounterInvulnEndTime = Now + 0.6;
+	const float InvulnSeconds = DivineCounterImpactDelay + 0.6f;
+	CounterInvulnEndTime = Now + InvulnSeconds;
 	if (DS)
 	{
 		FGOTABlueprintCombat::SetBool(DS, TEXT("IsInvincible"), true);
@@ -648,17 +684,50 @@ void UGOTADuelFighterComponent::Server_RequestDivineCounter_Implementation()
 			{
 				FGOTABlueprintCombat::SetBool(WeakDS.Get(), TEXT("IsInvincible"), false);
 			}
-		}), 0.6f, false);
+		}), InvulnSeconds, false);
 	}
-	FGOTABlueprintCombat::Call(Owner, TEXT("MeleeAttack"));
 
+	// The strike: a hero plays their first ability's animation/FX as pure presentation (the counter's blow is the
+	// only damage); a plain fighter swings its Blueprint melee attack.
+	UGOTAHeroAbilityComponent* Abilities = Owner->FindComponentByClass<UGOTAHeroAbilityComponent>();
+	const bool bHeroStrike = Abilities && !Abilities->IsBusy() && Abilities->PlayPresentation(0, Opp, DivineCounterImpactDelay);
+	if (!bHeroStrike)
+	{
+		FGOTABlueprintCombat::Call(Owner, TEXT("MeleeAttack"));
+	}
+
+	// A boss is caught at once (his attack is cut off and he stays put for the blow); the damage lands with the strike.
 	UGOTAChampionDirectorComponent* Director = Opp->FindComponentByClass<UGOTAChampionDirectorComponent>();
-	const float Damage = DivineCounterDamage * ((Director && Director->IsGuardBroken()) ? 1.4f : 1.f);
+	float Damage = DivineCounterDamage * ((Director && Director->IsGuardBroken()) ? 1.4f : 1.f);
+	if (Boss)
+	{
+		Damage = Boss->NotifyDivineCounter(Owner);
+	}
+	UE_LOG(LogGOTADuelAI, Log, TEXT("DIVINE COUNTER started by %s on %s (%s strike, blow in %.2fs)"), *GetNameSafe(Owner), *GetNameSafe(Opp),
+		bHeroStrike ? TEXT("hero") : TEXT("melee"), DivineCounterImpactDelay);
+	bCounterPending = true;
+	FTimerHandle BlowHandle;
+	GetWorld()->GetTimerManager().SetTimer(BlowHandle, FTimerDelegate::CreateWeakLambda(this, [this, Damage]()
+	{
+		LandDivineCounter(Damage);
+	}), FMath::Max(DivineCounterImpactDelay, 0.01f), false);
+}
+
+void UGOTADuelFighterComponent::LandDivineCounter(float Damage)
+{
+	bCounterPending = false;
+	AActor* Owner = GetOwner();
+	APawn* Opp = Opponent.Get();
+	if (!Owner || !IsValid(Opp) || !IsRoundLive() || UGOTACombatantObserver::IsCombatantDefeated(Opp))
+	{
+		UE_LOG(LogGOTADuelAI, Log, TEXT("DIVINE COUNTER by %s: blow skipped (round over or target gone)"), *GetNameSafe(Owner));
+		return;
+	}
 	const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Opp, Owner, Damage, false, false, TEXT("Stagger"));
 	UE_LOG(LogGOTADuelAI, Log, TEXT("DIVINE COUNTER by %s on %s: %.0f damage (landed=%d, momentum left %.0f)"),
 		*GetNameSafe(Owner), *GetNameSafe(Opp), Damage, bLanded ? 1 : 0, Momentum);
 	EmitCue(EGOTADuelCue::DivineCounter, Opp);
-	if (Director)
+	if (UGOTAChampionDirectorComponent* Director = Opp->FindComponentByClass<UGOTAChampionDirectorComponent>())
 	{
 		Director->NotifyDivineCounterReceived();
 	}
