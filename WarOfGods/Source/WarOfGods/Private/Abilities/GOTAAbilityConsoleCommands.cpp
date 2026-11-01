@@ -8,6 +8,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "HAL/IConsoleManager.h"
+#include "Containers/Ticker.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
@@ -120,7 +121,10 @@ namespace GOTAAbilityTest
 		}
 		const float Dist = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 250.f;
 		const FVector Fwd = A->GetActorForwardVector().GetSafeNormal2D();
-		const FVector Loc = A->GetActorLocation() + Fwd * Dist;
+		// Optional 3rd arg: sideways offset (cm, + = right of fighter 0) for sidestep / miss tests.
+		const float Side = Args.Num() > 2 ? FCString::Atof(*Args[2]) : 0.f;
+		const FVector Right = FVector::CrossProduct(FVector::UpVector, Fwd);
+		const FVector Loc = A->GetActorLocation() + Fwd * Dist + Right * Side;
 		B->TeleportTo(Loc, (-Fwd).Rotation(), false, true);
 		if (Args.Num() > 1)
 		{
@@ -178,7 +182,48 @@ namespace GOTAAbilityTest
 	}
 	static FAutoConsoleCommand CmdNav(TEXT("gota.Ability.Nav"), TEXT("Log runtime navigation data state."), FConsoleCommandWithArgsDelegate::CreateStatic(&NavReport));
 
-	static FAutoConsoleCommand CmdPlace(TEXT("gota.Ability.Place"), TEXT("Test: place fighter 1 <dist> in front of fighter 0 [freeze 0|1]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Place));
+	/** gota.Ability.PlaceOnCast <delay> <dist> [side]: when fighter 0's next cast starts, wait delay (real s) then Place. */
+	static FTSTicker::FDelegateHandle GPlaceOnCast;
+	static void PlaceOnCast(const TArray<FString>& Args)
+	{
+		if (Args.Num() < 2)
+		{
+			return;
+		}
+		const float Delay = FCString::Atof(*Args[0]);
+		TArray<FString> PlaceArgs = { Args[1], TEXT("1") };
+		if (Args.Num() > 2)
+		{
+			PlaceArgs.Add(Args[2]);
+		}
+		FTSTicker::GetCoreTicker().RemoveTicker(GPlaceOnCast);
+		TSharedRef<double> Started = MakeShared<double>(-1.0);
+		GPlaceOnCast = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([Delay, PlaceArgs, Started](float)
+		{
+			UGOTAHeroAbilityComponent* A = Abilities(0);
+			if (!A)
+			{
+				return true;
+			}
+			const double Now = FPlatformTime::Seconds();
+			if (*Started < 0.0)
+			{
+				if (A->IsBusy())
+				{
+					*Started = Now;
+				}
+				return true;
+			}
+			if (Now - *Started >= Delay)
+			{
+				Place(PlaceArgs);
+				return false;
+			}
+			return true;
+		}));
+	}
+	static FAutoConsoleCommand CmdPlaceOnCast(TEXT("gota.Ability.PlaceOnCast"), TEXT("After fighter 0's next cast starts, wait <delay>s then Place <dist> (frozen) [side]."), FConsoleCommandWithArgsDelegate::CreateStatic(&PlaceOnCast));
+	static FAutoConsoleCommand CmdPlace(TEXT("gota.Ability.Place"), TEXT("Test: place fighter 1 <dist> in front of fighter 0 [freeze 0|1] [side cm]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Place));
 	static FAutoConsoleCommand CmdUse(TEXT("gota.Ability.Use"), TEXT("Use hero ability: <fighter 0|1> <slot 0-3>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Use));
 	static FAutoConsoleCommand CmdDump(TEXT("gota.Ability.Dump"), TEXT("Log both fighters' ability state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Dump));
 	static FAutoConsoleCommand CmdAI(TEXT("gota.Ability.AI"), TEXT("AI fighter abilities: <slot> to force | on | off."), FConsoleCommandWithArgsDelegate::CreateStatic(&AI));

@@ -1,0 +1,33 @@
+# Zephyr - Gale Rush (slot 0, Charge): hit, cooldown refusal, max dash distance, sidestep miss.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Dump
+gota.Ability.Place 500 1
+wait 0.5
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Ability.Use 0 0
+wait 0.45
+gota.Ability.Use 0 0
+wait 1.2
+gota.Duel.Dump
+gota.Ability.Dump
+wait 9
+gota.Ability.Place 1300 1
+wait 0.5
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Ability.Use 0 0
+wait 1.5
+gota.Duel.Dump
+wait 9
+gota.Ability.Place 600 1
+wait 0.5
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Ability.Use 0 0
+gota.Ability.Place 650 1 380
+wait 1.0
+gota.Duel.Dump
+gota.Ability.Dump
+quit

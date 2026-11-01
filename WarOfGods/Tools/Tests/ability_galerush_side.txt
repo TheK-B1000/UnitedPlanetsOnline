@@ -1,0 +1,18 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 600 1
+wait 0.5
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Ability.PlaceOnCast 0.2 520 420
+gota.Ability.Use 0 0
+wait 1.0
+gota.Duel.Dump
+wait 9
+gota.Ability.Place 600 1
+wait 0.5
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 1.0
+gota.Duel.Dump
+quit

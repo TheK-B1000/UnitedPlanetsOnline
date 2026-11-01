@@ -108,3 +108,40 @@ Recommendation: realign names and descriptions to the cards when those sets are 
 1. Add the four new signature entries (Zephyr, Lysara, Kairos, Orion) to `GOTA_BuildHeroAbilities.py` in slot 0, with conservative prototype numbers.
 2. Run `ability_slots_<Hero>.txt`-style tests for each: hit/miss, refusal, interrupt, listen-server presentation.
 3. Keep the heroes In Development until their full sets exist and a complete match with abilities passes.
+
+## Milestone progress
+
+### Zephyr: Gale Rush (implemented 2026-10-31, In Development)
+
+**Data:** `Tools/GOTA_BuildHeroAbilities.py` → `HEROES["Zephyr"]`, slot 0. Build with `GOTA_HEROES=Zephyr`, which updates only that set and leaves the status overlay materials alone.
+
+| Property | Value |
+|---|---|
+| Kind | `Charge` |
+| Damage | 16 |
+| Cooldown | 8 s |
+| Cast / recovery | 0.15 s / 0.35 s |
+| Dash | 700 cm in 0.3 s |
+| Knockback | 750 |
+| Blockable | yes |
+| Body animation | Kwang `Ability_RMB` |
+| FX | Kwang after-image (cast) and primary impact |
+| AI use | 3.5–7 m |
+
+**Results:**
+
+| Check | Result |
+|---|---|
+| Hit (target 5 m, `ability_galerush.txt`) | 16 damage, champion knocked about 4 m |
+| Re-use during cooldown | Refused (`Cooldown`) |
+| Target beyond range (13 m) | Gap-closer: dashes toward the target and stops after about 6.3 m without a hit |
+| Sidestep after launch (`ability_galerush_side.txt`, `gota.Ability.PlaceOnCast`) | **Miss**; control dash right after: hit |
+| Outside a live round | Refused (`NotLive`) |
+| AI (`?Foe=Zephyr`) | The AI Zephyr chose Gale Rush at 5.5 m and hit the player for 16, in each round |
+| Listen server + client | The host's Gale Rush hit the client (100 → 84). The client saw Zephyr's Kwang body play `Ability_RMB` |
+
+**Framework fixes made along the way:**
+- A **missed charge now stops at the end of its dash.** It used to keep sliding on its launch velocity: 12.3 m for a 7 m dash. This also applies to Drakon's Warbringer.
+- `GOTA_BuildHeroAbilities.py` now updates sets in place instead of deleting them. A set is referenced by its hero definition, so the delete would fail and the script stopped, the same failure the boss builder had.
+
+**Card note:** the card says "twin wind blades", while Kwang has a single sword.

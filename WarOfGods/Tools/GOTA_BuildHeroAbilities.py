@@ -25,6 +25,10 @@ CA = C + "/Characters/Heroes/Countess/Animations/"
 S = "/Game/ParagonSevarog"
 SA = S + "/Characters/Heroes/Sevarog/Animations/"
 
+KW = "/Game/ParagonKwang"
+KWA = KW + "/Characters/Heroes/Kwang/Animations/"
+KWFX = KW + "/FX/Particles/Abilities/"
+
 K = unreal.GOTAAbilityKind
 ST = unreal.GOTAStatus
 LOOK = unreal.GOTAAbilityLook
@@ -101,6 +105,16 @@ HEROES = {
              anim=SA + "Ultimate_Swing_120fps", cast_fx=S + "/FX/Particles/Abilities/Ultimate/FX/P_UltActivate", impact_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_Sevarog_Subjugate_Blast", fx_scale=1.4, fx_life=2.0, kick=2.4,
              ai=dict(priority=2.0, min=0, max=420)),
     ]),
+    # Signature-ability milestone (Docs/GOTA_HERO_ABILITIES_PLAN.md): one card ability per new god, slot 0.
+    "Zephyr": dict(health=0.95, gap=3.5, look=LOOK.SHADOW, abilities=[
+        dict(id="GaleRush", name="Gale Rush", short="Gale Rush", kind=K.CHARGE,
+             desc="High-speed dash attack. Zephyr rides the wind straight at the enemy; the first one struck is "
+                  "knocked away. Sidestep the line to avoid it.",
+             damage=16, cooldown=8, cast=0.15, recovery=0.35, range=700, interval=0.3, magnitude=750,
+             anim=KWA + "Ability_RMB", cast_fx=KWFX + "Ultimate/FX/P_KwangAfterImage",
+             impact_fx=KWFX + "Primary/FX/P_Kwang_Primary_Impact", fx_scale=1.0, kick=1.2,
+             ai=dict(priority=1.2, min=350, max=700)),
+    ]),
 }
 
 
@@ -156,11 +170,12 @@ def overlay_material(name, color, strength):
 def build_set(hero, cfg):
     name = "DA_AbilitySet_" + hero
     path = OUT + "/" + name
-    if EAL.does_asset_exist(path):
-        EAL.delete_asset(path)
-    factory = unreal.DataAssetFactory()
-    factory.set_editor_property("data_asset_class", unreal.GOTAAbilitySet)
-    da = unreal.AssetToolsHelpers.get_asset_tools().create_asset(name, OUT, unreal.GOTAAbilitySet, factory)
+    # Update in place: DA_Hero_<Hero> references the set, so deleting it fails and create_asset returns None.
+    da = EAL.load_asset(path) if EAL.does_asset_exist(path) else None
+    if not da:
+        factory = unreal.DataAssetFactory()
+        factory.set_editor_property("data_asset_class", unreal.GOTAAbilitySet)
+        da = unreal.AssetToolsHelpers.get_asset_tools().create_asset(name, OUT, unreal.GOTAAbilitySet, factory)
     defs = []
     for a in cfg["abilities"]:
         d = unreal.GOTAAbilityDef()
@@ -217,18 +232,23 @@ def build_set(hero, cfg):
     da.set_editor_property("abilities", defs)
     da.set_editor_property("max_health_scale", float(cfg["health"]))
     da.set_editor_property("ai_global_gap", float(cfg["gap"]))
-    EAL.save_asset(path)
+    EAL.save_asset(path, only_if_is_dirty=False)
     hero_def = EAL.load_asset("/Game/Heroes/Data/DA_Hero_" + hero)
     hero_def.set_editor_property("ability_set", da)
-    EAL.save_asset("/Game/Heroes/Data/DA_Hero_" + hero)
+    EAL.save_asset("/Game/Heroes/Data/DA_Hero_" + hero, only_if_is_dirty=False)
     P(hero, "set saved with", len(defs), "abilities; linked to DA_Hero_" + hero)
 
 
+# GOTA_HEROES=Zephyr builds only those sets (and leaves the status overlay materials alone).
+ONLY = [h.strip() for h in os.environ.get("GOTA_HEROES", "").split(",") if h.strip()]
 EAL.make_directory(MAT)
-overlay_material("M_GOTA_Overlay_Unbreakable", (1.0, 0.72, 0.25), 6.0)
-overlay_material("M_GOTA_Overlay_Veiled", (0.35, 0.08, 0.55), 4.0)
-overlay_material("M_GOTA_Overlay_Dread", (0.25, 1.0, 0.35), 4.0)
+if not ONLY:
+    overlay_material("M_GOTA_Overlay_Unbreakable", (1.0, 0.72, 0.25), 6.0)
+    overlay_material("M_GOTA_Overlay_Veiled", (0.35, 0.08, 0.55), 4.0)
+    overlay_material("M_GOTA_Overlay_Dread", (0.25, 1.0, 0.35), 4.0)
 for hero, cfg in HEROES.items():
+    if ONLY and hero not in ONLY:
+        continue
     try:
         build_set(hero, cfg)
     except Exception as e:

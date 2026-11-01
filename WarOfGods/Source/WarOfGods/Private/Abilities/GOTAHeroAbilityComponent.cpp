@@ -554,6 +554,11 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 		if (bCharging && Now >= CastResolveTime + Def->HitInterval)
 		{
 			bCharging = false; // ran out of charge (missed)
+			// Stop at the end of the dash ("up to Range"); otherwise the launch velocity slides the caster on.
+			if (ACharacter* Dasher = Cast<ACharacter>(Owner))
+			{
+				Dasher->GetCharacterMovement()->StopMovementImmediately();
+			}
 			Multicast_Impact(static_cast<uint8>(ActiveSlot), Owner->GetActorLocation(), nullptr, 0);
 		}
 		if (!bCharging && CastFinishTime < 0.0)
