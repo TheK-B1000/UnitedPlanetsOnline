@@ -97,14 +97,15 @@ namespace GOTATest
 	{
 		TArray<FString> Lines;
 		int32 Index = 0;
-		/** Script time advances by capped frame deltas, so blocking map loads don't eat waits. */
+		/** Script time advances by capped frame deltas, so blocking map loads don't eat waits. The cap is 0.5 s: low
+		 *  frame rates (an unfocused packaged window) still count in full, multi-second load hitches do not. */
 		double ScriptTime = 0.0;
 		double ResumeAt = 0.0;
 		FTSTicker::FDelegateHandle Handle;
 
 		bool Tick(float DeltaTime)
 		{
-			ScriptTime += FMath::Min(DeltaTime, 0.1f);
+			ScriptTime += FMath::Min(DeltaTime, 0.5f);
 			const double Now = ScriptTime;
 			while (Index < Lines.Num() && Now >= ResumeAt)
 			{

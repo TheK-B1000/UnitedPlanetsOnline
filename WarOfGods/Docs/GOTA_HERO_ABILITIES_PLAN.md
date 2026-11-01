@@ -248,3 +248,63 @@ A **close-range, telegraphed area crush**, deliberately unlike Gravity Well: unt
 | AI Orion against a **blocking** player | Lands anyway (`landed=1`, 75 → 55): unblockable as designed |
 | AI use | Chose Gravity Slam at 1.0 m and 2.2 m |
 | Listen server | The host's slam hit the client (20). The client saw Orion's Steel body play the slam |
+
+### Gravity Well follow-ups (2026-11-01)
+
+Script: `ability_gravitywell_los.txt`. Dev helpers: `gota.Test.SetupBlocker` finds real arena geometry at runtime (Titan's Quarry dressing loads in game), and `gota.Test.Encroach` checks whether a fighter's capsule overlaps solid geometry.
+
+| Check | Result |
+|---|---|
+| **Line of sight:** target 5.4 m away (in range) behind an 88 cm block | **Refused (`NoLineOfSight`)**, no cooldown spent. Offset placements (up to ±1.6 m) were refused the same way |
+| **Pull into a wall:** caster's back 1.2 m from a wall, target 6.5 m in front | Pulled to 2.9 m in front of the caster; target **not in geometry** before or after |
+| **Why it can't tunnel** | A pull needs line of sight at cast **and** at resolve (refused or fizzles otherwise), so it never starts with geometry between the fighters. The pull itself is a `LaunchCharacter` through the normal swept character movement, so it collides and can't pass through |
+| Grazing (sightline clears an edge but the body would clip it) | Not reproduced: the Quarry's obstacles near usable floor are too broad for a sightline to graze them |
+
+**Lysara's weapon:** her canonical weapon is the **Celestial Twin Rings**; Aurora's ice blade is a stand-in. Recommended direction:
+- Floating ring meshes attached to hand or orbit sockets on her body.
+- Gravity Well's cast shows the rings orbiting and flaring.
+- Needs ring meshes (modelled, or a suitable licensed asset) and a cast animation layer. The ability's data and timing don't change.
+
+## Ability regression suite
+
+`Tools/GOTA_AbilityRegression.py` launches the game per case, runs a `Tools/Tests` script, and checks the log for expected and forbidden lines. It prints PASS/FAIL per check and exits with code 1 on any failure.
+
+```
+python Tools/GOTA_AbilityRegression.py                 # editor -game
+python Tools/GOTA_AbilityRegression.py --packaged      # packaged Win64 (GOTA_PACKAGE_DIR); copies the test scripts in
+python Tools/GOTA_AbilityRegression.py --only TimeLash
+python Tools/GOTA_AbilityRegression.py --check-only    # re-evaluate the last logs
+```
+
+**Coverage per signature ability:**
+- successful activation (damage/effect values asserted)
+- cooldown refusal
+- an invalid target: out of range or radius, sidestep, no line of sight, escape mid-cast
+- death during the cast (no effect lands)
+- multiplayer: the host's hit lands on a remote player and the client sees the body animation
+- every case also asserts no crash
+
+Cases are data in `CASES` and `MP`; new abilities add entries there. Scripts use `gota.Ability.ResetCooldowns` instead of waiting out cooldowns, so every case fits inside one round in both editor and packaged runs.
+
+**Results (2026-11-01):** **editor 16 of 16, packaged Win64 16 of 16** (packaged evaluated with `--packaged --check-only` over the latest packaged-run logs, all from the current package).
+
+Notes from getting there:
+- The first packaged pass failed two cases on **test timing**, not gameplay: cooldown waits outran the round timer, and the 3 s slow expired before a stretched wait ended.
+- The fix: `gota.Ability.ResetCooldowns` replaces cooldown waits; Time Lash has a lean script with no camera or screenshots; exact walk-speed values are asserted by the deterministic 8 s `status_slowed.txt` case.
+- The test runner now caps each frame's script-time step at 0.5 s instead of 0.1 s, so waits no longer crawl in an unfocused packaged window. This lands in the next package.
+
+## Open issue: intermittent D3D12 crash on the results screen
+
+Seen in 5 of 7 long editor runs and in 1 of 16 packaged suite runs, always while idling on the post-match results screen. The packaged crash has symbols:
+
+```
+EXCEPTION_ACCESS_VIOLATION reading 0xffffffffffffffff
+FD3D12ContextCommon::BindDiagnosticBuffer <- FD3D12DescriptorCache::SetSamplerTable
+<- FD3D12CommandContext::RHISetShaderParameters <- ... FRHICommandListExecutor::FTranslateState::Translate_ExecuteCommandList
+(Background Worker: RHI parallel translate)
+```
+
+- `BindDiagnosticBuffer` dereferences `PSOCommonData->RootSignature` when the root signature changes (`D3D12StateCache.cpp:531`). A garbage pointer there means a pipeline state whose root signature is no longer valid, while commands are translated in parallel.
+- This is engine-side; no game code is on the stack. The results widget is a plain image plus text.
+- **Candidate mitigation (not applied):** `r.RHICmd.ParallelTranslate.Enable=0`. It costs some rendering throughput, and at this repro rate it needs a long A/B soak before it can be called a fix.
+- Next steps: install editor debug symbols, run a long idle-results soak with and without the cvar, and if it reproduces, report it upstream (UE 5.8, D3D12, RTX 5070 / driver 610.88).

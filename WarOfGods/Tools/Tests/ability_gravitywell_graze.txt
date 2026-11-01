@@ -1,0 +1,49 @@
+# Grazing pulls: sight line clears the block; the capsule path may not.
+r.MotionBlurQuality 0
+wait 4
+gota.Test.SetupBlocker 150 2500 1
+wait 0.3
+gota.Ability.Place 538 1 -60
+wait 0.3
+gota.Test.Encroach 1
+gota.Ability.Use 0 0
+wait 1.5
+gota.Test.Encroach 1
+wait 12
+gota.Test.SetupBlocker 150 2500 1
+wait 0.3
+gota.Ability.Place 538 1 120
+wait 0.3
+gota.Test.Encroach 1
+gota.Ability.Use 0 0
+wait 1.5
+gota.Test.Encroach 1
+wait 12
+gota.Test.SetupBlocker 150 2500 1
+wait 0.3
+gota.Ability.Place 538 1 -120
+wait 0.3
+gota.Test.Encroach 1
+gota.Ability.Use 0 0
+wait 1.5
+gota.Test.Encroach 1
+wait 12
+gota.Test.SetupBlocker 150 2500 1
+wait 0.3
+gota.Ability.Place 538 1 160
+wait 0.3
+gota.Test.Encroach 1
+gota.Ability.Use 0 0
+wait 1.5
+gota.Test.Encroach 1
+wait 12
+gota.Test.SetupBlocker 150 2500 1
+wait 0.3
+gota.Ability.Place 538 1 -160
+wait 0.3
+gota.Test.Encroach 1
+gota.Ability.Use 0 0
+wait 1.5
+gota.Test.Encroach 1
+wait 12
+quit

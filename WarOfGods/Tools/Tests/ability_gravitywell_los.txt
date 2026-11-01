@@ -1,0 +1,29 @@
+# Gravity Well vs geometry.
+# 1) target behind a block -> NoLineOfSight. 2) grazing: sight line clears the block's edge but the capsule does not ->
+# the pull must stop at the block, never inside it. 3) caster's back to a wall -> the pulled target never ends in it.
+r.MotionBlurQuality 0
+wait 4
+gota.Test.SetupBlocker 150 2500 1
+wait 0.3
+gota.Test.Encroach 1
+gota.Ability.Use 0 0
+wait 0.5
+gota.Ability.Dump
+gota.Ability.Place 538 1 30
+wait 0.3
+gota.Test.Encroach 1
+gota.Ability.Use 0 0
+wait 1.5
+gota.Test.Encroach 1
+wait 1.0
+gota.Ability.ResetCooldowns 0
+gota.Test.SetupBlocker 100 2500 0
+wait 0.3
+gota.Ability.Place 650 1
+wait 0.3
+gota.Test.Encroach 1
+gota.Ability.Use 0 0
+wait 1.5
+gota.Test.Encroach 1
+gota.Ability.Dump
+quit

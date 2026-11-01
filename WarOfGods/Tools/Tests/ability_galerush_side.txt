@@ -8,7 +8,8 @@ gota.Ability.PlaceOnCast 0.2 520 420
 gota.Ability.Use 0 0
 wait 1.0
 gota.Duel.Dump
-wait 9
+wait 1.0
+gota.Ability.ResetCooldowns 0
 gota.Ability.Place 600 1
 wait 0.5
 gota.Duel.Face 0

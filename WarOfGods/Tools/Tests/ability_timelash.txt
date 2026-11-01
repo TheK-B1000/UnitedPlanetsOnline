@@ -20,7 +20,8 @@ gota.Ability.Dump
 wait 3.0
 gota.Ability.Dump
 gota.Test.Cam off
-wait 9
+wait 1.0
+gota.Ability.ResetCooldowns 0
 gota.Ability.Place 700 1
 wait 0.5
 gota.Ability.Use 0 0

@@ -15,7 +15,8 @@ gota.Ability.Use 0 0
 wait 1.0
 gota.Duel.Dump
 gota.Test.Cam off
-wait 13
+wait 1.0
+gota.Ability.ResetCooldowns 0
 gota.Ability.Place 1100 1
 wait 0.5
 gota.Duel.Face 0
@@ -28,7 +29,8 @@ gota.Ability.PlaceOnCast 0.25 1300
 gota.Ability.Use 0 0
 wait 1.5
 gota.Duel.Dump
-wait 13
+wait 1.0
+gota.Ability.ResetCooldowns 0
 gota.Ability.Place 650 1
 wait 0.5
 gota.Duel.Face 0
