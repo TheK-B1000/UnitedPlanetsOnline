@@ -34,6 +34,8 @@ AUFX = AU + "/FX/Particles/Abilities/"
 GD = "/Game/ParagonGideon"
 GDA = GD + "/Characters/Heroes/Gideon/Animations/"
 GDFX = GD + "/FX/Particles/Gideon/Abilities/"
+STL = "/Game/ParagonSteel"
+STLA = STL + "/Characters/Heroes/Steel/Animations/"
 
 K = unreal.GOTAAbilityKind
 ST = unreal.GOTAStatus
@@ -138,6 +140,18 @@ HEROES = {
              magnitude=0.4, anim=GDA + "Burden", cast_fx=GDFX + "Portal/FX/P_Portal_Cast",
              impact_fx=GDFX + "Portal/FX/P_Portal_Entrance", fx_scale=1.2, kick=0.6,
              ai=dict(priority=1.2, min=0, max=430)),
+    ]),
+    # Gravity Slam: close-range, telegraphed area crush (not a second pull). Steel's GroundSmash_End lands at 0.16 s;
+    # played at 0.229x the slam lands exactly at the end of the 0.7 s wind-up (the server's damage moment).
+    "Orion": dict(health=1.1, gap=3.5, look=LOOK.TITAN, abilities=[
+        dict(id="GravitySlam", name="Gravity Slam", short="Gravity Slam", kind=K.AREA_BURST,
+             desc="Orion charges gravity overhead, then crushes the ground around him: everything within 3.3 m is "
+                  "staggered. Clearly telegraphed and unblockable - get out of range or dodge through the impact.",
+             damage=20, cooldown=10, cast=0.7, recovery=0.6, radius=330, magnitude=0, blockable=False,
+             interruptible=True, anim=STLA + "Steel_Ability_GroundSmash_End", rate=0.229,
+             cast_fx=STL + "/FX/Particles/Steel/Abilities/Melee/FX/P_Steel_Melee_Charge_A",
+             impact_fx=STL + "/FX/Particles/Steel/Abilities/Ultimate/FX/P_Steel_Ultimate_Impact", fx_scale=0.8, kick=1.8,
+             ai=dict(priority=1.3, min=0, max=300)),
     ]),
 }
 

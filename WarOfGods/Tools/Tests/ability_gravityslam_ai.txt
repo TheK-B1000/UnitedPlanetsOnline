@@ -1,0 +1,9 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 220 1
+gota.Duel.Call 0 StartBlock
+gota.Ability.AI 0
+wait 2.5
+gota.Duel.Dump
+gota.Duel.Call 0 EndBlock
+quit

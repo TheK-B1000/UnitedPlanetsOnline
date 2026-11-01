@@ -214,3 +214,37 @@ Recommendation: realign names and descriptions to the cards when those sets are 
 | Listen server | The remote player's own client logged walk 300 under Time Lash, 500 after expiry, then 300 again under a second slow, so prediction agrees and the restore replicates. The client saw Kairos play the cast |
 
 **Limitation (unchanged design):** a fighter holds one status at a time, so a new status replaces the current one.
+
+### Orion: Gravity Slam (implemented 2026-11-01, In Development)
+
+A **close-range, telegraphed area crush**, deliberately unlike Gravity Well: untargeted, centred on Orion, no pull, a visible wind-up and one ground-impact damage moment.
+
+**Data:** `HEROES["Orion"]`, slot 0, built with `GOTA_HEROES=Orion`.
+
+| Property | Value |
+|---|---|
+| Kind | `AreaBurst`, radius 330 |
+| Damage | 20, with a stagger |
+| Knockback | none ("crush") |
+| Blockable | **no** |
+| Interruptible | **yes, during the wind-up** |
+| Cooldown | 10 s |
+| Wind-up / recovery | 0.7 s / 0.6 s |
+| Body animation | Steel `GroundSmash_End` at 0.229× |
+| FX | Steel melee charge glow (wind-up), ultimate ground impact |
+| AI use | 0–3 m |
+
+**Lining up the impact:** the slam lands 0.16 s into the animation (hand height sampled over the clip: 3 m overhead → ground at 0.16 s). At 0.229× it lands at 0.70 s, exactly the server's damage moment. A slow-motion film (`ability_gravityslam_film.txt`) shows fists raised overhead at 0.42 s, the impact at 0.74 s game time, then recovery.
+
+**Results** (`ability_gravityslam.txt` and `ability_gravityslam_ai.txt`):
+
+| Check | Result |
+|---|---|
+| Target at 2 m | 20 damage |
+| Re-use during cooldown | Refused |
+| Target at 4.5 m (outside the radius) | Cast, no hit |
+| Target leaves 0.35 s into the wind-up (`PlaceOnCast`) | **No hit** (the damage window is avoidable) |
+| Orion damaged during the wind-up | **Cancelled (interrupted)**, no damage |
+| AI Orion against a **blocking** player | Lands anyway (`landed=1`, 75 → 55): unblockable as designed |
+| AI use | Chose Gravity Slam at 1.0 m and 2.2 m |
+| Listen server | The host's slam hit the client (20). The client saw Orion's Steel body play the slam |
