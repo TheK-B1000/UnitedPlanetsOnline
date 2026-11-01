@@ -22,6 +22,7 @@
 #include "Engine/World.h"
 #include "EdGraph/EdGraph.h"
 #include "K2Node_CallFunction.h"
+#include "K2Node_CustomEvent.h"
 #include "EdGraph/EdGraphNode.h"
 #include "NavigationSystem.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
@@ -216,6 +217,40 @@ UFont* UGOTAEditorUIBuilderLibrary::CreateCompositeFont(const FString& PackagePa
 #endif
 
 #if WITH_EDITOR
+int32 UGOTAEditorUIBuilderLibrary::MakeServerEventsReliable(UObject* InBlueprint, const FString& Prefix)
+{
+	UBlueprint* Blueprint = Cast<UBlueprint>(InBlueprint);
+	if (!Blueprint)
+	{
+		return -1;
+	}
+	TArray<UEdGraph*> Graphs;
+	Blueprint->GetAllGraphs(Graphs);
+	int32 Changed = 0;
+	for (UEdGraph* Graph : Graphs)
+	{
+		TArray<UK2Node_CustomEvent*> Events;
+		Graph->GetNodesOfClass(Events);
+		for (UK2Node_CustomEvent* Event : Events)
+		{
+			if (Event && Event->CustomFunctionName.ToString().StartsWith(Prefix) && (Event->FunctionFlags & FUNC_NetServer)
+				&& !(Event->FunctionFlags & FUNC_NetReliable))
+			{
+				Event->Modify();
+				Event->FunctionFlags |= FUNC_NetReliable;
+				UE_LOG(LogTemp, Log, TEXT("MakeServerEventsReliable %s: %s -> Reliable"), *GetNameSafe(Blueprint), *Event->CustomFunctionName.ToString());
+				++Changed;
+			}
+		}
+	}
+	if (Changed > 0)
+	{
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+	}
+	return Changed;
+}
+
 int32 UGOTAEditorUIBuilderLibrary::RemoveDeadFunctionCalls(UBlueprint* Blueprint, FName FunctionName)
 {
 	if (!Blueprint)

@@ -1,0 +1,18 @@
+wait 80
+gota.Net.Players
+gota.Net.Hurt 1 500
+wait 3
+gota.Net.Players
+wait 8
+gota.Net.Players
+gota.Net.Hurt 0 500
+gota.Net.Hurt 1 500
+gota.Net.Hurt 2 500
+gota.Net.Hurt 3 500
+wait 3
+gota.Net.Players
+wait 8
+gota.Net.Players
+wait 20
+gota.Net.Players
+quit

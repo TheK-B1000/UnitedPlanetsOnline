@@ -50,6 +50,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
 	static int32 ClearLevelScriptGraphs(UObject* World);
 
+	/**
+	 * Network hardening: marks every Server-replicated custom event whose name starts with Prefix (e.g. "SR_") as
+	 * Reliable, then compiles. Client-to-server combat input (attack, block, parry) must not be silently dropped by
+	 * packet loss; these are discrete requests, never per-frame. Returns the number changed (save separately).
+	 */
+	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
+	static int32 MakeServerEventsReliable(UObject* Blueprint, const FString& Prefix);
+
 	/** Audit: writes every graph of a Blueprint as node text (same format as copy/paste) into OutDir. */
 	UFUNCTION(BlueprintCallable, Category = "GOTA|EditorUI")
 	static int32 ExportBlueprintGraphs(UObject* Blueprint, const FString& OutDir);

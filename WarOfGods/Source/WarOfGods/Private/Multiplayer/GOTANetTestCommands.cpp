@@ -13,6 +13,7 @@
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
 #include "Arenas/Horde/HordePlayerState.h"
+#include "Characters/GOTAPlayerCharacter.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
@@ -85,6 +86,10 @@ namespace GOTANetTest
 				Mode = FString::Printf(TEXT("eliminated=%d kills=%d elites=%d score=%d"), H->bIsEliminated ? 1 : 0, H->Eliminations, H->EliteEliminations, H->PersonalScore);
 			}
 			const UGOTADuelFighterComponent* F = Pawn ? Pawn->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr;
+			if (const AGOTAPlayerCharacter* Guarded = Cast<AGOTAPlayerCharacter>(Pawn))
+			{
+				Mode += FString::Printf(TEXT(" rejectedRPCs=%d"), Guarded->GetRejectedRPCs());
+			}
 			UE_LOG(LogGOTANet, Log, TEXT("NET  [%d] %s local=%d pawn=%s hp=%.0f/%.0f dead=%d mom=%.0f ping=%.0fms %s"), i, *PS->GetPlayerName(),
 				(PS->GetPlayerController() && PS->GetPlayerController()->IsLocalController()) ? 1 : 0, *GetNameSafe(Pawn), V.Health, V.MaxHealth,
 				UGOTACombatantObserver::IsCombatantDefeated(Pawn) && Pawn ? 1 : 0, F ? F->GetMomentum() : -1.f, PS->GetPingInMilliseconds(), *Mode);
@@ -142,6 +147,47 @@ namespace GOTANetTest
 		}
 		const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Best, Killer, 99999.f, false, false, TEXT("Stagger"));
 		UE_LOG(LogGOTANet, Log, TEXT("NET killenemy: [%d] %s -> %s (landed=%d)"), Index, *GetNameSafe(Killer), *GetNameSafe(Best), bLanded ? 1 : 0);
+	}
+
+	/**
+	 * Exploit test, run on a CLIENT: sends the Blueprint's SR_ParryAttack for its own pawn naming the farthest pawn as
+	 * the target - what a modified client could do. The server's AGOTAPlayerCharacter must reject it.
+	 */
+	static void ForgeParry(const TArray<FString>&)
+	{
+		UWorld* W = GameWorld();
+		APlayerController* PC = W ? W->GetFirstPlayerController() : nullptr;
+		APawn* Me = PC ? PC->GetPawn() : nullptr;
+		UFunction* Fn = Me ? Me->FindFunction(TEXT("SR_ParryAttack")) : nullptr;
+		if (!Fn)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET forgeparry: no local pawn with SR_ParryAttack"));
+			return;
+		}
+		APawn* Far = nullptr;
+		float FarDist = -1.f;
+		for (TActorIterator<APawn> It(W); It; ++It)
+		{
+			const float D = FVector::Dist(It->GetActorLocation(), Me->GetActorLocation());
+			if (*It != Me && D > FarDist)
+			{
+				FarDist = D;
+				Far = *It;
+			}
+		}
+		uint8* Params = static_cast<uint8*>(FMemory_Alloca(Fn->ParmsSize));
+		FMemory::Memzero(Params, Fn->ParmsSize);
+		Fn->InitializeStruct(Params);
+		for (TFieldIterator<FProperty> P(Fn); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
+		{
+			if (FObjectPropertyBase* O = CastField<FObjectPropertyBase>(*P))
+			{
+				O->SetObjectPropertyValue_InContainer(Params, Far);
+			}
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("NET forgeparry: %s sends SR_ParryAttack at %s (%.0f cm away, not blocking)"), *GetNameSafe(Me), *GetNameSafe(Far), FarDist);
+		Me->ProcessEvent(Fn, Params);
+		Fn->DestroyStruct(Params);
 	}
 
 	static bool IsGameClass(const UClass* C)
@@ -239,6 +285,7 @@ namespace GOTANetTest
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
 	static FAutoConsoleCommand CmdHurt(TEXT("gota.Net.Hurt"), TEXT("Server: damage player <index> <amount> through its own damage system."), FConsoleCommandWithArgsDelegate::CreateStatic(&Hurt));
 	static FAutoConsoleCommand CmdKillEnemy(TEXT("gota.Net.KillEnemy"), TEXT("Server: player <index> defeats the nearest living enemy (kill-credit test)."), FConsoleCommandWithArgsDelegate::CreateStatic(&KillEnemy));
+	static FAutoConsoleCommand CmdForge(TEXT("gota.Net.ForgeParry"), TEXT("Exploit test (client): forged SR_ParryAttack at the farthest pawn; the server must reject it."), FConsoleCommandWithArgsDelegate::CreateStatic(&ForgeParry));
 	static FAutoConsoleCommand CmdAudit(TEXT("gota.Net.AuditRPCs"), TEXT("List loaded game classes' network RPCs and replicated properties."), FConsoleCommandWithArgsDelegate::CreateStatic(&AuditRPCs));
 	static FAutoConsoleCommand CmdInspect(TEXT("gota.Net.InspectDamage"), TEXT("Damage-system props/delegates of the first pawn whose class contains <substring>."), FConsoleCommandWithArgsDelegate::CreateStatic(&InspectDamage));
 }
