@@ -205,3 +205,49 @@ Enemies keep their combat pawns (AI, attacks, montages and hit windows on the hi
 | Echo, the other gods | — | Not changed |
 
 Collision, capsules and damage are unchanged; this is purely visual.
+
+### Polish pass, Priority 2: Quarry Behemoth full encounter (2026-10-31, editor)
+
+| Check | Result |
+|---|---|
+| Natural fight (`boss_natural.txt`, challenger bot, boss AI, no forced attacks) | Intro, then all four attacks land: Claw Combo 6 windows, Charge, Earthshaker, Crushing Grasp. The bot took the boss to 680/900 and died; the match completed (boss wins). **0 boss attacks after the match ended.** |
+| Victory path (`boss_victory.txt`, bot healed 40/s; boss untouched) | **Phase II at 48%** (threshold 50%, triggered on the hit that crossed it). Phase II used Earthshaker chains (5 casts, 13 hits) and Claw Combo. "Boss DEFEATED" then the death animation (`Death_A`) and the BossDefeated cue, round won, match complete (player wins) |
+| Claw arc (`boss_claw_arc.txt`, player moved after the swing commits) | In front 180 cm: hit. Front-diagonal (facing 0.82): hit. **Behind, both sides, out of reach 340 cm, rear-diagonal: miss.** |
+| **Bug found and fixed** | On the backswing his hand passes 87 cm behind him, and the 120 cm hand sphere struck targets at his back (facing −0.52). The sphere now only counts in his front half. After the fix: **0 of 55** claw hits on targets behind him |
+| Avoidance by movement (`boss_avoid.txt`, `gota.Boss.PlaceOnAttack` moves the player once the attack has really started) | Earthshaker: leaving the 450 cm radius → miss; inside → hit. Crushing Grasp: beside/behind → miss (facing −0.30); in front → hit. Behemoth Charge: sidestep → "charge ended (missed)"; on the line → hit. Claw: behind or out of reach → miss |
+| Dodge roll (i-frames) | Not verified. The test bot's dodge mode reads Blueprint montages and the boss plays raw sequences, and a scripted `DodgeInDirection` with no input barely moves the player. Boss damage goes through the player's own damage system, so its i-frames apply by design |
+| Rewards | None implemented in the project |
+
+### Polish pass, Priority 3: a complete Fight AI match per god (2026-10-31, editor)
+
+- **Script:** `Tools/Tests/god_match_full.txt`. Titan's Quarry, best of 3, against the Feng Mao champion, with close-ups and a body probe about every 3 s.
+- **Hand gap:** visible hand to gameplay hand.
+
+| God | Body | Rounds (player:AI) | Match | Body re-applied | Hand gap median / max | Notes |
+|---|---|---|---|---|---|---|
+| Drakon | Greystone | 2:1 | complete | 4× | 11.3 / 23.5 cm | Sword and shield visible on the body |
+| Nyx | Countess | 2:1 | complete | 4× | 8.7 / 9.8 cm | Knocked out in a round, respawned |
+| Varoth | Sevarog @ 0.68 | 2:1 | complete | 4× | 7.8 / 15.2 cm | Was 50–85 cm before the scale fix |
+| Zephyr | Kwang | 2:1 | complete | 4× | 7.9 / 12.8 cm | |
+| Lysara | Aurora | 2:1 | complete | 4× | 8.4 / 10.9 cm | |
+| Kairos | Gideon | 2:1 | complete | 4× | 2.8 / 5.7 cm | |
+| Orion | Steel @ 0.75 + hand IK | 2:1 | complete | 4× | **0.0 / 4.8 cm** | Was 21–40 cm |
+
+- **Every run:** mesh and materials render, locomotion and attacks animate, damage lands both ways (both fighters' health drops each round), deaths end rounds, respawns re-dress the body, and the match completes.
+- **Status:** all gods except the UPA Warden stay **In Development**: no abilities yet for Zephyr, Lysara, Kairos and Orion, and a full ability pass is still pending for the rest.
+
+**Open issue: renderer crash on the results screen (editor `-game` only).**
+- 5 of the 7 consecutive runs (Drakon, Nyx, Varoth, Kairos, Orion) hit an access violation in `D3D12RHI` during the base-pass parallel draw, 1–4.5 min after the match completed, while idling on the results screen. No game code is on the stack.
+- Two targeted repros (best of 1, 5+ min idle on results, with and without the body probe) did **not** crash, and no packaged run has shown it.
+- Earlier long runs this session never hit it. Engine symbols aren't installed, so the dumps can't be read further.
+- Watching for it; if it recurs, next steps are installing editor debug symbols and trying `-d3d11` or `r.RHICmdBypass=1` to isolate it.
+
+### Polish pass, packaged Win64 (2026-10-31, built from the current source)
+
+| Check | Result |
+|---|---|
+| Quarry Behemoth, victory path (`boss_victory_pkg.txt`) | Phase II at 48% → "Boss DEFEATED" (death animation and BossDefeated cue) → round won → match complete → **VICTORY results screen** ("Best of 1, final 1–0", Rematch / Return to Main Menu). Earthshaker 6 casts (4 in phase II, 14 hits), Claw Combo and Crushing Grasp in phase II. No crash |
+| Quarry Behemoth, natural (bot unhealed) | All four attacks land; the bot dies; the match completes (boss wins) |
+| Claw arc (`boss_claw_arc.txt`) | 53 hits, **0 on targets behind him**; misses from behind, the sides and out of reach |
+
+Test-harness note: script `wait`s advance by frame delta capped at 0.1 s, so slow frames stretch them (up to 6× in some runs). Long scripts that need precise timing start their actions immediately.

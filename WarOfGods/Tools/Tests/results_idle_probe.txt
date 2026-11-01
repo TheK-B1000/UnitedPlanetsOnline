@@ -1,0 +1,100 @@
+wait 8
+gota.Duel.Hurt 1 5000
+wait 6
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 5
+gota.Test.Body
+quit

@@ -530,8 +530,9 @@ void UGOTABossComponent::TickAttack(APawn* Target, double Now)
 			{
 				const FVector Claw = Char->GetMesh()->DoesSocketExist(Win.Bone) ? Char->GetMesh()->GetSocketLocation(Win.Bone) : Char->GetActorLocation();
 				const FVector Local = Char->GetActorTransform().InverseTransformPosition(Claw);
-				UE_LOG(LogGOTABoss, Log, TEXT("Boss %s window %d missed: %s %.0f from target (radius %.0f), body %.0f, claw local fwd=%.0f right=%.0f up=%.0f"), *A.AttackId.ToString(), w, *Win.Bone.ToString(),
-					FVector::Dist2D(Claw, Target->GetActorLocation()), Win.Radius, FVector::Dist2D(Char->GetActorLocation(), Target->GetActorLocation()), Local.X, Local.Y, Local.Z);
+				const FVector TargetLocal = Char->GetActorTransform().InverseTransformPosition(Target->GetActorLocation());
+				UE_LOG(LogGOTABoss, Log, TEXT("Boss %s window %d missed: %s %.0f from target (radius %.0f), body %.0f, target local fwd=%.0f right=%.0f, claw local fwd=%.0f right=%.0f up=%.0f"), *A.AttackId.ToString(), w, *Win.Bone.ToString(),
+					FVector::Dist2D(Claw, Target->GetActorLocation()), Win.Radius, FVector::Dist2D(Char->GetActorLocation(), Target->GetActorLocation()), TargetLocal.X, TargetLocal.Y, Local.X, Local.Y, Local.Z);
 			}
 		}
 	}
@@ -584,7 +585,9 @@ void UGOTABossComponent::ResolveWindow(const FGOTABossAttack& A, const FGOTABoss
 		FromBody.Z = 0.f;
 		const float Facing = FVector::DotProduct(FromBody.GetSafeNormal(), Char->GetActorForwardVector());
 		const float ArcReach = Char->GetCapsuleComponent()->GetScaledCapsuleRadius() + Win.Radius + TargetRadius;
-		const bool bClawContact = ToTarget.Size() <= Win.Radius + TargetRadius;
+		// The claw sphere only counts in his front half: on the backswing the hand passes behind him, and the
+		// visible strike never reaches a target at his back.
+		const bool bClawContact = ToTarget.Size() <= Win.Radius + TargetRadius && Facing >= 0.f;
 		const bool bArcContact = FromBody.Size() <= ArcReach && Facing >= 0.35f;
 		if ((bClawContact || bArcContact) && Vertical < 200.f && HasLineOfSight(Char, Target))
 		{
