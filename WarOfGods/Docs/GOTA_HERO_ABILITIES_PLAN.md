@@ -310,7 +310,7 @@ Notes from getting there:
 | `r.ParallelBasePass=0` | 1 | 1 | Same crash, still a parallel draw context |
 | `r.RDG.ParallelExecute=0` | 3 | 1 | Same crash. Renderer settings only move the race |
 | **Enemy bodies off** (`gota.Enemies.Bodies=0`) | 6 | **0** | Points at our enemy bodies |
-| **Fix: champion dressed once** (bodies on) | 6 | **0** (4/4 at the time of writing; final count below) | |
+| **Fix: champion dressed once** (bodies on) | 6 | **0** | Drakon x2, Nyx, Varoth, Kairos, Orion; champion body applied once each |
 
 **Root cause:**
 - The Fight AI champion (`BP_Enemy_Melee`) was dressed **twice in the same frame**.
