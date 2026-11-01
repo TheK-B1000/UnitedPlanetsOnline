@@ -251,3 +251,28 @@ Collision, capsules and damage are unchanged; this is purely visual.
 | Claw arc (`boss_claw_arc.txt`) | 53 hits, **0 on targets behind him**; misses from behind, the sides and out of reach |
 
 Test-harness note: script `wait`s advance by frame delta capped at 0.1 s, so slow frames stretch them (up to 6× in some runs). Long scripts that need precise timing start their actions immediately.
+
+### Ayla: MetaHuman route (started 2026-11-01)
+
+**Tool:** UE 5.8 ships MetaHuman Creator in the editor (plugin `MetaHumanCharacter`, Python-scriptable). It's enabled in `WarOfGods.uproject` for the **Editor target only**, so packaged builds are unaffected for now. `Tools/GOTA_BuildAylaMetaHuman.py` builds Ayla end to end and skips, with a logged reason, any step whose prerequisite is missing.
+
+| Step | State |
+|---|---|
+| Character asset `/Game/Heroes/Ayla/MetaHuman/MH_Ayla` | ✅ created |
+| Body (card: "powerful but athletic") | ✅ 176 cm, feminine 1.4, muscularity 1.3, fat −0.9, shoulders 37 cm, bicep 31 cm → chest 100 / waist 68 / hip 105 cm |
+| Auto-rig (needed before assembly) | ⛔ **blocked: no Epic account login** (`EOS_InvalidAuth`); it's an Epic cloud service |
+| Skin textures | ⛔ **blocked**: needs the login (source textures) and the optional content (texture synthesis) |
+| Silver-white hair | ⛔ **blocked: MetaHuman optional content isn't installed** (no hair grooms). The script picks a groom and sets Melanin and Redness to 0 once it's there |
+| Assembly into skeletal meshes | ⛔ blocked until rigged |
+| Cybernetic arms and machine components | ❌ **Not possible in MetaHuman.** Needs a separately modelled or kitbashed attachment on the arms |
+| Game integration | Pending. The MetaHuman body uses UE5 Mannequin bone names, so it fits the Echo/UE5 retarget chains plus hand IK |
+
+**What you need to do (one-time):**
+1. **Install the optional content:** in the Epic Games Launcher, open UE 5.8 → Options, enable the MetaHuman optional content (hair grooms, clothing, texture synthesis), and apply.
+2. **Log in:** open the editor and sign in to your Epic account, which MetaHuman Creator asks for on first use.
+
+Then rerun `Tools/GOTA_BuildAylaMetaHuman.py` from the logged-in editor (Tools → Execute Python Script).
+
+**Repository policy:** the generated MetaHuman content is git-ignored (`WarOfGods/Content/Heroes/Ayla/MetaHuman/`) and excluded from cooking until it's integrated (`DirectoriesToNeverCook` in `DefaultGame.ini`). The script is the reproducible source.
+
+Ayla stays **Missing Asset / preview-only** until the body is built, the arms exist, and she's validated in play.
