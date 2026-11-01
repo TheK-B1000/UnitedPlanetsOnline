@@ -1,0 +1,8 @@
+# AI Zephyr (?Foe=Lysara): the AI fighter uses Gale Rush on its own.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 550
+wait 25
+gota.Ability.Dump
+gota.Duel.Dump
+quit

@@ -28,6 +28,9 @@ SA = S + "/Characters/Heroes/Sevarog/Animations/"
 KW = "/Game/ParagonKwang"
 KWA = KW + "/Characters/Heroes/Kwang/Animations/"
 KWFX = KW + "/FX/Particles/Abilities/"
+AU = "/Game/ParagonAurora"
+AUA = AU + "/Characters/Heroes/Aurora/Animations/"
+AUFX = AU + "/FX/Particles/Abilities/"
 
 K = unreal.GOTAAbilityKind
 ST = unreal.GOTAStatus
@@ -114,6 +117,15 @@ HEROES = {
              anim=KWA + "Ability_RMB", cast_fx=KWFX + "Ultimate/FX/P_KwangAfterImage",
              impact_fx=KWFX + "Primary/FX/P_Kwang_Primary_Impact", fx_scale=1.0, kick=1.2,
              ai=dict(priority=1.2, min=350, max=700)),
+    ]),
+    "Lysara": dict(health=1.0, gap=3.5, look=LOOK.VOID, abilities=[
+        dict(id="GravityWell", name="Gravity Well", short="Gravity Well", kind=K.PULL,
+             desc="Lysara bends gravity around a visible enemy and drags them to her, staggering them. Needs line "
+                  "of sight; breaking sight or leaving range during the cast makes it fizzle.",
+             damage=10, cooldown=12, cast=0.5, recovery=0.4, range=850, magnitude=1600,
+             anim=AUA + "Ability_R_InPlace", cast_fx=AUFX + "Ultimate/FX/P_Aurora_Ultimate_Warmup",
+             impact_fx=AUFX + "Freeze/FX/P_Aurora_Freeze_Whrilwind", fx_scale=1.0, kick=0.8,
+             ai=dict(priority=1.3, min=380, max=840)),
     ]),
 }
 

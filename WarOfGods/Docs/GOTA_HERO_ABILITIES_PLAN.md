@@ -145,3 +145,35 @@ Recommendation: realign names and descriptions to the cards when those sets are 
 - `GOTA_BuildHeroAbilities.py` now updates sets in place instead of deleting them. A set is referenced by its hero definition, so the delete would fail and the script stopped, the same failure the boss builder had.
 
 **Card note:** the card says "twin wind blades", while Kwang has a single sword.
+
+### Lysara: Gravity Well (implemented 2026-11-01, In Development)
+
+**Data:** `Tools/GOTA_BuildHeroAbilities.py` → `HEROES["Lysara"]`, slot 0. Build with `GOTA_HEROES=Lysara`.
+
+| Property | Value |
+|---|---|
+| Kind | `Pull`, needs line of sight |
+| Damage | 10, with a stagger ("disrupt") |
+| Cooldown | 12 s |
+| Cast / recovery | 0.5 s / 0.4 s |
+| Range | 850 cm |
+| Pull | up to 1600 |
+| Body animation | Aurora `Ability_R_InPlace` |
+| FX | Aurora ultimate warm-up (cast) and freeze whirlwind (impact) |
+| AI use | 3.8–8.4 m |
+
+**Results:**
+
+| Check | Result |
+|---|---|
+| Hit (target 6.5 m, `ability_gravitywell.txt`) | 10 damage; target pulled to about 3 m from Lysara |
+| Re-use during cooldown | Refused (`Cooldown`) |
+| Target at 11 m | Refused (`OutOfRange`) |
+| Target escapes during the cast (`gota.Ability.PlaceOnCast`) | **Fizzles** ("pull target lost") |
+| Control hit (next round) | Hit, pulled |
+| AI (`?Foe=Lysara`) | The AI Lysara chose Gravity Well at 6.5 m and 8.1 m and hit the player |
+| Listen server + client | The host's Gravity Well hit the client (100 → 90) and **pulled the remote player** from 6.5 m to 3 m. The client saw the Aurora body play `Ability_R_InPlace` |
+
+**Not covered by a dedicated test:** the line-of-sight refusal. It's the same validation Varoth's Grasp of the Void uses (verified in Pass 1).
+
+**Card note:** the card names "Celestial Twin Rings" as her weapon, while Aurora carries an ice blade.
