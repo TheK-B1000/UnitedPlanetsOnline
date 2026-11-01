@@ -1,0 +1,4 @@
+wait 15
+gota.Duel.Dump
+wait 5
+quit

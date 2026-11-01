@@ -43,75 +43,96 @@ LOOK = unreal.GOTAAbilityLook
 
 # id, name, short, kind, dict(values)
 HEROES = {
+    # Card-aligned sets (Docs/GOTA_HERO_ABILITIES_PLAN.md, "Card alignment"). Names and descriptions follow the hero
+    # cards (Tools/GOTA_HeroContent.py); mechanics map onto existing kinds. Unimplemented card effects are noted per entry.
     "Drakon": dict(health=1.15, gap=4.0, look=LOOK.TITAN, abilities=[
-        dict(id="TitansCleave", name="Titan's Cleave", short="Cleave", kind=K.MELEE_ARC,
-             desc="A heavy sweeping strike across a wide arc in front of Drakon.",
+        # Card: "Burst damage. Ignites enemies." (ignite / burning DoT not implemented yet)
+        dict(id="MoltenStrike", name="Molten Strike", short="Molten Strike", kind=K.MELEE_ARC,
+             desc="Burst damage. A heavy molten swing across a wide arc in front of Drakon.",
              damage=22, cooldown=6, cast=0.55, recovery=0.6, range=300, arc=150,
              anim=GA + "Ability_Q", cast_fx=None, impact_fx=GFX + "P_Greystone_ClearAPath_Impact", fx_scale=1.0,
              cast_sfx="/Game/ParagonGreystone/Audio/Cues/Greystone_Effort_Ability_Q", kick=1.3,
              ai=dict(priority=1.0, min=0, max=320)),
-        dict(id="Warbringer", name="Warbringer", short="Warbringer", kind=K.CHARGE,
-             desc="Charge forward; the first enemy struck is knocked back.",
-             damage=14, cooldown=10, cast=0.3, recovery=0.5, range=750, interval=0.45, magnitude=900,
+        # Card: "High movement. Breaks guard." Signature ability. Unblockable (breaks guard).
+        dict(id="TitanCharge", name="Titan Charge", short="Titan Charge", kind=K.CHARGE,
+             desc="High movement. Drakon charges forward and breaks guard: the first enemy struck cannot block it "
+                  "and is knocked back. Sidestep the line to avoid it.",
+             damage=14, cooldown=10, cast=0.3, recovery=0.5, range=750, interval=0.45, magnitude=900, blockable=False,
              anim=GA + "Attack_RMB", cast_fx=GFX + "P_Greystone_Trail_OnlyWind", impact_fx=GFX + "P_Greystone_Primary_Impact", fx_scale=1.2,
              cast_sfx="/Game/ParagonGreystone/Audio/Cues/Greystone_Effort_Ability_RMB", kick=1.5,
              ai=dict(priority=1.2, min=380, max=760)),
-        dict(id="Unbreakable", name="Unbreakable", short="Unbreakable", kind=K.SELF_GUARD,
-             desc="For 4 seconds Drakon cannot be staggered and shrugs off half of all damage.",
-             cooldown=16, cast=0.2, recovery=0.2, status=ST.UNBREAKABLE, status_duration=4.0, magnitude=0.5, interruptible=False,
-             anim=GA + "Deflect_InPlace", cast_fx=GFX + "P_Greystone_Deflect_Looping", fx_scale=1.0, fx_life=4.0,
-             cast_sfx="/Game/ParagonGreystone/Audio/Cues/Greystone_Effort_Block", kick=0.4,
-             ai=dict(priority=1.4, min=0, max=500, max_hp=0.75)),
-        dict(id="DivineReckoning", name="Divine Reckoning", short="Reckoning", kind=K.AREA_BURST, ult=True,
-             desc="Ultimate. After a long, visible wind-up Drakon slams the ground: a shockwave hits and throws back everything nearby. Leave the radius or dodge through it.",
+        # Card: "Area control. Knock back enemies." (replaces the non-card Unbreakable guard)
+        dict(id="DragonRoar", name="Dragon Roar", short="Dragon Roar", kind=K.AREA_BURST,
+             desc="Area control. Drakon roars: enemies within 4 m are knocked back.",
+             damage=6, cooldown=12, cast=0.4, recovery=0.5, radius=400, magnitude=850,
+             anim=GA + "Ability_E", cast_fx=GFX + "P_Greystone_Deflect_Looping", impact_fx=GFX + "P_Greystone_LeapAOE_GroundSmash", fx_scale=0.9,
+             cast_sfx="/Game/ParagonGreystone/Audio/Cues/Greystone_Effort_Block", kick=1.2,
+             ai=dict(priority=1.1, min=0, max=380)),
+        # Card: "Ultimate. Massive area damage."
+        dict(id="UnchainedFury", name="Unchained Fury", short="Unchained Fury", kind=K.AREA_BURST, ult=True,
+             desc="Ultimate. Massive area damage: after a long, visible wind-up Drakon slams the ground and throws back "
+                  "everything nearby. Leave the radius or dodge through it.",
              damage=45, cooldown=40, momentum=100, cast=1.0, recovery=1.0, radius=450, magnitude=700, blockable=False, interruptible=False,
              anim=GA + "Ability_Ultimate", cast_fx=GFX + "P_Greystone_Ultimate_Glow_Activate", impact_fx=GFX + "P_Greystone_LeapAOE_GroundSmash", fx_scale=1.3, fx_life=2.0,
              cast_sfx="/Game/ParagonGreystone/Audio/Cues/Greystone_Effort_Ability_Ultimate_Rebirth", kick=2.4,
              ai=dict(priority=2.0, min=0, max=380)),
     ]),
     "Nyx": dict(health=0.85, gap=3.0, look=LOOK.SHADOW, abilities=[
-        dict(id="Shadowstep", name="Shadowstep", short="Shadowstep", kind=K.TELEPORT,
-             desc="Blink behind the enemy (or forward). The destination is checked for navmesh, sight and collision.",
+        # Card: "Short-range teleportation." Signature ability.
+        dict(id="ShadowStep", name="Shadow Step", short="Shadow Step", kind=K.TELEPORT,
+             desc="Short-range teleportation: Nyx blinks behind the enemy (or forward). The destination is checked "
+                  "for navmesh, sight and collision.",
              cooldown=7, cast=0.15, recovery=0.25, range=650, interruptible=False,
              anim=CA + "Ability_RMB", rate=1.2, cast_fx=C + "/FX/Particles/Abilities/Blink/FX/P_Countess_TeleportBegin", impact_fx=C + "/FX/Particles/Abilities/Blink/FX/P_Countess_TeleportArrive", fx_scale=1.0, kick=0.0,
              ai=dict(priority=1.0, min=300, max=650)),
-        dict(id="Nightfall", name="Nightfall", short="Nightfall", kind=K.MULTI_HIT,
-             desc="Three rapid shadow slashes that track the target.",
+        # Card: "Stuns and disrupts." (a true stun status is not implemented yet: the strikes stagger)
+        dict(id="MindSpike", name="Mind Spike", short="Mind Spike", kind=K.MULTI_HIT,
+             desc="Disrupts: three rapid psychic strikes that stagger the target in front of Nyx.",
              damage=9, hits=3, interval=0.22, cooldown=7, cast=0.25, recovery=0.45, range=260, arc=110,
              anim=CA + "Ability_Q", rate=1.15, impact_fx=C + "/FX/Particles/Abilities/BlinkStrike/FX/P_Countess_BlinkStrike_HitFX", fx_scale=0.8, kick=0.5,
              ai=dict(priority=1.3, min=0, max=280)),
-        dict(id="VeilOfNight", name="Veil of Night", short="Veil", kind=K.SELF_GUARD,
-             desc="Nyx dissolves into shadow for 1.3 s: untargetable and immune to hits.",
+        # Card: "Absorbs damage and negates control."
+        dict(id="VoidShield", name="Void Shield", short="Void Shield", kind=K.SELF_GUARD,
+             desc="Absorbs damage and negates control: for 1.3 s Nyx is wrapped in void, untargetable and immune to hits.",
              cooldown=14, cast=0.05, recovery=0.0, status=ST.VEILED, status_duration=1.3, interruptible=False,
              anim=CA + "Ability_E", rate=1.3, cast_fx=C + "/FX/Particles/Abilities/ShadowClone/FX/p_Countess_ShadowCloneBurst", fx_scale=1.0, kick=0.0,
              ai=dict(priority=1.5, min=0, max=400, max_hp=0.7)),
-        dict(id="Eclipse", name="Eclipse", short="Eclipse", kind=K.MULTI_HIT, ult=True,
-             desc="Ultimate. Five shadow strikes in quick succession. Each strike only lands if the target is still in front of Nyx: dash away or dodge to escape.",
-             damage=10, hits=5, interval=0.25, cooldown=40, momentum=100, cast=0.6, recovery=0.8, range=320, arc=140, blockable=False, interruptible=False,
+        # Card: "Steals energy and weakens." Ultimate here. (energy steal not implemented yet: drains health + weakens)
+        dict(id="SoulDrain", name="Soul Drain", short="Soul Drain", kind=K.AURA, ult=True,
+             desc="Ultimate. Nyx drains the souls around her: enemies within 4.5 m take damage and are weakened "
+                  "(Dread: slower, softer divine abilities) for 4 s.",
+             damage=18, cooldown=40, momentum=100, cast=0.6, recovery=0.6, radius=450, status=ST.DREAD, status_duration=4.0, magnitude=0.35,
+             blockable=False, interruptible=False,
              anim=CA + "Ability_Ultimate", cast_fx=C + "/FX/Particles/Abilities/Ultimate/FX/p_CountessUlt_CastFX", impact_fx=C + "/FX/Particles/Abilities/Ultimate/FX/p_CountessUlt_SlashFX", fx_scale=0.9, kick=0.9,
-             ai=dict(priority=2.0, min=0, max=300)),
+             ai=dict(priority=2.0, min=0, max=430)),
     ]),
     "Varoth": dict(health=1.05, gap=4.0, look=LOOK.VOID, abilities=[
-        dict(id="SoulReaver", name="Soul Reaver", short="Soul Reaver", kind=K.MELEE_ARC,
-             desc="A slow, very wide reaping swing.",
-             damage=24, cooldown=7, cast=0.7, recovery=0.7, range=340, arc=200,
-             anim=SA + "Swing3_Slow", cast_fx=None, impact_fx=S + "/FX/Particles/Abilities/Primary/FX/P_Sevarog_Melee_SucessfulImpact", fx_scale=1.0, kick=1.3,
-             ai=dict(priority=1.0, min=0, max=360)),
-        dict(id="GraspOfTheVoid", name="Grasp of the Void", short="Grasp", kind=K.PULL,
-             desc="A void hand drags a visible target in range toward Varoth. Needs line of sight; breaking sight or leaving range during the cast makes it fizzle.",
-             damage=8, cooldown=12, cast=0.45, recovery=0.4, range=900, magnitude=1800,
-             anim=SA + "Soul_Siphon", cast_fx=S + "/FX/Particles/Abilities/SoulSiphon/FX/P_SiphonCasting", impact_fx=S + "/FX/Particles/Abilities/SoulSiphon/FX/P_SiphonImpact", fx_scale=1.0, kick=0.8,
-             ai=dict(priority=1.3, min=420, max=880)),
-        dict(id="DreadAura", name="Dread Aura", short="Dread", kind=K.AURA,
-             desc="Enemies within 5 m are gripped by dread for 4 s: 35% slower and their divine abilities hit softer.",
+        # Card: "Area damage. Launch enemies." Signature ability.
+        dict(id="InfernoSlam", name="Inferno Slam", short="Inferno Slam", kind=K.AREA_BURST,
+             desc="Area damage. Varoth slams the ground: enemies within 3.5 m are hit and launched away.",
+             damage=22, cooldown=8, cast=0.6, recovery=0.6, radius=350, magnitude=650,
+             anim=SA + "Swing3_Slow", cast_fx=None, impact_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_Sevarog_Subjugate_Blast", fx_scale=0.9, kick=1.6,
+             ai=dict(priority=1.0, min=0, max=330)),
+        # Card: "High-impact rush attack." (replaces the non-card Grasp of the Void pull)
+        dict(id="AshenCharge", name="Ashen Charge", short="Ashen Charge", kind=K.CHARGE,
+             desc="High-impact rush: Varoth bursts forward; the first enemy struck is knocked back. Sidestep the line.",
+             damage=16, cooldown=11, cast=0.3, recovery=0.5, range=700, interval=0.4, magnitude=950,
+             anim=SA + "Speedburst", cast_fx=S + "/FX/Particles/Abilities/SoulSiphon/FX/P_SiphonCasting", impact_fx=S + "/FX/Particles/Abilities/Primary/FX/P_Sevarog_Melee_SucessfulImpact", fx_scale=1.0, kick=1.5,
+             ai=dict(priority=1.2, min=400, max=700)),
+        # Card: "Burning area. Damage over time." (DoT not implemented yet: one burn tick + Dread)
+        dict(id="WorldBurn", name="World Burn", short="World Burn", kind=K.AURA,
+             desc="Burning area: enemies within 5 m are scorched and gripped by dread for 4 s - 35% slower and "
+                  "their divine abilities hit softer.",
              damage=5, cooldown=16, cast=0.5, recovery=0.4, radius=500, status=ST.DREAD, status_duration=4.0, magnitude=0.35,
              anim=SA + "Cast", cast_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_SubjugateSwirls", impact_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_Sub_Cast", fx_scale=1.2, kick=0.6,
              ai=dict(priority=1.1, min=0, max=480)),
-        dict(id="Oblivion", name="Oblivion", short="Oblivion", kind=K.AREA_BURST, ult=True,
-             desc="Ultimate. Varoth channels for 1.4 s, then the ground erupts around him. Clearly telegraphed: get out of the radius.",
-             damage=50, cooldown=40, momentum=100, cast=1.4, recovery=1.0, radius=520, magnitude=500, blockable=False, interruptible=False,
-             anim=SA + "Ultimate_Swing_120fps", cast_fx=S + "/FX/Particles/Abilities/Ultimate/FX/P_UltActivate", impact_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_Sevarog_Subjugate_Blast", fx_scale=1.4, fx_life=2.0, kick=2.4,
-             ai=dict(priority=2.0, min=0, max=420)),
+        # Card: "Increased power, defense, and area damage." (defense part: Unbreakable; power/area bonus not implemented yet)
+        dict(id="ColossusForm", name="Colossus Form", short="Colossus Form", kind=K.SELF_GUARD, ult=True,
+             desc="Ultimate. Varoth becomes the colossus for 6 s: half of all damage is shrugged off and he cannot "
+                  "be staggered.",
+             cooldown=40, momentum=100, cast=0.4, recovery=0.3, status=ST.UNBREAKABLE, status_duration=6.0, magnitude=0.5, interruptible=False,
+             anim=SA + "Subjugation", cast_fx=S + "/FX/Particles/Abilities/Ultimate/FX/P_UltActivate", fx_scale=1.4, fx_life=6.0, kick=1.0,
+             ai=dict(priority=2.0, min=0, max=500, max_hp=0.8)),
     ]),
     # Signature-ability milestone (Docs/GOTA_HERO_ABILITIES_PLAN.md): one card ability per new god, slot 0.
     "Zephyr": dict(health=0.95, gap=3.5, look=LOOK.SHADOW, abilities=[
@@ -270,7 +291,9 @@ def build_set(hero, cfg):
     da.set_editor_property("abilities", defs)
     da.set_editor_property("max_health_scale", float(cfg["health"]))
     da.set_editor_property("ai_global_gap", float(cfg["gap"]))
-    EAL.save_asset(path, only_if_is_dirty=False)
+    # A running game/editor holding the package makes the save fail silently: report it.
+    if not EAL.save_asset(path, only_if_is_dirty=False):
+        raise RuntimeError("could not save %s (is a game or editor holding it open?)" % path)
     hero_def = EAL.load_asset("/Game/Heroes/Data/DA_Hero_" + hero)
     hero_def.set_editor_property("ability_set", da)
     EAL.save_asset("/Game/Heroes/Data/DA_Hero_" + hero, only_if_is_dirty=False)

@@ -1,4 +1,5 @@
-"""Regression suite for the signature abilities (Gale Rush, Gravity Well, Time Lash, Gravity Slam).
+"""Regression suite for the signature abilities: Gale Rush (Zephyr), Gravity Well (Lysara), Time Lash (Kairos),
+Gravity Slam (Orion), Titan Charge (Drakon), Shadow Step (Nyx), Inferno Slam (Varoth).
 
 For every ability it checks, from the game logs: successful activation, cooldown refusal, an invalid target
 (out of range / out of radius / no line of sight), death during the cast, and multiplayer (listen server + client).
@@ -63,13 +64,39 @@ CASES = {
         ("death during cast", "?Opponent=AI?Hero=Orion?DevHeroes=1", "ability_death_cast.txt",
          [(r"GravitySlam cancelled", True), (r"GravitySlam hit", False)]),
     ],
+    # Card-aligned signatures of the Pass 1 gods.
+    "TitanCharge": [
+        ("hit+cooldown+sidestep", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "ability_titancharge.txt",
+         [(r"TitanCharge \(Charge\) cast", 3), (r"TitanCharge hit BP_Enemy\S+ for 14\.0 \(landed=1\)", 2),
+          (r"TitanCharge denied \(Cooldown\)", True)]),
+        ("breaks guard (AI vs blocking player)", "?Opponent=AI?Hero=UPAWarden?Foe=Drakon?DevHeroes=1", "ability_titancharge_block.txt",
+         [(r"TitanCharge hit BP_Player\S+ for 14\.0 \(landed=1\)", True)]),
+        ("death during cast", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "ability_death_cast_s1.txt",
+         [(r"TitanCharge cancelled", True), (r"TitanCharge hit", False)]),
+    ],
+    "ShadowStep": [
+        ("blink behind + cooldown + forward blink", "?Opponent=AI?Hero=Nyx?DevHeroes=1", "ability_shadowstep.txt",
+         [(r"ShadowStep \(Teleport\) cast", 2), (r": teleport V\(", 2), (r"ShadowStep denied \(Cooldown\)", True)]),
+        ("death during cast", "?Opponent=AI?Hero=Nyx?DevHeroes=1", "ability_death_cast.txt",
+         [(r"ShadowStep cancelled", True), (r": teleport V\(", False)]),
+    ],
+    "InfernoSlam": [
+        ("hit+cooldown+radius", "?Opponent=AI?Hero=Varoth?DevHeroes=1", "ability_infernoslam.txt",
+         [(r"InfernoSlam hit BP_Enemy\S+ for 22\.0 \(landed=1\)", 1), (r"InfernoSlam denied \(Cooldown\)", True),
+          (r"InfernoSlam \(AreaBurst\) cast", 2)]),
+        ("death during cast", "?Opponent=AI?Hero=Varoth?DevHeroes=1", "ability_death_cast.txt",
+         [(r"InfernoSlam cancelled", True), (r"InfernoSlam hit", False)]),
+    ],
 }
-# Multiplayer: host hero, host script, ability id, expected client-side animation.
+# Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.
 MP = {
-    "GaleRush": ("Zephyr", "gale_mp_host.txt", "GaleRush", "Ability_RMB"),
-    "GravityWell": ("Lysara", "grav_mp_host.txt", "GravityWell", "Ability_R_InPlace"),
-    "TimeLash": ("Kairos", "timelash_mp_host.txt", "TimeLash", "Burden"),
-    "GravitySlam": ("Orion", "slam_mp_host.txt", "GravitySlam", "Steel_Ability_GroundSmash_End"),
+    "GaleRush": ("Zephyr", "gale_mp_host.txt", r"GaleRush hit BP_Player\S+ for [0-9.]+ \(landed=1\)", "Ability_RMB"),
+    "GravityWell": ("Lysara", "grav_mp_host.txt", r"GravityWell hit BP_Player\S+ for [0-9.]+ \(landed=1\)", "Ability_R_InPlace"),
+    "TimeLash": ("Kairos", "timelash_mp_host.txt", r"TimeLash hit BP_Player\S+ for [0-9.]+ \(landed=1\)", "Burden"),
+    "GravitySlam": ("Orion", "slam_mp_host.txt", r"GravitySlam hit BP_Player\S+ for [0-9.]+ \(landed=1\)", "Steel_Ability_GroundSmash_End"),
+    "TitanCharge": ("Drakon", "titancharge_mp_host.txt", r"TitanCharge hit BP_Player\S+ for [0-9.]+ \(landed=1\)", "Attack_RMB"),
+    "ShadowStep": ("Nyx", "shadowstep_mp_host.txt", r": teleport V\(", "Ability_RMB"),
+    "InfernoSlam": ("Varoth", "infernoslam_mp_host.txt", r"InfernoSlam hit BP_Player\S+ for [0-9.]+ \(landed=1\)", "Swing3_Slow"),
 }
 
 
@@ -138,7 +165,7 @@ def main():
             print("%-5s %-12s %-42s %s" % ("PASS" if ok else "FAIL", ability, name, "" if ok else
                   "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
             sys.stdout.flush()
-        hero, host_script, ability_id, anim = MP[ability]
+        hero, host_script, host_rx, anim = MP[ability]
         host_log = os.path.join(LOGS, "%s_%s_mp_host.log" % (mode, ability))
         client_log = os.path.join(LOGS, "%s_%s_mp_client.log" % (mode, ability))
         if not a.check_only:
@@ -150,7 +177,7 @@ def main():
             except subprocess.TimeoutExpired:
                 host.kill()
         h, c = read(host_log), read(client_log)
-        results = check(h, [(ability_id + r" hit BP_Player\S+ for [0-9.]+ \(landed=1\)", True)]) + \
+        results = check(h, [(host_rx, True)]) + \
             check(c, [(r"body plays " + anim + r" \(ok", True), (r"BODY \[client\].*hero=" + hero, True)]) + \
             [("no crash", True, "Fatal error" not in h + c)]
         ok = all(r[2] for r in results)

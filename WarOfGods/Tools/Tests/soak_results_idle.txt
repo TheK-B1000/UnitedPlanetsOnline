@@ -1,0 +1,273 @@
+# Prototype god body check (Quarry, Fight AI). Close-ups, live combat, then the full match.
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 6
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Cam -620 0 175 -6 180 55 1
+wait 1.5
+gota.Test.Shot 90_god_front
+wait 0.5
+gota.Test.Cam -950 340 165 -4 -90 55 1
+wait 1.5
+gota.Test.Shot 91_god_side
+wait 0.5
+gota.Test.Cam off
+wait 0.5
+gota.Test.Shot 92_god_gameplay
+wait 0.5
+gota.Duel.Bot fight
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Shot 93_god_combat
+wait 0.3
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Shot 94_god_combat
+wait 0.3
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Shot 95_god_combat
+wait 0.3
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Shot 96_god_combat
+wait 0.3
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Shot 97_god_combat
+wait 0.3
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+gota.Test.Shot 98_god_combat
+wait 0.3
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+wait 3
+gota.Duel.Dump
+gota.Test.Body
+gota.Duel.Bot off
+wait 240
+quit

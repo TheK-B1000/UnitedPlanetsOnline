@@ -1,0 +1,27 @@
+# Drakon - Titan Charge (slot 1, Charge, unblockable): hit + cooldown, sidestep miss + control hit.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 500 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 1
+wait 0.45
+gota.Ability.Use 0 1
+wait 1.0
+gota.Duel.Dump
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 600 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.PlaceOnCast 0.35 520 420
+gota.Ability.Use 0 1
+wait 1.2
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 600 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 1
+wait 1.2
+gota.Duel.Dump
+quit

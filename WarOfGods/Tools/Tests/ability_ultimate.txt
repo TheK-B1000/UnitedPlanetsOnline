@@ -1,0 +1,11 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Duel.Momentum 0 100
+gota.Ability.Use 0 3
+wait 2.5
+gota.Ability.Dump
+quit

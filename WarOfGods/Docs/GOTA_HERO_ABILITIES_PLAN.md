@@ -308,3 +308,40 @@ FD3D12ContextCommon::BindDiagnosticBuffer <- FD3D12DescriptorCache::SetSamplerTa
 - This is engine-side; no game code is on the stack. The results widget is a plain image plus text.
 - **Candidate mitigation (not applied):** `r.RHICmd.ParallelTranslate.Enable=0`. It costs some rendering throughput, and at this repro rate it needs a long A/B soak before it can be called a fix.
 - Next steps: install editor debug symbols, run a long idle-results soak with and without the cvar, and if it reproduces, report it upstream (UE 5.8, D3D12, RTX 5070 / driver 610.88).
+
+## Card alignment: Drakon, Nyx, Varoth (2026-11-01)
+
+The Pass 1 sets now carry their **hero-card names and descriptions** (`Tools/GOTA_HeroContent.py`). Where an existing mechanic already fit a card ability it was kept and renamed. Where a Pass 1 ability had no card equivalent, it was replaced by a card ability that an existing kind can express. Card effects the framework can't do yet are listed in the last column.
+
+| God | Slot | Now (card) | Was | Kind | Not implemented yet |
+|---|---|---|---|---|---|
+| Drakon | 0 | Molten Strike | Titan's Cleave | MeleeArc (same values) | "ignites" (burning DoT) |
+| Drakon | 1 | **Titan Charge** ★ | Warbringer | Charge, now **unblockable** ("breaks guard") | — |
+| Drakon | 2 | Dragon Roar | Unbreakable (not on card) | AreaBurst r400, knockback 850 | — |
+| Drakon | 3 | Unchained Fury (ult) | Divine Reckoning | AreaBurst (same values) | — |
+| Nyx | 0 | **Shadow Step** ★ | Shadowstep | Teleport (same) | — |
+| Nyx | 1 | Mind Spike | Nightfall | MultiHit 3× (same), staggers | a true stun |
+| Nyx | 2 | Void Shield | Veil of Night | SelfGuard Veiled (same) | — |
+| Nyx | 3 | Soul Drain (ult) | Eclipse (5 slashes) | **Aura r450: 18 damage + Dread** ("weakens") | "steals energy" |
+| Varoth | 0 | **Inferno Slam** ★ | Soul Reaver (arc swing) | **AreaBurst r350, 22 damage, launch 650** | — |
+| Varoth | 1 | Ashen Charge | Grasp of the Void (not on card) | Charge (Sevarog `Speedburst`) | — |
+| Varoth | 2 | World Burn | Dread Aura | Aura + Dread (same) | burning DoT |
+| Varoth | 3 | Colossus Form (ult) | Oblivion | SelfGuard Unbreakable 6 s (½ damage, no stagger) | power / area-damage bonus |
+
+★ = the god's signature ability for the "one signature per god" milestone.
+
+**Cards left without a slot:** Nyx's *Illusion* (decoys, no mechanic yet), Varoth's *Molten Spikes* (5th card ability), and Lysara, Kairos, Zephyr and Orion's other card abilities (one signature each so far).
+
+**Balance note:**
+- Changed values: Titan Charge is now unblockable; Dragon Roar, Inferno Slam, Ashen Charge, Soul Drain and Colossus Form are new mechanics for their slots.
+- Unchanged values: Molten Strike, Unchained Fury, Shadow Step, Mind Spike, Void Shield and World Burn.
+
+**Verified (editor):**
+- **Every slot** (`ability_slots_<Hero>.txt`) casts and lands under its new name: Molten Strike 22, Titan Charge 14, Dragon Roar 6, Mind Spike 3×9, Void Shield → Veiled 1.3 s, Shadow Step teleports, World Burn 5 + Dread, Ashen Charge 16, Inferno Slam cast.
+- **Ultimates** (`ability_ultimate.txt`, with momentum granted):
+  - Unchained Fury hits.
+  - Soul Drain hits and applies Dread 4 s ×0.35.
+  - Colossus Form gives Unbreakable 6 s ×0.5.
+- **Signatures in the regression suite**, each with activation, cooldown, an invalid target or sidestep, death during cast, and multiplayer: **Titan Charge 4/4** (including landing on a **blocking** player: "breaks guard"), **Shadow Step 3/3** (blink behind, forward blink with nobody in range), **Inferno Slam 3/3**. Every god now has a signature ability in the suite: **26 of 26 checks pass** in the editor.
+
+**Builder fix:** `GOTA_BuildHeroAbilities.py` now raises an error when a set fails to save. Drakon's first rebuild silently didn't save because a running test game held the package open.

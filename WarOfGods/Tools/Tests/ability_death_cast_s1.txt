@@ -1,0 +1,13 @@
+# Death during casting: the caster dies inside the cast window -> no effect, no stuck state.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 300 1
+wait 0.5
+gota.Duel.Face 0
+gota.Ability.Use 0 1
+gota.Duel.Hurt 0 5000
+wait 1.5
+gota.Ability.Dump
+wait 8
+gota.Ability.Dump
+quit
