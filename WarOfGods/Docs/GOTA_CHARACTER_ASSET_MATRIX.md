@@ -185,3 +185,23 @@ Enemies keep their combat pawns (AI, attacks, montages and hit windows on the hi
 - **Lane minions:** hand-pose offsets (35–50 cm). These are cosmetic; their own weapons are shown.
 - **Minions:** no Anim Blueprints or montages ship with them. If enemies ever move off the shared combat frame, those must be built.
 - **Training dummy:** no dedicated actor exists. Add one only if a mode needs it; it's the one place the mannequin may appear.
+
+### Polish pass, Priority 1: hand IK (2026-10-31)
+
+**Tool:** `Tools/GOTA_AddHandIK.py` patches a body's IK rig and retargeter in place. Rerun it after `GOTA_BuildParagonRigs.py`, which rebuilds rigs from scratch.
+
+**What it adds:**
+1. A two-bone limb solver per arm (upperarm → hand) with a hand goal on the arm chain.
+2. The retargeter's **Retarget IK Goals** op, placed before *Run IK Rig*, with arms at BlendToSource 1 (translation only). The goal sits on the gameplay hand; only the elbow bend adapts, so shoulders and silhouette are preserved.
+3. For scaled bodies, a **Scale Source** op (factor 1/BodyScale). The body is a child of the gameplay mesh scaled by BodyScale, so without it the goals land BodyScale short.
+
+| Body | Before | After (idle + combat samples) |
+|---|---|---|
+| Orion / Steel (0.75, `GOTA_BODY_SCALE=0.75`) | 21–40 cm | **0.0 cm** (9 samples) |
+| Lane Melee minion | 40–41 cm | **0.0 cm** |
+| Lane Ranged minion | 35–42 cm | **0.0 cm**; the gun is now shouldered |
+| Lane Super minion (heavy brute) | ~50 cm | **0.0 cm** |
+| Feng Mao (Fight AI champion) | 17–20 cm | **0–7 cm** |
+| Echo, the other gods | — | Not changed |
+
+Collision, capsules and damage are unchanged; this is purely visual.

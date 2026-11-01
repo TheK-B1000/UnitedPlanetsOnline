@@ -1,0 +1,28 @@
+r.MotionBlurQuality 0
+wait 5
+gota.Test.Body
+gota.Test.Portrait 0 35 260 35 45
+gota.Test.Shot 90_god_front
+gota.Test.Cam off
+gota.Duel.Bot fight
+wait 1
+gota.Test.Body
+wait 0.4
+gota.Test.Body
+wait 0.4
+gota.Test.Body
+gota.Test.Shot 91_god_combat
+wait 0.4
+gota.Test.Body
+wait 0.4
+gota.Test.Body
+wait 0.4
+gota.Test.Body
+gota.Test.Shot 92_god_combat
+wait 0.4
+gota.Test.Body
+wait 0.4
+gota.Test.Body
+gota.Test.Shot 93_god_combat
+gota.Duel.Bot off
+quit
