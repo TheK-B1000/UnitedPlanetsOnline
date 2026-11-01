@@ -1,6 +1,7 @@
 // White Tiger Studios 2024
 
 #include "Story/GOTAStoryGameMode.h"
+#include "Characters/GOTAHeroBodyComponent.h"
 
 #include "Arenas/ArenaGrayboxBuilder.h"
 #include "Arenas/ArenaPlayerStart.h"
@@ -697,4 +698,10 @@ void AGOTAStoryGameMode::RequestRestartMission()
 AGOTAStoryGameState* AGOTAStoryGameMode::GetStoryGS() const
 {
 	return GetGameState<AGOTAStoryGameState>();
+}
+
+void AGOTAStoryGameMode::SetPlayerDefaults(APawn* PlayerPawn)
+{
+	Super::SetPlayerDefaults(PlayerPawn);
+	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, NAME_None);
 }

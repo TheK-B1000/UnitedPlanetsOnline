@@ -1,0 +1,20 @@
+# Nyx - Shadow Step (slot 0, Teleport): blink behind the target, cooldown, forward blink with no target in range.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 400 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 0.6
+gota.Ability.Use 0 0
+gota.Ability.Dump
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 1300 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 0.8
+gota.Ability.Dump
+quit

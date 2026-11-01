@@ -42,7 +42,9 @@ enum class EGOTAStatus : uint8
 	/** Untargetable by abilities and immune to Blueprint hits (the damage system's IsInvincible). */
 	Veiled,
 	/** Movement speed scaled by (1 - Magnitude) and outgoing ability damage scaled by (1 - Magnitude * 0.5). */
-	Dread
+	Dread,
+	/** Movement speed only, scaled by (1 - Magnitude). No effect on attacks, cooldowns or abilities. */
+	Slowed
 };
 
 /** Cosmetic family used to pick placeholder VFX/SFX until hero-specific effects exist. */
@@ -51,7 +53,7 @@ enum class EGOTAAbilityLook : uint8
 {
 	Titan,   // Drakon: heavy sparks, deep impact
 	Shadow,  // Nyx: quick dark bursts
-	Void     // Varoth: dark energy
+	Void     // Varoth: dark energy (Kairos/Lysara reuse it until their own looks exist)
 };
 
 /** One divine ability: every balancing value lives here (authored by Tools/GOTA_BuildHeroAbilities.py). */

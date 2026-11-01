@@ -1,0 +1,144 @@
+r.MotionBlurQuality 0
+wait 6
+gota.Duel.Bot dodge
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+quit

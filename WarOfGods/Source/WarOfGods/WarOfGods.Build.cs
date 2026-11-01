@@ -42,7 +42,8 @@ public class WarOfGods : ModuleRules
 			{
 				"UnrealEd",
 				"UMGEditor",
-				"Kismet"
+				"Kismet",
+				"BlueprintGraph"
 			});
 		}
 	}

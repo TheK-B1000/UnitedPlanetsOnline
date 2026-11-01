@@ -1,0 +1,14 @@
+r.MotionBlurQuality 0
+wait 12
+gota.Test.WatchSpawns
+gota.Test.Body
+wait 6
+gota.Test.Body
+wait 5
+gota.Test.Body
+wait 12
+gota.Test.Body
+gota.Test.Shot 87_mp_client_view
+wait 10
+gota.Test.Body
+quit

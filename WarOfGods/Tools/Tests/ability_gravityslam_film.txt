@@ -1,0 +1,18 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 200 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 0 80 650 50 40
+gota.Ability.Slomo 0.2
+gota.Ability.Use 0 0
+wait 0.6
+gota.Test.Shot 86_slam_windup_a
+wait 1.2
+gota.Test.Shot 87_slam_windup_b
+wait 1.4
+gota.Test.Shot 88_slam_impact
+wait 1.0
+gota.Test.Shot 89_slam_after
+gota.Ability.Slomo 1
+quit

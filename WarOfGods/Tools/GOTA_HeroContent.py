@@ -115,10 +115,36 @@ BODIES = {
     "Nyx": dict(mesh="/Game/ParagonCountess/Characters/Heroes/Countess/Meshes/SM_Countess",
                 retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Countess", scale=1.0,
                 note="Paragon: Countess (prototype body)", status="IN_DEVELOPMENT"),
+    # Default prototype player: Windwalker Echo (Epic sample) over the same BP_Player frame. Keeps the
+    # gameplay sword + shield (hide_weapons=False) and hides Echo's own sword material slot.
+    "UPAWarden": dict(mesh="/Game/EchoContent/Characters/Echo/Meshes/Echo",
+                      retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Echo", scale=1.0,
+                      note="Windwalker Echo (Epic Games sample)", status="PLAYABLE", hide_weapons=False,
+                      extras=["/Game/EchoContent/Characters/Echo/Meshes/Echo_Hair"],
+                      hidden_slots=["M_echoSword"], hidden_material="/Game/EchoContent/Characters/Echo/Materials/M_hide"),
     "Varoth": dict(mesh="/Game/ParagonSevarog/Characters/Heroes/Sevarog/Meshes/Sevarog",
-                   retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Sevarog", scale=1.0,
+                   retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Sevarog", scale=0.68,  # hands meet the gameplay hands (6-9 cm; 50+ at 1.0)
                    note="Paragon: Sevarog (prototype body)", status="IN_DEVELOPMENT"),
 }
+# Roster pass: prototype bodies for the remaining gods (Docs/GOTA_CHARACTER_ASSET_MATRIX.md). Ayla has no
+# matching asset and stays preview-only until a dedicated model exists.
+BODIES.update({
+    "Zephyr": dict(mesh="/Game/ParagonKwang/Characters/Heroes/Kwang/Meshes/Kwang_GDC",
+                   retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Kwang", scale=1.0,
+                   note="Paragon: Kwang (prototype body)", status="IN_DEVELOPMENT"),
+    "Lysara": dict(mesh="/Game/ParagonAurora/Characters/Heroes/Aurora/Meshes/Aurora",
+                   retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Aurora", scale=1.0,
+                   note="Paragon: Aurora (prototype body)", status="IN_DEVELOPMENT"),
+    "Kairos": dict(mesh="/Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon",
+                   retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Gideon", scale=1.0,
+                   note="Paragon: Gideon (prototype body)", status="IN_DEVELOPMENT"),
+    "Orion": dict(mesh="/Game/ParagonSteel/Characters/Heroes/Steel/Meshes/Steel",
+                  retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Steel", scale=0.75,  # closest hands (~30 cm: wider shoulders, needs IK)
+                  note="Paragon: Steel (prototype body)", status="IN_DEVELOPMENT",
+                  # Steel's deployable shield is not in a retarget chain and would float in its reference
+                  # pose; Orion's card names a lance, not a shield.
+                  hidden_slots=["M08_Steel_Shield"], hidden_material="/Game/Heroes/Materials/M_GOTA_HiddenSlot"),
+})
 IN_DEVELOPMENT_REASON = ("In development: prototype body over the shared combat frame. Not yet verified "
                          "through a full match, so it cannot be selected.")
 

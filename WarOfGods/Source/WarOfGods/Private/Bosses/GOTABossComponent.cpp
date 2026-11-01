@@ -522,6 +522,19 @@ void UGOTABossComponent::TickAttack(APawn* Target, double Now)
 		{
 			ResolveWindow(A, Win, w, Target);
 		}
+		else if (Clock > Win.End + 0.05f && !ResolvedWindows.Contains(w))
+		{
+			// Window closed without contact: a clean miss (logged with the claw-to-target distance for tuning).
+			ResolvedWindows.Add(w);
+			if (Target && Char && A.Kind == EGOTABossAttackKind::Melee)
+			{
+				const FVector Claw = Char->GetMesh()->DoesSocketExist(Win.Bone) ? Char->GetMesh()->GetSocketLocation(Win.Bone) : Char->GetActorLocation();
+				const FVector Local = Char->GetActorTransform().InverseTransformPosition(Claw);
+				const FVector TargetLocal = Char->GetActorTransform().InverseTransformPosition(Target->GetActorLocation());
+				UE_LOG(LogGOTABoss, Log, TEXT("Boss %s window %d missed: %s %.0f from target (radius %.0f), body %.0f, target local fwd=%.0f right=%.0f, claw local fwd=%.0f right=%.0f up=%.0f"), *A.AttackId.ToString(), w, *Win.Bone.ToString(),
+					FVector::Dist2D(Claw, Target->GetActorLocation()), Win.Radius, FVector::Dist2D(Char->GetActorLocation(), Target->GetActorLocation()), TargetLocal.X, TargetLocal.Y, Local.X, Local.Y, Local.Z);
+			}
+		}
 	}
 
 	const bool bAnimsDone = SequenceCursor >= A.Animations.Num() && Now >= NextSequenceAt - 0.05;
@@ -566,8 +579,20 @@ void UGOTABossComponent::ResolveWindow(const FGOTABossAttack& A, const FGOTABoss
 		FVector ToTarget = Target->GetActorLocation() - Claw;
 		const float Vertical = FMath::Abs(ToTarget.Z);
 		ToTarget.Z = 0.f;
-		if (ToTarget.Size() <= Win.Radius + TargetRadius && Vertical < 200.f && HasLineOfSight(Char, Target))
+		// Swipe arc: Rampage's Paragon swipes are animated for point-blank range (the claws stay near his own body),
+		// so the window also strikes anything in front of him within capsule + claw reach - the same rule as Grab.
+		FVector FromBody = Target->GetActorLocation() - Char->GetActorLocation();
+		FromBody.Z = 0.f;
+		const float Facing = FVector::DotProduct(FromBody.GetSafeNormal(), Char->GetActorForwardVector());
+		const float ArcReach = Char->GetCapsuleComponent()->GetScaledCapsuleRadius() + Win.Radius + TargetRadius;
+		// The claw sphere only counts in his front half: on the backswing the hand passes behind him, and the
+		// visible strike never reaches a target at his back.
+		const bool bClawContact = ToTarget.Size() <= Win.Radius + TargetRadius && Facing >= 0.f;
+		const bool bArcContact = FromBody.Size() <= ArcReach && Facing >= 0.35f;
+		if ((bClawContact || bArcContact) && Vertical < 200.f && HasLineOfSight(Char, Target))
 		{
+			UE_LOG(LogGOTABoss, Log, TEXT("Boss %s window %d hit (%s): body %.0f, reach %.0f, facing %.2f"), *A.AttackId.ToString(), WindowIndex,
+				bClawContact ? TEXT("claw") : TEXT("swipe arc"), FromBody.Size(), ArcReach, Facing);
 			ResolvedWindows.Add(WindowIndex);
 			const bool bLanded = DamageTarget(Target, A, Win.Damage);
 			bAttackLanded |= bLanded;
@@ -900,7 +925,8 @@ void UGOTABossComponent::SetBrainMoving(APawn* Target, bool bMove)
 		{
 			LastMoveRequest = Now;
 			const UGOTABossDefinition* Def = Definition.Get();
-			AIC->MoveToActor(Target, Def ? Def->EngageDistance * 0.75f : 220.f, true, true, true);
+			// Centre-to-centre acceptance (bStopOnOverlap would add both capsule radii and park the boss out of claw reach).
+			AIC->MoveToActor(Target, Def ? Def->EngageDistance * 0.85f : 200.f, false, true, true);
 		}
 	}
 	else if (AIC->GetMoveStatus() != EPathFollowingStatus::Idle)
@@ -919,7 +945,9 @@ void UGOTABossComponent::PlayLocal(UAnimSequenceBase* Sequence, float PlayRate, 
 	{
 		return;
 	}
-	UAnimMontage* M = Anim->PlaySlotAnimationAsDynamicMontage(Sequence, GOTABoss::Slot, 0.12f, 0.2f, PlayRate, LoopCount);
+	const UGOTABossDefinition* Def = Definition.Get();
+	const FName SlotName = Def ? Def->MontageSlot : GOTABoss::Slot;
+	UAnimMontage* M = Anim->PlaySlotAnimationAsDynamicMontage(Sequence, SlotName, 0.12f, 0.2f, PlayRate, LoopCount);
 	if (M && bHoldLastFrame)
 	{
 		M->bEnableAutoBlendOut = false; // death: stay down
@@ -940,7 +968,8 @@ void UGOTABossComponent::Multicast_StopAnimation_Implementation(float BlendOut)
 	ACharacter* Char = Cast<ACharacter>(GetOwner());
 	if (UAnimInstance* Anim = Char && Char->GetMesh() ? Char->GetMesh()->GetAnimInstance() : nullptr)
 	{
-		Anim->StopSlotAnimation(BlendOut, GOTABoss::Slot);
+		const UGOTABossDefinition* Def = Definition.Get();
+		Anim->StopSlotAnimation(BlendOut, Def ? Def->MontageSlot : GOTABoss::Slot);
 	}
 }
 

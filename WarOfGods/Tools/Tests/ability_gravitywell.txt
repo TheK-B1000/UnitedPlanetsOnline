@@ -1,0 +1,40 @@
+# Lysara - Gravity Well (slot 0, Pull): hit + pull, cooldown, out of range, escape fizzle, control hit.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 650 1
+wait 0.5
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Test.Portrait 0 80 800 50 40
+gota.Ability.Use 0 0
+wait 0.35
+gota.Test.Shot 82_gravity_cast
+wait 0.35
+gota.Test.Shot 83_gravity_pull
+gota.Ability.Use 0 0
+wait 1.0
+gota.Duel.Dump
+gota.Test.Cam off
+wait 1.0
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 1100 1
+wait 0.5
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 0.5
+gota.Ability.Place 650 1
+wait 0.5
+gota.Duel.Face 0
+gota.Ability.PlaceOnCast 0.25 1300
+gota.Ability.Use 0 0
+wait 1.5
+gota.Duel.Dump
+wait 1.0
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 650 1
+wait 0.5
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 1.5
+gota.Duel.Dump
+quit

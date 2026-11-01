@@ -61,6 +61,8 @@ def tick(dt):
         P("PIE world:", world.get_name() if world else None, "is playing:", le.is_in_play_in_editor())
         if world:
             inspect(world)
+            # Hand gaps and kept weapons on the visible body (logged as LogGOTABodyTest lines).
+            unreal.SystemLibrary.execute_console_command(world, "gota.Test.Body")
         le.editor_request_end_play()
         state["phase"] = "quit"
         state["t0"] = now

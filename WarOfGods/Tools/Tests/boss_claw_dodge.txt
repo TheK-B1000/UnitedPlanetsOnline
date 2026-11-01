@@ -1,0 +1,17 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+wait 2
+gota.Boss.AI 0
+gota.Ability.Place 180
+wait 0.5
+gota.Boss.Attack ClawCombo
+wait 3.2
+gota.Ability.Place 180
+wait 0.5
+gota.Boss.Attack ClawCombo
+wait 0.15
+gota.Ability.Place 420
+wait 3.2
+gota.Boss.Dump
+quit

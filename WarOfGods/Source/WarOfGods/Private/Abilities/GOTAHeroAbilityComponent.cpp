@@ -46,6 +46,7 @@ namespace GOTAAbilityAssets
 	static const TCHAR* OverlayUnbreakable = TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Unbreakable.M_GOTA_Overlay_Unbreakable");
 	static const TCHAR* OverlayVeiled = TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Veiled.M_GOTA_Overlay_Veiled");
 	static const TCHAR* OverlayDread = TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Dread.M_GOTA_Overlay_Dread");
+	static const TCHAR* OverlaySlowed = TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Slowed.M_GOTA_Overlay_Slowed");
 	static const TCHAR* DeniedSound = TEXT("/Game/Audio/UI/S_GOTA_UI_Error.S_GOTA_UI_Error");
 	static const FName BodySlot(TEXT("DefaultSlot"));
 }
@@ -554,6 +555,11 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 		if (bCharging && Now >= CastResolveTime + Def->HitInterval)
 		{
 			bCharging = false; // ran out of charge (missed)
+			// Stop at the end of the dash ("up to Range"); otherwise the launch velocity slides the caster on.
+			if (ACharacter* Dasher = Cast<ACharacter>(Owner))
+			{
+				Dasher->GetCharacterMovement()->StopMovementImmediately();
+			}
 			Multicast_Impact(static_cast<uint8>(ActiveSlot), Owner->GetActorLocation(), nullptr, 0);
 		}
 		if (!bCharging && CastFinishTime < 0.0)
@@ -1031,6 +1037,7 @@ void UGOTAHeroAbilityComponent::OnRep_Status()
 	case EGOTAStatus::Unbreakable: Path = GOTAAbilityAssets::OverlayUnbreakable; break;
 	case EGOTAStatus::Veiled: Path = GOTAAbilityAssets::OverlayVeiled; break;
 	case EGOTAStatus::Dread: Path = GOTAAbilityAssets::OverlayDread; break;
+	case EGOTAStatus::Slowed: Path = GOTAAbilityAssets::OverlaySlowed; break;
 	default: break;
 	}
 	if (Mesh)
@@ -1041,26 +1048,34 @@ void UGOTAHeroAbilityComponent::OnRep_Status()
 
 void UGOTAHeroAbilityComponent::ApplyMovementStatusLocally()
 {
-	// Dread slows movement. Applied on every peer (server + owning client) so prediction agrees.
+	// Dread and Slowed scale movement speed. Applied on every peer (server + owning client) so prediction agrees.
 	ACharacter* Char = Cast<ACharacter>(GetOwner());
 	UCharacterMovementComponent* Move = Char ? Char->GetCharacterMovement() : nullptr;
 	if (!Move)
 	{
 		return;
 	}
-	const bool bDread = ActiveStatus == EGOTAStatus::Dread && GetStatusRemaining() > 0.f;
-	if (bDread)
+	const bool bSlowsMovement = (ActiveStatus == EGOTAStatus::Dread || ActiveStatus == EGOTAStatus::Slowed) && GetStatusRemaining() > 0.f;
+	if (bSlowsMovement)
 	{
-		if (BaseWalkSpeed < 0.f)
+		// Capture the base once; if something else (a Blueprint stance change...) wrote MaxWalkSpeed since our last
+		// write, that value is the new base. Only movement speed is touched.
+		if (BaseWalkSpeed < 0.f || !FMath::IsNearlyEqual(Move->MaxWalkSpeed, AppliedWalkSpeed, 0.5f))
 		{
 			BaseWalkSpeed = Move->MaxWalkSpeed;
 		}
-		Move->MaxWalkSpeed = BaseWalkSpeed * FMath::Clamp(1.f - StatusMagnitude, 0.2f, 1.f);
+		AppliedWalkSpeed = BaseWalkSpeed * FMath::Clamp(1.f - StatusMagnitude, 0.2f, 1.f);
+		Move->MaxWalkSpeed = AppliedWalkSpeed;
 	}
 	else if (BaseWalkSpeed >= 0.f)
 	{
-		Move->MaxWalkSpeed = BaseWalkSpeed;
+		// Restore the latest base, unless something else already set a new speed after our last write.
+		if (FMath::IsNearlyEqual(Move->MaxWalkSpeed, AppliedWalkSpeed, 0.5f))
+		{
+			Move->MaxWalkSpeed = BaseWalkSpeed;
+		}
 		BaseWalkSpeed = -1.f;
+		AppliedWalkSpeed = -1.f;
 	}
 	// Status ran out locally before the server's replication caught up: drop the overlay now.
 	if (ActiveStatus != EGOTAStatus::None && GetStatusRemaining() <= 0.f && !GetOwner()->HasAuthority() && !bStatusVisualExpired)

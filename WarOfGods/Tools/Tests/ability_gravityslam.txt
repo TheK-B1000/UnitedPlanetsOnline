@@ -1,0 +1,42 @@
+# Orion - Gravity Slam (slot 0, AreaBurst, unblockable, interruptible wind-up).
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 200 1
+wait 0.5
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Test.Portrait 0 80 650 50 40
+gota.Ability.Use 0 0
+wait 0.3
+gota.Test.Shot 86_slam_windup
+wait 0.45
+gota.Test.Shot 87_slam_impact
+gota.Ability.Use 0 0
+wait 0.8
+gota.Duel.Dump
+gota.Test.Cam off
+wait 1.0
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 450 1
+wait 0.5
+gota.Ability.Use 0 0
+wait 1.5
+gota.Duel.Dump
+wait 1.0
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 200 1
+wait 0.5
+gota.Ability.PlaceOnCast 0.35 600
+gota.Ability.Use 0 0
+wait 1.5
+gota.Duel.Dump
+wait 1.0
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 200 1
+wait 0.5
+gota.Ability.Use 0 0
+gota.Duel.Hurt 0 15
+wait 1.5
+gota.Duel.Dump
+gota.Ability.Dump
+quit

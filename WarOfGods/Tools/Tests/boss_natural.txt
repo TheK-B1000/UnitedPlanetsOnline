@@ -1,0 +1,92 @@
+r.MotionBlurQuality 0
+wait 3
+gota.Test.Shot 60_boss_intro
+wait 3
+gota.Duel.Bot fight
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+gota.Test.Shot 61_boss_fight
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+gota.Test.Shot 62_boss_fight
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+gota.Test.Shot 63_boss_fight
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+gota.Test.Shot 66_boss_end
+wait 6
+gota.Test.Shot 67_boss_results
+quit

@@ -19,7 +19,33 @@ BODIES = {
     "Greystone": "/Game/ParagonGreystone/Characters/Heroes/Greystone/Meshes/Greystone",
     "Countess": "/Game/ParagonCountess/Characters/Heroes/Countess/Meshes/SM_Countess",
     "Sevarog": "/Game/ParagonSevarog/Characters/Heroes/Sevarog/Meshes/Sevarog",
+    # Windwalker Echo (Epic sample, migrated by Tools/GOTA_MigrateEcho.py): UE5 Mannequin bone layout.
+    "Echo": "/Game/EchoContent/Characters/Echo/Meshes/Echo",
+    # Roster pass (prototype bodies): Zephyr, Lysara, Kairos, Orion.
+    "Kwang": "/Game/ParagonKwang/Characters/Heroes/Kwang/Meshes/Kwang_GDC",
+    "Aurora": "/Game/ParagonAurora/Characters/Heroes/Aurora/Meshes/Aurora",
+    "Gideon": "/Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon",
+    "Steel": "/Game/ParagonSteel/Characters/Heroes/Steel/Meshes/Steel",
+    # Enemy roster bodies (Docs/GOTA_CHARACTER_ASSET_MATRIX.md). Melee and Ranged lane minions share a skeleton.
+    "MinionLane": "/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Melee_Dawn",
+    "MinionSuper": "/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Super_Dawn",
+    "FengMao": "/Game/ParagonFengMao/Characters/Heroes/FengMao/Meshes/FengMao_GDC",
 }
+# UE5 Mannequin layout (Echo): full spine/neck and finger chains so hand grips on the gameplay sword hold.
+CHAINS_UE5 = [
+    ("Spine", "spine_01", "spine_05", None),
+    ("Neck", "neck_01", "neck_02", None),
+    ("Head", "head", "head", None),
+    ("LeftClavicle", "clavicle_l", "clavicle_l", None),
+    ("RightClavicle", "clavicle_r", "clavicle_r", None),
+    ("LeftArm", "upperarm_l", "hand_l", "hand_l"),
+    ("RightArm", "upperarm_r", "hand_r", "hand_r"),
+    ("LeftLeg", "thigh_l", "ball_l", "foot_l"),
+    ("RightLeg", "thigh_r", "ball_r", "foot_r"),
+] + [("%s%s" % (side, f.capitalize()), "%s_%s_%s" % (f, "metacarpal" if f != "thumb" else "01", s[0].lower()), "%s_03_%s" % (f, s[0].lower()), None)
+     for side, s in (("Left", "l"), ("Right", "r")) for f in ("thumb", "index", "middle", "ring", "pinky")]
+UE5_BODIES = {"Echo"}
+
 ONLY = [b.strip() for b in os.environ.get("GOTA_BODIES", "").split(",") if b.strip()]
 
 # Manual chain fallback (UE4 / Paragon naming) if auto-detection does not recognise the skeleton.
@@ -68,7 +94,7 @@ def build_rig(body, mesh):
     names = set(bone_names(mesh))
     P(body, "bones", len(names), sorted(n for n in names if any(k in n for k in ("neck", "head", "ball", "foot", "thigh", "calf", "spine"))))
     c.set_retarget_root("pelvis")
-    for chain, start, end, goal in CHAINS:
+    for chain, start, end, goal in (CHAINS_UE5 if body in UE5_BODIES else CHAINS):
         if end not in names and goal in names:
             end = goal  # e.g. Sevarog: legs end at the foot (no ball/toe bones)
         if start in names and end in names:

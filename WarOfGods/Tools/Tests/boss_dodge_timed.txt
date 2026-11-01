@@ -1,0 +1,61 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+wait 3
+gota.Test.Heal 0 200
+wait 1.5
+gota.Boss.PlaceTarget 170 0
+gota.Boss.Attack ClawCombo
+wait 0.22
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.5
+gota.Test.Heal 0 200
+wait 1.5
+gota.Boss.PlaceTarget 170 0
+gota.Boss.Attack Earthshaker
+wait 0.62
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.5
+gota.Test.Heal 0 200
+wait 1.5
+gota.Boss.PlaceTarget 170 0
+gota.Boss.Attack CrushingGrasp
+wait 0.45
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.5
+gota.Test.Heal 0 200
+wait 1.5
+gota.Boss.PlaceTarget 900 0
+gota.Boss.Attack BehemothCharge
+wait 0.75
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.5
+gota.Test.Heal 0 200
+wait 1.5
+gota.Boss.PlaceTarget 170 0
+gota.Boss.Attack ClawCombo
+wait 0.22
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.5
+gota.Test.Heal 0 200
+wait 1.5
+gota.Boss.PlaceTarget 170 0
+gota.Boss.Attack Earthshaker
+wait 0.62
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.5
+gota.Test.Heal 0 200
+wait 1.5
+gota.Boss.PlaceTarget 170 0
+gota.Boss.Attack CrushingGrasp
+wait 0.45
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.5
+gota.Test.Heal 0 200
+wait 1.5
+gota.Boss.PlaceTarget 900 0
+gota.Boss.Attack BehemothCharge
+wait 0.75
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.5
+quit

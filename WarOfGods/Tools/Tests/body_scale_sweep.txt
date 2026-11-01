@@ -1,0 +1,52 @@
+r.MotionBlurQuality 0
+wait 5
+gota.Ability.Place 600 1
+gota.Test.BodyScale 1.0
+wait 0.6
+gota.Test.Body
+gota.Test.BodyScale 0.9
+wait 0.6
+gota.Test.Body
+gota.Test.BodyScale 0.8
+wait 0.6
+gota.Test.Body
+gota.Test.BodyScale 0.75
+wait 0.6
+gota.Test.Body
+gota.Test.BodyScale 0.7
+wait 0.6
+gota.Test.Body
+gota.Test.BodyScale 0.65
+wait 0.6
+gota.Test.Body
+gota.Test.BodyScale 0.6
+wait 0.6
+gota.Test.Body
+gota.Test.BodyScale 0.55
+wait 0.6
+gota.Test.Body
+gota.Test.BodyScale 1.0
+gota.Duel.Bot fight
+wait 1
+gota.Test.BodyScale 1.0
+wait 0.3
+gota.Test.Body
+wait 0.3
+gota.Test.Body
+wait 0.3
+gota.Test.Body
+gota.Test.BodyScale 0.75
+wait 0.3
+gota.Test.Body
+wait 0.3
+gota.Test.Body
+wait 0.3
+gota.Test.Body
+gota.Test.BodyScale 0.65
+wait 0.3
+gota.Test.Body
+wait 0.3
+gota.Test.Body
+wait 0.3
+gota.Test.Body
+quit

@@ -1,0 +1,47 @@
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+wait 3
+gota.Boss.Dump
+gota.Boss.Attack ClawCombo
+wait 0.5
+gota.Test.Portrait 1 90 950 55 60
+wait 0.15
+gota.Test.Shot 61_boss_claw_a
+wait 0.6
+gota.Test.Shot 62_boss_claw_b
+gota.Test.Cam off
+wait 3
+gota.Boss.Dump
+gota.Boss.Attack ClawCombo
+wait 0.5
+gota.Test.Portrait 1 90 950 55 60
+wait 0.15
+gota.Test.Shot 63_boss_claw_a
+wait 0.6
+gota.Test.Shot 64_boss_claw_b
+gota.Test.Cam off
+wait 3
+gota.Boss.Dump
+gota.Boss.Attack ClawCombo
+wait 0.5
+gota.Test.Portrait 1 90 950 55 60
+wait 0.15
+gota.Test.Shot 65_boss_claw_a
+wait 0.6
+gota.Test.Shot 66_boss_claw_b
+gota.Test.Cam off
+wait 3
+gota.Boss.Dump
+gota.Boss.Attack ClawCombo
+wait 0.5
+gota.Test.Portrait 1 90 950 55 60
+wait 0.15
+gota.Test.Shot 67_boss_claw_a
+wait 0.6
+gota.Test.Shot 68_boss_claw_b
+gota.Test.Cam off
+wait 3
+gota.Boss.Dump
+quit

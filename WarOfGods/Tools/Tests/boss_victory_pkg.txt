@@ -1,0 +1,1887 @@
+r.MotionBlurQuality 0
+gota.Duel.Bot fight
+gota.Test.Shot 50_boss_intro
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5000_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5024_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5048_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5072_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5096_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5120_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5144_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5168_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5192_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5216_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5240_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5264_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5288_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5312_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5336_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5360_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5384_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5408_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5432_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5456_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5480_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5504_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5528_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5552_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5576_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5600_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5624_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5648_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5672_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5696_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5720_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5744_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5768_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5792_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5816_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5840_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5864_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+gota.Test.Shot 5888_boss
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+wait 0.25
+gota.Test.Heal 0 40
+quit

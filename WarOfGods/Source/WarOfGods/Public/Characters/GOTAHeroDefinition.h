@@ -170,6 +170,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gameplay")
 	TSoftObjectPtr<class UGOTAAbilitySet> AbilitySet;
 
+	/** Extra meshes on the body's skeleton (e.g. Echo's hair cards); they follow the body's pose (leader pose). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
+	TArray<TSoftObjectPtr<USkeletalMesh>> BodyExtraMeshes;
+
+	/** Material slots of BodyMesh to hide (e.g. a body's own weapon, so only the gameplay weapon shows). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
+	TArray<FName> BodyHiddenMaterialSlots;
+
+	/** Material used for hidden slots (an invisible/masked-out material). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
+	TSoftObjectPtr<class UMaterialInterface> BodyHiddenMaterial;
+
 	/** Where the body comes from, for credits/QA (e.g. "Paragon: Greystone (prototype)"). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
 	FText BodySourceNote;

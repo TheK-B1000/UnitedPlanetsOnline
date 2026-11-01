@@ -1,0 +1,7 @@
+wait 22
+gota.Test.Body
+gota.Test.LookAt Enemy_Melee 300 20
+wait 0.5
+gota.Test.Shot 77_mp_client_minion
+wait 10
+quit

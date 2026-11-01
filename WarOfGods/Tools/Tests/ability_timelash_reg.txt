@@ -1,0 +1,20 @@
+# Time Lash regression (no camera/screenshots: hitches stretch waits past the 3 s slow).
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.3
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 0.7
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 4.0
+gota.Ability.Dump
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 700 1
+wait 0.3
+gota.Ability.Use 0 0
+wait 1.2
+gota.Ability.Dump
+quit

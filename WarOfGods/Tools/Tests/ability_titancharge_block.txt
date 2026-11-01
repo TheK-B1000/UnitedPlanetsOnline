@@ -1,0 +1,9 @@
+# AI Drakon's Titan Charge vs a blocking player: breaks guard (lands anyway).
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 550 1
+gota.Duel.Call 0 StartBlock
+gota.Ability.AI 1
+wait 2.0
+gota.Duel.Dump
+quit

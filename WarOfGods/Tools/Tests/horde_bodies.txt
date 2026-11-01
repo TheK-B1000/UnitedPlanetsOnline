@@ -1,0 +1,42 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Horde.SkipPrep
+wait 6
+gota.Horde.Dump
+gota.Test.Body
+gota.Test.Shot 70_horde_w1
+wait 4
+gota.Test.Shot 71_horde_w1b
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 7
+gota.Horde.Dump
+gota.Test.Body
+gota.Test.Shot 72_horde_w2
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 7
+gota.Test.Body
+gota.Test.Shot 73_horde_w3
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 7
+gota.Test.Body
+gota.Test.Shot 74_horde_w4
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 7
+gota.Test.Body
+gota.Test.Shot 75_horde_w5
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 8
+gota.Horde.Dump
+gota.Test.Body
+gota.Test.Shot 76_horde_boss
+quit

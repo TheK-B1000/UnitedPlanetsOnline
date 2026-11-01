@@ -8,6 +8,9 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "HAL/IConsoleManager.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Containers/Ticker.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
@@ -86,6 +89,9 @@ namespace GOTAAbilityTest
 				UAnimMontage* M = Anim ? Anim->GetCurrentActiveMontage() : nullptr;
 				UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY f%d body=%s anim=%s montage=%s pos=%.2f slotWeight=%.2f"), F, Body ? *GetNameSafe(Body->GetSkeletalMeshAsset()) : TEXT("-"),
 					*GetNameSafe(Anim), *GetNameSafe(M), M ? Anim->Montage_GetPosition(M) : -1.f, Anim ? Anim->GetSlotMontageGlobalWeight(FName(TEXT("DefaultSlot"))) : -1.f);
+				const UCharacterMovementComponent* Move = Char->GetCharacterMovement();
+				UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY f%d move walk=%.0f timeDilation=%.2f meshAnimRate=%.2f"), F, Move ? Move->MaxWalkSpeed : -1.f,
+					Char->CustomTimeDilation, Char->GetMesh() ? Char->GetMesh()->GlobalAnimRateScale : -1.f);
 			}
 		}
 	}
@@ -120,7 +126,10 @@ namespace GOTAAbilityTest
 		}
 		const float Dist = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 250.f;
 		const FVector Fwd = A->GetActorForwardVector().GetSafeNormal2D();
-		const FVector Loc = A->GetActorLocation() + Fwd * Dist;
+		// Optional 3rd arg: sideways offset (cm, + = right of fighter 0) for sidestep / miss tests.
+		const float Side = Args.Num() > 2 ? FCString::Atof(*Args[2]) : 0.f;
+		const FVector Right = FVector::CrossProduct(FVector::UpVector, Fwd);
+		const FVector Loc = A->GetActorLocation() + Fwd * Dist + Right * Side;
 		B->TeleportTo(Loc, (-Fwd).Rotation(), false, true);
 		if (Args.Num() > 1)
 		{
@@ -178,7 +187,209 @@ namespace GOTAAbilityTest
 	}
 	static FAutoConsoleCommand CmdNav(TEXT("gota.Ability.Nav"), TEXT("Log runtime navigation data state."), FConsoleCommandWithArgsDelegate::CreateStatic(&NavReport));
 
-	static FAutoConsoleCommand CmdPlace(TEXT("gota.Ability.Place"), TEXT("Test: place fighter 1 <dist> in front of fighter 0 [freeze 0|1]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Place));
+	/** gota.Ability.PlaceOnCast <delay> <dist> [side]: when fighter 0's next cast starts, wait delay (real s) then Place. */
+	static FTSTicker::FDelegateHandle GPlaceOnCast;
+	static void PlaceOnCast(const TArray<FString>& Args)
+	{
+		if (Args.Num() < 2)
+		{
+			return;
+		}
+		const float Delay = FCString::Atof(*Args[0]);
+		TArray<FString> PlaceArgs = { Args[1], TEXT("1") };
+		if (Args.Num() > 2)
+		{
+			PlaceArgs.Add(Args[2]);
+		}
+		FTSTicker::GetCoreTicker().RemoveTicker(GPlaceOnCast);
+		TSharedRef<double> Started = MakeShared<double>(-1.0);
+		GPlaceOnCast = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([Delay, PlaceArgs, Started](float)
+		{
+			UGOTAHeroAbilityComponent* A = Abilities(0);
+			if (!A)
+			{
+				return true;
+			}
+			const double Now = FPlatformTime::Seconds();
+			if (*Started < 0.0)
+			{
+				if (A->IsBusy())
+				{
+					*Started = Now;
+				}
+				return true;
+			}
+			if (Now - *Started >= Delay)
+			{
+				Place(PlaceArgs);
+				return false;
+			}
+			return true;
+		}));
+	}
+	/** gota.Ability.Status <fighter> <None|Unbreakable|Veiled|Dread|Slowed> <seconds> <magnitude>: server-side status (tests). */
+	static void Status(const TArray<FString>& Args)
+	{
+		if (Args.Num() < 4)
+		{
+			return;
+		}
+		UWorld* World = GameWorld();
+		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
+		APawn* Pawn = GM ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		const int64 Value = StaticEnum<EGOTAStatus>()->GetValueByNameString(Args[1]);
+		if (!Pawn || Value == INDEX_NONE)
+		{
+			return;
+		}
+		UGOTAHeroAbilityComponent* A = Pawn->FindComponentByClass<UGOTAHeroAbilityComponent>();
+		if (!A)
+		{
+			A = NewObject<UGOTAHeroAbilityComponent>(Pawn, TEXT("GOTAHeroAbilities"));
+			A->RegisterComponent();
+		}
+		A->ApplyStatus(static_cast<EGOTAStatus>(Value), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), nullptr);
+	}
+	/**
+	 * gota.Test.SetupBlocker <minDist> <maxDist> [place 0|1] [behind=150]: find solid WorldStatic geometry around fighter 0
+	 * (36 chest-height traces), face it, and optionally put a frozen fighter 1 on open floor directly behind it
+	 * (line-of-sight / collision tests). Logs what it found.
+	 */
+	static void SetupBlocker(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
+		APawn* A = GM ? GM->GetFighterPawn(0) : nullptr;
+		APawn* B = GM ? GM->GetFighterPawn(1) : nullptr;
+		if (!A || !B || Args.Num() < 2)
+		{
+			return;
+		}
+		const float MinD = FCString::Atof(*Args[0]);
+		const float MaxD = FCString::Atof(*Args[1]);
+		const bool bPlace = Args.Num() > 2 && FCString::Atoi(*Args[2]) != 0;
+		const float Behind = Args.Num() > 3 ? FCString::Atof(*Args[3]) : 150.f;
+		FCollisionQueryParams Q(TEXT("GOTASetupBlocker"), false, A);
+		Q.AddIgnoredActor(B);
+		const FVector From = A->GetActorLocation() + FVector(0, 0, 50);
+		for (int32 i = 0; i < 36; ++i)
+		{
+			const FVector Dir = FRotator(0.f, i * 10.f, 0.f).Vector();
+			FHitResult Hit;
+			if (!World->LineTraceSingleByChannel(Hit, From, From + Dir * MaxD, ECC_WorldStatic, Q) || Hit.Distance < MinD)
+			{
+				continue;
+			}
+			if (!bPlace)
+			{
+				// Wall mode: stand with the back 120 cm from it, facing away (fighter 1 can then be placed in front).
+				FVector Near = Hit.ImpactPoint - Dir * 120.f;
+				Near.Z = A->GetActorLocation().Z;
+				A->TeleportTo(Near, (-Dir).Rotation(), false, true);
+				if (AController* C = A->GetController())
+				{
+					C->SetControlRotation((-Dir).Rotation());
+				}
+				UE_LOG(LogGOTAAbilityTest, Log, TEXT("BLOCKER %s: fighter 0 now has its back 120 cm from it (wall test)"), *GetNameSafe(Hit.GetActor()));
+				return;
+			}
+			// Find the obstacle's back face: trace back toward A from well past the hit.
+			const FVector Far = Hit.ImpactPoint + Dir * 600.f;
+			FHitResult Back;
+			if (!World->LineTraceSingleByChannel(Back, Far, Hit.ImpactPoint, ECC_WorldStatic, Q) || !Back.bBlockingHit)
+			{
+				continue;
+			}
+			const float Thickness = FVector::Dist(Back.ImpactPoint, Hit.ImpactPoint);
+			if (Thickness > 400.f)
+			{
+				continue; // a wall, not a pillar: no arena floor behind it
+			}
+			if (Hit.Distance > 450.f)
+			{
+				// Far obstacle: bring fighter 0 to 300 cm in front of it first (same floor height).
+				FVector Near = Hit.ImpactPoint - Dir * 300.f;
+				Near.Z = A->GetActorLocation().Z;
+				A->TeleportTo(Near, Dir.Rotation(), false, true);
+				Hit.Distance = 300.f;
+				Hit.ImpactPoint = Near + Dir * 300.f;
+			}
+			FVector Spot = Back.ImpactPoint + Dir * Behind;
+			Spot.Z = B->GetActorLocation().Z;
+			// Open floor there: no geometry within the capsule.
+			const ACharacter* BC = Cast<ACharacter>(B);
+			const float R = BC ? BC->GetCapsuleComponent()->GetScaledCapsuleRadius() : 40.f;
+			const float H = BC ? BC->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 90.f;
+			if (World->OverlapBlockingTestByChannel(Spot, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(R, H), Q))
+			{
+				continue;
+			}
+			A->SetActorRotation(Dir.Rotation());
+			if (AController* C = A->GetController())
+			{
+				C->SetControlRotation(Dir.Rotation());
+			}
+			B->TeleportTo(Spot, (-Dir).Rotation(), false, true);
+			if (AAIController* AIC = Cast<AAIController>(B->GetController()))
+			{
+				AIC->StopMovement();
+				if (UBrainComponent* Brain = AIC->GetBrainComponent())
+				{
+					Brain->PauseLogic(TEXT("test freeze"));
+				}
+			}
+			// Half-width of the obstacle across the line of fire (for grazing tests: side offset just past its edge).
+			const FVector Right = FVector::CrossProduct(FVector::UpVector, Dir);
+			float HalfWidth = 0.f;
+			for (float Side = 10.f; Side <= 400.f; Side += 10.f)
+			{
+				FHitResult Probe;
+				const FVector P0 = From + Right * Side;
+				if (!World->LineTraceSingleByChannel(Probe, P0, P0 + Dir * (Hit.Distance + Thickness + 20.f), ECC_WorldStatic, Q))
+				{
+					HalfWidth = Side;
+					break;
+				}
+			}
+			UE_LOG(LogGOTAAbilityTest, Log, TEXT("BLOCKER %s at %.0f cm (thickness %.0f, clears %.0f cm to the right), target behind at %.0f cm"), *GetNameSafe(Hit.GetActor()),
+				Hit.Distance, Thickness, HalfWidth, FVector::Dist2D(Spot, A->GetActorLocation()));
+			return;
+		}
+		UE_LOG(LogGOTAAbilityTest, Warning, TEXT("BLOCKER none found between %.0f and %.0f cm"), MinD, MaxD);
+	}
+	/** gota.Test.Encroach <fighter>: does the fighter's capsule overlap solid geometry? Logs its position too. */
+	static void Encroach(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
+		ACharacter* C = GM ? Cast<ACharacter>(GM->GetFighterPawn(Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 1)) : nullptr;
+		if (!C)
+		{
+			return;
+		}
+		FCollisionQueryParams Q(TEXT("GOTAEncroach"), false, C);
+		const UCapsuleComponent* Cap = C->GetCapsuleComponent();
+		const bool bInside = World->OverlapBlockingTestByChannel(C->GetActorLocation(), FQuat::Identity, ECC_WorldStatic,
+			FCollisionShape::MakeCapsule(Cap->GetScaledCapsuleRadius() - 2.f, Cap->GetScaledCapsuleHalfHeight() - 2.f), Q);
+		APawn* A = GM->GetFighterPawn(0);
+		UE_LOG(LogGOTAAbilityTest, Log, TEXT("ENCROACH %s at %s inGeometry=%d distToFighter0=%.0f"), *C->GetName(), *C->GetActorLocation().ToCompactString(), bInside ? 1 : 0,
+			A ? FVector::Dist2D(A->GetActorLocation(), C->GetActorLocation()) : -1.f);
+	}
+	static FAutoConsoleCommand CmdEncroach(TEXT("gota.Test.Encroach"), TEXT("Is fighter <n> inside solid geometry?"), FConsoleCommandWithArgsDelegate::CreateStatic(&Encroach));
+	static FAutoConsoleCommand CmdSetupBlocker(TEXT("gota.Test.SetupBlocker"), TEXT("Find geometry around fighter 0: <min> <max> [place 0|1] [behind]."), FConsoleCommandWithArgsDelegate::CreateStatic(&SetupBlocker));
+	/** gota.Ability.ResetCooldowns [fighter=0]: clear cooldowns, casts and status (keeps test scripts inside one round). */
+	static void ResetCooldowns(const TArray<FString>& Args)
+	{
+		if (UGOTAHeroAbilityComponent* A = Abilities(Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0))
+		{
+			A->ResetAbilities(true);
+			UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY cooldowns reset"));
+		}
+	}
+	static FAutoConsoleCommand CmdResetCooldowns(TEXT("gota.Ability.ResetCooldowns"), TEXT("Clear a fighter's cooldowns/casts/status [fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&ResetCooldowns));
+	static FAutoConsoleCommand CmdStatus(TEXT("gota.Ability.Status"), TEXT("Apply a status: <fighter> <Status> <seconds> <magnitude>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Status));
+	static FAutoConsoleCommand CmdPlaceOnCast(TEXT("gota.Ability.PlaceOnCast"), TEXT("After fighter 0's next cast starts, wait <delay>s then Place <dist> (frozen) [side]."), FConsoleCommandWithArgsDelegate::CreateStatic(&PlaceOnCast));
+	static FAutoConsoleCommand CmdPlace(TEXT("gota.Ability.Place"), TEXT("Test: place fighter 1 <dist> in front of fighter 0 [freeze 0|1] [side cm]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Place));
 	static FAutoConsoleCommand CmdUse(TEXT("gota.Ability.Use"), TEXT("Use hero ability: <fighter 0|1> <slot 0-3>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Use));
 	static FAutoConsoleCommand CmdDump(TEXT("gota.Ability.Dump"), TEXT("Log both fighters' ability state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Dump));
 	static FAutoConsoleCommand CmdAI(TEXT("gota.Ability.AI"), TEXT("AI fighter abilities: <slot> to force | on | off."), FConsoleCommandWithArgsDelegate::CreateStatic(&AI));

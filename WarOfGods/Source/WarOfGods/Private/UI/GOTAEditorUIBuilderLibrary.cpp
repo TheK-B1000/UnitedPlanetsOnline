@@ -21,6 +21,7 @@
 #include "Engine/Level.h"
 #include "Engine/World.h"
 #include "EdGraph/EdGraph.h"
+#include "K2Node_CallFunction.h"
 #include "EdGraph/EdGraphNode.h"
 #include "NavigationSystem.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
@@ -215,6 +216,42 @@ UFont* UGOTAEditorUIBuilderLibrary::CreateCompositeFont(const FString& PackagePa
 #endif
 
 #if WITH_EDITOR
+int32 UGOTAEditorUIBuilderLibrary::RemoveDeadFunctionCalls(UBlueprint* Blueprint, FName FunctionName)
+{
+	if (!Blueprint)
+	{
+		return -1;
+	}
+	TArray<UEdGraph*> Graphs;
+	Blueprint->GetAllGraphs(Graphs);
+	int32 Removed = 0;
+	for (UEdGraph* Graph : Graphs)
+	{
+		TArray<UK2Node_CallFunction*> Calls;
+		Graph->GetNodesOfClass(Calls);
+		for (UK2Node_CallFunction* Call : Calls)
+		{
+			// Only calls that name this function AND no longer resolve to a real function.
+			if (Call && Call->FunctionReference.GetMemberName() == FunctionName && !Call->GetTargetFunction())
+			{
+				FBlueprintEditorUtils::RemoveNode(Blueprint, Call, true);
+				++Removed;
+			}
+		}
+	}
+	if (Removed > 0)
+	{
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+		UPackage* Package = Blueprint->GetOutermost();
+		Package->MarkPackageDirty();
+		FSavePackageArgs Args;
+		Args.TopLevelFlags = RF_Public | RF_Standalone;
+		UPackage::SavePackage(Package, Blueprint, *FPackageName::LongPackageNameToFilename(Package->GetName(), FPackageName::GetAssetPackageExtension()), Args);
+	}
+	UE_LOG(LogTemp, Log, TEXT("RemoveDeadFunctionCalls %s %s: removed %d"), *GetNameSafe(Blueprint), *FunctionName.ToString(), Removed);
+	return Removed;
+}
+
 bool UGOTAEditorUIBuilderLibrary::BuildEditorNavigation()
 {
 	UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;

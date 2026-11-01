@@ -86,6 +86,7 @@ protected:
 	bool TrySpawnOne(const FHordeEnemySpawnEntry& Entry);
 	AHordeSpawnPoint* PickSpawnPoint(EHordeEnemyRole EnemyRole) const;
 	void RegisterEnemy(APawn* Enemy, EHordeEnemyRole EnemyRole, int32 ScoreValue);
+	UFUNCTION()
 	void HandleEnemyEndPlay(AActor* Actor, EEndPlayReason::Type Reason);
 	void NotifyEnemyDefeated(FHordeTrackedEnemy& Tracked, bool bLegitimateKill);
 	void PushCountsToGameState() const;

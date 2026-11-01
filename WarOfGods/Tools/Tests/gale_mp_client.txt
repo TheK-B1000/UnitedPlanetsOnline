@@ -1,0 +1,4 @@
+wait 30
+gota.Test.Body
+wait 8
+quit

@@ -179,6 +179,8 @@ protected:
 	TSet<TWeakObjectPtr<APawn>> ChargeHit;
 	bool bOwnerInvincibleByUs = false;
 	float BaseWalkSpeed = -1.f;
+	/** Speed this component last wrote; anything else changing MaxWalkSpeed meanwhile becomes the new base. */
+	float AppliedWalkSpeed = -1.f;
 	double NextAIDecisionTime = 0.0;
 	double LastAIUseTime = -100.0;
 	int32 ForcedAISlot = INDEX_NONE;

@@ -1,0 +1,23 @@
+# Slowed player (Zephyr) vs AI Kairos: stance change while slowed, own ability while slowed, clean restore.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 900 1
+wait 0.5
+gota.Ability.Dump
+gota.Ability.Place 300 1
+gota.Ability.AI 0
+wait 0.8
+gota.Ability.Dump
+gota.Duel.Call 0 UnarmedStance
+gota.Duel.Call 0 MagicStance
+gota.Ability.Dump
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+gota.Ability.Dump
+wait 4
+gota.Ability.Dump
+gota.Duel.Call 0 UnarmedStance
+gota.Duel.Call 0 MeleeStance
+wait 0.3
+gota.Ability.Dump
+quit

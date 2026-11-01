@@ -3,6 +3,7 @@
 #include "Characters/GOTAHeroBodyComponent.h"
 #include "Characters/GOTAHeroDefinition.h"
 #include "Characters/GOTAHeroRegistry.h"
+#include "Characters/GOTAEnemyDefinition.h"
 #include "Characters/GOTARetargetAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -13,6 +14,9 @@
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 #include "Retargeter/IKRetargeter.h"
+#include "Engine/SkeletalMeshSocket.h"
+#include "Materials/MaterialInterface.h"
+#include "Arenas/ArenaTypes.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GOTAHeroBodyComponent)
 
@@ -21,7 +25,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogGOTAHeroBody, Log, All);
 UGOTAHeroBodyComponent::UGOTAHeroBodyComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.TickInterval = 0.5f; // only used to re-hide late-equipped weapon meshes
+	PrimaryComponentTick.TickInterval = 0.f; // weapons re-attached by the Blueprint are moved to the body the same frame
 	SetIsReplicatedByDefault(true);
 }
 
@@ -40,6 +44,21 @@ UGOTAHeroBodyComponent* UGOTAHeroBodyComponent::ApplyToPawn(APawn* Pawn, const U
 	}
 	Comp->SetHeroId(Hero->HeroId);
 	return Comp;
+}
+
+UGOTAHeroBodyComponent* UGOTAHeroBodyComponent::ApplyForHeroOrDefault(APawn* Pawn, FName InHeroId)
+{
+	const UGameInstance* GI = Pawn ? Pawn->GetGameInstance() : nullptr;
+	const UGOTAHeroRegistry* Registry = GI ? GI->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
+	if (!Registry)
+	{
+		return nullptr;
+	}
+	if (InHeroId.IsNone())
+	{
+		InHeroId = Registry->GetDefaultHero(EArenaMode::PvPDuel); // the prototype frame (UPA Warden)
+	}
+	return ApplyToPawn(Pawn, Registry->FindHero(InHeroId));
 }
 
 void UGOTAHeroBodyComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -85,6 +104,14 @@ void UGOTAHeroBodyComponent::ApplyBody()
 	const UGameInstance* GI = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
 	const UGOTAHeroRegistry* Registry = GI ? GI->GetSubsystem<UGOTAHeroRegistry>() : nullptr;
 	const UGOTAHeroDefinition* Hero = Registry ? Registry->FindHero(HeroId) : nullptr;
+	if (!Hero && GI)
+	{
+		// Enemy bodies use the same fields and path, from their own registry (never hero selection).
+		if (const UGOTAEnemyRegistry* Enemies = GI->GetSubsystem<UGOTAEnemyRegistry>())
+		{
+			Hero = Enemies->FindEnemy(HeroId);
+		}
+	}
 	if (!Character || !Character->GetMesh() || !Hero)
 	{
 		return;
@@ -93,7 +120,8 @@ void UGOTAHeroBodyComponent::ApplyBody()
 	UIKRetargeter* Retargeter = Hero->BodyRetargeter.LoadSynchronous();
 	if (!BodyAsset || !Retargeter)
 	{
-		UE_LOG(LogGOTAHeroBody, Warning, TEXT("Hero %s: body or retargeter failed to load — keeping the pawn mesh"), *HeroId.ToString());
+		UE_LOG(LogGOTAHeroBody, Error, TEXT("Hero %s: body or retargeter failed to load (%s) - the combat frame is showing; install the asset (Docs/GOTA_THIRD_PARTY_ASSETS.md)"),
+			*HeroId.ToString(), *Hero->BodyMesh.ToString());
 		return;
 	}
 
@@ -114,6 +142,37 @@ void UGOTAHeroBodyComponent::ApplyBody()
 	{
 		Anim->Retargeter = Retargeter;
 	}
+	// Hide body material slots that duplicate gameplay equipment (e.g. Echo's own sword).
+	if (UMaterialInterface* Hidden = Hero->BodyHiddenMaterial.LoadSynchronous())
+	{
+		for (const FName& SlotName : Hero->BodyHiddenMaterialSlots)
+		{
+			const int32 Index = Body->GetMaterialIndex(SlotName);
+			if (Index != INDEX_NONE)
+			{
+				Body->SetMaterial(Index, Hidden);
+			}
+		}
+	}
+	// Extra meshes on the same skeleton (hair cards...) follow the body's pose.
+	for (const TSoftObjectPtr<USkeletalMesh>& ExtraRef : Hero->BodyExtraMeshes)
+	{
+		if (USkeletalMesh* ExtraAsset = ExtraRef.LoadSynchronous())
+		{
+			USkeletalMeshComponent* Extra = NewObject<USkeletalMeshComponent>(Character);
+			Extra->SetupAttachment(Body);
+			Extra->SetSkeletalMeshAsset(ExtraAsset);
+			Extra->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Extra->SetCanEverAffectNavigation(false);
+			// Copy the body's pose (not leader pose) so the extra mesh's own Post Process Anim Blueprint runs:
+			// Echo_Hair's rigid-body ponytail. Only those few chain bones simulate.
+			Extra->SetAnimInstanceClass(UGOTACopyPoseAnimInstance::StaticClass());
+			Extra->RegisterComponent();
+			Extra->AddTickPrerequisiteComponent(Body); // copy this frame's body pose, not last frame's
+			Character->AddInstanceComponent(Extra);
+			BodyExtras.Add(Extra);
+		}
+	}
 
 	// Hide the combat mesh but keep it evaluating: sockets, traces and notifies depend on it.
 	PawnMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
@@ -127,6 +186,28 @@ void UGOTAHeroBodyComponent::ApplyBody()
 
 void UGOTAHeroBodyComponent::RemoveBody()
 {
+	for (USkeletalMeshComponent* Extra : BodyExtras)
+	{
+		if (Extra)
+		{
+			Extra->DestroyComponent();
+		}
+	}
+	BodyExtras.Reset();
+	if (Body && SourceMesh.IsValid() && GetOwner())
+	{
+		// Hand kept weapons back to the gameplay mesh before the body goes away.
+		TArray<AActor*> Attached;
+		GetOwner()->GetAttachedActors(Attached, false, false);
+		for (AActor* Actor : Attached)
+		{
+			USceneComponent* Root = Actor ? Actor->GetRootComponent() : nullptr;
+			if (Root && Root->GetAttachParent() == Body)
+			{
+				Root->AttachToComponent(SourceMesh.Get(), FAttachmentTransformRules::KeepRelativeTransform, Root->GetAttachSocketName());
+			}
+		}
+	}
 	if (Body)
 	{
 		Body->DestroyComponent();
@@ -161,7 +242,7 @@ void UGOTAHeroBodyComponent::HideAttachedWeaponMeshes()
 	Owner->GetComponents<UMeshComponent>(Meshes);
 	for (UMeshComponent* Mesh : Meshes)
 	{
-		if (Mesh && Mesh != Body && Mesh != SourceMesh.Get() && Mesh->GetAttachParent() != Body
+		if (Mesh && Mesh != Body && Mesh != SourceMesh.Get() && Mesh->GetAttachParent() != Body && !BodyExtras.Contains(Mesh)
 			&& (Mesh->IsA<UStaticMeshComponent>() || Mesh->IsA<USkeletalMeshComponent>()) && !Mesh->bHiddenInGame)
 		{
 			Mesh->SetHiddenInGame(true, false);
@@ -170,8 +251,53 @@ void UGOTAHeroBodyComponent::HideAttachedWeaponMeshes()
 	}
 }
 
+void UGOTAHeroBodyComponent::FollowBodyWithWeapons()
+{
+	// Kept weapons (sword, shield...) are attached by the Blueprint to the hidden gameplay mesh. Move them onto
+	// the same socket/bone of the visible body so they sit in the visible hands. The weapon's own trace sockets
+	// move with it on every machine, so the presented blade and the hit trace stay together; damage is unchanged.
+	AActor* Owner = GetOwner();
+	USkeletalMeshComponent* PawnMesh = SourceMesh.Get();
+	if (bHideWeapons || !Owner || !Body || !PawnMesh)
+	{
+		return;
+	}
+	TArray<AActor*> Attached;
+	Owner->GetAttachedActors(Attached, false, false);
+	for (AActor* Actor : Attached)
+	{
+		USceneComponent* Root = Actor ? Actor->GetRootComponent() : nullptr;
+		if (!Root || Actor->IsA<APawn>() || Root->GetAttachParent() != PawnMesh)
+		{
+			continue;
+		}
+		const FName SocketName = Root->GetAttachSocketName();
+		const FTransform Relative = Root->GetRelativeTransform();
+		if (Body->DoesSocketExist(SocketName) && Body->GetSocketByName(SocketName))
+		{
+			Root->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, SocketName);
+			Root->SetRelativeTransform(Relative);
+		}
+		else
+		{
+			// Socket defined only on the mannequin: attach to its parent bone on the body with the socket's offset.
+			const USkeletalMeshSocket* Socket = PawnMesh->GetSocketByName(SocketName);
+			const FName Bone = Socket ? Socket->BoneName : SocketName;
+			if (Body->GetBoneIndex(Bone) == INDEX_NONE)
+			{
+				continue;
+			}
+			const FTransform SocketLocal = Socket ? Socket->GetSocketLocalTransform() : FTransform::Identity;
+			Root->AttachToComponent(Body, FAttachmentTransformRules::KeepRelativeTransform, Bone);
+			Root->SetRelativeTransform(Relative * SocketLocal);
+		}
+		UE_LOG(LogGOTAHeroBody, Log, TEXT("Hero %s: %s now follows the body at %s"), *HeroId.ToString(), *GetNameSafe(Actor), *SocketName.ToString());
+	}
+}
+
 void UGOTAHeroBodyComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	HideAttachedWeaponMeshes();
+	FollowBodyWithWeapons(); // re-applies when the Blueprint re-attaches a weapon (equip / sheathe / stance)
 }

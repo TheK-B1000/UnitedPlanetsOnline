@@ -1,0 +1,716 @@
+r.MotionBlurQuality 0
+wait 2
+gota.Test.Shot 50_boss_intro
+wait 4
+gota.Duel.Bot fight
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5000_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5006_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5012_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5018_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5024_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5030_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5036_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5042_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5048_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5054_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5060_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5066_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5072_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5078_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5084_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5090_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5096_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5102_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5108_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5114_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5120_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5126_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5132_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5138_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5144_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5150_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5156_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5162_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5168_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5174_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5180_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5186_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5192_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5198_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5204_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5210_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5216_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5222_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5228_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5234_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5240_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5246_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5252_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5258_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5264_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+gota.Test.Shot 5270_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5276_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5282_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5288_boss
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+gota.Test.Shot 5294_boss
+wait 1
+gota.Test.Heal 0 40
+gota.Boss.Dump
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+wait 1
+gota.Test.Heal 0 40
+quit

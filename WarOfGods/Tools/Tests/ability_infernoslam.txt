@@ -1,0 +1,20 @@
+# Varoth - Inferno Slam (slot 0, AreaBurst + launch): hit, cooldown, out of radius.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 220 1
+wait 0.3
+gota.Duel.Face 0
+gota.Duel.Dump
+gota.Ability.Use 0 0
+wait 0.9
+gota.Ability.Use 0 0
+wait 0.6
+gota.Duel.Dump
+gota.Ability.ResetCooldowns 0
+gota.Ability.Place 480 1
+wait 0.3
+gota.Ability.Use 0 0
+wait 1.2
+gota.Duel.Dump
+quit

@@ -1,0 +1,68 @@
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+wait 0.3
+gota.Boss.Attack ClawCombo
+wait 0.45
+gota.Boss.PlaceTarget 180 0
+wait 0.05
+gota.Boss.Dump
+wait 3.4
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+wait 0.3
+gota.Boss.Attack ClawCombo
+wait 0.45
+gota.Boss.PlaceTarget -200 0
+wait 0.05
+gota.Boss.Dump
+wait 3.4
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+wait 0.3
+gota.Boss.Attack ClawCombo
+wait 0.45
+gota.Boss.PlaceTarget 0 230
+wait 0.05
+gota.Boss.Dump
+wait 3.4
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+wait 0.3
+gota.Boss.Attack ClawCombo
+wait 0.45
+gota.Boss.PlaceTarget 0 -230
+wait 0.05
+gota.Boss.Dump
+wait 3.4
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+wait 0.3
+gota.Boss.Attack ClawCombo
+wait 0.45
+gota.Boss.PlaceTarget 340 0
+wait 0.05
+gota.Boss.Dump
+wait 3.4
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+wait 0.3
+gota.Boss.Attack ClawCombo
+wait 0.45
+gota.Boss.PlaceTarget 160 110
+wait 0.05
+gota.Boss.Dump
+wait 3.4
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 170 0
+wait 0.3
+gota.Boss.Attack ClawCombo
+wait 0.45
+gota.Boss.PlaceTarget -120 150
+wait 0.05
+gota.Boss.Dump
+wait 3.4
+quit
