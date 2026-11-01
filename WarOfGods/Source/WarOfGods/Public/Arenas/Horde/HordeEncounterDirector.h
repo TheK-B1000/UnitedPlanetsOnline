@@ -7,6 +7,8 @@
 #include "Arenas/Horde/HordeTypes.h"
 #include "HordeEncounterDirector.generated.h"
 
+class APlayerState;
+
 class UHordeWaveDefinition;
 class AHordeSpawnPoint;
 class AHordeGameState;
@@ -75,7 +77,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Horde")
 	FOnHordeWaveCleared OnWaveCleared;
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHordeEnemyDefeated, int32, ScoreValue);
+	/** Server: an enemy was killed. Killer = the player whose pawn landed the last hit (null if none in the last 10 s). */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHordeEnemyDefeated, int32, ScoreValue, APlayerState*, Killer);
 	UPROPERTY(BlueprintAssignable, Category = "Horde")
 	FOnHordeEnemyDefeated OnEnemyDefeated;
 

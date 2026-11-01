@@ -1,6 +1,7 @@
 // White Tiger Studios 2024
 
 #include "Combat/GOTACombatantObserver.h"
+#include "Characters/StatsComponent.h"
 #include "Components/ActorComponent.h"
 #include "GameFramework/Actor.h"
 #include "UObject/UnrealType.h"
@@ -82,6 +83,18 @@ UActorComponent* UGOTACombatantObserver::FindDamageSystem(const AActor* Combatan
 FGOTACombatantVitals UGOTACombatantObserver::ReadVitals(const AActor* Combatant)
 {
 	FGOTACombatantVitals Vitals;
+	// Clients: BPC_DamageSystem is not replicated, so its local copy is stale. Use the server's mirror.
+	if (Combatant && !Combatant->HasAuthority())
+	{
+		if (const UStatsComponent* Stats = Combatant->FindComponentByClass<UStatsComponent>(); Stats && Stats->HasObservedHealth())
+		{
+			Vitals.bHasDamageSystem = true;
+			Vitals.Health = Stats->GetHealth();
+			Vitals.MaxHealth = Stats->GetMaxHealth();
+			Vitals.bIsDead = Stats->GetHealth() <= 0.f;
+			return Vitals;
+		}
+	}
 	const UActorComponent* Damage = FindDamageSystem(Combatant);
 	if (!Damage)
 	{

@@ -65,6 +65,8 @@ protected:
 	void HandleActorSpawned(AActor* Spawned);
 	void BindPlayerController(APlayerController* PC);
 	void EnsureComponentsOnPawn(APawn* Pawn);
+	/** Server: one replicated UStatsComponent mirroring the pawn's Blueprint health (clients: the replicated one). */
+	class UStatsComponent* EnsureReplicatedVitals(APawn* Pawn);
 	void BindCombatLogging(UCombatComponent* Combat);
 	void BindTimingLogging(UCombatTimingComponent* Timing);
 

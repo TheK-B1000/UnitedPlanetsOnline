@@ -258,9 +258,14 @@ void ADuelGameMode::Logout(AController* Exiting)
 			|| GS->DuelPhase == EDuelPhase::Countdown
 			|| GS->DuelPhase == EDuelPhase::PreparingRound)
 		{
+			// Only a fighter leaving forfeits; a spectator (no duel slot) leaving changes nothing.
 			ADuelPlayerState* Leaving = GetDuelPS(Exiting);
-			const int32 WinnerSlot = (Leaving && Leaving->DuelSlot == 0) ? 1 : 0;
-			CompleteMatch(WinnerSlot == 0 ? EDuelMatchOutcome::Player0Wins : EDuelMatchOutcome::Player1Wins);
+			if (Leaving && Leaving->DuelSlot != INDEX_NONE)
+			{
+				const int32 WinnerSlot = Leaving->DuelSlot == 0 ? 1 : 0;
+				UE_LOG(LogTemp, Log, TEXT("Duel: fighter in slot %d left - forfeit"), Leaving->DuelSlot);
+				CompleteMatch(WinnerSlot == 0 ? EDuelMatchOutcome::Player0Wins : EDuelMatchOutcome::Player1Wins);
+			}
 		}
 	}
 }

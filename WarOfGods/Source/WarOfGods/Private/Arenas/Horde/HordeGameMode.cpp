@@ -11,6 +11,7 @@
 #include "Arenas/Horde/HordeSpawnPoint.h"
 #include "Arenas/Horde/HordeWaveDefinition.h"
 #include "Blueprint/UserWidget.h"
+#include "Combat/GOTACombatantObserver.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -560,31 +561,31 @@ void AHordeGameMode::HandleWaveCleared()
 	}
 }
 
-void AHordeGameMode::OnDirectorEnemyDefeated(int32 ScoreValue)
+void AHordeGameMode::OnDirectorEnemyDefeated(int32 ScoreValue, APlayerState* Killer)
 {
-	HandleEnemyScore(ScoreValue);
+	HandleEnemyScore(ScoreValue, Killer);
 }
 
-void AHordeGameMode::HandleEnemyScore(int32 ScoreValue)
+void AHordeGameMode::HandleEnemyScore(int32 ScoreValue, APlayerState* Killer)
 {
+	if (bMatchEnded)
+	{
+		return; // no rewards after the outcome is decided
+	}
 	if (AHordeGameState* GS = GetHordeGS())
 	{
 		GS->AddTeamScore(ScoreValue);
 	}
-	// Attribute to first non-eliminated player as a simple co-op share until kill credit RPCs exist.
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	// Personal credit goes to the player who landed the last hit (server damage record). Kills with no player
+	// damage in the last 10 s (environment, AI infighting) only count for the team.
+	if (AHordePlayerState* PS = Cast<AHordePlayerState>(Killer))
 	{
-		if (APlayerController* PC = It->Get())
-		{
-			if (AHordePlayerState* PS = PC->GetPlayerState<AHordePlayerState>())
-			{
-				if (!PS->bIsEliminated)
-				{
-					PS->ServerAddElimination(ScoreValue >= 400, ScoreValue);
-					break;
-				}
-			}
-		}
+		PS->ServerAddElimination(ScoreValue >= 400, ScoreValue);
+		UE_LOG(LogTemp, Log, TEXT("Horde kill credit: %s +%d"), *PS->GetPlayerName(), ScoreValue);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Horde kill: team only (+%d, no player damage on record)"), ScoreValue);
 	}
 }
 
@@ -617,10 +618,12 @@ void AHordeGameMode::EvaluateTeamWipe()
 		++Considered;
 		AHordePlayerState* PS = PC->GetPlayerState<AHordePlayerState>();
 		APawn* Pawn = PC->GetPawn();
-		const bool bAlive = Pawn && IsValid(Pawn) && !Pawn->IsActorBeingDestroyed();
-		if (PS)
+		// Blueprint death leaves the pawn in the world: alive means a pawn whose damage system still has health.
+		const bool bAlive = Pawn && !UGOTACombatantObserver::IsCombatantDefeated(Pawn);
+		if (PS && PS->bIsEliminated != !bAlive)
 		{
 			PS->SetEliminated(!bAlive);
+			UE_LOG(LogTemp, Log, TEXT("Horde: %s %s"), *PS->GetPlayerName(), bAlive ? TEXT("back in the fight") : TEXT("ELIMINATED"));
 		}
 		if (bAlive)
 		{
@@ -688,15 +691,25 @@ void AHordeGameMode::RespawnEliminatedPlayers()
 			continue;
 		}
 		AHordePlayerState* PS = PC->GetPlayerState<AHordePlayerState>();
-		if (PS && PS->bIsEliminated)
+		APawn* Old = PC->GetPawn();
+		const bool bDown = !Old || UGOTACombatantObserver::IsCombatantDefeated(Old) || (PS && PS->bIsEliminated);
+		if (!bDown)
 		{
-			RestartPlayer(PC);
+			continue;
+		}
+		// The dead body stays in the world after Blueprint death: remove it, then spawn a fresh pawn
+		// (RestartPlayer would otherwise keep the dead one).
+		if (Old)
+		{
+			PC->UnPossess();
+			Old->Destroy();
+		}
+		RestartPlayer(PC);
+		if (PS)
+		{
 			PS->SetEliminated(false);
 		}
-		else if (!PC->GetPawn())
-		{
-			RestartPlayer(PC);
-		}
+		UE_LOG(LogTemp, Log, TEXT("Horde: respawned %s as %s"), PS ? *PS->GetPlayerName() : TEXT("?"), *GetNameSafe(PC->GetPawn()));
 	}
 }
 

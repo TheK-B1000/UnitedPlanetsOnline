@@ -74,6 +74,28 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat|Stats")
 	void ObserveHealth(float Current, float Maximum);
 
+	/**
+	 * Server: mirror the owner's Blueprint damage system (BPC_DamageSystem, the health authority) into this
+	 * replicated component - health and death for every client, plus the last damager for kill credit.
+	 * Event-driven (OnDamageResponse / OnDeath) with a 10 Hz check for heals and respawns. Idempotent.
+	 */
+	void BeginObservingBlueprintDamage();
+	/** Server: re-read the Blueprint health now. */
+	void SyncFromBlueprint();
+	/** True once the server has mirrored real health into this component (clients: replicated). */
+	bool HasObservedHealth() const { return bHealthObserved; }
+	/** Server: the pawn (or its controller's pawn) that last damaged the owner, if within Seconds. */
+	APawn* GetRecentDamager(float Seconds = 10.f) const;
+	/** Server: record who is about to damage the owner (C++ damage path; Blueprint hits arrive via OnDamageResponse). */
+	void NoteDamageFrom(AActor* DamageCauser);
+
+	/** Bound to BPC_DamageSystem.OnDamageResponse(DamageResponse, DamageCauser) on the server. */
+	UFUNCTION()
+	void HandleBlueprintDamageResponse(uint8 DamageResponse, AActor* DamageCauser);
+	/** Bound to BPC_DamageSystem.OnDeath() on the server. */
+	UFUNCTION()
+	void HandleBlueprintDeath();
+
 	UPROPERTY(BlueprintAssignable, Category = "Combat|Stats")
 	FOnStatChanged OnHealthChanged;
 
@@ -88,6 +110,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Combat|Stats")
 	float Health = 100.f;
@@ -109,6 +132,17 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat|Stats")
 	bool bAuthoritativeMutations = false;
+
+	UPROPERTY(Replicated)
+	bool bHealthObserved = false;
+
+	TWeakObjectPtr<UActorComponent> ObservedDamageSystem;
+	TWeakObjectPtr<APawn> LastDamager;
+	double LastDamageTime = -1000.0;
+	FTimerHandle SyncTimer;
+	/** One death event per life (cleared when health comes back). */
+	bool bDeathBroadcast = false;
+	void BroadcastDeath();
 
 	UFUNCTION()
 	void OnRep_Health(float OldHealth);

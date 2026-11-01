@@ -1,0 +1,32 @@
+wait 80
+gota.Net.Players
+gota.Horde.SkipPrep
+wait 10
+gota.Test.Body
+gota.Net.Players
+gota.Horde.Dump
+gota.Net.KillEnemy 1
+gota.Net.KillEnemy 2
+gota.Net.KillEnemy 2
+wait 3
+gota.Net.Players
+gota.Net.Hurt 3 500
+wait 3
+gota.Net.Players
+gota.Horde.ForceClear
+wait 8
+gota.Net.Players
+gota.Horde.Dump
+gota.Horde.SkipPrep
+wait 6
+gota.Horde.Dump
+gota.Net.Hurt 0 500
+gota.Net.Hurt 1 500
+gota.Net.Hurt 2 500
+gota.Net.Hurt 3 500
+wait 4
+gota.Net.Players
+gota.Horde.Dump
+wait 10
+gota.Net.Players
+quit

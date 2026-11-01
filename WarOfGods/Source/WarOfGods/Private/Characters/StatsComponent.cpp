@@ -2,7 +2,15 @@
 
 #include "Characters/StatsComponent.h"
 
+#include "Arenas/Duel/GOTADuelCombat.h"
+#include "Combat/GOTACombatantObserver.h"
+#include "Engine/World.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogGOTAStats, Log, All);
 
 UStatsComponent::UStatsComponent()
 {
@@ -20,6 +28,117 @@ void UStatsComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(UStatsComponent, MaxStamina);
 	DOREPLIFETIME(UStatsComponent, DivineMomentum);
 	DOREPLIFETIME(UStatsComponent, MaxDivineMomentum);
+	DOREPLIFETIME(UStatsComponent, bHealthObserved);
+}
+
+void UStatsComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UActorComponent* DS = ObservedDamageSystem.Get())
+	{
+		FGOTABlueprintCombat::UnbindDelegate(DS, TEXT("OnDamageResponse"), this, GET_FUNCTION_NAME_CHECKED(UStatsComponent, HandleBlueprintDamageResponse));
+		FGOTABlueprintCombat::UnbindDelegate(DS, TEXT("OnDeath"), this, GET_FUNCTION_NAME_CHECKED(UStatsComponent, HandleBlueprintDeath));
+	}
+	ObservedDamageSystem.Reset();
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(SyncTimer);
+	}
+	OnHealthChanged.Clear();
+	OnStaminaChanged.Clear();
+	OnDivineMomentumChanged.Clear();
+	OnDied.Clear();
+	Super::EndPlay(EndPlayReason);
+}
+
+void UStatsComponent::BeginObservingBlueprintDamage()
+{
+	AActor* Owner = GetOwner();
+	if (!Owner || !Owner->HasAuthority() || ObservedDamageSystem.IsValid())
+	{
+		return;
+	}
+	UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Owner);
+	if (!DS)
+	{
+		return;
+	}
+	ObservedDamageSystem = DS;
+	FGOTABlueprintCombat::BindDelegate(DS, TEXT("OnDamageResponse"), this, GET_FUNCTION_NAME_CHECKED(UStatsComponent, HandleBlueprintDamageResponse));
+	FGOTABlueprintCombat::BindDelegate(DS, TEXT("OnDeath"), this, GET_FUNCTION_NAME_CHECKED(UStatsComponent, HandleBlueprintDeath));
+	SyncFromBlueprint();
+	GetWorld()->GetTimerManager().SetTimer(SyncTimer, this, &UStatsComponent::SyncFromBlueprint, 0.1f, true);
+}
+
+void UStatsComponent::SyncFromBlueprint()
+{
+	AActor* Owner = GetOwner();
+	UActorComponent* DS = ObservedDamageSystem.Get();
+	if (!Owner || !DS || !Owner->HasAuthority())
+	{
+		return;
+	}
+	const FGOTACombatantVitals V = UGOTACombatantObserver::ReadVitals(Owner);
+	if (!V.bHasDamageSystem)
+	{
+		return;
+	}
+	bHealthObserved = true;
+	const float NewHealth = V.bIsDead ? 0.f : V.Health;
+	if (NewHealth > 0.f)
+	{
+		bDeathBroadcast = false; // healed / respawned: a new life
+	}
+	if (!FMath::IsNearlyEqual(NewHealth, Health) || !FMath::IsNearlyEqual(FMath::Max(V.MaxHealth, 1.f), MaxHealth))
+	{
+		ObserveHealth(NewHealth, V.MaxHealth);
+	}
+}
+
+APawn* UStatsComponent::GetRecentDamager(float Seconds) const
+{
+	const UWorld* World = GetWorld();
+	return (World && World->GetTimeSeconds() - LastDamageTime <= Seconds) ? LastDamager.Get() : nullptr;
+}
+
+void UStatsComponent::NoteDamageFrom(AActor* DamageCauser)
+{
+	HandleBlueprintDamageResponse(0, DamageCauser);
+}
+
+void UStatsComponent::HandleBlueprintDamageResponse(uint8 DamageResponse, AActor* DamageCauser)
+{
+	// The causer may be the attacker, its weapon or a projectile: walk instigator / owner to the pawn.
+	APawn* By = Cast<APawn>(DamageCauser);
+	for (AActor* A = DamageCauser; A && !By; A = A->GetOwner())
+	{
+		By = A->GetInstigator() ? A->GetInstigator() : Cast<APawn>(A->GetOwner());
+	}
+	if (By && By != GetOwner())
+	{
+		LastDamager = By;
+		LastDamageTime = GetWorld()->GetTimeSeconds();
+	}
+	SyncFromBlueprint();
+}
+
+void UStatsComponent::HandleBlueprintDeath()
+{
+	SyncFromBlueprint();
+	BroadcastDeath();
+}
+
+void UStatsComponent::BroadcastDeath()
+{
+	if (bDeathBroadcast)
+	{
+		return;
+	}
+	bDeathBroadcast = true;
+	FCombatActorEvent Event;
+	Event.Target = GetOwner();
+	Event.Instigator = GetRecentDamager();
+	UE_LOG(LogGOTAStats, Log, TEXT("Combatant %s defeated (by %s)"), *GetNameSafe(GetOwner()), *GetNameSafe(Event.Instigator.Get()));
+	OnDied.Broadcast(Event);
 }
 
 void UStatsComponent::BeginPlay()
@@ -47,9 +166,7 @@ void UStatsComponent::ObserveHealth(float Current, float Maximum)
 		OnHealthChanged.Broadcast(Health, MaxHealth);
 		if (Health <= 0.f && Old > 0.f)
 		{
-			FCombatActorEvent Event;
-			Event.Target = GetOwner();
-			OnDied.Broadcast(Event);
+			BroadcastDeath(); // server: exactly once per life, with the killer
 		}
 	}
 }
@@ -158,6 +275,7 @@ bool UStatsComponent::ConsumeDivineMomentum(float Amount)
 
 void UStatsComponent::OnRep_Health(float OldHealth)
 {
+	// Clients: presentation events from the replicated, server-mirrored value (never a gameplay decision).
 	OnHealthChanged.Broadcast(Health, MaxHealth);
 	if (Health <= 0.f && OldHealth > 0.f)
 	{

@@ -206,6 +206,11 @@ bool FGOTABlueprintCombat::ApplyDamage(AActor* Victim, AActor* Causer, float Amo
 		UE_LOG(LogGOTADuelAI, Warning, TEXT("ApplyDamage: no BPC_DamageSystem::TakeDamage on %s"), *GetNameSafe(Victim));
 		return false;
 	}
+	// Kill credit: the Blueprint reports the causer only for non-lethal hits, so record it before a C++-driven hit.
+	if (UStatsComponent* VictimStats = Victim ? Victim->FindComponentByClass<UStatsComponent>() : nullptr; VictimStats && Causer && Victim->HasAuthority())
+	{
+		VictimStats->NoteDamageFrom(Causer);
+	}
 	uint8* Params = static_cast<uint8*>(FMemory_Alloca(Fn->ParmsSize));
 	FMemory::Memzero(Params, Fn->ParmsSize);
 	Fn->InitializeStruct(Params);

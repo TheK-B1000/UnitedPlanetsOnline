@@ -32,6 +32,7 @@ class WAROFGODS_API AGOTAStoryGameMode : public AGameModeBase
 public:
 	/** Story uses the default prototype hero's body (cosmetic; same gameplay pawn). */
 	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
+	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT("")) override;
 
 public:
 	AGOTAStoryGameMode();
@@ -130,4 +131,11 @@ protected:
 	bool bMissionFlowComplete = false;
 	int32 NextPlayerSlot = 0;
 	FTimerHandle EncounterWatchHandle;
+
+	/** Co-op: a downed player respawns at a player start after this many seconds (server). */
+	UPROPERTY(EditDefaultsOnly, Category = "Story|Co-op")
+	float DownedRespawnSeconds = 6.f;
+	/** Server: when each downed player went down (Blueprint death leaves the pawn in the world). */
+	TMap<TWeakObjectPtr<APlayerController>, double> DownedSince;
+	void WatchPlayers();
 };

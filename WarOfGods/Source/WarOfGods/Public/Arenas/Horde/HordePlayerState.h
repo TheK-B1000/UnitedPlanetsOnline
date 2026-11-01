@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/PlayerState.h"
+#include "Multiplayer/GOTAPlayerState.h"
 #include "HordePlayerState.generated.h"
 
 UCLASS()
-class WAROFGODS_API AHordePlayerState : public APlayerState
+class WAROFGODS_API AHordePlayerState : public AGOTAPlayerState
 {
 	GENERATED_BODY()
 

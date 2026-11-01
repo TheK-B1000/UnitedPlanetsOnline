@@ -5,6 +5,9 @@
 #include "Arenas/Horde/HordeGameState.h"
 #include "Arenas/Horde/HordeSpawnPoint.h"
 #include "Arenas/Horde/HordeWaveDefinition.h"
+#include "Characters/StatsComponent.h"
+#include "Combat/GOTACombatantObserver.h"
+#include "GameFramework/PlayerState.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
@@ -389,7 +392,11 @@ void AHordeEncounterDirector::NotifyEnemyDefeated(FHordeTrackedEnemy& Tracked, b
 	if (bLegitimateKill)
 	{
 		++DefeatedCount;
-		OnEnemyDefeated.Broadcast(Tracked.ScoreValue);
+		// Kill credit from the server's damage record (the replicated vitals mirror), never from a client claim.
+		const APawn* Enemy = Tracked.Pawn.Get();
+		const UStatsComponent* Stats = Enemy ? Enemy->FindComponentByClass<UStatsComponent>() : nullptr;
+		const APawn* Killer = Stats ? Stats->GetRecentDamager() : nullptr;
+		OnEnemyDefeated.Broadcast(Tracked.ScoreValue, Killer ? Killer->GetPlayerState() : nullptr);
 	}
 
 	PushCountsToGameState();
@@ -416,7 +423,8 @@ void AHordeEncounterDirector::TickAliveScrub()
 			continue;
 		}
 		APawn* Pawn = Tracked.Pawn.Get();
-		if (!Pawn || !IsValid(Pawn) || Pawn->IsActorBeingDestroyed())
+		// Defeated = destroyed OR out of health (Blueprint death can leave the body in the world for a while).
+		if (!Pawn || !IsValid(Pawn) || Pawn->IsActorBeingDestroyed() || UGOTACombatantObserver::IsCombatantDefeated(Pawn))
 		{
 			NotifyEnemyDefeated(Tracked, true);
 			bChanged = true;

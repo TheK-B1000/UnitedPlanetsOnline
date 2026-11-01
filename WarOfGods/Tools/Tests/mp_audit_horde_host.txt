@@ -1,0 +1,18 @@
+wait 20
+gota.Net.AuditRPCs
+gota.Net.Players
+gota.Horde.SkipPrep
+wait 8
+gota.Net.InspectDamage Enemy
+gota.Horde.Dump
+gota.Net.Players
+gota.Net.Hurt 1 500
+wait 3
+gota.Net.Players
+gota.Horde.Dump
+gota.Net.Hurt 0 500
+wait 5
+gota.Net.Players
+gota.Horde.Dump
+wait 4
+quit

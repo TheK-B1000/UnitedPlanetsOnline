@@ -3,6 +3,7 @@
 #include "Arenas/ArenaGameMode.h"
 #include "Characters/GOTAHeroBodyComponent.h"
 #include "Arenas/Duel/DuelPlayerState.h"
+#include "Multiplayer/GOTAPlayerState.h"
 
 #include "Arenas/ArenaEncounterDirector.h"
 #include "Arenas/ArenaGameState.h"
@@ -353,10 +354,29 @@ void AArenaGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 	Super::SetPlayerDefaults(PlayerPawn);
 	// Cosmetic only: the hero's body over the same gameplay pawn. Duel passes the server-accepted HeroId;
 	// modes without hero selection (Horde) get the default prototype hero's body.
-	const ADuelPlayerState* PS = PlayerPawn ? PlayerPawn->GetPlayerState<ADuelPlayerState>() : nullptr;
-	if (!PS && PlayerPawn && PlayerPawn->GetController())
+	const APlayerState* AnyPS = PlayerPawn ? PlayerPawn->GetPlayerState() : nullptr;
+	if (!AnyPS && PlayerPawn && PlayerPawn->GetController())
 	{
-		PS = PlayerPawn->GetController()->GetPlayerState<ADuelPlayerState>();
+		AnyPS = PlayerPawn->GetController()->PlayerState;
 	}
-	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, PS ? PS->HeroId : NAME_None);
+	FName Hero = NAME_None;
+	if (const ADuelPlayerState* DuelPS = Cast<ADuelPlayerState>(AnyPS))
+	{
+		Hero = DuelPS->HeroId;
+	}
+	else if (const AGOTAPlayerState* CoopPS = Cast<AGOTAPlayerState>(AnyPS))
+	{
+		Hero = CoopPS->GetHeroId(); // Horde: each player's own validated hero
+	}
+	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, Hero);
+}
+
+FString AArenaGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
+{
+	const FString Error = Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
+	if (AGOTAPlayerState* PS = NewPlayerController ? NewPlayerController->GetPlayerState<AGOTAPlayerState>() : nullptr)
+	{
+		PS->AcceptHeroFromOptions(Options, ArenaMode);
+	}
+	return Error;
 }

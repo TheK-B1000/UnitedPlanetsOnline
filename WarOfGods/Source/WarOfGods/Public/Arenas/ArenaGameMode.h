@@ -24,6 +24,8 @@ class WAROFGODS_API AArenaGameMode : public AGameModeBase
 public:
 	/** Dresses every spawned player pawn in its hero body (accepted HeroId, or the default prototype hero). */
 	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
+	/** Co-op modes: accept the joining player's ?Hero= (server-validated) into AGOTAPlayerState. */
+	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT("")) override;
 
 public:
 	AArenaGameMode();

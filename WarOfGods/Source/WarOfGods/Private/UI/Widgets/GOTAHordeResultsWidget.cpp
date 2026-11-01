@@ -22,21 +22,21 @@ void UGOTAHordeResultsWidget::NativeConstruct()
 	if (Btn_Replay)
 	{
 		Btn_Replay->SetLabel(NSLOCTEXT("GOTA", "Replay", "FIGHT AGAIN"));
-		Btn_Replay->OnActivated.AddDynamic(this, &UGOTAHordeResultsWidget::HandleReplay);
+		Btn_Replay->OnActivated.AddUniqueDynamic(this, &UGOTAHordeResultsWidget::HandleReplay);
 	}
 	else if (Btn_ReplayNative)
 	{
-		Btn_ReplayNative->OnClicked.AddDynamic(this, &UGOTAHordeResultsWidget::HandleReplay);
+		Btn_ReplayNative->OnClicked.AddUniqueDynamic(this, &UGOTAHordeResultsWidget::HandleReplay);
 	}
 
 	if (Btn_ReturnToLobby)
 	{
 		Btn_ReturnToLobby->SetLabel(NSLOCTEXT("GOTA", "ReturnLobby", "RETURN TO LOBBY"));
-		Btn_ReturnToLobby->OnActivated.AddDynamic(this, &UGOTAHordeResultsWidget::HandleReturnToLobby);
+		Btn_ReturnToLobby->OnActivated.AddUniqueDynamic(this, &UGOTAHordeResultsWidget::HandleReturnToLobby);
 	}
 	else if (Btn_ReturnNative)
 	{
-		Btn_ReturnNative->OnClicked.AddDynamic(this, &UGOTAHordeResultsWidget::HandleReturnToLobby);
+		Btn_ReturnNative->OnClicked.AddUniqueDynamic(this, &UGOTAHordeResultsWidget::HandleReturnToLobby);
 	}
 
 	Refresh();

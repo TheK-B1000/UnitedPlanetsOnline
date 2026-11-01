@@ -9,10 +9,13 @@
 #include "Arenas/ArenaVisualDressDefaults.h"
 #include "Arenas/ArenaVisualDressDefinition.h"
 #include "Blueprint/UserWidget.h"
+#include "Combat/GOTACombatantObserver.h"
+#include "Multiplayer/GOTAPlayerState.h"
 #include "Components/BoxComponent.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameSession.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Story/GOTAStoryGameState.h"
 #include "Story/GOTAStoryMissionDefinition.h"
@@ -24,6 +27,7 @@
 AGOTAStoryGameMode::AGOTAStoryGameMode()
 {
 	GameStateClass = AGOTAStoryGameState::StaticClass();
+	PlayerStateClass = AGOTAPlayerState::StaticClass(); // per-player validated hero (co-op)
 	SoftMaxPlayers = 4;
 
 	SoftPlayerClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Player/BP_Player.BP_Player_C")));
@@ -499,9 +503,59 @@ void AGOTAStoryGameMode::SpawnGuardian()
 	}
 }
 
+void AGOTAStoryGameMode::WatchPlayers()
+{
+	const double Now = GetWorld()->GetTimeSeconds();
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PC = It->Get();
+		if (!PC)
+		{
+			continue;
+		}
+		APawn* Pawn = PC->GetPawn();
+		const bool bDown = !Pawn || UGOTACombatantObserver::IsCombatantDefeated(Pawn);
+		if (!bDown)
+		{
+			DownedSince.Remove(PC);
+			continue;
+		}
+		if (!DownedSince.Contains(PC))
+		{
+			DownedSince.Add(PC, Now);
+			UE_LOG(LogTemp, Log, TEXT("Story: %s is down - respawn in %.0fs"), *GetNameSafe(PC->PlayerState.Get()), DownedRespawnSeconds);
+			continue;
+		}
+		if (Now - DownedSince[PC] < DownedRespawnSeconds)
+		{
+			continue;
+		}
+		DownedSince.Remove(PC);
+		if (Pawn)
+		{
+			PC->UnPossess();
+			Pawn->Destroy(); // the dead body; RestartPlayer would otherwise keep it
+		}
+		RestartPlayer(PC);
+		UE_LOG(LogTemp, Log, TEXT("Story: respawned %s as %s"), *GetNameSafe(PC->PlayerState.Get()), *GetNameSafe(PC->GetPawn()));
+	}
+	for (auto It = DownedSince.CreateIterator(); It; ++It)
+	{
+		if (!It->Key.IsValid())
+		{
+			It.RemoveCurrent(); // disconnected while down
+		}
+	}
+}
+
 void AGOTAStoryGameMode::WatchEncounters()
 {
-	if (!HasAuthority() || bMissionFlowComplete)
+	if (!HasAuthority())
+	{
+		return;
+	}
+	WatchPlayers();
+	if (bMissionFlowComplete)
 	{
 		return;
 	}
@@ -703,5 +757,16 @@ AGOTAStoryGameState* AGOTAStoryGameMode::GetStoryGS() const
 void AGOTAStoryGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 {
 	Super::SetPlayerDefaults(PlayerPawn);
-	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, NAME_None);
+	const AGOTAPlayerState* PS = PlayerPawn && PlayerPawn->GetController() ? PlayerPawn->GetController()->GetPlayerState<AGOTAPlayerState>() : nullptr;
+	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, PS ? PS->GetHeroId() : NAME_None);
+}
+
+FString AGOTAStoryGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
+{
+	const FString Error = Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
+	if (AGOTAPlayerState* PS = NewPlayerController ? NewPlayerController->GetPlayerState<AGOTAPlayerState>() : nullptr)
+	{
+		PS->AcceptHeroFromOptions(Options, EArenaMode::Story);
+	}
+	return Error;
 }

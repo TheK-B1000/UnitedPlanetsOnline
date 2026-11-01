@@ -4,6 +4,8 @@
 
 #include "Characters/StatsComponent.h"
 #include "Combat/CombatComponent.h"
+#include "Combat/GOTACombatantObserver.h"
+#include "EngineUtils.h"
 #include "Combat/CombatTimingComponent.h"
 #include "Combat/CombatTimingTypes.h"
 #include "Combat/LockonComponent.h"
@@ -42,6 +44,12 @@ void UCombatBootstrapSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 		{
 			BindPlayerController(PC);
 		}
+	}	for (TActorIterator<APawn> It(&InWorld); It; ++It)
+	{
+		if (!It->IsPlayerControlled())
+		{
+			EnsureReplicatedVitals(*It); // level-placed AI
+		}
 	}
 }
 
@@ -65,6 +73,10 @@ void UCombatBootstrapSubsystem::HandleActorSpawned(AActor* Spawned)
 		if (Pawn->IsPlayerControlled())
 		{
 			EnsureComponentsOnPawn(Pawn);
+		}
+		else
+		{
+			EnsureReplicatedVitals(Pawn); // AI / enemies / bosses: clients see their real health, the server gets kill credit
 		}
 	}
 }
@@ -118,15 +130,9 @@ void UCombatBootstrapSubsystem::EnsureComponentsOnPawn(APawn* Pawn)
 		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Attached ULockonComponent to %s"), *GetNameSafe(Pawn));
 	}
 
-	UStatsComponent* Stats = Pawn->FindComponentByClass<UStatsComponent>();
-	if (!Stats)
-	{
-		Stats = NewObject<UStatsComponent>(Pawn, TEXT("GOTA_StatsComponent"));
-		Stats->RegisterComponent();
-		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Attached UStatsComponent to %s"), *GetNameSafe(Pawn));
-	}
-
-	if (Stats)
+	// Stats are server-created and replicated (clients receive the server's instance; never create their own).
+	UStatsComponent* Stats = EnsureReplicatedVitals(Pawn);
+	if (Stats && Pawn->HasAuthority())
 	{
 		Stats->SetAuthoritativeMutationsEnabled(bEnableAuthoritativeStats);
 	}
@@ -139,6 +145,32 @@ void UCombatBootstrapSubsystem::EnsureComponentsOnPawn(APawn* Pawn)
 	{
 		BindTimingLogging(Timing);
 	}
+}
+
+UStatsComponent* UCombatBootstrapSubsystem::EnsureReplicatedVitals(APawn* Pawn)
+{
+	if (!IsValid(Pawn))
+	{
+		return nullptr;
+	}
+	UStatsComponent* Stats = Pawn->FindComponentByClass<UStatsComponent>();
+	if (!Pawn->HasAuthority())
+	{
+		return Stats; // the replicated server instance (may arrive a few frames after the pawn)
+	}
+	if (!UGOTACombatantObserver::FindDamageSystem(Pawn))
+	{
+		return Stats;
+	}
+	if (!Stats)
+	{
+		Stats = NewObject<UStatsComponent>(Pawn, TEXT("GOTA_StatsComponent"));
+		Stats->SetIsReplicated(true);
+		Stats->RegisterComponent();
+		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Attached replicated UStatsComponent to %s"), *GetNameSafe(Pawn));
+	}
+	Stats->BeginObservingBlueprintDamage();
+	return Stats;
 }
 
 void UCombatBootstrapSubsystem::BindCombatLogging(UCombatComponent* Combat)

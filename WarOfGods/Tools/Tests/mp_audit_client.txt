@@ -1,0 +1,7 @@
+wait 18
+gota.Net.AuditRPCs
+gota.Net.Players
+wait 16
+gota.Net.Players
+wait 15
+quit

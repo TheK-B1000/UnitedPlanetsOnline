@@ -7,6 +7,8 @@
 #include "Arenas/Horde/HordeTypes.h"
 #include "HordeGameMode.generated.h"
 
+class APlayerState;
+
 class UHordeMatchDefinition;
 class UHordeWaveDefinition;
 class AHordeEncounterDirector;
@@ -92,7 +94,7 @@ protected:
 	void BeginIntermission();
 	void BeginBossFinale();
 	void HandleWaveCleared();
-	void HandleEnemyScore(int32 ScoreValue);
+	void HandleEnemyScore(int32 ScoreValue, APlayerState* Killer);
 	void EvaluateTeamWipe();
 	void CompleteVictory();
 	void CompleteDefeat();
@@ -108,7 +110,7 @@ protected:
 	void OnDirectorWaveCleared();
 
 	UFUNCTION()
-	void OnDirectorEnemyDefeated(int32 ScoreValue);
+	void OnDirectorEnemyDefeated(int32 ScoreValue, APlayerState* Killer);
 
 	UPROPERTY()
 	TObjectPtr<AHordeEncounterDirector> HordeDirector;
