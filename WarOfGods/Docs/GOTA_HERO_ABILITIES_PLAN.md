@@ -293,21 +293,38 @@ Notes from getting there:
 - The fix: `gota.Ability.ResetCooldowns` replaces cooldown waits; Time Lash has a lean script with no camera or screenshots; exact walk-speed values are asserted by the deterministic 8 s `status_slowed.txt` case.
 - The test runner now caps each frame's script-time step at 0.5 s instead of 0.1 s, so waits no longer crawl in an unfocused packaged window. This lands in the next package.
 
-## Open issue: intermittent D3D12 crash on the results screen
+## D3D12 crash on the results screen: root cause found and fixed (2026-11-01)
 
-Seen in 5 of 7 long editor runs and in 1 of 16 packaged suite runs, always while idling on the post-match results screen. The packaged crash has symbols:
+**Symptom:**
+- `EXCEPTION_ACCESS_VIOLATION` in `FD3D12ContextCommon::BindDiagnosticBuffer` ← `SetSamplerTable` ← `RHISetShaderParameters`, inside a *Parallel* BasePass draw on a worker thread.
+- Always 1–4.5 min after a duel ended, while idling on the results screen.
+- Editor `-game` and packaged builds.
 
-```
-EXCEPTION_ACCESS_VIOLATION reading 0xffffffffffffffff
-FD3D12ContextCommon::BindDiagnosticBuffer <- FD3D12DescriptorCache::SetSamplerTable
-<- FD3D12CommandContext::RHISetShaderParameters <- ... FRHICommandListExecutor::FTranslateState::Translate_ExecuteCommandList
-(Background Worker: RHI parallel translate)
-```
+**Soak** (`scratchpad/soak.sh`, `Tools/Tests/soak_results_idle.txt`): a full Fight AI match, then 4 min on the results screen, rotating Drakon, Nyx, Varoth, Kairos and Orion.
 
-- `BindDiagnosticBuffer` dereferences `PSOCommonData->RootSignature` when the root signature changes (`D3D12StateCache.cpp:531`). A garbage pointer there means a pipeline state whose root signature is no longer valid, while commands are translated in parallel.
-- This is engine-side; no game code is on the stack. The results widget is a plain image plus text.
-- **Candidate mitigation (not applied):** `r.RHICmd.ParallelTranslate.Enable=0`. It costs some rendering throughput, and at this repro rate it needs a long A/B soak before it can be called a fix.
-- Next steps: install editor debug symbols, run a long idle-results soak with and without the cvar, and if it reproduces, report it upstream (UE 5.8, D3D12, RTX 5070 / driver 610.88).
+| Configuration | Runs | Crashes | Notes |
+|---|---|---|---|
+| Default | 13 (7 god batch + 6 soak) | **9** (~70%) | |
+| `r.RHICmd.ParallelTranslate.Enable=0` | — | — | **Unusable in UE 5.8**: asserts (`Pair != nullptr`, `Map.h.inl`) on the first frame, whether set at runtime or at startup |
+| `r.RHICmdBypass=1` | 1 | 1 | Same crash |
+| `r.ParallelBasePass=0` | 1 | 1 | Same crash, still a parallel draw context |
+| `r.RDG.ParallelExecute=0` | 3 | 1 | Same crash. Renderer settings only move the race |
+| **Enemy bodies off** (`gota.Enemies.Bodies=0`) | 6 | **0** | Points at our enemy bodies |
+| **Fix: champion dressed once** (bodies on) | 6 | **0** (4/4 at the time of writing; final count below) | |
+
+**Root cause:**
+- The Fight AI champion (`BP_Enemy_Melee`) was dressed **twice in the same frame**.
+- First, `UGOTAEnemyBodySubsystem` auto-dressed it as a Melee Soldier inside `SpawnActor`. Then `ADuelGameMode` immediately re-dressed it as Feng Mao.
+- That **destroyed a skeletal mesh component in the same frame it was created and registered**, leaving the renderer with stale pipeline state for it. That state was hit later, when the round-end teardown and GC churned the draw lists.
+
+**Fix:**
+- `ADuelGameMode::SpawnAIFighter` suppresses the subsystem's auto-dress around the champion's `SpawnActor` (`UGOTAEnemyBodySubsystem::SuppressAutoDress`) and dresses it once.
+- Horde enemies were only ever dressed once.
+- No renderer settings are changed.
+
+**Kept for diagnostics:** `gota.Enemies.Bodies 0` (startup: `-ini:Engine:[SystemSettings]:gota.Enemies.Bodies=0`) leaves enemies undressed.
+
+**Follow-up worth considering:** `UGOTAHeroBodyComponent::ApplyBody` still destroys the previous body when a hero ID changes. That's fine across frames, but the same-frame pattern should be avoided anywhere else a pawn might be re-dressed right after spawning.
 
 ## Card alignment: Drakon, Nyx, Varoth (2026-11-01)
 

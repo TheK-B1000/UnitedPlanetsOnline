@@ -1095,7 +1095,11 @@ void ADuelGameMode::SpawnAIFighter()
 		SpawnRot = (W - SpawnLoc).Rotation();
 		SpawnRot.Pitch = 0.f;
 	}
+	// The champion gets its body once, below: keep the generic enemy auto-dress from dressing it first (a body
+	// created and destroyed in the same frame left the renderer with stale pipeline state).
+	++UGOTAEnemyBodySubsystem::SuppressAutoDress;
 	APawn* Champion = GetWorld()->SpawnActor<APawn>(ChampionClass, SpawnLoc, SpawnRot, Params);
+	--UGOTAEnemyBodySubsystem::SuppressAutoDress;
 	if (!Champion)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Duel Fight AI: SpawnActor failed"));
@@ -1108,7 +1112,7 @@ void ADuelGameMode::SpawnAIFighter()
 	}
 	AIFighterPawn = Champion;
 	// Fight AI champion wears the elite champion body (bosses bring their own body via UGOTABossComponent).
-	if (!BossDefinition)
+	if (!BossDefinition && UGOTAEnemyBodySubsystem::AreEnemyBodiesEnabled())
 	{
 		const UGOTAEnemyRegistry* Enemies = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGOTAEnemyRegistry>() : nullptr;
 		if (const UGOTAEnemyDefinition* Def = Enemies ? Enemies->FindEnemy(TEXT("Enemy_Champion")) : nullptr)

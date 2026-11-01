@@ -80,6 +80,10 @@ public:
 
 	/** Applies the enemy body for this pawn's exact class if one is defined. */
 	static void DressPawn(APawn* Pawn);
+	/** gota.Enemies.Bodies (diagnostics switch). */
+	static bool AreEnemyBodiesEnabled();
+	/** While > 0, spawned pawns are not auto-dressed (the spawner dresses them itself, exactly once). */
+	static int32 SuppressAutoDress;
 
 private:
 	void HandleActorSpawned(AActor* Actor);

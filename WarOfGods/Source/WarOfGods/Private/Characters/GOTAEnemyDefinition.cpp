@@ -7,10 +7,22 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
+#include "HAL/IConsoleManager.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GOTAEnemyDefinition)
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTAEnemies, Log, All);
+
+static TAutoConsoleVariable<int32> CVarGOTAEnemyBodies(
+	TEXT("gota.Enemies.Bodies"), 1,
+	TEXT("1 = enemies wear their roster bodies (default). 0 = leave enemy combat frames undressed (diagnostics only)."));
+
+int32 UGOTAEnemyBodySubsystem::SuppressAutoDress = 0;
+
+bool UGOTAEnemyBodySubsystem::AreEnemyBodiesEnabled()
+{
+	return CVarGOTAEnemyBodies.GetValueOnGameThread() != 0;
+}
 
 void UGOTAEnemyRegistry::EnsureLoaded() const
 {
@@ -111,12 +123,16 @@ void UGOTAEnemyBodySubsystem::Deinitialize()
 
 void UGOTAEnemyBodySubsystem::HandleActorSpawned(AActor* Actor)
 {
+	if (SuppressAutoDress > 0)
+	{
+		return; // e.g. the Fight AI champion: dressed once by ADuelGameMode (never twice in one frame)
+	}
 	DressPawn(Cast<APawn>(Actor));
 }
 
 void UGOTAEnemyBodySubsystem::DressPawn(APawn* Pawn)
 {
-	if (!Pawn || !Pawn->HasAuthority() || Pawn->IsPlayerControlled())
+	if (!Pawn || !Pawn->HasAuthority() || Pawn->IsPlayerControlled() || !AreEnemyBodiesEnabled())
 	{
 		return;
 	}
