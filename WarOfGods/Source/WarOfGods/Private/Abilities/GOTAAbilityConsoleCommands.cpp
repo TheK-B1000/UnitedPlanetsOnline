@@ -8,6 +8,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "HAL/IConsoleManager.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Containers/Ticker.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -87,6 +88,9 @@ namespace GOTAAbilityTest
 				UAnimMontage* M = Anim ? Anim->GetCurrentActiveMontage() : nullptr;
 				UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY f%d body=%s anim=%s montage=%s pos=%.2f slotWeight=%.2f"), F, Body ? *GetNameSafe(Body->GetSkeletalMeshAsset()) : TEXT("-"),
 					*GetNameSafe(Anim), *GetNameSafe(M), M ? Anim->Montage_GetPosition(M) : -1.f, Anim ? Anim->GetSlotMontageGlobalWeight(FName(TEXT("DefaultSlot"))) : -1.f);
+				const UCharacterMovementComponent* Move = Char->GetCharacterMovement();
+				UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY f%d move walk=%.0f timeDilation=%.2f meshAnimRate=%.2f"), F, Move ? Move->MaxWalkSpeed : -1.f,
+					Char->CustomTimeDilation, Char->GetMesh() ? Char->GetMesh()->GlobalAnimRateScale : -1.f);
 			}
 		}
 	}
@@ -222,6 +226,30 @@ namespace GOTAAbilityTest
 			return true;
 		}));
 	}
+	/** gota.Ability.Status <fighter> <None|Unbreakable|Veiled|Dread|Slowed> <seconds> <magnitude>: server-side status (tests). */
+	static void Status(const TArray<FString>& Args)
+	{
+		if (Args.Num() < 4)
+		{
+			return;
+		}
+		UWorld* World = GameWorld();
+		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
+		APawn* Pawn = GM ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		const int64 Value = StaticEnum<EGOTAStatus>()->GetValueByNameString(Args[1]);
+		if (!Pawn || Value == INDEX_NONE)
+		{
+			return;
+		}
+		UGOTAHeroAbilityComponent* A = Pawn->FindComponentByClass<UGOTAHeroAbilityComponent>();
+		if (!A)
+		{
+			A = NewObject<UGOTAHeroAbilityComponent>(Pawn, TEXT("GOTAHeroAbilities"));
+			A->RegisterComponent();
+		}
+		A->ApplyStatus(static_cast<EGOTAStatus>(Value), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), nullptr);
+	}
+	static FAutoConsoleCommand CmdStatus(TEXT("gota.Ability.Status"), TEXT("Apply a status: <fighter> <Status> <seconds> <magnitude>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Status));
 	static FAutoConsoleCommand CmdPlaceOnCast(TEXT("gota.Ability.PlaceOnCast"), TEXT("After fighter 0's next cast starts, wait <delay>s then Place <dist> (frozen) [side]."), FConsoleCommandWithArgsDelegate::CreateStatic(&PlaceOnCast));
 	static FAutoConsoleCommand CmdPlace(TEXT("gota.Ability.Place"), TEXT("Test: place fighter 1 <dist> in front of fighter 0 [freeze 0|1] [side cm]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Place));
 	static FAutoConsoleCommand CmdUse(TEXT("gota.Ability.Use"), TEXT("Use hero ability: <fighter 0|1> <slot 0-3>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Use));

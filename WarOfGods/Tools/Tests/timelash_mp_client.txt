@@ -1,0 +1,54 @@
+wait 23
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+gota.Test.Body
+wait 1
+quit

@@ -31,6 +31,9 @@ KWFX = KW + "/FX/Particles/Abilities/"
 AU = "/Game/ParagonAurora"
 AUA = AU + "/Characters/Heroes/Aurora/Animations/"
 AUFX = AU + "/FX/Particles/Abilities/"
+GD = "/Game/ParagonGideon"
+GDA = GD + "/Characters/Heroes/Gideon/Animations/"
+GDFX = GD + "/FX/Particles/Gideon/Abilities/"
 
 K = unreal.GOTAAbilityKind
 ST = unreal.GOTAStatus
@@ -126,6 +129,15 @@ HEROES = {
              anim=AUA + "Ability_R_InPlace", cast_fx=AUFX + "Ultimate/FX/P_Aurora_Ultimate_Warmup",
              impact_fx=AUFX + "Freeze/FX/P_Aurora_Freeze_Whrilwind", fx_scale=1.0, kick=0.8,
              ai=dict(priority=1.3, min=380, max=840)),
+    ]),
+    "Kairos": dict(health=1.0, gap=3.5, look=LOOK.VOID, abilities=[
+        dict(id="TimeLash", name="Time Lash", short="Time Lash", kind=K.AURA,
+             desc="Area control. Kairos lashes time around him: enemies within 4.5 m take light damage and are "
+                  "Slowed (40% movement speed) for 3 seconds. Their attacks and abilities are unaffected.",
+             damage=6, cooldown=12, cast=0.5, recovery=0.4, radius=450, status=ST.SLOWED, status_duration=3.0,
+             magnitude=0.4, anim=GDA + "Burden", cast_fx=GDFX + "Portal/FX/P_Portal_Cast",
+             impact_fx=GDFX + "Portal/FX/P_Portal_Entrance", fx_scale=1.2, kick=0.6,
+             ai=dict(priority=1.2, min=0, max=430)),
     ]),
 }
 
@@ -251,6 +263,9 @@ def build_set(hero, cfg):
     P(hero, "set saved with", len(defs), "abilities; linked to DA_Hero_" + hero)
 
 
+if not EAL.does_asset_exist(MAT + "/M_GOTA_Overlay_Slowed"):
+    EAL.make_directory(MAT)
+    overlay_material("M_GOTA_Overlay_Slowed", (0.25, 0.55, 1.0), 4.0)  # time-blue, Kairos' Time Lash
 # GOTA_HEROES=Zephyr builds only those sets (and leaves the status overlay materials alone).
 ONLY = [h.strip() for h in os.environ.get("GOTA_HEROES", "").split(",") if h.strip()]
 EAL.make_directory(MAT)

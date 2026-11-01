@@ -314,6 +314,7 @@ void UGOTADuelHUDWidget::RefreshAbilityBar()
 		case EGOTAStatus::Unbreakable: Status = TEXT("UNBREAKABLE"); break;
 		case EGOTAStatus::Veiled: Status = TEXT("VEILED"); break;
 		case EGOTAStatus::Dread: Status = TEXT("DREAD  -  SLOWED"); break;
+		case EGOTAStatus::Slowed: Status = TEXT("TIME-LASHED  -  SLOWED"); break;
 		default: break;
 		}
 		const float Left = A->GetStatusRemaining();

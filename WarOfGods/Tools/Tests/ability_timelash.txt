@@ -1,0 +1,29 @@
+# Kairos - Time Lash (slot 0, Aura + Slowed): slow applies/expires/restores; slowed target's own ability unaffected.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.5
+gota.Duel.Face 0
+gota.Ability.Dump
+gota.Test.Portrait 0 80 700 50 40
+gota.Ability.Use 0 0
+wait 0.35
+gota.Test.Shot 84_timelash_cast
+wait 0.4
+gota.Test.Shot 85_timelash_slowed
+gota.Ability.Dump
+gota.Ability.Use 0 0
+gota.Ability.AI 0
+wait 0.6
+gota.Ability.Dump
+wait 3.0
+gota.Ability.Dump
+gota.Test.Cam off
+wait 9
+gota.Ability.Place 700 1
+wait 0.5
+gota.Ability.Use 0 0
+wait 1.2
+gota.Ability.Dump
+quit

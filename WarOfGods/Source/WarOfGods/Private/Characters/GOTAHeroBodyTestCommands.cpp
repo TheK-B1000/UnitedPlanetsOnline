@@ -14,6 +14,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
 #include "HAL/IConsoleManager.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraActor.h"
 #include "GameFramework/PlayerController.h"
 
@@ -74,6 +75,7 @@ namespace GOTABodyTest
 			{
 				VisibleMeshes += (S->IsVisible() && !S->bHiddenInGame && S->GetSkeletalMeshAsset()) ? 1 : 0;
 			}
+			UE_LOG(LogGOTABodyTest, Log, TEXT("MOVE [%s] %s walk=%.0f speed=%.0f"), NetName(W), *C->GetName(), C->GetCharacterMovement() ? C->GetCharacterMovement()->MaxWalkSpeed : -1.f, C->GetVelocity().Size2D());
 			UE_LOG(LogGOTABodyTest, Log, TEXT("BODY [%s] %s hero=%s body=%s bodyVisible=%d gameplayMeshHidden=%d visibleSkelMeshes=%d handGap L=%.1f R=%.1f"),
 				NetName(W), *C->GetName(), Comp ? *Comp->GetHeroId().ToString() : TEXT("-"),
 				BodyMesh ? *GetNameSafe(BodyMesh->GetSkeletalMeshAsset()) : TEXT("none"),

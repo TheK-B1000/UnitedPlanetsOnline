@@ -177,3 +177,40 @@ Recommendation: realign names and descriptions to the cards when those sets are 
 **Not covered by a dedicated test:** the line-of-sight refusal. It's the same validation Varoth's Grasp of the Void uses (verified in Pass 1).
 
 **Card note:** the card names "Celestial Twin Rings" as her weapon, while Aurora carries an ice blade.
+
+### Kairos: Time Lash, and the new Slowed status (implemented 2026-11-01, In Development)
+
+**`EGOTAStatus::Slowed`** (new, appended to the enum):
+- Scales **movement speed only**, by (1 − Magnitude). Damage, attack speed, animation rate and cooldowns are untouched. Only Dread reduces ability damage.
+- It's applied on every peer (server and owning client) so movement prediction agrees, and it shows the blue `M_GOTA_Overlay_Slowed` overlay plus a HUD line ("TIME-LASHED - SLOWED").
+- **Restore fix, shared by Slowed and Dread:** if anything else changes `MaxWalkSpeed` during the status (e.g. a Blueprint stance change), that value becomes the new base, and the **latest** base is restored on expiry. Dread used to restore a stale speed.
+
+**Time Lash:** `HEROES["Kairos"]`, slot 0, built with `GOTA_HEROES=Kairos`.
+
+| Property | Value |
+|---|---|
+| Kind | `Aura`, radius 450 |
+| Damage | 6 |
+| Effect | Slowed, 40% for 3 s |
+| Cooldown | 12 s |
+| Cast / recovery | 0.5 s / 0.4 s |
+| Body animation | Gideon `Burden` (1.03 s) |
+| FX | Gideon portal cast and portal entrance |
+| AI use | 0–4.3 m |
+
+`PortalBlast` was tried first and rejected: it's only 0.03 s long, so there was no visible cast.
+
+**Results:**
+
+| Check | Result |
+|---|---|
+| Hit at 3 m (`ability_timelash.txt`) | 6 damage; target walk speed 500 → **300** for 3 s → **500** restored. Animation rate and time dilation stay 1.00 |
+| Target outside the radius (7 m) | Cast, nothing affected |
+| Re-use during cooldown | Refused |
+| Slowed target's own ability (`status_slowed.txt`, deterministic via `gota.Ability.Status`) | Gale Rush casts normally while slowed, with the normal 8 s cooldown |
+| Stance change while slowed | Magic stance 200 → **120** (adopted as the new base) → expiry restores **200**, not the stale 430 → Melee 430 |
+| Death during casting (`ability_death_cast.txt`) | Cast cancelled; no status reaches the target; the next round starts clean |
+| AI (`?Foe=Kairos`) | The AI Kairos chose Time Lash at 3–4.2 m and slowed the player (430 → 258) |
+| Listen server | The remote player's own client logged walk 300 under Time Lash, 500 after expiry, then 300 again under a second slow, so prediction agrees and the restore replicates. The client saw Kairos play the cast |
+
+**Limitation (unchanged design):** a fighter holds one status at a time, so a new status replaces the current one.
