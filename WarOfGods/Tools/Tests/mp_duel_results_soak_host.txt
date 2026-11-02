@@ -1,0 +1,13 @@
+# PvP Duel host: forfeit → idle on results long enough for the prior ~67s D3D12 crash window.
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 25
+gota.Net.Players
+gota.Duel.Dump
+wait 50
+gota.Net.Players
+gota.Duel.Dump
+wait 90
+gota.Net.Players
+gota.Duel.Dump
+wait 5
+quit

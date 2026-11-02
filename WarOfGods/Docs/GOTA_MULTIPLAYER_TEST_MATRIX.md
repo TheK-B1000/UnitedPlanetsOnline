@@ -46,7 +46,23 @@
 | 8f | Travel (menu → session → match) | — | **NOT RUN** in this pass. Sessions start directly on the match map; the menu Host/Find/Join path was not re-tested |
 | 9 | **Latency and packet loss** | Horde, host + 4 clients. Clients: 120 ms ±30 lag, 5% loss. Host: 60 ms, 3% loss | **PASS** | Pings ~230–244 ms. Kill credit exact, respawn worked, Defeat once (`outcome=2`), clients converged to the same state (`hp=0/100`, kills) |
 | 10 | Delegate lifecycle | Code review + runs | **PASS** (review) | `UStatsComponent::EndPlay` unbinds Blueprint delegates and clears its timer; death broadcast once per life; Horde results buttons use `AddUniqueDynamic`. No duplicate deaths or outcomes in any run. **No automated rebinding test across travel** |
-| — | **Crash: D3D12 results-screen crash in PvP** | Duel PvP 2P, after a forfeit, idle on results | **FAIL (1/1)** | Host `EXCEPTION_ACCESS_VIOLATION` in a parallel BasePass draw, ~70 s after match complete. Same signature as the earlier Fight AI results crash (fixed there by dressing the champion once). PvP recreates each fighter's hero-body pawn every round, which looks like another trigger. **Not yet known whether it predates this pass** (the Duel round reset was not changed) |
+| — | **Crash: D3D12 results-screen crash in PvP** | Duel PvP 2P, after a forfeit, idle on results | **FAIL (1/1)** prior; **PASS (6/6 + rematch)** after fix | See stability pass below |
+
+## Stability pass (2026-11-01 night, uncommitted → then committed on branch)
+
+**Root cause (PvP forfeit path):** delayed `D3D12RHI` Parallel BasePass AV while idling on results. Correlated with (1) orphan `W_PlayerHUD` ticking without a valid pawn and (2) dressed hero meshes left in the world. Same-frame PostLogin dress→destroy was a related Fight AI trigger; spectators-only start removed it but was **not** sufficient alone (`duelsoakB*` still 3/3 CRASH).
+
+**Fix:** `bStartPlayersAsSpectators`; on `CompleteMatch` destroy remaining fighters + strip `W_PlayerHUD`; MP clamps `SetGlobalTimeDilation` to actor-local; Story safe respawn + 2.5 s invuln.
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| S1 | Forfeit → results idle soak (`duelsoakC1`–`C6`) | **PASS 6/6** | Each: `forfeit` → `match complete` → **NO** `EXCEPTION_ACCESS_VIOLATION`; `hud_msgs=0` |
+| S2 | Rematch / multi-spawn soak (`duelrematch1`) | **PASS 1/1** | `NO_CRASH`, 4 fighter spawns (round recreation) |
+| S3 | Global slow-mo clamp (`slowmo1`, listen + 1 client) | **PASS** | `ABILITY slomo 0.150` → `clamped SetGlobalTimeDilation … CustomTimeDilation locally` |
+| S4 | Story 4P wipe → protected respawn (`storyrespawn2`) | **PASS** | 4 downs → 4× `respawned … (protection 2.5s)` → all `hp=100/100 dead=0` |
+| S5 | Packaged 4P with this fix | **NOT RUN** | Existing `B:\Unreal\GOTA_Builds\Pass2_Paragon` predates the fix; no package rebuilt this pass |
+
+**Counts:** forfeit crash soaks **6 pass / 0 fail** (after fix); rematch **1/1**; P2 **1/1**; P3 **1/1**; packaged **0 run**.
 
 ## How to re-run
 

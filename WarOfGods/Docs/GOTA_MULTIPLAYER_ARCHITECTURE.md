@@ -130,6 +130,7 @@ Rules this project follows:
 
 | Mechanic | Judged | Latency effect | Mitigation |
 |---|---|---|---|
+| Parry presentation slow-mo | Was `SetGlobalTimeDilation` in `BP_Player` | Listen server would slow **all** pawns / combat clocks | **Fixed:** `AGOTAPlayerCharacter` clamps global dilation in multiplayer and applies actor-local `CustomTimeDilation` only for the controlling pawn |
 | Perfect parry (Blueprint parry window) | Server copy of the defender's block montage | A remote defender's block starts on the server ~RTT/2 late, so the window shrinks by one-way latency | Recommended: favour-the-defender grace (accept a block that started up to min(RTT/2, 100 ms) after the hit for remote defenders), or resolve boss/AI hits against remote players after half their RTT |
 | Perfect dodge vs boss | Boss impact time (server) and the dodge's i-frame start (server) | Same one-way shift | Perfect window 0.35 s; dodges inside it are honoured to the impact (`IsDodgeProtected`) |
 | Riposte request | Server-side defending state within a 0.6 s grace | Covers RTT up to ~600 ms | `AGOTAPlayerCharacter::ParryGraceSeconds` |
@@ -143,7 +144,7 @@ Rules this project follows:
 | Max humans | 4 | 4 | 2 (vs AI: 1 + spectators) |
 | Per-player hero (validated) | yes | yes | yes |
 | Replicated health on clients | yes | yes | yes |
-| Death → respawn | 6 s co-op respawn | between waves | round reset |
+| Death → respawn | 6 s co-op respawn at safest start/checkpoint + 2.5 s invuln | between waves | round reset; match end tears down fighters/HUD (results crash mitigation) |
 | Kill credit | — | per killer | rounds |
 | Abilities / momentum / perfect parry-dodge / Divine Counter / bosses | **no** (Duel-only, audit I2) | **no** (I2) | yes |
 | Teams / 2v2 / FFA | co-op | co-op | **1v1 only** (I1) |

@@ -47,6 +47,10 @@ ADuelGameMode::ADuelGameMode()
 	GrayboxLayout = EArenaGrayboxLayout::TitansQuarry;
 	SoftMaxPlayers = 2;
 	bAutoStartEncounterDirector = false;
+	// Spectators until RespawnFighters: PostLogin must not dress a transient pawn that
+	// RequestStartMatch immediately destroys (same-frame GOTAHeroBodyMesh create→destroy
+	// triggers the recurring D3D12 BasePass results-screen crash).
+	bStartPlayersAsSpectators = true;
 
 	DuelHudWidgetClass = TSoftClassPtr<UUserWidget>(
 		FSoftObjectPath(TEXT("/Game/UI/Duel/WBP_GOTA_DuelHUD.WBP_GOTA_DuelHUD_C")));
@@ -647,6 +651,20 @@ void ADuelGameMode::CompleteMatch(EDuelMatchOutcome Outcome)
 		GS->OnDuelMatchOutcomeChanged.Broadcast(Outcome);
 		GS->SetDuelPhase(EDuelPhase::MatchEnd);
 	}
+	// Results idle previously kept dressed hero meshes + orphan W_PlayerHUD ticking, which
+	// correlated with the delayed D3D12 Parallel BasePass AV. Tear both down before the UI sits.
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PC = It->Get();
+		RemovePawnOwnedHud(PC);
+		if (APawn* Pawn = PC ? PC->GetPawn() : nullptr)
+		{
+			UnbindCombatDeath(Pawn);
+			PC->UnPossess();
+			DestroyFighter(Pawn);
+		}
+	}
+	DespawnAIFighter();
 	PresentResultsToAll();
 	UE_LOG(LogTemp, Log, TEXT("Duel match complete outcome=%d"), static_cast<int32>(Outcome));
 }
@@ -1179,17 +1197,27 @@ void ADuelGameMode::SetAIBrainActive(bool bActive)
 
 void ADuelGameMode::RemovePawnOwnedHud(APlayerController* PC)
 {
-	if (!PC || !PC->IsLocalController())
+	// Widgets only exist on the local player machine (listen-server host and each client).
+	// After a forfeit the host's W_PlayerHUD kept ticking without a valid pawn and spammed
+	// Script Msg until the delayed D3D12 crash — always strip it when we still have a local PC.
+	if (!PC)
 	{
 		return;
 	}
 	TArray<UUserWidget*> Widgets;
-	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Widgets, UUserWidget::StaticClass(), true);
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Widgets, UUserWidget::StaticClass(), false);
 	for (UUserWidget* Widget : Widgets)
 	{
-		if (Widget && Widget->GetOwningPlayer() == PC && Widget->GetClass()->GetName().StartsWith(TEXT("W_PlayerHUD")))
+		if (!Widget)
+		{
+			continue;
+		}
+		const bool bOwned = Widget->GetOwningPlayer() == PC;
+		const FString ClassName = Widget->GetClass()->GetName();
+		if ((bOwned || PC->IsLocalController()) && ClassName.StartsWith(TEXT("W_PlayerHUD")))
 		{
 			Widget->RemoveFromParent();
+			Widget->MarkAsGarbage();
 		}
 	}
 }

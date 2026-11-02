@@ -1,0 +1,16 @@
+# Wait until 4 players are present, then wipe and confirm protected safe respawns.
+wait 100
+gota.Net.Players
+gota.Net.Hurt 0 999
+gota.Net.Hurt 1 999
+gota.Net.Hurt 2 999
+gota.Net.Hurt 3 999
+wait 3
+gota.Net.Players
+wait 9
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 15
+gota.Net.Players
+quit

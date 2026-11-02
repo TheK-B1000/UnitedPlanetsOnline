@@ -1,0 +1,23 @@
+# PvP Duel host: force several round transitions via bot fights, then idle on results.
+# Used to soak fighter recreation across rounds (not only forfeit).
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 8
+gota.Duel.Bot fight
+wait 25
+gota.Duel.Dump
+gota.Net.Players
+wait 25
+gota.Duel.Dump
+gota.Net.Players
+wait 25
+gota.Duel.Dump
+gota.Net.Players
+wait 40
+gota.Duel.Dump
+gota.Net.Players
+wait 90
+gota.Duel.Dump
+gota.Net.Players
+gota.Duel.Bot off
+wait 5
+quit

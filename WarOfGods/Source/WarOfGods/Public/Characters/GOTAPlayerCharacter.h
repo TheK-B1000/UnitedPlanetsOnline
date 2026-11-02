@@ -42,14 +42,21 @@ public:
 	float ParryGraceSeconds = 0.6f;
 	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Net Validation")
 	float ParryRiposteCooldown = 0.35f;
+	/** How long a converted BP global slow-mo lasts as actor-local CustomTimeDilation. */
+	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Presentation")
+	float LocalParrySlowMoSeconds = 0.25f;
 
 protected:
 	/** False = drop the call. Only consulted on the server for SR_* functions. */
 	bool ValidateServerRPC(const UFunction* Function, void* Parms);
 	bool IsDefendingNow() const;
 	static AActor* ReadActorParam(const UFunction* Function, void* Parms);
+	/** BP_Player may call SetGlobalTimeDilation on parry; neutralize it in multiplayer. */
+	void NeutralizeUnsafeGlobalSlowMo();
 
 	double LastDefendingTime = -100.0;
 	double LastRiposteTime = -100.0;
 	int32 RejectedRPCs = 0;
+	FTimerHandle LocalSlowMoHandle;
+	bool bLoggedGlobalSlowMoClamp = false;
 };

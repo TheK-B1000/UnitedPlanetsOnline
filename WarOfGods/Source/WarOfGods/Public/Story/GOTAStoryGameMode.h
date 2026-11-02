@@ -135,7 +135,16 @@ protected:
 	/** Co-op: a downed player respawns at a player start after this many seconds (server). */
 	UPROPERTY(EditDefaultsOnly, Category = "Story|Co-op")
 	float DownedRespawnSeconds = 6.f;
+	/** Prefer spawn points at least this far from living enemies (cm). */
+	UPROPERTY(EditDefaultsOnly, Category = "Story|Co-op")
+	float RespawnMinEnemyClearance = 900.f;
+	/** Server-authoritative spawn invulnerability after co-op respawn. */
+	UPROPERTY(EditDefaultsOnly, Category = "Story|Co-op")
+	float RespawnProtectionSeconds = 2.5f;
 	/** Server: when each downed player went down (Blueprint death leaves the pawn in the world). */
 	TMap<TWeakObjectPtr<APlayerController>, double> DownedSince;
 	void WatchPlayers();
+	/** Checkpoint-aware, enemy-clearance spawn pick (server). */
+	AActor* ChooseSafeRespawnStart(AController* Player) const;
+	void ApplyRespawnProtection(APawn* Pawn);
 };

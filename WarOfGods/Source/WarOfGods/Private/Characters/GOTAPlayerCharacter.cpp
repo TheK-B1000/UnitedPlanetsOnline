@@ -4,6 +4,8 @@
 
 #include "Combat/GOTACombatantObserver.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 #include "UObject/UnrealType.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTANetGuard, Log, All);
@@ -34,6 +36,42 @@ void AGOTAPlayerCharacter::Tick(float DeltaSeconds)
 	if (HasAuthority() && IsDefendingNow())
 	{
 		LastDefendingTime = GetWorld()->GetTimeSeconds();
+	}
+	NeutralizeUnsafeGlobalSlowMo();
+}
+
+void AGOTAPlayerCharacter::NeutralizeUnsafeGlobalSlowMo()
+{
+	UWorld* World = GetWorld();
+	if (!World || World->GetNetMode() == NM_Standalone)
+	{
+		return; // solo: keep BP_Player's authored feel
+	}
+	const float Dil = UGameplayStatics::GetGlobalTimeDilation(World);
+	if (FMath::IsNearlyEqual(Dil, 1.f))
+	{
+		return;
+	}
+	// Convert to actor-local presentation for the controlling player only; never slow the shared sim.
+	if (IsLocallyControlled() && Dil < 1.f && LocalParrySlowMoSeconds > 0.f)
+	{
+		CustomTimeDilation = Dil;
+		TWeakObjectPtr<AGOTAPlayerCharacter> WeakThis(this);
+		World->GetTimerManager().SetTimer(LocalSlowMoHandle, FTimerDelegate::CreateLambda([WeakThis]()
+		{
+			if (AGOTAPlayerCharacter* Self = WeakThis.Get())
+			{
+				Self->CustomTimeDilation = 1.f;
+			}
+		}), LocalParrySlowMoSeconds, false);
+	}
+	UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+	if (!bLoggedGlobalSlowMoClamp)
+	{
+		bLoggedGlobalSlowMoClamp = true;
+		UE_LOG(LogGOTANetGuard, Warning,
+			TEXT("%s: clamped SetGlobalTimeDilation in multiplayer (converted to CustomTimeDilation locally)"),
+			*GetName());
 	}
 }
 

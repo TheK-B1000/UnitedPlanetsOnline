@@ -10,6 +10,25 @@ and Trial of Champions (Duel).
 - Inspected the Blueprint damage system (`gota.Net.InspectDamage`).
 - Confirmed findings in live listen-server sessions (`Tools/GOTA_MPSession.py`).
 
+---
+
+## Stability pass status (2026-11-01 night)
+
+**Baseline:** `4f6642a`, `ae00b81`, `8e85490`. Fixes verified in editor Development soaks; see matrix § Stability pass.
+
+| Priority | Status | Notes |
+|---|---|---|
+| P1 Duel results crash | **Fixed (editor)** | Attempt A insufficient (3/3 crash). Attempt B: fighters+HUD teardown on `CompleteMatch` → **6/6 forfeit soaks + rematch PASS** |
+| P2 Global slow-mo | **Fixed (editor)** | `AGOTAPlayerCharacter` clamps in MP; `slowmo1` PASS |
+| P3 Story safe respawn | **Fixed (editor)** | Clearance pick + 2.5 s `IsInvincible`; `storyrespawn2` 4/4 protected respawns |
+| P4 Packaged 4P | **NOT RUN** | Rebuild package from this commit first (`Pass2_Paragon` is stale) |
+
+**Production readiness:** **not ready to ship** until a packaged rebuild re-runs S1–S4 (+ prior matrix #3/#4/#9). Editor listen-server evidence is strong for the crash/slow-mo/respawn fixes.
+
+**I11 / I12 (incomplete list below):** addressed by P2 / P3 in this pass.
+
+---
+
 Status legend:
 - **Correct:** works as intended, keep it.
 - **Incomplete:** works partly or for fewer players.
@@ -89,8 +108,8 @@ Status legend:
 | I8 | **Test and dev console commands** (`gota.Duel.*`, `gota.Test.*`, `gota.Boss.*`) are compiled into Shipping, but act only on the host. The new `gota.Net.*` commands are excluded from Shipping | | Wrap the older command files in `#if !UE_BUILD_SHIPPING` |
 | I9 | **Host migration:** none. Host leaves → clients get a network failure and return to the menu (`UGOTAMenuSubsystem::HandleNetworkFailure`) | Out of scope for listen-server Null OSS | Document as expected behaviour |
 | I10 | `WBP_GOTA_HordeHUD` widget asset missing (warning at Horde load) | Content | Rebuild the Horde HUD widget |
-| I11 | **`BP_Player`'s parry graph calls `SetGlobalTimeDilation`** (slow-motion on parry). Global time dilation on the listen server slows the world for **every** player, and on a client it desyncs that client's simulation | Seen in the exported `BP_Player` EventGraph; which machine runs it is not yet traced | Replace with actor-local `CustomTimeDilation` (as the C++ hit-stop already does) or a camera-only effect |
-| I12 | **Story respawn uses the normal player starts.** In the Prologue an idle host respawned next to a level-placed `BP_Enemy_Boss` and was killed repeatedly (seen in the 4-player Story session) | Level design / spawn choice | Respawn at the active checkpoint or the start farthest from living enemies |
+| I11 | **`BP_Player`'s parry graph calls `SetGlobalTimeDilation`** | **Fixed (runtime):** `AGOTAPlayerCharacter` clamps global dilation in multiplayer and converts to local `CustomTimeDilation` (`slowmo1` PASS). BP node not removed | Optional: delete the BP node so solo/editor doesn't need the clamp |
+| I12 | **Story respawn unsafe near enemies** | **Fixed:** `ChooseSafeRespawnStart` + `ApplyRespawnProtection` (2.5 s). `storyrespawn2` 4/4 protected | Optional: spread multiple players across different starts instead of stacking on the safest one |
 | I13 | The Horde Wave-2 spawn and the Horde HUD were not exercised visually with 4 players (all clients ran `-nullrhi`) | Test environment: four rendering game windows on one GPU caused a GPU device-removed crash | Run a manual 4-machine LAN playtest |
 
 ## 5. Trust boundary (summary; full table in `GOTA_MULTIPLAYER_ARCHITECTURE.md`)

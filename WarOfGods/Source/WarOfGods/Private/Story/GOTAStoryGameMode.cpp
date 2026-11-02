@@ -8,15 +8,18 @@
 #include "Arenas/ArenaTypes.h"
 #include "Arenas/ArenaVisualDressDefaults.h"
 #include "Arenas/ArenaVisualDressDefinition.h"
+#include "Arenas/Duel/GOTADuelCombat.h"
 #include "Blueprint/UserWidget.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Multiplayer/GOTAPlayerState.h"
 #include "Components/BoxComponent.h"
 #include "EngineUtils.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/GameSession.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
+#include "NavigationSystem.h"
 #include "Story/GOTAStoryGameState.h"
 #include "Story/GOTAStoryMissionDefinition.h"
 #include "Story/GOTAStoryObjectiveActor.h"
@@ -537,7 +540,33 @@ void AGOTAStoryGameMode::WatchPlayers()
 			Pawn->Destroy(); // the dead body; RestartPlayer would otherwise keep it
 		}
 		RestartPlayer(PC);
-		UE_LOG(LogTemp, Log, TEXT("Story: respawned %s as %s"), *GetNameSafe(PC->PlayerState.Get()), *GetNameSafe(PC->GetPawn()));
+		if (APawn* NewPawn = PC->GetPawn())
+		{
+			if (AActor* Safe = ChooseSafeRespawnStart(PC))
+			{
+				FVector Loc = Safe->GetActorLocation();
+				FRotator Rot = Safe->GetActorRotation();
+				if (UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+				{
+					FNavLocation Projected;
+					if (Nav->ProjectPointToNavigation(Loc, Projected, FVector(400.f, 400.f, 500.f)))
+					{
+						Loc = Projected.Location + FVector(0.f, 0.f, 90.f);
+					}
+				}
+				NewPawn->SetActorLocationAndRotation(Loc, Rot, false, nullptr, ETeleportType::ResetPhysics);
+				PC->SetControlRotation(Rot);
+				PC->SetViewTarget(NewPawn);
+			}
+			ApplyRespawnProtection(NewPawn);
+			UE_LOG(LogTemp, Log, TEXT("Story: respawned %s as %s at %s (protection %.1fs)"),
+				*GetNameSafe(PC->PlayerState.Get()), *GetNameSafe(NewPawn),
+				*NewPawn->GetActorLocation().ToCompactString(), RespawnProtectionSeconds);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Story: respawn failed for %s (no pawn)"), *GetNameSafe(PC->PlayerState.Get()));
+		}
 	}
 	for (auto It = DownedSince.CreateIterator(); It; ++It)
 	{
@@ -610,6 +639,93 @@ void AGOTAStoryGameMode::ActivateCheckpoint(FName CheckpointId)
 		GS->SetMissionPhase(EStoryMissionPhase::Active);
 	}
 	PersistProgress(true);
+}
+
+AActor* AGOTAStoryGameMode::ChooseSafeRespawnStart(AController* Player) const
+{
+	TArray<AActor*> Candidates;
+	for (TActorIterator<AArenaPlayerStart> It(GetWorld()); It; ++It)
+	{
+		Candidates.Add(*It);
+	}
+	const AGOTAStoryGameState* GS = GetStoryGS();
+	const FName Checkpoint = GS ? GS->ActiveCheckpointId : NAME_None;
+	if (!Checkpoint.IsNone())
+	{
+		for (TActorIterator<AGOTAStoryObjectiveActor> It(GetWorld()); It; ++It)
+		{
+			if (It->CheckpointId == Checkpoint)
+			{
+				Candidates.Add(*It); // checkpoint volume itself is a valid retreat point
+			}
+		}
+	}
+	if (Candidates.Num() == 0)
+	{
+		return const_cast<AGOTAStoryGameMode*>(this)->ChoosePlayerStart_Implementation(Player);
+	}
+
+	auto MinEnemyDist = [this](const FVector& Loc) -> float
+	{
+		float Best = TNumericLimits<float>::Max();
+		auto Consider = [&](APawn* Enemy)
+		{
+			if (!Enemy || !IsValid(Enemy) || Enemy->IsActorBeingDestroyed()
+				|| UGOTACombatantObserver::IsCombatantDefeated(Enemy))
+			{
+				return;
+			}
+			Best = FMath::Min(Best, FVector::Dist(Loc, Enemy->GetActorLocation()));
+		};
+		for (const TObjectPtr<APawn>& E : EncounterEnemies)
+		{
+			Consider(E);
+		}
+		Consider(GuardianPawn);
+		return Best;
+	};
+
+	AActor* Best = nullptr;
+	float BestScore = -1.f;
+	for (AActor* Cand : Candidates)
+	{
+		if (!Cand)
+		{
+			continue;
+		}
+		const float Clear = MinEnemyDist(Cand->GetActorLocation());
+		// Prefer clearance above the minimum; among those (or all if none clear), farthest wins.
+		const float Score = Clear >= RespawnMinEnemyClearance ? Clear + 100000.f : Clear;
+		if (Score > BestScore)
+		{
+			BestScore = Score;
+			Best = Cand;
+		}
+	}
+	return Best ? Best : const_cast<AGOTAStoryGameMode*>(this)->ChoosePlayerStart_Implementation(Player);
+}
+
+void AGOTAStoryGameMode::ApplyRespawnProtection(APawn* Pawn)
+{
+	if (!Pawn || RespawnProtectionSeconds <= 0.f)
+	{
+		return;
+	}
+	UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Pawn);
+	if (!DS)
+	{
+		return;
+	}
+	FGOTABlueprintCombat::SetBool(DS, TEXT("IsInvincible"), true);
+	TWeakObjectPtr<UActorComponent> WeakDS(DS);
+	FTimerHandle Handle;
+	GetWorldTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([WeakDS]()
+	{
+		if (UActorComponent* Comp = WeakDS.Get())
+		{
+			FGOTABlueprintCombat::SetBool(Comp, TEXT("IsInvincible"), false);
+		}
+	}), RespawnProtectionSeconds, false);
 }
 
 void AGOTAStoryGameMode::CompleteMission()

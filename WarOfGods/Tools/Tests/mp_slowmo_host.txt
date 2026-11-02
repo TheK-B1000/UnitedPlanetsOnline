@@ -1,0 +1,11 @@
+# Force global slow-mo on the listen server; AGOTAPlayerCharacter must clamp it in multiplayer.
+wait 20
+gota.Net.Players
+gota.Ability.Slomo 0.15
+wait 1
+gota.Net.Players
+gota.Ability.Slomo 1
+wait 2
+gota.Net.Players
+wait 5
+quit
