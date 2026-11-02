@@ -12,6 +12,8 @@
 
 See `GOTA_MULTIPLAYER_AUDIT.md` for findings and `GOTA_MULTIPLAYER_TEST_MATRIX.md` for what is verified.
 
+**Packaged check (2026-11-02):** Development cook `B:\Unreal\GOTA_Builds\RC1_0a93ace` from `0a93ace`. The listen-server clamp, PvP results teardown, and Story protected respawn survived cooking. Horde's packaged four-player combat script did not finish. Details and the pass/fail split are in the audit's Packaged RC1 section.
+
 ## 1. Topology and session flow
 
 ```mermaid
@@ -130,7 +132,7 @@ Rules this project follows:
 
 | Mechanic | Judged | Latency effect | Mitigation |
 |---|---|---|---|
-| Parry presentation slow-mo | Was `SetGlobalTimeDilation` in `BP_Player` | Listen server would slow **all** pawns / combat clocks | **Fixed:** `AGOTAPlayerCharacter` clamps global dilation in multiplayer and applies actor-local `CustomTimeDilation` only for the controlling pawn |
+| Parry presentation slow-mo | Was `SetGlobalTimeDilation` in `BP_Player` | Listen server would slow **all** pawns / combat clocks | **Fixed:** `AGOTAPlayerCharacter` clamps global dilation in multiplayer and applies actor-local `CustomTimeDilation` only for the controlling pawn. Confirmed in the packaged listen server (`pkgslow`) |
 | Perfect parry (Blueprint parry window) | Server copy of the defender's block montage | A remote defender's block starts on the server ~RTT/2 late, so the window shrinks by one-way latency | Recommended: favour-the-defender grace (accept a block that started up to min(RTT/2, 100 ms) after the hit for remote defenders), or resolve boss/AI hits against remote players after half their RTT |
 | Perfect dodge vs boss | Boss impact time (server) and the dodge's i-frame start (server) | Same one-way shift | Perfect window 0.35 s; dodges inside it are honoured to the impact (`IsDodgeProtected`) |
 | Riposte request | Server-side defending state within a 0.6 s grace | Covers RTT up to ~600 ms | `AGOTAPlayerCharacter::ParryGraceSeconds` |

@@ -1,6 +1,6 @@
 # Gods of the Arena: Multiplayer Test Matrix
 
-**Date:** 2026-11-01. **Build:** editor Development, commits `4f6642a` and `ae00b81` on top of `f79d856`.
+**Date:** 2026-11-02. **Editor rows** are Development on `4f6642a` / `ae00b81`. **Packaged rows** are the UE 5.8 Development cook `B:\Unreal\GOTA_Builds\RC1_0a93ace` from `0a93ace`. `Pass2_Paragon` is not evidence for these fixes.
 
 **How the sessions run:**
 - `Tools/GOTA_MPSession.py` starts **separate game processes** on one machine (`UnrealEditor -game`, not PIE): a
@@ -28,7 +28,7 @@
 | 2 | Four-player PIE session | — | **NOT RUN** | PIE needs the interactive editor. Multi-process standalone sessions (#3) were used instead; they are the stronger test, since each player is a real separate process with its own net driver |
 | 3 | **Four-player standalone session** | Horde, host + 3 clients (`horde4d`) | **PASS** | `Horde PostLogin players=4`; every client lists 4 players with the right local player; heroes validated per player (`accepted hero Nyx / Varoth / Kairos`) |
 | 3b | Four-player standalone session | Story, host + 3 clients (`story4`) | **PASS** | 4 players, heroes validated, co-op respawn (below) |
-| 3c | Four-player **packaged** session | — | **NOT RUN** | No package was rebuilt in this pass |
+| 3c | Four-player **packaged** session | Story + Horde, cook `RC1_0a93ace` | **PARTIAL** | Story `pkgstory2` PASS. Horde join PASS, Horde combat script **NOT COMPLETED**. See § Packaged RC1 |
 | 4 | Server-authoritative health on clients | Horde 4P, Story 4P | **PASS** | Before the fix: clients always showed 100/100. After: clients show the host's health live (`hp=60 → 20 → 0 dead=1 → respawn 100`, `story4_client1`); everyone at `hp=0/100 dead=1` after a wipe (`horde4d_client*`) |
 | 4b | Client cannot forge combat outcomes | Story 4P, each client runs `gota.Net.ForgeParry` (forged `SR_ParryAttack` at the farthest pawn) | **PASS** | Server: `rejected SR_ParryAttack (failed server validation)` × 3 (one per client); no damage applied |
 | 5 | Parry / dodge / Divine Counter | Duel vs boss (host) | **PASS** (host) | See 1b. **Not tested with a remote client as defender** (needs a human or a client-side bot) |
@@ -60,9 +60,30 @@
 | S2 | Rematch / multi-spawn soak (`duelrematch1`) | **PASS 1/1** | `NO_CRASH`, 4 fighter spawns (round recreation) |
 | S3 | Global slow-mo clamp (`slowmo1`, listen + 1 client) | **PASS** | `ABILITY slomo 0.150` → `clamped SetGlobalTimeDilation … CustomTimeDilation locally` |
 | S4 | Story 4P wipe → protected respawn (`storyrespawn2`) | **PASS** | 4 downs → 4× `respawned … (protection 2.5s)` → all `hp=100/100 dead=0` |
-| S5 | Packaged 4P with this fix | **NOT RUN** | Existing `B:\Unreal\GOTA_Builds\Pass2_Paragon` predates the fix; no package rebuilt this pass |
+| S5 | Packaged 4P with this fix | **PARTIAL** | Cook `RC1_0a93ace` exists. PvP and Story re-ran in that package. Horde combat did not. See below |
 
-**Counts:** forfeit crash soaks **6 pass / 0 fail** (after fix); rematch **1/1**; P2 **1/1**; P3 **1/1**; packaged **0 run**.
+**Editor counts:** forfeit crash soaks **6 pass / 0 fail**; rematch **1/1**; P2 **1/1**; P3 **1/1**.
+
+## Packaged RC1 (2026-11-02)
+
+Development cook only (`RunUAT BuildCookRun`, exit 0). Logs: `Saved/MPTests/pkg*.log`. A run that did not execute is **NOT RUN** or **NOT COMPLETED**, not a pass. Invalid attempts (`pkgsoak*`, `pkgf*`) killed the bootstrap stub or shared port 7777 with a leftover process; they are not results.
+
+| # | Test | Rendering | Result | Evidence |
+|---|---|---|---|---|
+| P4-1 | Cook | — | **PASS** | `B:\Unreal\GOTA_Builds\RC1_0a93ace` |
+| P4-2 | PvP forfeit soak | Host rendered. `pkga6` client rendered. `pkga1`–`pkga5` clients `-nullrhi` | **PASS 6/6** | Each: slot 1 forfeit, `outcome=1`, crash lines 0 |
+| P4-3 | PvP rematch | Host rendered, client `-nullrhi` | **PASS** | `pkgrematch3`: 4 fighter spawns, rounds 1–2, score 2:0, `Player0Wins`, crash lines 0 |
+| P4-4 | Slow-mo clamp | Host rendered, client `-nullrhi` | **PASS** | `pkgslow` clamp log |
+| P4-5 | Story 4P death + safe respawn | Host rendered, 3 clients `-nullrhi` | **PASS** | `pkgstory2`: heroes Drakon/Nyx/Varoth/Kairos, 4× `hp=-899`, 4× protected respawn. First attempt `pkgstory` **NOT COMPLETED** (HUD log flood) |
+| P4-6 | Horde 4P kills, wipe, results | `pkghorde` / `pkghorde2` host rendered. `pkghorde3` host `-nullrhi`. Clients `-nullrhi` | **NOT COMPLETED** | `players=4` and `waves=5`. No `kill credit`, no `outcome=`. Process killed at timeout. No crash dump |
+| P4-7 | 120 ms / 5% loss + forged RPC | `pkglag` host and client 1 rendered; clients 2–3 `-nullrhi` | **PASS (forge)** | 3× `rejected SR_ParryAttack`. Pings on later runs ~200–254 ms. Horde kills under lag **NOT COMPLETED** |
+| P4-8 | Legitimate remote parry | — | **NOT RUN** | No client defender |
+| P4-9 | Menu Host → Find → Join | — | **NOT RUN** | Manual. `gota.Menu.Go` was not driven |
+| P4-10 | Drakon vs Rampage | Rendered host, no clients | **PASS** | `pkgboss2`: 8 perfect parries, 8 perfect dodges, counter stun 90 damage, 0 rejected RPCs |
+| P4-11 | Packaged cap + disconnect | — | **NOT RUN** | Editor #8–#8d only |
+| P4-12 | GPU crash / sustained performance | Rendered hosts as above, never four rendered clients | **No crash observed** | No GPU dump. No FPS or memory capture |
+
+**Counts:** packaged forfeit **6/6**; rematch **1/1**; slow-mo **1/1**; Story wipe **1/1**; boss regression **1/1**; Horde combat **0 completed**; menu **0**; remote parry **0**.
 
 ## How to re-run
 
@@ -81,17 +102,18 @@ python Tools/GOTA_MPSession.py --tag horde4 --url "/Game/Arenas/Maps/L_Arena_Tit
 **Environment notes:**
 - Four game windows rendering on one GPU crashed one client (device removed). Clients therefore run `-nullrhi`
   while the host renders.
-- A `-nullrhi` host stalled, so the host always renders.
+- A `-nullrhi` host stalled in the editor, so editor hosts render. Packaged Horde was also tried with `--host-nullrhi`
+  (`pkghorde3`); the combat script still did not finish.
+- Packaged runs: `GOTA_PACKAGED` points at the staged `WarOfGods.exe` (the runner resolves the inner binary) and
+  `GOTA_PORT` picks a free port. Do not reuse 7777 if an old `WarOfGods.exe` is still bound there.
 - The first launch after a code change is slow (shader/DDC warm-up). Allow `--join-delay 30` or more and a long
   `--timeout`.
 
 ## Recommended follow-up tests
 
-1. **Packaged** 4-player session (rebuild the package, then `--packaged`).
-2. **Results-screen crash soak in PvP Duel**, on `f79d856` and on HEAD, to tell whether it is pre-existing and to
-   validate a fix.
-3. Remote-client defender: a client-side bot that blocks and dodges boss/AI attacks, to measure perfect parry and
-   dodge rates under 0 / 100 / 200 ms.
-4. Menu flow: Host → Find → Join → Start → match → return to lobby, with 4 players.
-5. Late join into a running Horde wave and a running Story encounter. Reconnect with the same hero.
-6. A manual 4-machine LAN playtest (rendering on every machine).
+1. Finish packaged Horde: the host script clock stops advancing after four players join, so kill credit, wipe, and results never run. Editor rows #7 and #7b are not a substitute.
+2. Manual menu playtest: Host → Find → Join → Start → match → return, four players, including the session cap and a disconnect.
+3. Remote-client defender under 120 ms, so a real parry is measured separately from forged-RPC rejection.
+4. Stop `W_PlayerHUD::GetPercent` from reading a null `PlayerRef` (Story log flood).
+5. Teach Story and Horde to honor `?DevHeroes=1` the way `ADuelGameMode` does.
+6. A manual 4-machine LAN playtest (rendering on every machine), then a Shipping cook.

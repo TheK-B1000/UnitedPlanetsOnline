@@ -21,16 +21,36 @@ PACKAGED = os.environ.get("GOTA_PACKAGED", os.path.join(ROOT, "Saved", "Packaged
 LOGS = os.path.join(ROOT, "Saved", "MPTests")
 
 
+def packaged_exe(path):
+    """The staged bootstrap spawns Binaries/Win64/WarOfGods.exe and exits. Killing the stub
+    leaves the game running, so disconnect/forfeit tests never see the client leave."""
+    folder = os.path.dirname(os.path.abspath(path))
+    inner = os.path.join(folder, "WarOfGods", "Binaries", "Win64", "WarOfGods.exe")
+    if os.path.isfile(inner):
+        return inner
+    return path
+
+
+PORT = os.environ.get("GOTA_PORT", "")
+
+
 def launch(packaged, url, script, log, extra_exec="", res=(960, 540), pos=(0, 0), nullrhi=False):
-    exe = [PACKAGED] if packaged else [EDITOR, PROJECT, "-game"]
+    exe = [packaged_exe(PACKAGED)] if packaged else [EDITOR, PROJECT, "-game"]
     if nullrhi:
         exe = exe + ["-nullrhi"]  # no rendering: several game windows on one GPU otherwise risk a device-removed crash
-    cmds = "gota.Heroes.AllowInDevelopment 1"
+    cmds = "t.IdleWhenNotForeground 0,gota.Heroes.AllowInDevelopment 1"
     if extra_exec:
         cmds += "," + extra_exec
     cmds += ",gota.Test.Run Tools/Tests/" + script
+    # ExecCmds runs after the host's own PostLogin, so DevHeroes and the idle throttle have to be
+    # config-time. An unfocused packaged window otherwise sleeps, and the script clock caps each hitch at 0.5s.
     args = exe + [url, "-windowed", "-ResX=%d" % res[0], "-ResY=%d" % res[1], "-WinX=%d" % pos[0], "-WinY=%d" % pos[1],
-                  "-nosplash", "-unattended", "-nop4", "-log", "-abslog=" + log, "-ExecCmds=" + cmds]
+                  "-nosplash", "-unattended", "-nop4", "-log", "-abslog=" + log,
+                  "-ini:Engine:[ConsoleVariables]:gota.Heroes.AllowInDevelopment=1",
+                  "-ini:Engine:[ConsoleVariables]:Slate.bAllowThrottling=0",
+                  "-ExecCmds=" + cmds]
+    if PORT and "listen" in url:
+        args.append("-port=" + PORT)
     return subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
@@ -70,7 +90,8 @@ def main():
         hero = heroes[i] if i < len(heroes) else "UPAWarden"
         log = os.path.join(LOGS, "%s_client%d.log" % (a.tag, i + 1))
         pos = (960 * ((i + 1) % 2), 540 * ((i + 1) // 2))
-        procs.append(("client%d" % (i + 1), launch(a.packaged, "127.0.0.1?Hero=%s" % hero, a.client_script, log, a.client_exec, pos=pos, nullrhi=i >= a.render_clients)))
+        addr = ("127.0.0.1:%s" % PORT) if PORT else "127.0.0.1"
+        procs.append(("client%d" % (i + 1), launch(a.packaged, "%s?Hero=%s" % (addr, hero), a.client_script, log, a.client_exec, pos=pos, nullrhi=i >= a.render_clients)))
         last_join = time.time()
         time.sleep(a.stagger)
     killed_client = killed_host = False

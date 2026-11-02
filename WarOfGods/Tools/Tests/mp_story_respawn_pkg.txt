@@ -1,0 +1,14 @@
+# Packaged Story wipe. LogScript off: W_PlayerHUD::GetPercent null-refs every tick and the warning flood
+# stalls the script clock. Wait long enough for three staggered clients, then down all four.
+Log LogScript Off
+wait 45
+gota.Net.Players
+gota.Net.Hurt 0 999
+gota.Net.Hurt 1 999
+gota.Net.Hurt 2 999
+gota.Net.Hurt 3 999
+wait 8
+gota.Net.Players
+wait 6
+gota.Net.Players
+quit
