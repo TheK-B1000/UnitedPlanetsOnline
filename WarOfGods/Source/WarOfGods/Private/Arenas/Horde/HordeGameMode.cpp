@@ -101,7 +101,7 @@ void AHordeGameMode::BeginPlay()
 	GetWorldTimerManager().SetTimer(
 		PlayerWatchTimerHandle,
 		this,
-		&AHordeGameMode::EvaluateTeamWipe,
+		&AHordeGameMode::TickHordeWatch,
 		1.f,
 		true);
 
@@ -589,6 +589,52 @@ void AHordeGameMode::HandleEnemyScore(int32 ScoreValue, APlayerState* Killer)
 	}
 }
 
+void AHordeGameMode::TickHordeWatch()
+{
+	LogHordeLife();
+	EvaluateTeamWipe();
+}
+
+void AHordeGameMode::LogHordeLife() const
+{
+	const AHordeGameState* GS = GetHordeGS();
+	int32 Living = 0;
+	int32 Considered = 0;
+	if (GetWorld())
+	{
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			APlayerController* PC = It->Get();
+			if (!PC)
+			{
+				continue;
+			}
+			++Considered;
+			APawn* Pawn = PC->GetPawn();
+			if (Pawn && !UGOTACombatantObserver::IsCombatantDefeated(Pawn))
+			{
+				++Living;
+			}
+		}
+	}
+	const UEnum* PhaseEnum = StaticEnum<EHordeMatchPhase>();
+	const UEnum* OutcomeEnum = StaticEnum<EHordeMatchOutcome>();
+	const int32 Phase = GS ? static_cast<int32>(GS->HordePhase) : -1;
+	const int32 Outcome = GS ? static_cast<int32>(GS->MatchOutcome) : -1;
+	UE_LOG(LogTemp, Log, TEXT("Horde life: phase=%s wave=%d/%d enemies=%d toSpawn=%d defeated=%d living=%d/%d score=%d outcome=%s ended=%d"),
+		PhaseEnum ? *PhaseEnum->GetNameStringByValue(Phase) : TEXT("?"),
+		GS ? GS->CurrentWaveIndex : -1,
+		GS ? GS->TotalRegularWaves : -1,
+		GS ? GS->EnemiesAlive : -1,
+		GS ? GS->EnemiesRemainingToSpawn : -1,
+		GS ? GS->EnemiesDefeated : -1,
+		Living,
+		Considered,
+		GS ? GS->TeamScore : 0,
+		OutcomeEnum ? *OutcomeEnum->GetNameStringByValue(Outcome) : TEXT("?"),
+		bMatchEnded ? 1 : 0);
+}
+
 void AHordeGameMode::EvaluateTeamWipe()
 {
 	if (!HasAuthority() || bMatchEnded || !bMatchStarted)
@@ -654,6 +700,7 @@ void AHordeGameMode::CompleteVictory()
 	{
 		GS->MatchOutcome = EHordeMatchOutcome::Victory;
 		GS->OnHordeMatchOutcomeChanged.Broadcast(EHordeMatchOutcome::Victory);
+		UE_LOG(LogTemp, Log, TEXT("Horde match complete outcome=Victory score=%d"), GS->TeamScore);
 	}
 	TryTransition(EHordeMatchPhase::Victory);
 	PresentResultsToAll();
@@ -676,6 +723,7 @@ void AHordeGameMode::CompleteDefeat()
 	{
 		GS->MatchOutcome = EHordeMatchOutcome::Defeat;
 		GS->OnHordeMatchOutcomeChanged.Broadcast(EHordeMatchOutcome::Defeat);
+		UE_LOG(LogTemp, Log, TEXT("Horde match complete outcome=Defeat score=%d"), GS->TeamScore);
 	}
 	TryTransition(EHordeMatchPhase::Defeat);
 	PresentResultsToAll();

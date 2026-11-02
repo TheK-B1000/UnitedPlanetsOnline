@@ -1,5 +1,6 @@
-# Same Drakon vs Rampage checks as slice_mechanics, but the bot and intro skip run immediately.
-# On a backgrounded packaged window the opening waits let the boss kill the player first.
+# Same Drakon vs Rampage checks as slice_mechanics. Wait until the boss pawn exists;
+# a realtime script clock otherwise fires Skip before the round spawns Rampage.
+wait 8
 r.MotionBlurQuality 0
 gota.Boss.Skip
 gota.Duel.Bot parry

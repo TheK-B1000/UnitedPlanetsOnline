@@ -1,0 +1,4 @@
+wait 28
+gota.Net.Players
+wait 8
+quit

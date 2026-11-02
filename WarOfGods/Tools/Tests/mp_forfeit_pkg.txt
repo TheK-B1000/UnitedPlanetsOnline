@@ -1,0 +1,7 @@
+wait 16
+gota.Net.Players
+gota.Duel.Dump
+wait 10
+gota.Net.Players
+gota.Duel.Dump
+quit

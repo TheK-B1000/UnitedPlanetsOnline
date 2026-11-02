@@ -4,6 +4,7 @@
 #include "Characters/GOTAHeroDefinition.h"
 #include "Engine/AssetManager.h"
 #include "HAL/IConsoleManager.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTAHeroes, Log, All);
 
@@ -12,6 +13,23 @@ static TAutoConsoleVariable<int32> CVarGOTAAllowInDevelopmentHeroes(
 	TEXT("gota.Heroes.AllowInDevelopment"), 0,
 	TEXT("1 = In Development heroes with a gameplay pawn may be spawned (testing only; never in shipping)."));
 #endif
+
+void UGOTAHeroRegistry::ApplyDevHeroesOption(const FString& Options)
+{
+#if !UE_BUILD_SHIPPING
+	if (UGameplayStatics::GetIntOption(Options, TEXT("DevHeroes"), 0) == 0)
+	{
+		return;
+	}
+	if (IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("gota.Heroes.AllowInDevelopment")))
+	{
+		CVar->Set(1, ECVF_SetByCode);
+		UE_LOG(LogGOTAHeroes, Warning, TEXT("DevHeroes=1 — In Development heroes may spawn for this process (testing only, not a public unlock)"));
+	}
+#else
+	(void)Options;
+#endif
+}
 
 bool UGOTAHeroRegistry::IsHeroSpawnable(const UGOTAHeroDefinition* Def)
 {

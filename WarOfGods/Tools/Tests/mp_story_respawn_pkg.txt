@@ -1,6 +1,5 @@
-# Packaged Story wipe. LogScript off: W_PlayerHUD::GetPercent null-refs every tick and the warning flood
-# stalls the script clock. Wait long enough for three staggered clients, then down all four.
-Log LogScript Off
+# Packaged Story wipe. GetPercent must stay quiet without suppressing LogScript.
+# Wait long enough for three staggered clients, then down all four.
 wait 45
 gota.Net.Players
 gota.Net.Hurt 0 999

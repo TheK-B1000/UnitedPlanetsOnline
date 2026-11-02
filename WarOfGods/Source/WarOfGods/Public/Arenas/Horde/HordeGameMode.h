@@ -96,6 +96,8 @@ protected:
 	void HandleWaveCleared();
 	void HandleEnemyScore(int32 ScoreValue, APlayerState* Killer);
 	void EvaluateTeamWipe();
+	void TickHordeWatch();
+	void LogHordeLife() const;
 	void CompleteVictory();
 	void CompleteDefeat();
 	void RespawnEliminatedPlayers();

@@ -1,0 +1,5 @@
+# Local client times StartBlock against the boss. The server must accept it as a real parry, not a forge.
+wait 8
+gota.Net.RemoteParry 30 0.40
+wait 32
+quit

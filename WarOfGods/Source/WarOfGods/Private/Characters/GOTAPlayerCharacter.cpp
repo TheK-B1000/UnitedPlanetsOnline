@@ -2,10 +2,18 @@
 
 #include "Characters/GOTAPlayerCharacter.h"
 
+#include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Blueprint/WidgetTree.h"
+#include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Components/ProgressBar.h"
 #include "Engine/World.h"
+#include "GameFramework/WorldSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "UObject/Stack.h"
+#include "UObject/UObjectIterator.h"
 #include "UObject/UnrealType.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTANetGuard, Log, All);
@@ -139,4 +147,237 @@ void AGOTAPlayerCharacter::ProcessEvent(UFunction* Function, void* Parms)
 		return;
 	}
 	Super::ProcessEvent(Function, Parms);
+}
+
+namespace
+{
+	float SafeHealthFraction(const UUserWidget* Widget)
+	{
+		if (!Widget)
+		{
+			return 0.f;
+		}
+		const APawn* Pawn = nullptr;
+		if (const FObjectProperty* Prop = FindFProperty<FObjectProperty>(Widget->GetClass(), TEXT("PlayerRef")))
+		{
+			if (UObject* Obj = Prop->GetObjectPropertyValue_InContainer(Widget))
+			{
+				if (const APawn* AsPawn = Cast<APawn>(Obj))
+				{
+					Pawn = AsPawn;
+				}
+				else if (const AController* Controller = Cast<AController>(Obj))
+				{
+					Pawn = Controller->GetPawn();
+				}
+			}
+		}
+		if (!IsValid(Pawn))
+		{
+			if (const APlayerController* PC = Widget->GetOwningPlayer())
+			{
+				Pawn = PC->GetPawn();
+			}
+		}
+		if (!IsValid(Pawn))
+		{
+			return 0.f;
+		}
+		const UStatsComponent* Stats = Pawn->FindComponentByClass<UStatsComponent>();
+		const float Max = Stats ? Stats->GetMaxHealth() : 0.f;
+		if (Max <= KINDA_SMALL_NUMBER)
+		{
+			return 0.f;
+		}
+		return FMath::Clamp(Stats->GetHealth() / Max, 0.f, 1.f);
+	}
+
+	FNativeFuncPtr OriginalSetDilation = nullptr;
+	bool bInDilationGuard = false;
+	bool bPercentIsDouble = false;
+
+	void ExecSafeGetPercent(UObject* Context, FFrame& Stack, void* Result)
+	{
+		P_FINISH;
+		if (Result)
+		{
+			const double Fraction = SafeHealthFraction(Cast<UUserWidget>(Context));
+			if (bPercentIsDouble)
+			{
+				*static_cast<double*>(Result) = Fraction;
+			}
+			else
+			{
+				*static_cast<float*>(Result) = static_cast<float>(Fraction);
+			}
+		}
+	}
+
+	void ExecGuardedDilation(UObject* Context, FFrame& Stack, void* Result)
+	{
+		if (OriginalSetDilation)
+		{
+			OriginalSetDilation(Context, Stack, Result);
+		}
+		else
+		{
+			P_FINISH;
+		}
+		if (bInDilationGuard)
+		{
+			return;
+		}
+		bInDilationGuard = true;
+		for (TObjectIterator<UWorld> It; It; ++It)
+		{
+			UWorld* World = *It;
+			if (!World->IsGameWorld() || World->GetNetMode() == NM_Standalone)
+			{
+				continue;
+			}
+			const float Dil = UGameplayStatics::GetGlobalTimeDilation(World);
+			if (Dil >= 1.f - KINDA_SMALL_NUMBER)
+			{
+				continue;
+			}
+			if (AWorldSettings* Settings = World->GetWorldSettings())
+			{
+				Settings->SetTimeDilation(1.f);
+			}
+			if (APlayerController* PC = World->GetFirstPlayerController())
+			{
+				if (AGOTAPlayerCharacter* Hero = Cast<AGOTAPlayerCharacter>(PC->GetPawn()))
+				{
+					Hero->ApplyLocalParrySlow(Dil);
+				}
+			}
+		}
+		bInDilationGuard = false;
+	}
+}
+
+void AGOTAPlayerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	static bool bHudPatched = false;
+	if (!bHudPatched)
+	{
+		if (UClass* HudClass = LoadObject<UClass>(nullptr, TEXT("/Game/Widgets/W_PlayerHUD.W_PlayerHUD_C")))
+		{
+			if (UFunction* GetPercent = HudClass->FindFunctionByName(TEXT("GetPercent")))
+			{
+				if (const FProperty* ReturnProp = GetPercent->GetReturnProperty())
+				{
+					bPercentIsDouble = ReturnProp->IsA<FDoubleProperty>();
+				}
+				GetPercent->SetNativeFunc(&ExecSafeGetPercent);
+				GetPercent->FunctionFlags |= FUNC_Native;
+				bHudPatched = true;
+				UE_LOG(LogGOTANetGuard, Log, TEXT("W_PlayerHUD GetPercent now reads replicated stats and returns 0 when the pawn is missing"));
+			}
+		}
+	}
+	if (IsLocallyControlled())
+	{
+		BindLocalHud();
+	}
+}
+
+void AGOTAPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UnbindLocalHud();
+	Super::EndPlay(EndPlayReason);
+}
+
+void AGOTAPlayerCharacter::ApplyLocalParrySlow(float Dilation)
+{
+	if (!IsLocallyControlled() || Dilation >= 1.f || !GetWorld())
+	{
+		return;
+	}
+	CustomTimeDilation = Dilation;
+	TWeakObjectPtr<AGOTAPlayerCharacter> WeakThis(this);
+	GetWorld()->GetTimerManager().SetTimer(LocalSlowMoHandle, FTimerDelegate::CreateLambda([WeakThis]()
+	{
+		if (AGOTAPlayerCharacter* Self = WeakThis.Get())
+		{
+			Self->CustomTimeDilation = 1.f;
+		}
+	}), LocalParrySlowMoSeconds, false);
+	if (!bLoggedGlobalSlowMoClamp)
+	{
+		bLoggedGlobalSlowMoClamp = true;
+		UE_LOG(LogGOTANetGuard, Warning, TEXT("%s: SetGlobalTimeDilation redirected to local CustomTimeDilation (other players stay at full speed)"), *GetName());
+	}
+}
+
+void AGOTAPlayerCharacter::InstallGlobalDilationGuard()
+{
+	static bool bInstalled = false;
+	if (bInstalled)
+	{
+		return;
+	}
+	UClass* Statics = FindObject<UClass>(nullptr, TEXT("/Script/Engine.GameplayStatics"));
+	UFunction* Fn = Statics ? Statics->FindFunctionByName(TEXT("SetGlobalTimeDilation")) : nullptr;
+	if (!Fn)
+	{
+		return;
+	}
+	OriginalSetDilation = Fn->GetNativeFunc();
+	Fn->SetNativeFunc(&ExecGuardedDilation);
+	bInstalled = true;
+}
+
+void AGOTAPlayerCharacter::BindLocalHud()
+{
+	UnbindLocalHud();
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		return;
+	}
+	TArray<UUserWidget*> Widgets;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Widgets, UUserWidget::StaticClass(), false);
+	UUserWidget* Hud = nullptr;
+	for (UUserWidget* Widget : Widgets)
+	{
+		if (Widget && Widget->GetClass()->GetName().StartsWith(TEXT("W_PlayerHUD")) && Widget->GetOwningPlayer() == PC)
+		{
+			Hud = Widget;
+		}
+	}
+	if (!Hud || !Hud->WidgetTree)
+	{
+		return;
+	}
+	HudBar = Cast<UProgressBar>(Hud->WidgetTree->FindWidget(TEXT("ProgressBar_0")));
+	if (UStatsComponent* Stats = FindComponentByClass<UStatsComponent>())
+	{
+		HudStats = Stats;
+		Stats->OnHealthChanged.AddDynamic(this, &AGOTAPlayerCharacter::HandleHudHealth);
+		HandleHudHealth(Stats->GetHealth(), Stats->GetMaxHealth());
+	}
+}
+
+void AGOTAPlayerCharacter::UnbindLocalHud()
+{
+	if (UStatsComponent* Stats = HudStats.Get())
+	{
+		Stats->OnHealthChanged.RemoveDynamic(this, &AGOTAPlayerCharacter::HandleHudHealth);
+	}
+	HudStats = nullptr;
+	HudBar = nullptr;
+}
+
+void AGOTAPlayerCharacter::HandleHudHealth(float NewValue, float MaxValue)
+{
+	if (UProgressBar* Bar = HudBar.Get())
+	{
+		Bar->SetPercent(MaxValue > KINDA_SMALL_NUMBER ? FMath::Clamp(NewValue / MaxValue, 0.f, 1.f) : 0.f);
+	}
 }

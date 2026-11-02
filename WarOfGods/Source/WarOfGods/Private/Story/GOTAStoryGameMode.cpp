@@ -2,6 +2,7 @@
 
 #include "Story/GOTAStoryGameMode.h"
 #include "Characters/GOTAHeroBodyComponent.h"
+#include "Characters/GOTAHeroRegistry.h"
 
 #include "Arenas/ArenaGrayboxBuilder.h"
 #include "Arenas/ArenaPlayerStart.h"
@@ -54,6 +55,7 @@ AGOTAStoryGameMode::AGOTAStoryGameMode()
 
 void AGOTAStoryGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
+	UGOTAHeroRegistry::ApplyDevHeroesOption(Options);
 	ResolveClasses();
 	Super::InitGame(MapName, Options, ErrorMessage);
 
@@ -542,22 +544,25 @@ void AGOTAStoryGameMode::WatchPlayers()
 		RestartPlayer(PC);
 		if (APawn* NewPawn = PC->GetPawn())
 		{
-			if (AActor* Safe = ChooseSafeRespawnStart(PC))
+			FVector Loc = NewPawn->GetActorLocation();
+			FRotator Rot = NewPawn->GetActorRotation();
+			if (AActor* Safe = ChooseSafeRespawnStart(PC, NewPawn))
 			{
-				FVector Loc = Safe->GetActorLocation();
-				FRotator Rot = Safe->GetActorRotation();
-				if (UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
-				{
-					FNavLocation Projected;
-					if (Nav->ProjectPointToNavigation(Loc, Projected, FVector(400.f, 400.f, 500.f)))
-					{
-						Loc = Projected.Location + FVector(0.f, 0.f, 90.f);
-					}
-				}
-				NewPawn->SetActorLocationAndRotation(Loc, Rot, false, nullptr, ETeleportType::ResetPhysics);
-				PC->SetControlRotation(Rot);
-				PC->SetViewTarget(NewPawn);
+				Loc = Safe->GetActorLocation();
+				Rot = Safe->GetActorRotation();
 			}
+			if (UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+			{
+				FNavLocation Projected;
+				if (Nav->ProjectPointToNavigation(Loc, Projected, FVector(400.f, 400.f, 500.f)))
+				{
+					Loc = Projected.Location + FVector(0.f, 0.f, 90.f);
+				}
+			}
+			Loc = SeparateRespawnLocation(Loc, NewPawn);
+			NewPawn->SetActorLocationAndRotation(Loc, Rot, false, nullptr, ETeleportType::ResetPhysics);
+			PC->SetControlRotation(Rot);
+			PC->SetViewTarget(NewPawn);
 			ApplyRespawnProtection(NewPawn);
 			UE_LOG(LogTemp, Log, TEXT("Story: respawned %s as %s at %s (protection %.1fs)"),
 				*GetNameSafe(PC->PlayerState.Get()), *GetNameSafe(NewPawn),
@@ -641,7 +646,7 @@ void AGOTAStoryGameMode::ActivateCheckpoint(FName CheckpointId)
 	PersistProgress(true);
 }
 
-AActor* AGOTAStoryGameMode::ChooseSafeRespawnStart(AController* Player) const
+AActor* AGOTAStoryGameMode::ChooseSafeRespawnStart(AController* Player, APawn* Self) const
 {
 	TArray<AActor*> Candidates;
 	for (TActorIterator<AArenaPlayerStart> It(GetWorld()); It; ++It)
@@ -685,6 +690,23 @@ AActor* AGOTAStoryGameMode::ChooseSafeRespawnStart(AController* Player) const
 		return Best;
 	};
 
+	auto OccupiedByPlayer = [this, Self](const FVector& Loc) -> bool
+	{
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			const APawn* Other = It->Get() ? It->Get()->GetPawn() : nullptr;
+			if (!Other || Other == Self || !IsValid(Other) || UGOTACombatantObserver::IsCombatantDefeated(const_cast<APawn*>(Other)))
+			{
+				continue;
+			}
+			if (FVector::Dist2D(Loc, Other->GetActorLocation()) < 130.f)
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
 	AActor* Best = nullptr;
 	float BestScore = -1.f;
 	for (AActor* Cand : Candidates)
@@ -695,7 +717,12 @@ AActor* AGOTAStoryGameMode::ChooseSafeRespawnStart(AController* Player) const
 		}
 		const float Clear = MinEnemyDist(Cand->GetActorLocation());
 		// Prefer clearance above the minimum; among those (or all if none clear), farthest wins.
-		const float Score = Clear >= RespawnMinEnemyClearance ? Clear + 100000.f : Clear;
+		// A start another living player already occupies loses to a free one.
+		float Score = Clear >= RespawnMinEnemyClearance ? Clear + 100000.f : Clear;
+		if (OccupiedByPlayer(Cand->GetActorLocation()))
+		{
+			Score -= 200000.f;
+		}
 		if (Score > BestScore)
 		{
 			BestScore = Score;
@@ -703,6 +730,52 @@ AActor* AGOTAStoryGameMode::ChooseSafeRespawnStart(AController* Player) const
 		}
 	}
 	return Best ? Best : const_cast<AGOTAStoryGameMode*>(this)->ChoosePlayerStart_Implementation(Player);
+}
+
+FVector AGOTAStoryGameMode::SeparateRespawnLocation(FVector Loc, APawn* Self) const
+{
+	auto Blocked = [this, Self](const FVector& At) -> bool
+	{
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			const APawn* Other = It->Get() ? It->Get()->GetPawn() : nullptr;
+			if (!Other || Other == Self || !IsValid(Other) || UGOTACombatantObserver::IsCombatantDefeated(const_cast<APawn*>(Other)))
+			{
+				continue;
+			}
+			if (FVector::Dist2D(At, Other->GetActorLocation()) < 140.f)
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	const FVector Base = Loc;
+	for (int32 Step = 0; Step < 8; ++Step)
+	{
+		FVector Try = Base;
+		if (Step > 0)
+		{
+			const float Angle = Step * (2.f * PI / 8.f);
+			Try += FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * 160.f;
+		}
+		if (Nav)
+		{
+			FNavLocation Projected;
+			if (Nav->ProjectPointToNavigation(Try, Projected, FVector(400.f, 400.f, 500.f)))
+			{
+				Try = Projected.Location + FVector(0.f, 0.f, 90.f);
+			}
+		}
+		if (!Blocked(Try))
+		{
+			return Try;
+		}
+		Loc = Try;
+	}
+	return Loc;
 }
 
 void AGOTAStoryGameMode::ApplyRespawnProtection(APawn* Pawn)

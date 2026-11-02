@@ -17,6 +17,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/GameStateBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -71,6 +72,7 @@ void UGOTABossComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(UGOTABossComponent, Phase);
 	DOREPLIFETIME(UGOTABossComponent, State);
 	DOREPLIFETIME(UGOTABossComponent, AttackIndex);
+	DOREPLIFETIME(UGOTABossComponent, AttackStart);
 	DOREPLIFETIME(UGOTABossComponent, LastTelegraph);
 }
 
@@ -216,7 +218,16 @@ float UGOTABossComponent::AttackClock(double Now) const
 {
 	const UGOTABossDefinition* Def = Definition.Get();
 	const float Rate = (Def && Def->Attacks.IsValidIndex(AttackIndex)) ? Def->Attacks[AttackIndex].PlayRate : 1.f;
-	return static_cast<float>(Now - AttackStart) * Rate;
+	// AttackStart is server world time. A remote client must use the synced server clock, not its own world time.
+	double ClockNow = Now;
+	if (GetOwner() && !GetOwner()->HasAuthority())
+	{
+		if (const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr)
+		{
+			ClockNow = GS->GetServerWorldTimeSeconds();
+		}
+	}
+	return static_cast<float>(ClockNow - AttackStart) * Rate;
 }
 
 bool UGOTABossComponent::HasLineOfSight(const AActor* A, const AActor* B) const

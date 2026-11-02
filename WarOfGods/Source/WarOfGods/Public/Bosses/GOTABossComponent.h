@@ -142,6 +142,10 @@ protected:
 	UPROPERTY(Replicated)
 	int32 AttackIndex = INDEX_NONE;
 
+	/** Server world time when the current attack began. Clients use it with GetServerWorldTimeSeconds to time a parry. */
+	UPROPERTY(Replicated)
+	double AttackStart = 0.0;
+
 	UPROPERTY(Replicated)
 	FText LastTelegraph;
 
@@ -156,7 +160,6 @@ protected:
 	bool bIntroDone = false;
 	bool bBodyApplied = false;
 	double StateUntil = 0.0;
-	double AttackStart = 0.0;
 	double LastAttackEnd = -100.0;
 	TArray<double> CooldownUntil;
 	int32 SequenceCursor = 0;

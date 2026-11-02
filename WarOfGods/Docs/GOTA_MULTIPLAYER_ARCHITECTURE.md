@@ -12,7 +12,7 @@
 
 See `GOTA_MULTIPLAYER_AUDIT.md` for findings and `GOTA_MULTIPLAYER_TEST_MATRIX.md` for what is verified.
 
-**Packaged check (2026-11-02):** Development cook `B:\Unreal\GOTA_Builds\RC1_0a93ace` from `0a93ace`. The listen-server clamp, PvP results teardown, and Story protected respawn survived cooking. Horde's packaged four-player combat script did not finish. Details and the pass/fail split are in the audit's Packaged RC1 section.
+**Packaged checks (2026-11-02):** RC1 is `B:\Unreal\GOTA_Builds\RC1_0a93ace` (from `0a93ace`). RC2 is a new Development cook at `B:\Unreal\GOTA_Builds\RC2` and is the one that contains the script-clock, HUD, spawn, and dilation-guard changes. RC1 is kept as the earlier result, not reused as the RC2 binary. Pass/fail is in the audit's Packaged RC1 and Packaged RC2 sections.
 
 ## 1. Topology and session flow
 
@@ -132,7 +132,7 @@ Rules this project follows:
 
 | Mechanic | Judged | Latency effect | Mitigation |
 |---|---|---|---|
-| Parry presentation slow-mo | Was `SetGlobalTimeDilation` in `BP_Player` | Listen server would slow **all** pawns / combat clocks | **Fixed:** `AGOTAPlayerCharacter` clamps global dilation in multiplayer and applies actor-local `CustomTimeDilation` only for the controlling pawn. Confirmed in the packaged listen server (`pkgslow`) |
+| Parry presentation slow-mo | `BP_Player` still calls `SetGlobalTimeDilation` | Listen server would slow **all** pawns / combat clocks | **Redirected in multiplayer:** the `GameplayStatics` function is hooked at startup. Below 1.0 in a non-standalone world, world dilation is put back to 1 and only the local pawn gets `CustomTimeDilation` for `LocalParrySlowMoSeconds`. The per-tick clamp remains as backup. Solo worlds are unchanged. `rc2boss3` logged the redirect on a perfect parry |
 | Perfect parry (Blueprint parry window) | Server copy of the defender's block montage | A remote defender's block starts on the server ~RTT/2 late, so the window shrinks by one-way latency | Recommended: favour-the-defender grace (accept a block that started up to min(RTT/2, 100 ms) after the hit for remote defenders), or resolve boss/AI hits against remote players after half their RTT |
 | Perfect dodge vs boss | Boss impact time (server) and the dodge's i-frame start (server) | Same one-way shift | Perfect window 0.35 s; dodges inside it are honoured to the impact (`IsDodgeProtected`) |
 | Riposte request | Server-side defending state within a 0.6 s grace | Covers RTT up to ~600 ms | `AGOTAPlayerCharacter::ParryGraceSeconds` |
@@ -146,7 +146,17 @@ Rules this project follows:
 | Max humans | 4 | 4 | 2 (vs AI: 1 + spectators) |
 | Per-player hero (validated) | yes | yes | yes |
 | Replicated health on clients | yes | yes | yes |
-| Death → respawn | 6 s co-op respawn at safest start/checkpoint + 2.5 s invuln | between waves | round reset; match end tears down fighters/HUD (results crash mitigation) |
+| Death → respawn | 6 s co-op respawn. Server picks a checkpoint or PlayerStart, then separates simultaneous pawns onto a 160 cm ring. 2.5 s invuln | Eliminated players respawn during intermission | round reset; match end tears down fighters/HUD (results crash mitigation) |
 | Kill credit | — | per killer | rounds |
 | Abilities / momentum / perfect parry-dodge / Divine Counter / bosses | **no** (Duel-only, audit I2) | **no** (I2) | yes |
 | Teams / 2v2 / FFA | co-op | co-op | **1v1 only** (I1) |
+
+## 7. Decisions held for later phases
+
+These are the rules for the next passes. They are not implemented beyond what RC2 already changed.
+
+- Keep Unreal's native replication. Do not move this game to Iris, Replication Graph, or GAS just to look newer. Four players do not need that machinery until a measured profile says otherwise.
+- One source of truth, several observers. `UStatsComponent` remains the replicated health mirror. HUD and animation subscribe locally (`OnRep` / `OnHealthChanged`) and drop the subscription when the pawn ends play. Story, Horde, and Duel already share that mirror. Each mode still decides what a death means (respawn timer, team wipe, round award). Unifying the *reactions* further is the shared-combat phase, after RC2, not a rewrite of the modes that already work.
+- Listen server first. Dedicated-server compatibility means GameMode stays server-only and clients do not trust their own damage. It does not mean standing up a dedicated host for this release.
+- LAN / direct IP stays. A session-service interface for Epic Online Services is a later phase. The menu Host → Find → Join path was not driven in RC2.
+- Observers are local. Do not add RPCs whose only job is to tell a widget to refresh.

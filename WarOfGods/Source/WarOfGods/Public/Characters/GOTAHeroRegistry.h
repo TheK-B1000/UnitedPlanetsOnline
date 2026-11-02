@@ -50,6 +50,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GOTA|Heroes")
 	FName GetDefaultHero(EArenaMode Mode) const;
 
+	/**
+	 * Testing only. ?DevHeroes=1 sets gota.Heroes.AllowInDevelopment for this process before login.
+	 * Shipping builds ignore it, so In Development heroes stay unselectable in a public build.
+	 * Every match game mode calls this; it is not a Duel-only switch.
+	 */
+	static void ApplyDevHeroesOption(const FString& Options);
+
 protected:
 	void EnsureLoaded() const;
 

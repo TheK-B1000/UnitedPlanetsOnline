@@ -15,6 +15,8 @@
 #include "Arenas/Horde/HordePlayerState.h"
 #include "Characters/GOTAPlayerCharacter.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Bosses/GOTABossComponent.h"
+#include "Containers/Ticker.h"
 #include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
 #include "Engine/World.h"
@@ -282,10 +284,87 @@ namespace GOTANetTest
 		}
 	}
 
+	static FTSTicker::FDelegateHandle RemoteParryHandle;
+	static double RemoteParryUntil = 0.0;
+	static double RemoteParryNext = 0.0;
+	static float RemoteParryLead = 0.35f;
+	static int32 RemoteParryBlocks = 0;
+
+	static bool TickRemoteParry(float)
+	{
+		UWorld* World = GameWorld();
+		if (!World || World->GetTimeSeconds() > RemoteParryUntil)
+		{
+			UE_LOG(LogGOTANet, Log, TEXT("REMOTE parry finished blocks=%d"), RemoteParryBlocks);
+			RemoteParryHandle.Reset();
+			return false;
+		}
+		APlayerController* PC = World->GetFirstPlayerController();
+		APawn* Me = PC ? PC->GetPawn() : nullptr;
+		if (!Me)
+		{
+			return true;
+		}
+		UGOTABossComponent* Boss = nullptr;
+		float BestDist = 2500.f;
+		for (TActorIterator<APawn> It(World); It; ++It)
+		{
+			if (UGOTABossComponent* Comp = It->FindComponentByClass<UGOTABossComponent>())
+			{
+				const float Dist = FVector::Dist2D(It->GetActorLocation(), Me->GetActorLocation());
+				if (Dist < BestDist)
+				{
+					BestDist = Dist;
+					Boss = Comp;
+				}
+			}
+		}
+		if (!Boss)
+		{
+			return true;
+		}
+		const double Now = World->GetTimeSeconds();
+		float Lead = -1.f;
+		bool bBlockable = false;
+		bool bParryable = false;
+		if (Now >= RemoteParryNext && Boss->GetIncomingImpact(Lead, bBlockable, bParryable)
+			&& bParryable && Lead <= RemoteParryLead && BestDist < 700.f)
+		{
+			FGOTABlueprintCombat::Call(Me, TEXT("StartBlock"));
+			RemoteParryNext = Now + 0.45;
+			++RemoteParryBlocks;
+			UE_LOG(LogGOTANet, Log, TEXT("REMOTE block lead=%.2f dist=%.0f (legitimate local input)"), Lead, BestDist);
+		}
+		return true;
+	}
+
+	static void RemoteParry(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		if (!World)
+		{
+			return;
+		}
+		const float Seconds = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 25.f;
+		if (Args.Num() > 1)
+		{
+			RemoteParryLead = FCString::Atof(*Args[1]);
+		}
+		RemoteParryUntil = World->GetTimeSeconds() + FMath::Max(Seconds, 1.f);
+		RemoteParryBlocks = 0;
+		RemoteParryNext = 0.0;
+		if (!RemoteParryHandle.IsValid())
+		{
+			RemoteParryHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&TickRemoteParry), 0.f);
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("REMOTE parry armed for %.0fs lead=%.2f on the local pawn"), Seconds, RemoteParryLead);
+	}
+
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
 	static FAutoConsoleCommand CmdHurt(TEXT("gota.Net.Hurt"), TEXT("Server: damage player <index> <amount> through its own damage system."), FConsoleCommandWithArgsDelegate::CreateStatic(&Hurt));
 	static FAutoConsoleCommand CmdKillEnemy(TEXT("gota.Net.KillEnemy"), TEXT("Server: player <index> defeats the nearest living enemy (kill-credit test)."), FConsoleCommandWithArgsDelegate::CreateStatic(&KillEnemy));
 	static FAutoConsoleCommand CmdForge(TEXT("gota.Net.ForgeParry"), TEXT("Exploit test (client): forged SR_ParryAttack at the farthest pawn; the server must reject it."), FConsoleCommandWithArgsDelegate::CreateStatic(&ForgeParry));
+	static FAutoConsoleCommand CmdRemote(TEXT("gota.Net.RemoteParry"), TEXT("Client: time StartBlock on the local pawn against the nearest boss. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteParry));
 	static FAutoConsoleCommand CmdAudit(TEXT("gota.Net.AuditRPCs"), TEXT("List loaded game classes' network RPCs and replicated properties."), FConsoleCommandWithArgsDelegate::CreateStatic(&AuditRPCs));
 	static FAutoConsoleCommand CmdInspect(TEXT("gota.Net.InspectDamage"), TEXT("Damage-system props/delegates of the first pawn whose class contains <substring>."), FConsoleCommandWithArgsDelegate::CreateStatic(&InspectDamage));
 }

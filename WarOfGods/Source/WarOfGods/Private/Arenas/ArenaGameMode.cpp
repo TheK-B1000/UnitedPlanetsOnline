@@ -2,6 +2,7 @@
 
 #include "Arenas/ArenaGameMode.h"
 #include "Characters/GOTAHeroBodyComponent.h"
+#include "Characters/GOTAHeroRegistry.h"
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Multiplayer/GOTAPlayerState.h"
 
@@ -72,6 +73,7 @@ void AArenaGameMode::ResolveSoftClasses()
 
 void AArenaGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
+	UGOTAHeroRegistry::ApplyDevHeroesOption(Options);
 	ResolveSoftClasses();
 	Super::InitGame(MapName, Options, ErrorMessage);
 

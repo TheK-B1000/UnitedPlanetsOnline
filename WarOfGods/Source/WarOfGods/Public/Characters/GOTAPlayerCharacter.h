@@ -29,9 +29,15 @@ public:
 	AGOTAPlayerCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	virtual void ProcessEvent(UFunction* Function, void* Parms) override;
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
 
 	int32 GetRejectedRPCs() const { return RejectedRPCs; }
+
+	/** Redirects BP SetGlobalTimeDilation in multiplayer to the local pawn. Safe to call once at startup. */
+	static void InstallGlobalDilationGuard();
+	void ApplyLocalParrySlow(float Dilation);
 
 	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Net Validation")
 	float ParryRiposteRange = 450.f;
@@ -51,12 +57,20 @@ protected:
 	bool ValidateServerRPC(const UFunction* Function, void* Parms);
 	bool IsDefendingNow() const;
 	static AActor* ReadActorParam(const UFunction* Function, void* Parms);
-	/** BP_Player may call SetGlobalTimeDilation on parry; neutralize it in multiplayer. */
+	/** Backup if a global dilation slips through between ticks. */
 	void NeutralizeUnsafeGlobalSlowMo();
+	void BindLocalHud();
+	void UnbindLocalHud();
+
+	UFUNCTION()
+	void HandleHudHealth(float NewValue, float MaxValue);
 
 	double LastDefendingTime = -100.0;
 	double LastRiposteTime = -100.0;
 	int32 RejectedRPCs = 0;
 	FTimerHandle LocalSlowMoHandle;
 	bool bLoggedGlobalSlowMoClamp = false;
+
+	TWeakObjectPtr<class UStatsComponent> HudStats;
+	TWeakObjectPtr<class UProgressBar> HudBar;
 };

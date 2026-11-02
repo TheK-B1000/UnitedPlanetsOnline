@@ -144,7 +144,9 @@ protected:
 	/** Server: when each downed player went down (Blueprint death leaves the pawn in the world). */
 	TMap<TWeakObjectPtr<APlayerController>, double> DownedSince;
 	void WatchPlayers();
-	/** Checkpoint-aware, enemy-clearance spawn pick (server). */
-	AActor* ChooseSafeRespawnStart(AController* Player) const;
+	/** Checkpoint-aware, enemy-clearance spawn pick (server). Self is the pawn being placed, so it is not treated as an obstacle. */
+	AActor* ChooseSafeRespawnStart(AController* Player, APawn* Self) const;
+	/** Push Loc off other living players, then project back onto the navmesh. */
+	FVector SeparateRespawnLocation(FVector Loc, APawn* Self) const;
 	void ApplyRespawnProtection(APawn* Pawn);
 };

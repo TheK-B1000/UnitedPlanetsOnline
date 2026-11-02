@@ -1,0 +1,7 @@
+# Lagged client: time a real block, then send a forged parry the server must reject.
+wait 4
+gota.Net.RemoteParry 22 0.45
+wait 10
+gota.Net.ForgeParry
+wait 16
+quit

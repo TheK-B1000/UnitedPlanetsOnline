@@ -85,6 +85,26 @@ Development cook only (`RunUAT BuildCookRun`, exit 0). Logs: `Saved/MPTests/pkg*
 
 **Counts:** packaged forfeit **6/6**; rematch **1/1**; slow-mo **1/1**; Story wipe **1/1**; boss regression **1/1**; Horde combat **0 completed**; menu **0**; remote parry **0**.
 
+## Packaged RC2 (2026-11-02)
+
+New cook `B:\Unreal\GOTA_Builds\RC2`. RC1 was not reused. Logs: `Saved/MPTests/rc2*.log`. Local processes only. Host rendered unless noted. Clients `-nullrhi` unless noted. Ports 7791–7799.
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R2-1 | Cook | **PASS** | AutomationTool exit 0 |
+| R2-2 | Horde 4P victory, kill credit, one results event, intermission respawn | **PASS** | `rc2hordewin`. Not "four players joined" |
+| R2-3 | Horde 4P team wipe | **PASS** | `rc2hordewipe`, one `outcome=Defeat` |
+| R2-4 | Story HUD + spread respawn | **PASS** | `rc2story`. No GetPercent null or divide-by-zero |
+| R2-5 | Forged parry at 120 ms / 5% loss | **PASS** | `rc2parry`, one `rejected SR_ParryAttack`. Client rendered, host `-nullrhi` |
+| R2-6 | Legitimate remote parry | **NOT RUN** | Client was not the boss-fight defender. See audit |
+| R2-7 | Drakon vs Quarry Behemoth | **PASS** | `rc2boss3`. 2 parries, 4 dodges, counter 90, stun. Dilation redirected |
+| R2-8 | PvP forfeit | **PASS (single)** | `rc2forfeit`, `outcome=1`. Not a 6/6 idle soak |
+| R2-9 | Fifth player rejected | **PASS** | `rc2cap`, `Server full.` All `-nullrhi` |
+| R2-10 | Client leave / host leave to menu | **NOT RUN** | Kill order did not leave a live server to record the client, and clients were stopped before a menu return |
+| R2-11 | Menu Host → Find → Join | **NOT RUN** | Direct map travel |
+| R2-12 | Insights / frame time / memory | **NOT RUN** | No capture |
+| R2-13 | Second machine | **NOT RUN** | Not available |
+
 ## How to re-run
 
 ```text

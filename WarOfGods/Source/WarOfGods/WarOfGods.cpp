@@ -2,6 +2,7 @@
 
 #include "WarOfGods.h"
 #include "Arenas/ArenaConsoleCommands.h"
+#include "Characters/GOTAPlayerCharacter.h"
 #include "Modules/ModuleManager.h"
 
 class FWarOfGodsModule : public FDefaultGameModuleImpl
@@ -10,6 +11,7 @@ public:
 	virtual void StartupModule() override
 	{
 		FDefaultGameModuleImpl::StartupModule();
+		AGOTAPlayerCharacter::InstallGlobalDilationGuard();
 		FArenaConsoleCommands::Register();
 	}
 

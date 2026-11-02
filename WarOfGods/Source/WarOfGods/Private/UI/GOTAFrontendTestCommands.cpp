@@ -100,15 +100,17 @@ namespace GOTATest
 	{
 		TArray<FString> Lines;
 		int32 Index = 0;
-		/** Script time advances by capped frame deltas, so blocking map loads don't eat waits. The cap is 0.5 s: low
-		 *  frame rates (an unfocused packaged window) still count in full, multi-second load hitches do not. */
+		/** Script time is the sum of frame deltas, each capped at 0.5 s. The ticker runs every frame (delay 0).
+		 *  A 0.05 s ticker delay used to sample only one tiny frame, so a fast nullrhi host made `wait 35` last
+		 *  many minutes and the packaged Horde script never reached kill credit. A single load hitch still
+		 *  cannot skip a wait, because one step is capped. */
 		double ScriptTime = 0.0;
 		double ResumeAt = 0.0;
 		FTSTicker::FDelegateHandle Handle;
 
 		bool Tick(float DeltaTime)
 		{
-			ScriptTime += FMath::Min(DeltaTime, 0.5f);
+			ScriptTime += FMath::Min(static_cast<double>(DeltaTime), 0.5);
 			const double Now = ScriptTime;
 			while (Index < Lines.Num() && Now >= ResumeAt)
 			{
@@ -165,7 +167,7 @@ namespace GOTATest
 		Runner->Handle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([](float Dt)
 		{
 			return Runner.IsValid() && Runner->Tick(Dt);
-		}), 0.05f);
+		}), 0.f);
 		UE_LOG(LogGOTATest, Log, TEXT("Running %s (%d lines)"), *Path, Runner->Lines.Num());
 	}
 

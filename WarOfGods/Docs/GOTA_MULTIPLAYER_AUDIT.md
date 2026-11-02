@@ -23,7 +23,7 @@ and Trial of Champions (Duel).
 | P3 Story safe respawn | **Fixed (editor + packaged)** | `pkgstory2`: 4 downs, 4 protected respawns |
 | P4 Packaged 4P | **Partial** | Cook succeeded. PvP, Story, slow-mo, and Drakon vs Rampage ran in the package. Horde kill/wipe/results did not. Menu flow not run |
 
-**Production readiness:** **not a release candidate.** The packaged listen server keeps the PvP results fix, the slow-mo clamp, and Story's protected respawn. Horde's packaged session never reached kill credit, wipe, or results. Host → Find → Join was not automated. See the matrix § Packaged RC1.
+**Production readiness:** **not a release candidate.** RC2 (`B:\Unreal\GOTA_Builds\RC2`) completed packaged four-player Horde victory and defeat, and it stopped the Story HUD null-divide flood. Host → Find → Join, a real remote parry, a second physical machine, and a performance capture are still open. See Packaged RC2 below. RC1 remains the record of the earlier package.
 
 ## Packaged RC1 (2026-11-02)
 
@@ -47,18 +47,40 @@ and Trial of Champions (Duel).
 
 **Harness notes (this package, not in `0a93ace`):** the staged bootstrap exe exits after spawning `Binaries\Win64\WarOfGods.exe`, so the runner launches the inner exe. `GOTA_PORT` avoids a leftover process on 7777. `gota.Heroes.AllowInDevelopment` is set from `Engine.ini` at startup because `?DevHeroes=1` is applied only by `ADuelGameMode`; without that, Story and Horde reject Drakon and fall back to UPAWarden (`pkgstory`, `pkghorde`). `Slate.bAllowThrottling=0` is set the same way. `t.IdleWhenNotForeground` is cheat-flagged and cannot be set from `Engine.ini`; the runner sends it on the console instead.
 
+## Packaged RC2 (2026-11-02)
+
+**Build:** fresh UE 5.8 Win64 Development cook. AutomationTool exit 0. Archive `B:\Unreal\GOTA_Builds\RC2`. The RC1 directory was not overwritten. Development, so `gota.*` commands exist. Every process below is on this machine. No second physical machine was available.
+
+The Horde stall in RC1 was the test-script clock, not a stuck wave. `FTSTicker` hands the callback one frame's delta and the old runner sampled that only every 0.05 s, so a fast packaged host never finished `wait 70`. The runner now ticks every frame and still caps one step at 0.5 s so a hitch cannot skip a wait.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Clean cook | **PASS** | `BuildCookRun` exit 0, new archive directory |
+| Horde 4P, five waves + boss | **PASS** | `rc2hordewin`: host rendered, 3 clients `-nullrhi`, port 7791. Six `Horde kill credit` lines (five +100 and a boss +2500). `Horde match complete outcome=Victory score=6250` once. `BossActive` then `ended=1`. No `EXCEPTION` |
+| Horde intermission respawn | **PASS** | Same log: one player hurt during wave 1, `Horde: respawned …` on the clear, `living=4/4` in the next wave |
+| Horde 4P team wipe | **PASS** | `rc2hordewipe`: four `NET hurt`, one `Horde match complete outcome=Defeat score=0`. No second complete line. No crash |
+| Story HUD | **PASS** | `rc2story`: `GetPercent now reads replicated stats` once. `Accessed None` 0, divide-by-zero 0, with `Log LogScript` left on |
+| Story respawn spread | **PASS** | Five protected respawns (one player died twice). The four that overlapped in time landed at different XY: `(-1064,-190)`, `(-951,-77)`, `(-1064,-399)`, `(-952,-297)`. Protection 2.5 s. Host rendered, clients `-nullrhi` |
+| Dev heroes in Story and Horde | **PASS** | `DevHeroes=1` is applied in `AArenaGameMode` and `AGOTAStoryGameMode` before login. Shipping builds ignore the option. Horde/Story logs show Drakon, Nyx, Varoth, Kairos |
+| Forged parry | **PASS** | `rc2parry`: client `PktLag 120`, variance 30, `PktLoss 5`. Server logged `rejected SR_ParryAttack`. That session had no boss (URL omitted `?Boss=`), so it does not prove a parry |
+| Legitimate remote parry | **NOT RUN** | Client armed `gota.Net.RemoteParry` and finished with no timed block. A Fight AI boss fight allows one human; that human is the listen-server host. A joining client is the second fighter only when there is no boss, or a spectator when there is one. The remote pawn was not the defender against Quarry Behemoth |
+| Drakon vs Quarry Behemoth (Rampage body) | **PASS** | `rc2boss3`, rendered host, no clients, `?Boss=QuarryBehemoth`. 2 perfect parries, 4 perfect dodges, Divine Counter 90 damage, `Boss STUNNED`, boss hp 800/900, player hp 130. `SetGlobalTimeDilation redirected to local CustomTimeDilation`. Script quit then logged slot 0 forfeit `outcome=2` (host leaving). No crash. An earlier `rc2boss` / `rc2boss2` without `?Boss=` is not this result (`BOSS none`) |
+| PvP forfeit | **PASS (1, not a 6/6 soak)** | `rc2forfeit`: `fighter in slot 1 left - forfeit`, `outcome=1`. Host rendered, client `-nullrhi`. The process quit about 8 s later, so the old ~67 s results-screen crash window was not re-soaked |
+| Four-player cap | **PASS** | `rc2cap`: Horde `players=4`, then client 4 `PreLogin failure` / `Server full.` All processes `-nullrhi` |
+| Client disconnect while the server is up | **NOT RUN** | The harness killed the host before it killed a joined client, so the server never logged that leave |
+| Host disconnect back to menu | **NOT RUN** | Host was hard-killed. Client logs did not show a network-failure return to the menu before those clients were stopped |
+| Menu Host → Find → Join | **NOT RUN** | Sessions travel straight onto the match map. `gota.Menu.Go` was not driven |
+| Frame time / GPU / memory | **NOT RUN** | No Unreal Insights capture. Cook peak was the cooker, not a play session. No crash dump in the runs above |
+| Second physical machine | **NOT RUN** | Only local processes |
+
 **Still blocking a release candidate**
 
-1. Packaged Horde never completed waves, kill credit, team wipe, or results.
-2. Menu Host → Find → Join, the 4-player cap, and disconnect handling were not re-run on this package (editor matrix #8–#8d still stand).
-3. No legitimate remote parry under latency.
-4. `W_PlayerHUD::GetPercent` reads a null `PlayerRef` every tick in Story.
-5. Only `ADuelGameMode` honors `?DevHeroes=1`. A normal Story/Horde host still rejects Drakon unless the cvar is set first.
-6. Story respawns still stack on the single safest start.
-7. The Blueprint parry graph still calls `SetGlobalTimeDilation`. The package clamps it; the node is still there.
-8. Development package only. No Shipping cook, no memory or frame-time report.
-
-**I11 / I12 (incomplete list below):** addressed by P2 / P3 in this pass.
+1. No legitimate remote perfect parry. The listen-server host is the only human fighter in a boss encounter, so a lagged client cannot be the defender without a different slot setup.
+2. Menu Host → Find → Join was not driven.
+3. A joined client leaving, and a host drop returning clients to the menu, were not cleanly logged on RC2. The four-player cap was.
+4. The Blueprint parry node still calls `SetGlobalTimeDilation`. RC2 redirects that call in multiplayer (`rc2boss3`); the node is still in the asset. `gota.Ability.Slomo` still calls the C++ API, which the same hook and the tick clamp convert.
+5. Development package only. No Shipping cook, no frame-time or memory profile, no second machine.
+6. Shared combat (parry, dodge, Divine Counter, abilities in Story and Horde) and 2v2 are not started. They wait on the remote-parry gap and a menu/disconnect pass.
 
 ---
 
@@ -141,12 +163,12 @@ Status legend:
 | I8 | **Test and dev console commands** (`gota.Duel.*`, `gota.Test.*`, `gota.Boss.*`) are compiled into Shipping, but act only on the host. The new `gota.Net.*` commands are excluded from Shipping | | Wrap the older command files in `#if !UE_BUILD_SHIPPING` |
 | I9 | **Host migration:** none. Host leaves → clients get a network failure and return to the menu (`UGOTAMenuSubsystem::HandleNetworkFailure`) | Out of scope for listen-server Null OSS | Document as expected behaviour |
 | I10 | `WBP_GOTA_HordeHUD` widget asset missing (warning at Horde load) | Content | Rebuild the Horde HUD widget |
-| I11 | **`BP_Player`'s parry graph calls `SetGlobalTimeDilation`** | **Fixed (runtime):** `AGOTAPlayerCharacter` clamps global dilation in multiplayer and converts to local `CustomTimeDilation` (`slowmo1` PASS). BP node not removed | Optional: delete the BP node so solo/editor doesn't need the clamp |
-| I12 | **Story respawn unsafe near enemies** | **Fixed:** `ChooseSafeRespawnStart` + `ApplyRespawnProtection` (2.5 s). `storyrespawn2` 4/4 protected | Optional: spread multiple players across different starts instead of stacking on the safest one |
+| I11 | **`BP_Player`'s parry graph calls `SetGlobalTimeDilation`** | **Redirected:** the UFunction is hooked. Multiplayer puts world dilation back to 1 and slows only the local pawn (`rc2boss3`). Tick clamp remains. BP node not removed | Optional: delete the BP node |
+| I12 | **Story respawn unsafe near enemies** | **Fixed and spread:** clearance, 2.5 s protection, and a 160 cm ring so simultaneous respawns do not share a capsule (`rc2story`) | — |
 | I13 | The Horde Wave-2 spawn and the Horde HUD were not exercised visually with 4 players (all clients ran `-nullrhi`) | Test environment: four rendering game windows on one GPU caused a GPU device-removed crash | Run a manual 4-machine LAN playtest |
-| I14 | **`W_PlayerHUD::GetPercent` null `PlayerRef`** every tick in packaged Story, including a divide-by-zero. `pkgstory` grew to ~26 MB of warnings and the wipe script never finished | Packaged log `pkgstory_host.log` | Guard the widget when `PlayerRef` is unset. `pkgstory2` passed only after `Log LogScript Off` |
-| I15 | **Packaged Horde host script does not reach combat commands** after four players join (`pkghorde`, `pkghorde2`, `pkghorde3`, and the lag reruns). Session stays up (a forged parry is still rejected) but kill credit, wipe, and results are not executed | Packaged logs; no crash dump | Find why the host ticker stalls in a packaged Horde session, then re-run `mp4_horde_pkg.txt` |
-| I16 | **`?DevHeroes=1` is read only by `ADuelGameMode`.** Story and Horde reject Drakon at login unless `gota.Heroes.AllowInDevelopment` is already 1. The test harness sets that cvar from `Engine.ini` before login | `pkgstory` / `pkghorde` logged the rejection; `pkgstory2` accepted Drakon after the harness change | Apply the same option in Story and Horde `InitGame` |
+| I14 | **`W_PlayerHUD::GetPercent` null `PlayerRef`** | **Fixed:** native `GetPercent` reads `UStatsComponent` and returns 0 if the pawn or max health is missing. The local HUD also binds `OnHealthChanged` and unbinds on EndPlay. `rc2story` had zero `Accessed None` and zero divide-by-zero with logging left on | — |
+| I15 | **Packaged Horde script never reached combat** | **Fixed:** script clock. `rc2hordewin` victory and `rc2hordewipe` defeat on RC2. RC1 logs stay as the pre-fix evidence | — |
+| I16 | **`?DevHeroes=1` was Duel-only** | **Fixed:** `UGOTAHeroRegistry::ApplyDevHeroesOption` runs from Arena and Story `InitGame`. Shipping ignores it. Dev heroes are not publicly selectable when the cvar stays 0 | — |
 
 ## 5. Trust boundary (summary; full table in `GOTA_MULTIPLAYER_ARCHITECTURE.md`)
 

@@ -70,17 +70,6 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 	bAutoStartEncounterDirector = false;
 
 	bVersusAI = UGameplayStatics::ParseOption(Options, TEXT("Opponent")).Equals(TEXT("AI"), ESearchCase::IgnoreCase);
-#if !UE_BUILD_SHIPPING
-	// Testing only: ?DevHeroes=1 lets In Development heroes spawn (see UGOTAHeroRegistry::IsHeroSpawnable).
-	if (UGameplayStatics::GetIntOption(Options, TEXT("DevHeroes"), 0) != 0)
-	{
-		if (IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("gota.Heroes.AllowInDevelopment")))
-		{
-			CVar->Set(1, ECVF_SetByCode);
-			UE_LOG(LogTemp, Warning, TEXT("Duel: DevHeroes=1 — In Development heroes may spawn (testing only)"));
-		}
-	}
-#endif
 	if (bVersusAI)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Duel: Fight AI mode (champion %s)"), *AIChampionClass.ToString());

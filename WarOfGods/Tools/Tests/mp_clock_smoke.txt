@@ -1,0 +1,3 @@
+# Script clock must advance about one second per wall second. quit follows a 2s wait.
+wait 2
+quit
