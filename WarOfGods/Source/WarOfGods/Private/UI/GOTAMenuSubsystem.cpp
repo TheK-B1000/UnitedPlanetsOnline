@@ -845,6 +845,18 @@ void UGOTAMenuSubsystem::HandleNetworkFailure(UWorld* World, UNetDriver* NetDriv
 	PendingErrorTitle = NSLOCTEXT("GOTA", "NetFailTitle", "CONNECTION LOST");
 	PendingErrorBody = FText::Format(NSLOCTEXT("GOTA", "NetFailBody", "{0}\n\n{1}"),
 		FText::FromString(ENetworkFailure::ToString(FailureType)), FText::FromString(ErrorString));
+	// A listen host hears a client drop here too. Only the machine that lost the server clears its session.
+	// The engine then travels that client to the default map, which is the main menu.
+	if (World && World->GetNetMode() == NM_Client)
+	{
+		if (UGotaSessionSubsystem* Sessions = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGotaSessionSubsystem>() : nullptr)
+		{
+			Sessions->DestroyCurrentSession();
+		}
+		UE_LOG(LogGOTAMenu, Warning, TEXT("Network failure %s: session cleared, returning to the main menu (%s)"),
+			ENetworkFailure::ToString(FailureType), *ErrorString);
+		return;
+	}
 	UE_LOG(LogGOTAMenu, Warning, TEXT("Network failure %s: %s"), ENetworkFailure::ToString(FailureType), *ErrorString);
 }
 
@@ -897,11 +909,52 @@ void UGOTAMenuSubsystem::SetWorldRenderingSuppressed(bool bSuppressed)
 	}
 }
 
+bool UGOTAMenuSubsystem::ClearReturnedClientSession(UWorld* World)
+{
+	if (!World || !IsFrontendMap(World))
+	{
+		return false;
+	}
+	UGotaSessionSubsystem* Sessions = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGotaSessionSubsystem>() : nullptr;
+	if (!Sessions || !Sessions->IsInSession() || Sessions->IsHosting())
+	{
+		return false;
+	}
+	// ?closed is the engine's "connection ended" travel. The main menu is both the lobby and the
+	// default map, so the world object is reused and can still report NM_Client on this frame.
+	const bool bClosed = World->URL.HasOption(TEXT("closed"));
+	const bool bHome = World->GetNetMode() == NM_Standalone;
+	if (!bClosed && !bHome)
+	{
+		return false;
+	}
+	Sessions->DestroyCurrentSession();
+	NavigateTo(EGOTAMenuScreen::MainMenu, true);
+	UE_LOG(LogGOTAMenu, Log, TEXT("Returned to the main menu; session cleared"));
+	return true;
+}
+
 void UGOTAMenuSubsystem::HandlePostLoadMap(UWorld* LoadedWorld)
 {
 	if (!LoadedWorld || LoadedWorld->GetGameInstance() != GetGameInstance())
 	{
 		return;
+	}
+
+	// Run before the same-world return. BeginPlay already presented the lobby on a reused menu world.
+	if (!ClearReturnedClientSession(LoadedWorld))
+	{
+		if (UGotaSessionSubsystem* Sessions = GetGameInstance()->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			if (IsFrontendMap(LoadedWorld) && Sessions->IsInSession() && !Sessions->IsHosting())
+			{
+				TWeakObjectPtr<UWorld> WeakWorld(LoadedWorld);
+				LoadedWorld->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this, WeakWorld]()
+				{
+					ClearReturnedClientSession(WeakWorld.Get());
+				}));
+			}
+		}
 	}
 
 	// The frontend GameMode may already have presented the UI during BeginPlay (which runs

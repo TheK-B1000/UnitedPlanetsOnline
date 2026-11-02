@@ -76,6 +76,12 @@ void ADuelGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 	}
 
 #if !UE_BUILD_SHIPPING
+	// Testing: the joining client is the human defender and the listen host spectates. ?Defender=Remote
+	bRemoteDefender = UGameplayStatics::ParseOption(Options, TEXT("Defender")).Equals(TEXT("Remote"), ESearchCase::IgnoreCase);
+	if (bRemoteDefender)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Duel: remote client is the defender; the listen host spectates"));
+	}
 	// Testing: the AI champion plays a hero (body + divine abilities) — ?Foe=Varoth.
 	FoeHeroId = FName(*UGameplayStatics::ParseOption(Options, TEXT("Foe")));
 	if (!FoeHeroId.IsNone())
@@ -172,7 +178,7 @@ void ADuelGameMode::BeginPlay()
 		RemoveDeveloperPawns();
 	}
 	// Local hosts log in before BeginPlay; start here once the arena (and its starts) exist.
-	if (bAutoStartWhenFull && GetNumPlayers() >= GetRequiredHumanPlayers())
+	if (bAutoStartWhenFull && HasRemoteDefender() && GetNumPlayers() >= GetRequiredHumanPlayers())
 	{
 		RequestStartMatch();
 	}
@@ -223,11 +229,15 @@ void ADuelGameMode::PostLogin(APlayerController* NewPlayer)
 			GetNumPlayers(), SoftMaxPlayers, static_cast<int32>(GS->DuelPhase));
 	}
 
-	if (bVersusAI && GetNumPlayers() > GetRequiredHumanPlayers())
+	if (bVersusAI && !bRemoteDefender && GetNumPlayers() > GetRequiredHumanPlayers())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Duel Fight AI accepts one human; extra player will spectate."));
 	}
-	if (bAutoStartWhenFull && HasActorBegunPlay() && GetNumPlayers() >= GetRequiredHumanPlayers())
+	if (bRemoteDefender && NewPlayer && !NewPlayer->IsLocalController())
+	{
+		UE_LOG(LogTemp, Log, TEXT("Duel: remote defender joined; listen host stays a spectator"));
+	}
+	if (bAutoStartWhenFull && HasActorBegunPlay() && HasRemoteDefender() && GetNumPlayers() >= GetRequiredHumanPlayers())
 	{
 		RequestStartMatch();
 	}
@@ -288,10 +298,51 @@ AActor* ADuelGameMode::ChoosePlayerStart_Implementation(AController* Player)
 	return Super::ChoosePlayerStart_Implementation(Player);
 }
 
+bool ADuelGameMode::HasRemoteDefender() const
+{
+	if (!bRemoteDefender)
+	{
+		return true;
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (const APlayerController* PC = It->Get(); PC && !PC->IsLocalController())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void ADuelGameMode::AssignDuelSlots()
 {
 	if (!HasAuthority())
 	{
+		return;
+	}
+	if (bRemoteDefender)
+	{
+		// The listen host has no duel slot. The first remote player is the defender.
+		bool bDefenderAssigned = false;
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			APlayerController* PC = It->Get();
+			ADuelPlayerState* PS = PC ? GetDuelPS(PC) : nullptr;
+			if (!PS)
+			{
+				continue;
+			}
+			if (PC->IsLocalController())
+			{
+				PS->DuelSlot = INDEX_NONE;
+				continue;
+			}
+			if (!bDefenderAssigned)
+			{
+				PS->DuelSlot = 0;
+				bDefenderAssigned = true;
+			}
+		}
 		return;
 	}
 	// Slots already held (e.g. the host's slot 0 when a client joins) must be skipped, not re-issued.

@@ -1,0 +1,7 @@
+# Stay up while the client leaves on its own, then confirm the session is still hosted.
+wait 18
+gota.Net.Players
+wait 20
+gota.Net.Players
+wait 8
+quit

@@ -93,6 +93,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GOTA|Session")
 	void RefreshLobbyProjection();
 
+	/** Hero this lobby connection asked for. The frontend travel appends it to that player's own URL. */
+	void RememberLobbyHero(APlayerController* Player, FName HeroId);
+	FName GetLobbyHero(const APlayerController* Player) const;
+
 	UPROPERTY(BlueprintAssignable, Category = "GOTA|Session")
 	FOnGotaSessionHosted OnHostComplete;
 
@@ -150,6 +154,8 @@ protected:
 
 	TSharedPtr<FOnlineSessionSearch> LastSearch;
 	TSharedPtr<FOnlineSessionSettings> LastHostSettings;
+
+	TMap<uint32, FName> LobbyHeroByPlayer;
 
 	bool bSessionActive = false;
 	bool bIsHost = false;

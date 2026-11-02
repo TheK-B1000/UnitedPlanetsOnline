@@ -105,6 +105,20 @@ New cook `B:\Unreal\GOTA_Builds\RC2`. RC1 was not reused. Logs: `Saved/MPTests/r
 | R2-12 | Insights / frame time / memory | **NOT RUN** | No capture |
 | R2-13 | Second machine | **NOT RUN** | Not available |
 
+## Packaged RC3 (2026-11-02)
+
+Cook `B:\Unreal\GOTA_Builds\RC3`, then the Development exe with the menu, defender, and camera-parry changes copied over the inner binary. RC2 was not overwritten and its passing rows were not re-run. Logs: `Saved/MPTests/rc3*.log`. Local processes only.
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R3-1 | Menu Host → Find → Join → Horde, two heroes | **PASS** | `rc3menu3`. Both windows rendered. Client `Hero=Nyx` (no `listen`), host `Hero=Drakon`. Meshes Greystone and SM_Countess on both processes. Commands call the same subsystem as the buttons; the widgets were not mouse-clicked |
+| R3-2 | Host leave clears the client session | **PASS** | `rc3menuleave2`, both `-nullrhi`. `in=1 screen=Lobby` then `session cleared` then `in=0 screen=MainMenu` |
+| R3-3 | Client leave, host stays | **PASS** | `rc3leave`, both `-nullrhi`. Host 2 → 1 players, client back on `L_GOTA_MainMenu` |
+| R3-4 | Remote defender parry + dodge, 120 ms / 5% loss | **PASS** | `rc3parry3`. Ping 141 ms. Two perfect parries, boss staggered, Earthshaker dodge `landed=0`, player hp 130. `CustomTimeDilation=1.00` |
+| R3-5 | Frame / GPU / memory / net sample | **PASS (short)** | `rc3menu3`: frame 11.81–18.41 ms, GPU 5.72–9.24 ms, ~1.4 GB, net ~88/71 KB then 118/93 KB, lost 0. `rc3menu2` wave-1 hitch 223–357 ms is not the steady figure |
+| R3-6 | Story from the menu, mouse clicks, remote Divine Counter, charge dodge | **NOT RUN** | |
+| R3-7 | Four rendered windows, second machine, Shipping | **NOT RUN** | |
+
 ## How to re-run
 
 ```text
@@ -131,9 +145,8 @@ python Tools/GOTA_MPSession.py --tag horde4 --url "/Game/Arenas/Maps/L_Arena_Tit
 
 ## Recommended follow-up tests
 
-1. Finish packaged Horde: the host script clock stops advancing after four players join, so kill credit, wipe, and results never run. Editor rows #7 and #7b are not a substitute.
-2. Manual menu playtest: Host → Find → Join → Start → match → return, four players, including the session cap and a disconnect.
-3. Remote-client defender under 120 ms, so a real parry is measured separately from forged-RPC rejection.
-4. Stop `W_PlayerHUD::GetPercent` from reading a null `PlayerRef` (Story log flood).
-5. Teach Story and Horde to honor `?DevHeroes=1` the way `ADuelGameMode` does.
-6. A manual 4-machine LAN playtest (rendering on every machine), then a Shipping cook.
+1. Enter Story from the lobby the same way Horde was entered in `rc3menu3`.
+2. Remote Divine Counter, and a charge dodge once charge state is replicated to the defender.
+3. Click Host, Find, and Join with the mouse. The subsystem path is already the one those buttons call.
+4. A second machine, then a Shipping cook. Do not put four rendered windows on one GPU.
+5. After those, share Duel parry, dodge, Divine Counter, and hero abilities with Story and Horde. Do not start that while the rows above are still open.

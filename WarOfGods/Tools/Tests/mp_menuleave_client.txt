@@ -1,0 +1,10 @@
+wait 4
+gota.Menu.Go Multiplayer
+gota.Menu.Session find
+wait 4
+gota.Menu.Session join
+wait 8
+gota.Menu.Session dump
+wait 16
+gota.Menu.Session dump
+quit

@@ -19,6 +19,10 @@ class WAROFGODS_API AGOTAFrontendPlayerController : public APlayerController
 public:
 	AGOTAFrontendPlayerController();
 	virtual void BeginPlay() override;
+
+	/** Server: store this connection's hero so match travel can put it on that player's URL only. */
+	UFUNCTION(Server, Reliable)
+	void ServerSetLobbyHero(const FString& HeroName);
 };
 
 /**
@@ -43,6 +47,7 @@ public:
 	int32 MaxLobbyPlayers = 4;
 
 	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
+	virtual APlayerController* ProcessClientTravel(FString& URL, bool bSeamless, bool bAbsolute) override;
 
 protected:
 	void RefreshLobby() const;

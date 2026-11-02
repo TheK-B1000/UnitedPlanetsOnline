@@ -9,6 +9,8 @@
 #include "Combat/GOTACombatantObserver.h"
 #include "Components/ProgressBar.h"
 #include "Engine/World.h"
+#include "Camera/PlayerCameraManager.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/WorldSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -60,26 +62,19 @@ void AGOTAPlayerCharacter::NeutralizeUnsafeGlobalSlowMo()
 	{
 		return;
 	}
-	// Convert to actor-local presentation for the controlling player only; never slow the shared sim.
-	if (IsLocallyControlled() && Dil < 1.f && LocalParrySlowMoSeconds > 0.f)
+	// The pawn keeps simulating at full speed. Feedback is a local camera pulse.
+	CustomTimeDilation = 1.f;
+	if (IsLocallyControlled() && Dil < 1.f)
 	{
-		CustomTimeDilation = Dil;
-		TWeakObjectPtr<AGOTAPlayerCharacter> WeakThis(this);
-		World->GetTimerManager().SetTimer(LocalSlowMoHandle, FTimerDelegate::CreateLambda([WeakThis]()
-		{
-			if (AGOTAPlayerCharacter* Self = WeakThis.Get())
-			{
-				Self->CustomTimeDilation = 1.f;
-			}
-		}), LocalParrySlowMoSeconds, false);
+		ApplyLocalParrySlow(Dil);
 	}
 	UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
 	if (!bLoggedGlobalSlowMoClamp)
 	{
 		bLoggedGlobalSlowMoClamp = true;
 		UE_LOG(LogGOTANetGuard, Warning,
-			TEXT("%s: clamped SetGlobalTimeDilation in multiplayer (converted to CustomTimeDilation locally)"),
-			*GetName());
+			TEXT("%s: clamped SetGlobalTimeDilation in multiplayer (pawn CustomTimeDilation=%.2f)"),
+			*GetName(), CustomTimeDilation);
 	}
 }
 
@@ -289,25 +284,51 @@ void AGOTAPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+void AGOTAPlayerCharacter::RestoreParryCamera()
+{
+	bParryCameraActive = false;
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (APlayerCameraManager* Cam = PC->PlayerCameraManager)
+		{
+			Cam->SetFOV(SavedFOV);
+		}
+	}
+}
+
 void AGOTAPlayerCharacter::ApplyLocalParrySlow(float Dilation)
 {
-	if (!IsLocallyControlled() || Dilation >= 1.f || !GetWorld())
+	// Dilation is the value the Blueprint asked the world to use. It is not applied to this pawn.
+	(void)Dilation;
+	CustomTimeDilation = 1.f;
+	if (!IsLocallyControlled() || !GetWorld())
 	{
 		return;
 	}
-	CustomTimeDilation = Dilation;
-	TWeakObjectPtr<AGOTAPlayerCharacter> WeakThis(this);
-	GetWorld()->GetTimerManager().SetTimer(LocalSlowMoHandle, FTimerDelegate::CreateLambda([WeakThis]()
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
-		if (AGOTAPlayerCharacter* Self = WeakThis.Get())
+		if (APlayerCameraManager* Cam = PC->PlayerCameraManager)
 		{
-			Self->CustomTimeDilation = 1.f;
+			if (!bParryCameraActive)
+			{
+				SavedFOV = Cam->GetFOVAngle();
+				bParryCameraActive = true;
+			}
+			Cam->SetFOV(FMath::Max(SavedFOV * 0.9f, 50.f));
+			TWeakObjectPtr<AGOTAPlayerCharacter> WeakThis(this);
+			GetWorld()->GetTimerManager().SetTimer(LocalSlowMoHandle, FTimerDelegate::CreateLambda([WeakThis]()
+			{
+				if (AGOTAPlayerCharacter* Self = WeakThis.Get())
+				{
+					Self->RestoreParryCamera();
+				}
+			}), LocalParrySlowMoSeconds, false);
 		}
-	}), LocalParrySlowMoSeconds, false);
+	}
 	if (!bLoggedGlobalSlowMoClamp)
 	{
 		bLoggedGlobalSlowMoClamp = true;
-		UE_LOG(LogGOTANetGuard, Warning, TEXT("%s: SetGlobalTimeDilation redirected to local CustomTimeDilation (other players stay at full speed)"), *GetName());
+		UE_LOG(LogGOTANetGuard, Warning, TEXT("%s: parry feedback is local camera only (CustomTimeDilation=%.2f)"), *GetName(), CustomTimeDilation);
 	}
 }
 

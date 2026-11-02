@@ -73,12 +73,16 @@ def main():
     ap.add_argument("--timeout", type=float, default=420.0)
     ap.add_argument("--render-clients", type=int, default=99, help="only the first N clients render; the rest run -nullrhi")
     ap.add_argument("--host-nullrhi", action="store_true", help="host does not render (keeps the server at full speed)")
+    ap.add_argument("--menu", action="store_true", help="both processes start on the frontend map; scripts drive Host/Find/Join")
     ap.add_argument("--host-exec", default="", help="extra console commands for the host (e.g. NetEmulation.PktLag 120)")
     ap.add_argument("--kill-client", type=int, default=0, help="which client --kill-client-at kills (1-based; 0 = last)")
     a = ap.parse_args()
     os.makedirs(LOGS, exist_ok=True)
     heroes = [h for h in a.client_heroes.split(",") if h]
-    host_url = a.url + ("?Hero=%s" % a.host_hero if a.host_hero else "") + "?DevHeroes=1?listen"
+    if a.menu:
+        host_url = a.url
+    else:
+        host_url = a.url + ("?Hero=%s" % a.host_hero if a.host_hero else "") + "?DevHeroes=1?listen"
     host_log = os.path.join(LOGS, "%s_host.log" % a.tag)
     procs = [("host", launch(a.packaged, host_url, a.host_script, host_log, a.host_exec, pos=(0, 0), nullrhi=a.host_nullrhi))]
     start = time.time()
@@ -90,8 +94,12 @@ def main():
         hero = heroes[i] if i < len(heroes) else "UPAWarden"
         log = os.path.join(LOGS, "%s_client%d.log" % (a.tag, i + 1))
         pos = (960 * ((i + 1) % 2), 540 * ((i + 1) // 2))
-        addr = ("127.0.0.1:%s" % PORT) if PORT else "127.0.0.1"
-        procs.append(("client%d" % (i + 1), launch(a.packaged, "%s?Hero=%s" % (addr, hero), a.client_script, log, a.client_exec, pos=pos, nullrhi=i >= a.render_clients)))
+        if a.menu:
+            client_url = a.url
+        else:
+            addr = ("127.0.0.1:%s" % PORT) if PORT else "127.0.0.1"
+            client_url = "%s?Hero=%s" % (addr, hero)
+        procs.append(("client%d" % (i + 1), launch(a.packaged, client_url, a.client_script, log, a.client_exec, pos=pos, nullrhi=i >= a.render_clients)))
         last_join = time.time()
         time.sleep(a.stagger)
     killed_client = killed_host = False

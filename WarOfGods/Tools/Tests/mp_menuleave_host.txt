@@ -1,0 +1,8 @@
+wait 3
+gota.Menu.Go Multiplayer
+gota.Menu.Session mode PvEHorde
+gota.Menu.Session host
+wait 28
+gota.Net.Leave
+wait 6
+quit

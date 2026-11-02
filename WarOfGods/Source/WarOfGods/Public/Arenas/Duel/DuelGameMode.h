@@ -172,6 +172,8 @@ protected:
 	ADuelPlayerState* GetPSForSlot(int32 Slot) const;
 	APlayerController* GetControllerForSlot(int32 Slot) const;
 	int32 GetRequiredHumanPlayers() const { return bVersusAI ? 1 : SoftMaxPlayers; }
+	/** False while ?Defender=Remote is waiting for the joining client. */
+	bool HasRemoteDefender() const;
 
 	// --- Fight AI ---
 	void EnsureAIParticipant();
@@ -214,6 +216,8 @@ protected:
 	TSet<TWeakObjectPtr<UCombatComponent>> BoundCombatComponents;
 
 	bool bVersusAI = false;
+	/** Development URL ?Defender=Remote: the listen host spectates and the joining client is slot 0. */
+	bool bRemoteDefender = false;
 
 	UPROPERTY()
 	TObjectPtr<ADuelPlayerState> AIPlayerState;

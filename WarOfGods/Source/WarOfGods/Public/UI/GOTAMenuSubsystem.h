@@ -257,6 +257,8 @@ protected:
 	void HandleCameraTransitionFinished();
 
 	void HandlePostLoadMap(UWorld* LoadedWorld);
+	/** Drops a joined session when this machine is sent home. Returns true when a destroy was started. */
+	bool ClearReturnedClientSession(UWorld* World);
 	void HandleTravelFailure(UWorld* World, ETravelFailure::Type FailureType, const FString& ErrorString);
 	void HandleNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
 

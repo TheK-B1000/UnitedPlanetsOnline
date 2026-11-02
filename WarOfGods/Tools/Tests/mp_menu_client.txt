@@ -1,0 +1,19 @@
+# Frontend Find + Join, then the hero the lobby travel should carry.
+wait 4
+gota.Menu.Go Multiplayer
+gota.Menu.Dump
+wait 10
+gota.Menu.Session find
+wait 6
+gota.Menu.Session dump
+gota.Menu.Session join
+wait 4
+gota.Menu.Session hero Nyx
+gota.Menu.Session dump
+wait 70
+gota.Net.Players
+gota.Net.Perf
+wait 25
+gota.Menu.Dump
+gota.Net.Players
+quit

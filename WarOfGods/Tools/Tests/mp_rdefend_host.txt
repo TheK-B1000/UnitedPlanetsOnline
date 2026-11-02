@@ -1,0 +1,17 @@
+# Wait until the remote defender has joined and the boss intro can be skipped.
+wait 45
+gota.Boss.Skip
+wait 8
+gota.Boss.PlaceTarget 140 0
+gota.Duel.Face 0
+gota.Boss.Attack ClawCombo
+wait 4
+gota.Boss.Dump
+wait 2
+gota.Boss.PlaceTarget 200 0
+gota.Boss.Attack Earthshaker
+wait 6
+gota.Boss.Dump
+gota.Net.Players
+wait 2
+quit

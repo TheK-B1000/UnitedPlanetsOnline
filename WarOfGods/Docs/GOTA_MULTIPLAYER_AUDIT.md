@@ -23,7 +23,7 @@ and Trial of Champions (Duel).
 | P3 Story safe respawn | **Fixed (editor + packaged)** | `pkgstory2`: 4 downs, 4 protected respawns |
 | P4 Packaged 4P | **Partial** | Cook succeeded. PvP, Story, slow-mo, and Drakon vs Rampage ran in the package. Horde kill/wipe/results did not. Menu flow not run |
 
-**Production readiness:** **not a release candidate.** RC2 (`B:\Unreal\GOTA_Builds\RC2`) completed packaged four-player Horde victory and defeat, and it stopped the Story HUD null-divide flood. Host → Find → Join, a real remote parry, a second physical machine, and a performance capture are still open. See Packaged RC2 below. RC1 remains the record of the earlier package.
+**Production readiness:** **not a release candidate.** RC2 (`11f2602`, `B:\Unreal\GOTA_Builds\RC2`) is the four-player Horde and Story baseline and was not re-run. RC3 (`B:\Unreal\GOTA_Builds\RC3`, cook plus the later Development exe copied over the inner binary) drove the menu session path, a real remote parry and dodge, disconnect cleanup, two rendered heroes, and a short frame/GPU sample. A second machine, four rendered windows, Shipping, and shared Story/Horde combat are still open.
 
 ## Packaged RC1 (2026-11-02)
 
@@ -73,7 +73,7 @@ The Horde stall in RC1 was the test-script clock, not a stuck wave. `FTSTicker` 
 | Frame time / GPU / memory | **NOT RUN** | No Unreal Insights capture. Cook peak was the cooker, not a play session. No crash dump in the runs above |
 | Second physical machine | **NOT RUN** | Only local processes |
 
-**Still blocking a release candidate**
+**Open at the end of RC2** (closed or narrowed in RC3 below)
 
 1. No legitimate remote perfect parry. The listen-server host is the only human fighter in a boss encounter, so a lagged client cannot be the defender without a different slot setup.
 2. Menu Host → Find → Join was not driven.
@@ -81,6 +81,32 @@ The Horde stall in RC1 was the test-script clock, not a stuck wave. `FTSTicker` 
 4. The Blueprint parry node still calls `SetGlobalTimeDilation`. RC2 redirects that call in multiplayer (`rc2boss3`); the node is still in the asset. `gota.Ability.Slomo` still calls the C++ API, which the same hook and the tick clamp convert.
 5. Development package only. No Shipping cook, no frame-time or memory profile, no second machine.
 6. Shared combat (parry, dodge, Divine Counter, abilities in Story and Horde) and 2v2 are not started. They wait on the remote-parry gap and a menu/disconnect pass.
+
+## Packaged RC3 (2026-11-02)
+
+**Build:** UE 5.8 Win64 Development cook, archive `B:\Unreal\GOTA_Builds\RC3`. RC2 was not overwritten. Later code (per-player travel hero, listen-flag strip, camera-only parry, remote defender, session clear) was linked into `WarOfGods.exe` and copied over the RC3 inner binary. No second cook. Development, so `gota.*` exists. Every process is on this machine.
+
+Menu Host / Find / Join calls `UGotaSessionSubsystem` through `gota.Menu.Session` after `gota.Menu.Go Multiplayer`. That is the same C++ the buttons call. The widgets were not clicked with the mouse. The Host button still sets PvP Duel when it creates the session. The lobby no longer overwrites the mode on open or on Start, so a later Horde selection is what traveled.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Menu Host → Find → Join → Horde | **PASS** | `rc3menu3`, host and one client both rendered, Null OSS port 7777. Find `results=1`, join `button=1`. Client travel URL `HordeGameMode?Hero=Nyx` with no `listen`. Host URL `?listen?Hero=Drakon`. Both accepted. Titans Quarry |
+| Two rendered heroes | **PASS** | Same log. Host and client both: Drakon `mesh=Greystone`, Nyx `mesh=SM_Countess`, `dilation=1.00`, ping 13–14 ms. Two windows, not four |
+| Host leave, client returns and session clears | **PASS** | `rc3menuleave2`, both `-nullrhi`. Client dump `in=1 screen=Lobby`, then `Returned to the main menu; session cleared`, then `in=0 screen=MainMenu`. `rc3menu3` (rendered) also logged `returning to Entry` and `Frontend presented` on both processes; that binary did not yet clear the session flag |
+| Client leave, host stays in the match | **PASS** | `rc3leave`, port 7801, both `-nullrhi`, direct URL. Client `NET leave` then frontend on `L_GOTA_MainMenu`. Host went from 2 players to 1 and stayed in Horde. Same run logged Drakon/Greystone and Nyx/SM_Countess on both processes (client was `-nullrhi`, so the mesh applied; it was not a rendered shot) |
+| Legitimate remote parry and dodge | **PASS** | `rc3parry3`, port 7804, `?Defender=Remote?Boss=QuarryBehemoth`. Client rendered, host `-nullrhi`. Client `PktLag 120`, variance 30, `PktLoss 5`, logged ping 141 ms. Two `Momentum … (perfect parry)`, boss `parried=2` then Staggered, hp 890/900, player 130/130. Earthshaker `REMOTE dodge` and `landed=0`. Host pawn none, `duelSlot=-1`. Client is the defender |
+| Parry feedback does not scale the pawn | **PASS** | Same client log: `parry feedback is local camera only (CustomTimeDilation=1.00)`. End dump `dilation=1.00` |
+| Frame time, GPU, memory, replication | **PASS (short sample)** | `rc3menu3` `gota.Net.Perf` on the rendered Horde pair: frame 11.81–18.41 ms, GPU 5.72–9.24 ms, used physical ~1394–1411 MB, net in 88–118 KB, net out 71–93 KB, packets lost 0. An earlier two-window wave-1 sample (`rc3menu2`) hit frame 223–357 ms and GPU 230–281 ms during first-frame shader misses. Not an Unreal Insights capture |
+| Story entered from the menu | **NOT RUN** | Horde was the mode that traveled. The mode command can select Story; that run was not made |
+| Mouse click of Host / Find / Join | **NOT RUN** | Same subsystem calls as the buttons, after the menu was opened by command |
+| Remote Divine Counter | **NOT RUN** | Parry and dodge only |
+| Charge-attack dodge | **NOT RUN** | `bCharging` is server-only, so the client cannot time a charge from replicated state |
+| Four rendered players | **NOT RUN** | Two windows maximum. Four rendered clients previously removed the D3D12 device |
+| Second physical machine | **NOT RUN** | |
+| Shipping cook | **NOT RUN** | |
+| Shared Story/Horde combat, 2v2 | **NOT RUN** | Still the next phase, after this list |
+
+RC2 rows for Horde victory, Horde defeat, Story HUD, Story respawn spread, the fifth-player rejection, and forged `SR_ParryAttack` stay as recorded on `11f2602`. They were not repeated.
 
 ---
 
@@ -163,7 +189,7 @@ Status legend:
 | I8 | **Test and dev console commands** (`gota.Duel.*`, `gota.Test.*`, `gota.Boss.*`) are compiled into Shipping, but act only on the host. The new `gota.Net.*` commands are excluded from Shipping | | Wrap the older command files in `#if !UE_BUILD_SHIPPING` |
 | I9 | **Host migration:** none. Host leaves → clients get a network failure and return to the menu (`UGOTAMenuSubsystem::HandleNetworkFailure`) | Out of scope for listen-server Null OSS | Document as expected behaviour |
 | I10 | `WBP_GOTA_HordeHUD` widget asset missing (warning at Horde load) | Content | Rebuild the Horde HUD widget |
-| I11 | **`BP_Player`'s parry graph calls `SetGlobalTimeDilation`** | **Redirected:** the UFunction is hooked. Multiplayer puts world dilation back to 1 and slows only the local pawn (`rc2boss3`). Tick clamp remains. BP node not removed | Optional: delete the BP node |
+| I11 | **`BP_Player`'s parry graph calls `SetGlobalTimeDilation`** | **Redirected, then made cosmetic:** multiplayer forces world dilation back to 1. `ApplyLocalParrySlow` no longer sets `CustomTimeDilation`. It pulses the local camera FOV for 0.25 s (`rc3parry3`: `parry feedback is local camera only (CustomTimeDilation=1.00)`). The Blueprint node is still in the asset | Optional: delete the BP node |
 | I12 | **Story respawn unsafe near enemies** | **Fixed and spread:** clearance, 2.5 s protection, and a 160 cm ring so simultaneous respawns do not share a capsule (`rc2story`) | — |
 | I13 | The Horde Wave-2 spawn and the Horde HUD were not exercised visually with 4 players (all clients ran `-nullrhi`) | Test environment: four rendering game windows on one GPU caused a GPU device-removed crash | Run a manual 4-machine LAN playtest |
 | I14 | **`W_PlayerHUD::GetPercent` null `PlayerRef`** | **Fixed:** native `GetPercent` reads `UStatsComponent` and returns 0 if the pawn or max health is missing. The local HUD also binds `OnHealthChanged` and unbinds on EndPlay. `rc2story` had zero `Accessed None` and zero divide-by-zero with logging left on | — |

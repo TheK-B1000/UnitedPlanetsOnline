@@ -35,8 +35,9 @@ public:
 
 	int32 GetRejectedRPCs() const { return RejectedRPCs; }
 
-	/** Redirects BP SetGlobalTimeDilation in multiplayer to the local pawn. Safe to call once at startup. */
+	/** Redirects BP SetGlobalTimeDilation in multiplayer onto a local camera pulse. Safe to call once at startup. */
 	static void InstallGlobalDilationGuard();
+	/** Local camera pulse only. Does not change CustomTimeDilation, movement, or attack timing. */
 	void ApplyLocalParrySlow(float Dilation);
 
 	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Net Validation")
@@ -48,7 +49,7 @@ public:
 	float ParryGraceSeconds = 0.6f;
 	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Net Validation")
 	float ParryRiposteCooldown = 0.35f;
-	/** How long a converted BP global slow-mo lasts as actor-local CustomTimeDilation. */
+	/** How long the local parry camera pulse lasts. The pawn keeps simulating at full speed. */
 	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Presentation")
 	float LocalParrySlowMoSeconds = 0.25f;
 
@@ -59,6 +60,7 @@ protected:
 	static AActor* ReadActorParam(const UFunction* Function, void* Parms);
 	/** Backup if a global dilation slips through between ticks. */
 	void NeutralizeUnsafeGlobalSlowMo();
+	void RestoreParryCamera();
 	void BindLocalHud();
 	void UnbindLocalHud();
 
@@ -70,6 +72,8 @@ protected:
 	int32 RejectedRPCs = 0;
 	FTimerHandle LocalSlowMoHandle;
 	bool bLoggedGlobalSlowMoClamp = false;
+	bool bParryCameraActive = false;
+	float SavedFOV = 90.f;
 
 	TWeakObjectPtr<class UStatsComponent> HudStats;
 	TWeakObjectPtr<class UProgressBar> HudBar;

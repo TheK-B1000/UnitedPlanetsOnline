@@ -13,8 +13,14 @@
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
 #include "Arenas/Horde/HordePlayerState.h"
+#include "Characters/GOTAHeroBodyComponent.h"
 #include "Characters/GOTAPlayerCharacter.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "HAL/PlatformMemory.h"
+#include "Misc/App.h"
+#include "Multiplayer/GotaSessionSubsystem.h"
+#include "RHI.h"
+#include "TimerManager.h"
 #include "Bosses/GOTABossComponent.h"
 #include "Containers/Ticker.h"
 #include "Engine/Engine.h"
@@ -22,6 +28,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -90,7 +97,12 @@ namespace GOTANetTest
 			const UGOTADuelFighterComponent* F = Pawn ? Pawn->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr;
 			if (const AGOTAPlayerCharacter* Guarded = Cast<AGOTAPlayerCharacter>(Pawn))
 			{
-				Mode += FString::Printf(TEXT(" rejectedRPCs=%d"), Guarded->GetRejectedRPCs());
+				Mode += FString::Printf(TEXT(" rejectedRPCs=%d dilation=%.2f"), Guarded->GetRejectedRPCs(), Guarded->CustomTimeDilation);
+			}
+			if (const UGOTAHeroBodyComponent* Body = Pawn ? Pawn->FindComponentByClass<UGOTAHeroBodyComponent>() : nullptr)
+			{
+				const USkeletalMeshComponent* Mesh = Body->GetBodyMesh();
+				Mode += FString::Printf(TEXT(" body=%s mesh=%s"), *Body->GetHeroId().ToString(), *GetNameSafe(Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr));
 			}
 			UE_LOG(LogGOTANet, Log, TEXT("NET  [%d] %s local=%d pawn=%s hp=%.0f/%.0f dead=%d mom=%.0f ping=%.0fms %s"), i, *PS->GetPlayerName(),
 				(PS->GetPlayerController() && PS->GetPlayerController()->IsLocalController()) ? 1 : 0, *GetNameSafe(Pawn), V.Health, V.MaxHealth,
@@ -284,18 +296,42 @@ namespace GOTANetTest
 		}
 	}
 
+	static bool CallVector(UObject* Obj, FName Function, const FVector& Value)
+	{
+		UFunction* Fn = Obj ? Obj->FindFunction(Function) : nullptr;
+		if (!Fn)
+		{
+			return false;
+		}
+		uint8* Params = static_cast<uint8*>(FMemory_Alloca(Fn->ParmsSize));
+		FMemory::Memzero(Params, Fn->ParmsSize);
+		Fn->InitializeStruct(Params);
+		for (TFieldIterator<FProperty> P(Fn); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
+		{
+			if (FStructProperty* SP = CastField<FStructProperty>(*P); SP && SP->Struct == TBaseStructure<FVector>::Get())
+			{
+				*SP->ContainerPtrToValuePtr<FVector>(Params) = Value;
+			}
+		}
+		Obj->ProcessEvent(Fn, Params);
+		Fn->DestroyStruct(Params);
+		return true;
+	}
+
 	static FTSTicker::FDelegateHandle RemoteParryHandle;
 	static double RemoteParryUntil = 0.0;
 	static double RemoteParryNext = 0.0;
 	static float RemoteParryLead = 0.35f;
 	static int32 RemoteParryBlocks = 0;
+	static int32 RemoteParryDodges = 0;
+	static FString RemoteMode = TEXT("parry");
 
 	static bool TickRemoteParry(float)
 	{
 		UWorld* World = GameWorld();
 		if (!World || World->GetTimeSeconds() > RemoteParryUntil)
 		{
-			UE_LOG(LogGOTANet, Log, TEXT("REMOTE parry finished blocks=%d"), RemoteParryBlocks);
+			UE_LOG(LogGOTANet, Log, TEXT("REMOTE parry finished blocks=%d dodges=%d mode=%s"), RemoteParryBlocks, RemoteParryDodges, *RemoteMode);
 			RemoteParryHandle.Reset();
 			return false;
 		}
@@ -327,13 +363,27 @@ namespace GOTANetTest
 		float Lead = -1.f;
 		bool bBlockable = false;
 		bool bParryable = false;
-		if (Now >= RemoteParryNext && Boss->GetIncomingImpact(Lead, bBlockable, bParryable)
-			&& bParryable && Lead <= RemoteParryLead && BestDist < 700.f)
+		const bool bIncoming = Boss->GetIncomingImpact(Lead, bBlockable, bParryable);
+		const bool bWantDodge = RemoteMode == TEXT("dodge") || (RemoteMode == TEXT("both") && !bParryable);
+		const bool bWantBlock = !bWantDodge && bBlockable && (RemoteMode == TEXT("parry") || RemoteMode == TEXT("both"));
+		if (Now >= RemoteParryNext && bIncoming && Lead <= RemoteParryLead)
 		{
-			FGOTABlueprintCombat::Call(Me, TEXT("StartBlock"));
-			RemoteParryNext = Now + 0.45;
-			++RemoteParryBlocks;
-			UE_LOG(LogGOTANet, Log, TEXT("REMOTE block lead=%.2f dist=%.0f (legitimate local input)"), Lead, BestDist);
+			const FName AttackId = Boss->GetCurrentAttack() ? Boss->GetCurrentAttack()->AttackId : NAME_None;
+			if (bWantBlock && BestDist < 700.f)
+			{
+				FGOTABlueprintCombat::Call(Me, TEXT("StartBlock"));
+				RemoteParryNext = Now + 0.45;
+				++RemoteParryBlocks;
+				UE_LOG(LogGOTANet, Log, TEXT("REMOTE block lead=%.2f dist=%.0f attack=%s (legitimate local input)"), Lead, BestDist, *AttackId.ToString());
+			}
+			else if (bWantDodge && BestDist < 1300.f)
+			{
+				const FVector Away = (Me->GetActorLocation() - Boss->GetOwner()->GetActorLocation()).GetSafeNormal2D();
+				CallVector(Me, TEXT("DodgeToLocation"), Me->GetActorLocation() + Away * 380.f);
+				RemoteParryNext = Now + 0.45;
+				++RemoteParryDodges;
+				UE_LOG(LogGOTANet, Log, TEXT("REMOTE dodge lead=%.2f dist=%.0f attack=%s (legitimate local input)"), Lead, BestDist, *AttackId.ToString());
+			}
 		}
 		return true;
 	}
@@ -352,12 +402,106 @@ namespace GOTANetTest
 		}
 		RemoteParryUntil = World->GetTimeSeconds() + FMath::Max(Seconds, 1.f);
 		RemoteParryBlocks = 0;
+		RemoteParryDodges = 0;
 		RemoteParryNext = 0.0;
 		if (!RemoteParryHandle.IsValid())
 		{
 			RemoteParryHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&TickRemoteParry), 0.f);
 		}
-		UE_LOG(LogGOTANet, Log, TEXT("REMOTE parry armed for %.0fs lead=%.2f on the local pawn"), Seconds, RemoteParryLead);
+		UE_LOG(LogGOTANet, Log, TEXT("REMOTE parry armed for %.0fs lead=%.2f mode=%s on the local pawn"), Seconds, RemoteParryLead, *RemoteMode);
+	}
+
+	static void RemoteDefend(const TArray<FString>& Args)
+	{
+		if (Args.Num() > 0)
+		{
+			RemoteMode = Args[0].ToLower();
+		}
+		TArray<FString> Rest;
+		if (Args.Num() > 1) { Rest.Add(Args[1]); }
+		if (Args.Num() > 2) { Rest.Add(Args[2]); }
+		RemoteParry(Rest);
+	}
+
+	static void Leave(const TArray<FString>&)
+	{
+		UWorld* World = GameWorld();
+		UGameInstance* GI = World ? World->GetGameInstance() : nullptr;
+		if (!World || !GI)
+		{
+			return;
+		}
+		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
+		{
+			Sessions->DestroyCurrentSession();
+		}
+		if (World->GetNetMode() != NM_Client)
+		{
+			for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+			{
+				if (APlayerController* PC = It->Get(); PC && !PC->IsLocalController())
+				{
+					PC->ClientReturnToMainMenuWithTextReason(NSLOCTEXT("GOTA", "HostLeft", "Host has left the game."));
+				}
+			}
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("NET leave: clearing session and returning to the main menu"));
+		TWeakObjectPtr<UGameInstance> WeakGI(GI);
+		FTimerHandle Handle;
+		World->GetTimerManager().SetTimer(Handle, [WeakGI]()
+		{
+			if (UGameInstance* Live = WeakGI.Get())
+			{
+				Live->ReturnToMainMenu();
+			}
+		}, 0.5f, false);
+	}
+
+	static void Perf(const TArray<FString>&)
+	{
+		UWorld* World = GameWorld();
+		if (!World)
+		{
+			return;
+		}
+		const FPlatformMemoryStats Mem = FPlatformMemory::GetStats();
+		const float FrameMs = FApp::GetDeltaTime() * 1000.f;
+		const float GpuMs = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles());
+		int32 InBytes = 0;
+		int32 OutBytes = 0;
+		int32 InLost = 0;
+		int32 OutLost = 0;
+		auto AddConn = [&](const UNetConnection* Conn)
+		{
+			if (!Conn)
+			{
+				return;
+			}
+			InBytes += Conn->InTotalBytes;
+			OutBytes += Conn->OutTotalBytes;
+			InLost += Conn->InPacketsLost;
+			OutLost += Conn->OutPacketsLost;
+		};
+		if (World->GetNetMode() == NM_Client)
+		{
+			if (const APlayerController* PC = World->GetFirstPlayerController())
+			{
+				AddConn(PC->NetConnection);
+			}
+		}
+		else
+		{
+			for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+			{
+				if (const APlayerController* PC = It->Get())
+				{
+					AddConn(PC->NetConnection);
+				}
+			}
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("PERF frame=%.2fms gpu=%.2fms usedPhys=%.0fMB peakPhys=%.0fMB netIn=%dKB netOut=%dKB lostIn=%d lostOut=%d"),
+			FrameMs, GpuMs, Mem.UsedPhysical / 1048576.0, Mem.PeakUsedPhysical / 1048576.0,
+			InBytes / 1024, OutBytes / 1024, InLost, OutLost);
 	}
 
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
@@ -365,6 +509,9 @@ namespace GOTANetTest
 	static FAutoConsoleCommand CmdKillEnemy(TEXT("gota.Net.KillEnemy"), TEXT("Server: player <index> defeats the nearest living enemy (kill-credit test)."), FConsoleCommandWithArgsDelegate::CreateStatic(&KillEnemy));
 	static FAutoConsoleCommand CmdForge(TEXT("gota.Net.ForgeParry"), TEXT("Exploit test (client): forged SR_ParryAttack at the farthest pawn; the server must reject it."), FConsoleCommandWithArgsDelegate::CreateStatic(&ForgeParry));
 	static FAutoConsoleCommand CmdRemote(TEXT("gota.Net.RemoteParry"), TEXT("Client: time StartBlock on the local pawn against the nearest boss. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteParry));
+	static FAutoConsoleCommand CmdDefend(TEXT("gota.Net.RemoteDefend"), TEXT("Client: parry, dodge, or both against the nearest boss. Args: parry|dodge|both [seconds] [lead]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteDefend));
+	static FAutoConsoleCommand CmdLeave(TEXT("gota.Net.Leave"), TEXT("Clear the session and return this process to the main menu. A listen host tells clients to return first."), FConsoleCommandWithArgsDelegate::CreateStatic(&Leave));
+	static FAutoConsoleCommand CmdPerf(TEXT("gota.Net.Perf"), TEXT("Log one frame time, GPU time, memory, and replication byte totals."), FConsoleCommandWithArgsDelegate::CreateStatic(&Perf));
 	static FAutoConsoleCommand CmdAudit(TEXT("gota.Net.AuditRPCs"), TEXT("List loaded game classes' network RPCs and replicated properties."), FConsoleCommandWithArgsDelegate::CreateStatic(&AuditRPCs));
 	static FAutoConsoleCommand CmdInspect(TEXT("gota.Net.InspectDamage"), TEXT("Damage-system props/delegates of the first pawn whose class contains <substring>."), FConsoleCommandWithArgsDelegate::CreateStatic(&InspectDamage));
 }

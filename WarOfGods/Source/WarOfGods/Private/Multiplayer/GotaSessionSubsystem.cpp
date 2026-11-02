@@ -7,6 +7,7 @@
 #include "Engine/GameInstance.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
+#include "Arenas/ArenaGameMode.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -530,19 +531,44 @@ FString UGotaSessionSubsystem::BuildTravelOptions(bool bListen) const
 	return Options;
 }
 
+void UGotaSessionSubsystem::RememberLobbyHero(APlayerController* Player, FName HeroId)
+{
+	if (Player && !HeroId.IsNone())
+	{
+		LobbyHeroByPlayer.Add(Player->GetUniqueID(), HeroId);
+	}
+}
+
+FName UGotaSessionSubsystem::GetLobbyHero(const APlayerController* Player) const
+{
+	if (!Player)
+	{
+		return NAME_None;
+	}
+	const FName* Found = LobbyHeroByPlayer.Find(Player->GetUniqueID());
+	return Found ? *Found : NAME_None;
+}
+
 void UGotaSessionSubsystem::TravelToMatch(bool bAsListenHost)
 {
 	const FString Options = BuildTravelOptions(bAsListenHost);
-	FSoftObjectPath MapPath = MatchMap;
+	FString MapPackage;
 	if (SelectedMode == EArenaMode::Story)
 	{
 		const FString StoryPackage = TEXT("/Game/Story/Maps/L_GOTA_Story_Prologue");
 		if (FPackageName::DoesPackageExist(StoryPackage))
 		{
-			MapPath = FSoftObjectPath(StoryPackage + TEXT(".L_GOTA_Story_Prologue"));
+			MapPackage = StoryPackage;
 		}
 	}
-	const FString MapPackage = MapPath.GetLongPackageName();
+	else
+	{
+		MapPackage = AArenaGameMode::GetAuthoredArenaMap(SelectedArena);
+	}
+	if (MapPackage.IsEmpty())
+	{
+		MapPackage = MatchMap.GetLongPackageName();
+	}
 
 	if (bAsListenHost)
 	{

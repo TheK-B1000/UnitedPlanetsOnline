@@ -12,7 +12,7 @@
 
 See `GOTA_MULTIPLAYER_AUDIT.md` for findings and `GOTA_MULTIPLAYER_TEST_MATRIX.md` for what is verified.
 
-**Packaged checks (2026-11-02):** RC1 is `B:\Unreal\GOTA_Builds\RC1_0a93ace` (from `0a93ace`). RC2 is a new Development cook at `B:\Unreal\GOTA_Builds\RC2` and is the one that contains the script-clock, HUD, spawn, and dilation-guard changes. RC1 is kept as the earlier result, not reused as the RC2 binary. Pass/fail is in the audit's Packaged RC1 and Packaged RC2 sections.
+**Packaged checks (2026-11-02):** RC1 is `B:\Unreal\GOTA_Builds\RC1_0a93ace` (from `0a93ace`). RC2 is `B:\Unreal\GOTA_Builds\RC2` (`11f2602`: script clock, Story HUD, respawn spread, dilation guard). RC3 is `B:\Unreal\GOTA_Builds\RC3`: that cook, plus a later Development exe for per-player menu travel, a remote duel defender, camera-only parry feedback, and session cleanup on disconnect. RC2 was not overwritten. Pass/fail is in the audit's Packaged RC1, RC2, and RC3 sections.
 
 ## 1. Topology and session flow
 
@@ -48,8 +48,10 @@ flowchart LR
   - `AGameSession::ApproveLogin` rejects at `MaxPlayers`, which every mode sets from `SoftMaxPlayers` (Duel 2,
     Horde/Story 4).
   - The frontend hall additionally rejects at 4 in `PreLogin`.
-- **Host leaves:** clients get `OnNetworkFailure` and `UGOTAMenuSubsystem::HandleNetworkFailure` returns them to the
-  menu. There is no host migration.
+- **Host leaves:** clients are sent home (`?closed` loads the main menu). `UGOTAMenuSubsystem` destroys the joined
+  session and shows Main Menu (`rc3menuleave2`: `in=1` then `session cleared`, `in=0 screen=MainMenu`). There is no
+  host migration. A client who leaves on their own uses `gota.Net.Leave` / `DestroyCurrentSession`; the host keeps
+  the match (`rc3leave`).
 - **Client leaves:**
   - Duel: a fighter leaving forfeits; a spectator leaving changes nothing.
   - Horde: the team-wipe check counts only connected players.
@@ -66,7 +68,7 @@ flowchart LR
 | Divine Momentum | `UStatsComponent` on the server | `UGOTADuelFighterComponent::Momentum` (+ Stats) | Granted only on the server |
 | Melee swing / traces / damage | `BP_Player` + `BPC_Attacks` (server side of `SR_MeleeAttack`) | `MC_*` multicasts (cosmetic, unreliable) | |
 | Block / parry state | Server `BPC_DamageSystem.IsBlocking`, `BP_Player.IsWithinParryWindow` | multicasts | Riposte RPC validated by `AGOTAPlayerCharacter` |
-| Perfect parry / perfect dodge / Divine Counter | `UGOTADuelFighterComponent` (server) | Cues via `Multicast_Cue` (unreliable), momentum property | Boss impacts judged on the boss timeline (server) |
+| Perfect parry / perfect dodge / Divine Counter | `UGOTADuelFighterComponent` (server) | Cues via `Multicast_Cue` (unreliable), momentum property | Boss impacts judged on the boss timeline (server). Multiplayer parry feedback is a local camera FOV pulse. `CustomTimeDilation` stays 1, so attack timing is not scaled |
 | Abilities | `UGOTAHeroAbilityComponent` (server validates, resolves) | `Multicast_BeginCast` (reliable, discrete), `Multicast_Impact` (unreliable), cooldown/status properties | |
 | AI, Fight AI director, bosses | Server only (`UGOTAChampionDirectorComponent`, `UGOTABossComponent`) | Boss state/phase/attack properties + reliable animation multicasts | |
 | Hero body (cosmetic) | Each machine builds it | `UGOTAHeroBodyComponent::HeroId` (OnRep) | |
@@ -153,10 +155,10 @@ Rules this project follows:
 
 ## 7. Decisions held for later phases
 
-These are the rules for the next passes. They are not implemented beyond what RC2 already changed.
+These are the rules for the next passes. RC3 added the menu travel, remote-defender, and cosmetic-parry checks. Shared combat is not started.
 
 - Keep Unreal's native replication. Do not move this game to Iris, Replication Graph, or GAS just to look newer. Four players do not need that machinery until a measured profile says otherwise.
 - One source of truth, several observers. `UStatsComponent` remains the replicated health mirror. HUD and animation subscribe locally (`OnRep` / `OnHealthChanged`) and drop the subscription when the pawn ends play. Story, Horde, and Duel already share that mirror. Each mode still decides what a death means (respawn timer, team wipe, round award). Unifying the *reactions* further is the shared-combat phase, after RC2, not a rewrite of the modes that already work.
 - Listen server first. Dedicated-server compatibility means GameMode stays server-only and clients do not trust their own damage. It does not mean standing up a dedicated host for this release.
-- LAN / direct IP stays. A session-service interface for Epic Online Services is a later phase. The menu Host → Find → Join path was not driven in RC2.
+- LAN / direct IP stays. A session-service interface for Epic Online Services is a later phase. Menu Host → Find → Join was driven in RC3 (`rc3menu3`) through the session subsystem, not by clicking the widgets.
 - Observers are local. Do not add RPCs whose only job is to tell a widget to refresh.

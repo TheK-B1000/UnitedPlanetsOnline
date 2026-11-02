@@ -61,8 +61,7 @@ void UGOTALobbyWidget::NativeConstruct()
 	{
 		if (UGotaSessionSubsystem* Sessions = GI->GetSubsystem<UGotaSessionSubsystem>())
 		{
-			Sessions->SetSelectedMode(EArenaMode::PvPDuel);
-			Sessions->SetSelectedArena(EArenaId::TitansQuarry);
+			// Keep the mode chosen before the lobby opened. The session default is still a duel.
 			Sessions->RefreshLobbyProjection();
 		}
 	}
@@ -207,7 +206,6 @@ void UGOTALobbyWidget::HandleStart()
 				}
 				return;
 			}
-			Sessions->SetSelectedMode(EArenaMode::PvPDuel);
 			Sessions->StartMatchFromLobby();
 			return;
 		}

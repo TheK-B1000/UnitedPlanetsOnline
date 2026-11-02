@@ -1,0 +1,3 @@
+wait 20
+gota.Menu.Session dump
+quit

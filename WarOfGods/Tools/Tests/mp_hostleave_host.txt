@@ -1,0 +1,4 @@
+wait 22
+gota.Net.Leave
+wait 8
+quit

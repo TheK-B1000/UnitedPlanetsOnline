@@ -1,0 +1,5 @@
+wait 6
+gota.Net.RemoteDefend both 40 0.40
+wait 48
+gota.Net.Players
+quit

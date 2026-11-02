@@ -1,0 +1,6 @@
+wait 10
+gota.Net.Players
+gota.Net.Leave
+wait 12
+gota.Menu.Dump
+quit

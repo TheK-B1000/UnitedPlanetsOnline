@@ -51,6 +51,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Characters/GOTAHeroRegistry.h"
+#include "Multiplayer/GotaSessionSubsystem.h"
+#include "UI/GOTAFrontendGameMode.h"
 #include "UI/GOTAMenuSubsystem.h"
 #include "UnrealClient.h"
 #include "UObject/UnrealType.h"
@@ -326,6 +329,113 @@ namespace GOTATest
 			Menu->RequestLaunchArena(Ruleset, Arena);
 		}
 	}
+
+	static UGotaSessionSubsystem* GetSessions()
+	{
+		UWorld* World = GetGameWorld();
+		UGameInstance* GI = World ? World->GetGameInstance() : nullptr;
+		return GI ? GI->GetSubsystem<UGotaSessionSubsystem>() : nullptr;
+	}
+
+	/** Drives the same session calls the Host, Find, and Join buttons use. */
+	static void MenuSession(const TArray<FString>& Args)
+	{
+		UGotaSessionSubsystem* Sessions = GetSessions();
+		UGOTAMenuSubsystem* Menu = GetMenu();
+		if (!Sessions)
+		{
+			UE_LOG(LogGOTATest, Warning, TEXT("MENU session: no session subsystem"));
+			return;
+		}
+		const FString Cmd = Args.Num() > 0 ? Args[0].ToLower() : TEXT("dump");
+		if (Cmd == TEXT("dump"))
+		{
+			const TArray<FGOTASessionResultView> Results = Sessions->GetSearchResultViews();
+			UE_LOG(LogGOTATest, Log, TEXT("MENU session host=%d in=%d mode=%s results=%d screen=%s"),
+				Sessions->IsHosting() ? 1 : 0, Sessions->IsInSession() ? 1 : 0,
+				*StaticEnum<EArenaMode>()->GetNameStringByValue(static_cast<int64>(Sessions->GetSelectedMode())),
+				Results.Num(),
+				Menu ? *StaticEnum<EGOTAMenuScreen>()->GetNameStringByValue(static_cast<int64>(Menu->GetCurrentScreen())) : TEXT("-"));
+			for (const FGOTASessionResultView& Result : Results)
+			{
+				UE_LOG(LogGOTATest, Log, TEXT("MENU  result %d host=%s"), Result.ResultIndex, *Result.HostName);
+			}
+			return;
+		}
+		if (Cmd == TEXT("mode") && Args.Num() > 1)
+		{
+			EArenaMode Mode = EArenaMode::PvPDuel;
+			if (Args[1].Equals(TEXT("Horde"), ESearchCase::IgnoreCase)) { Mode = EArenaMode::PvEHorde; }
+			else if (Args[1].Equals(TEXT("Story"), ESearchCase::IgnoreCase)) { Mode = EArenaMode::Story; }
+			else if (Args[1].Equals(TEXT("Duel"), ESearchCase::IgnoreCase)) { Mode = EArenaMode::PvPDuel; }
+			Sessions->SetSelectedMode(Mode);
+			Sessions->SetSelectedArena(EArenaId::TitansQuarry);
+			UE_LOG(LogGOTATest, Log, TEXT("MENU session mode %s"), *StaticEnum<EArenaMode>()->GetNameStringByValue(static_cast<int64>(Mode)));
+			return;
+		}
+		if (Cmd == TEXT("hero") && Args.Num() > 1)
+		{
+			const FName HeroId(*Args[1]);
+			if (UGameInstance* GI = GetGameWorld() ? GetGameWorld()->GetGameInstance() : nullptr)
+			{
+				if (UGOTAHeroRegistry* Registry = GI->GetSubsystem<UGOTAHeroRegistry>())
+				{
+					Registry->SetLocalSelection(HeroId);
+				}
+			}
+			if (APlayerController* PC = GetGameWorld() ? GetGameWorld()->GetFirstPlayerController() : nullptr)
+			{
+				if (AGOTAFrontendPlayerController* Frontend = Cast<AGOTAFrontendPlayerController>(PC))
+				{
+					if (PC->GetNetMode() == NM_Client)
+					{
+						Frontend->ServerSetLobbyHero(Args[1]);
+					}
+					else
+					{
+						Frontend->ServerSetLobbyHero_Implementation(Args[1]);
+					}
+				}
+			}
+			UE_LOG(LogGOTATest, Log, TEXT("MENU session hero %s"), *HeroId.ToString());
+			return;
+		}
+		if (Menu)
+		{
+			Menu->NavigateTo(EGOTAMenuScreen::Multiplayer, true);
+		}
+		if (Cmd == TEXT("host"))
+		{
+			const bool bOk = Sessions->HostSession(4, true);
+			UE_LOG(LogGOTATest, Log, TEXT("MENU session host button=%d"), bOk ? 1 : 0);
+		}
+		else if (Cmd == TEXT("find"))
+		{
+			const bool bOk = Sessions->FindSessions(true);
+			UE_LOG(LogGOTATest, Log, TEXT("MENU session find button=%d"), bOk ? 1 : 0);
+		}
+		else if (Cmd == TEXT("join"))
+		{
+			const int32 Index = Args.Num() > 1 ? FCString::Atoi(*Args[1]) : 0;
+			const bool bOk = Sessions->JoinSessionAtIndex(Index);
+			UE_LOG(LogGOTATest, Log, TEXT("MENU session join button=%d index=%d"), bOk ? 1 : 0, Index);
+		}
+		else if (Cmd == TEXT("start"))
+		{
+			const bool bOk = Sessions->StartMatchFromLobby();
+			UE_LOG(LogGOTATest, Log, TEXT("MENU session start button=%d"), bOk ? 1 : 0);
+		}
+		else if (Cmd == TEXT("leave"))
+		{
+			Sessions->DestroyCurrentSession();
+			UE_LOG(LogGOTATest, Log, TEXT("MENU session leave"));
+		}
+		else
+		{
+			UE_LOG(LogGOTATest, Warning, TEXT("MENU session unknown '%s'"), *Cmd);
+		}
+	}
+	static FAutoConsoleCommand CmdMenuSession(TEXT("gota.Menu.Session"), TEXT("Menu session path: dump | host | find | join | start | leave | mode <Horde|Story|Duel> | hero <Id>."), FConsoleCommandWithArgsDelegate::CreateStatic(&MenuSession));
 
 	// ------------------------------------------------------------------ duel
 	static ADuelGameMode* GetDuelGM()

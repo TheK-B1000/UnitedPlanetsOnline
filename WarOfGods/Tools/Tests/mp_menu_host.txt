@@ -1,0 +1,24 @@
+# Frontend Host button, then start Horde once the client has stored a hero.
+wait 3
+gota.Menu.Go Multiplayer
+gota.Menu.Dump
+gota.Menu.Session mode Horde
+gota.Menu.Session host
+wait 12
+gota.Menu.Session hero Drakon
+gota.Menu.Session dump
+wait 70
+gota.Menu.Session mode Horde
+gota.Menu.Session start
+wait 30
+gota.Net.Players
+gota.Net.Perf
+csvprofile start
+wait 8
+csvprofile stop
+gota.Net.Perf
+wait 2
+gota.Net.Leave
+wait 12
+gota.Menu.Dump
+quit
