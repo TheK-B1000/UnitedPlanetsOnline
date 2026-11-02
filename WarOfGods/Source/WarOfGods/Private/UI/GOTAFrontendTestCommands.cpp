@@ -57,6 +57,8 @@
 #include "UI/GOTAMenuSubsystem.h"
 #include "UnrealClient.h"
 #include "UObject/UnrealType.h"
+#include "UObject/UObjectIterator.h"
+#include "UI/Widgets/GOTAMenuButtonWidget.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTATest, Log, All);
 
@@ -435,6 +437,48 @@ namespace GOTATest
 			UE_LOG(LogGOTATest, Warning, TEXT("MENU session unknown '%s'"), *Cmd);
 		}
 	}
+	static void MenuClick(const TArray<FString>& Args)
+	{
+		UWorld* World = GetGameWorld();
+		const FString Needle = FString::Join(Args, TEXT(" "));
+		UGOTAMenuButtonWidget* Chosen = nullptr;
+		int32 Matches = 0;
+		for (TObjectIterator<UGOTAMenuButtonWidget> It; It; ++It)
+		{
+			UGOTAMenuButtonWidget* Button = *It;
+			if (!Button || Button->GetWorld() != World || !Button->IsButtonEnabled())
+			{
+				continue;
+			}
+			const FString Label = Button->Label.ToString();
+			if (!Needle.IsEmpty() && !Label.Contains(Needle, ESearchCase::IgnoreCase))
+			{
+				continue;
+			}
+			++Matches;
+			const bool bBetter = !Chosen
+				|| (Label.Equals(Needle, ESearchCase::IgnoreCase) && !Chosen->Label.ToString().Equals(Needle, ESearchCase::IgnoreCase))
+				|| Label.Len() < Chosen->Label.ToString().Len();
+			if (bBetter)
+			{
+				Chosen = Button;
+			}
+			if (Needle.IsEmpty())
+			{
+				UE_LOG(LogGOTATest, Log, TEXT("MENU button '%s'"), *Label);
+			}
+		}
+		if (Needle.IsEmpty())
+		{
+			UE_LOG(LogGOTATest, Log, TEXT("MENU buttons=%d"), Matches);
+			return;
+		}
+		const bool bClicked = Chosen && Chosen->RouteTestClick();
+		UE_LOG(LogGOTATest, Log, TEXT("MENU click '%s' matched=%d button='%s' slate=%d"),
+			*Needle, Matches, Chosen ? *Chosen->Label.ToString() : TEXT(""), bClicked ? 1 : 0);
+	}
+
+	static FAutoConsoleCommand CmdMenuClick(TEXT("gota.Menu.Click"), TEXT("Left-click the visible menu button whose label contains the text. No args lists buttons."), FConsoleCommandWithArgsDelegate::CreateStatic(&MenuClick));
 	static FAutoConsoleCommand CmdMenuSession(TEXT("gota.Menu.Session"), TEXT("Menu session path: dump | host | find | join | start | leave | mode <Horde|Story|Duel> | hero <Id>."), FConsoleCommandWithArgsDelegate::CreateStatic(&MenuSession));
 
 	// ------------------------------------------------------------------ duel

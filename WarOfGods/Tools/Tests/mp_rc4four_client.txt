@@ -1,0 +1,5 @@
+wait 18
+gota.Net.Players
+wait 28
+gota.Net.Players
+quit

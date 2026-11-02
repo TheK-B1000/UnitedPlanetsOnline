@@ -1,0 +1,15 @@
+wait 8
+gota.Menu.Click STORY
+wait 2
+gota.Menu.Click JOIN A CAMPAIGN
+wait 2
+gota.Menu.Click FIND
+wait 6
+gota.Menu.Click DESKTOP
+wait 6
+gota.Menu.Session dump
+gota.Menu.Session hero Nyx
+gota.Menu.Session dump
+wait 40
+gota.Net.Players
+quit

@@ -455,6 +455,15 @@ void UGOTAMenuSubsystem::RequestStartStoryPrologue(bool bHostCoop)
 	}
 	if (bHostCoop)
 	{
+		if (UGotaSessionSubsystem* Sessions = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGotaSessionSubsystem>() : nullptr)
+		{
+			Sessions->SetSelectedMode(EArenaMode::Story);
+			if (Sessions->HostSession(4, true))
+			{
+				UE_LOG(LogGOTAMenu, Log, TEXT("Story co-op is hosting a lobby session; Start travels to the prologue"));
+				return;
+			}
+		}
 		Options += TEXT("?listen");
 	}
 	BeginGuardedTravel(MapPath.GetLongPackageName(), Options, NSLOCTEXT("GOTA", "LoadingStory", "Deploying to The Fallen Sanctuary…"));

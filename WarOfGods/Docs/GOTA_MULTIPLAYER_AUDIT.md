@@ -23,7 +23,7 @@ and Trial of Champions (Duel).
 | P3 Story safe respawn | **Fixed (editor + packaged)** | `pkgstory2`: 4 downs, 4 protected respawns |
 | P4 Packaged 4P | **Partial** | Cook succeeded. PvP, Story, slow-mo, and Drakon vs Rampage ran in the package. Horde kill/wipe/results did not. Menu flow not run |
 
-**Production readiness:** **not a release candidate.** RC2 (`11f2602`, `B:\Unreal\GOTA_Builds\RC2`) is the four-player Horde and Story baseline and was not re-run. RC3 (`B:\Unreal\GOTA_Builds\RC3`, cook plus the later Development exe copied over the inner binary) drove the menu session path, a real remote parry and dodge, disconnect cleanup, two rendered heroes, and a short frame/GPU sample. A second machine, four rendered windows, Shipping, and shared Story/Horde combat are still open.
+**Production readiness:** **not a release candidate.** RC2 (`11f2602`) and RC3 (`8b886f0`) were not re-cooked and their directories were not overwritten. RC4 is a copy of the RC3 cook at `B:\Unreal\GOTA_Builds\RC4` with a newer Development exe. Story can be hosted from the lobby and traveled with two heroes. A lagged remote Divine Counter landed. Charge rush state now replicates, and the charge dodge still got hit. One machine only. Shared combat is planned in the architecture doc and is not implemented.
 
 ## Packaged RC1 (2026-11-02)
 
@@ -107,6 +107,24 @@ Menu Host / Find / Join calls `UGotaSessionSubsystem` through `gota.Menu.Session
 | Shared Story/Horde combat, 2v2 | **NOT RUN** | Still the next phase, after this list |
 
 RC2 rows for Horde victory, Horde defeat, Story HUD, Story respawn spread, the fifth-player rejection, and forged `SR_ParryAttack` stay as recorded on `11f2602`. They were not repeated.
+
+## Packaged RC4 (2026-11-02)
+
+**Build:** `B:\Unreal\GOTA_Builds\RC4` is a file copy of the RC3 cook. The RC4 inner exe is the Development binary built after `8b886f0`. RC2 and RC3 were not modified. No second cook. Every process is on this machine (`DESKTOP-9MUFES4`). There is no second computer on this run.
+
+Menu clicks are a left mouse-down delivered to that button's `SButton` (`gota.Menu.Click`). The first attempt routed the event through an empty widget path and crashed (`rc4story`). The passing run does not. Clicking a session row now focuses it before Join, which is what a pointer click has to do for the result index.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Story selected in the lobby and traveled | **PASS** | `rc4story4`, both windows rendered. Clicks: STORY, NEW CO-OP CAMPAIGN, JOIN A CAMPAIGN, FIND GAMES, the session row, START MISSION. Lobby dump `mode=Story`. Client URL `GOTAStoryGameMode?Hero=Nyx` with no `listen`. Host URL `?listen?Hero=Drakon`. `Story PostLogin players=2`. Client welcomed on `L_GOTA_Story_Prologue` |
+| Hero appearance on that travel | **PASS** | Client dump: local Nyx `mesh=SM_Countess`, remote Drakon `mesh=Greystone`, ping 18 ms. Host applied `SM_Countess` with authority. The lobby has no hero tiles. The hero id was stored with `gota.Menu.Session hero` after the clicks. The hero-select screen launches a local arena and was not the multiplayer path |
+| Remote Divine Counter, 120 ms / 5% loss | **PASS** | `rc4combat`, client rendered, host `-nullrhi`, client `PktLag 120` variance 30 `PktLoss 5`. Three perfect parries to momentum 69, then `REMOTE counter mom=66`. Server `Boss STUNNED by Divine Counter` and `90 damage (landed=1, momentum left 19)` |
+| Charge state visible to the defender | **PASS** | Same fight and `rc4charge`. Client: `Boss charge replicated; defensive lead uses distance / ChargeSpeed`, then `REMOTE dodge … BehemothCharge charging=1`. Only `bCharging` was replicated. Direction and the hit stay on the server |
+| Charge dodge avoids the hit | **FAIL** | `rc4charge`: sidestep dodges at lead 0.42 and 0.31 while `charging=1`. Server `BehemothCharge hit … for 18.0 (landed=1)`. The rush was readable. The dodge did not clear it |
+| Four players, rendered where practical | **PASS (two windows)** | `rc4four`, Story prologue, port 7814. Host and client 1 rendered. Clients 2 and 3 `-nullrhi`. `players=4`. Drakon/Greystone, Nyx/SM_Countess, Varoth/Sevarog, Kairos/Gideon. Four rendered windows were not opened. That previously removed the D3D12 device |
+| CPU / GPU / net sample, shader hitches | **PASS (20 s)** | Same host. 1193 samples, avg frame 16.78 ms, max 359.55 ms, avg GPU 6.52 ms, max GPU 17.54 ms, 1 hitch. The hitch is the frame the fourth player logged in; GPU on that frame was 8.8 ms, so it was not a GPU shader stall. Two `PSO/Encountered new graphics PSO` events at capture frame 2. End sample: 1731 MB used, 1977 MB peak, net in 380 KB, net out 222 KB, lost 0. CSV id `B363489D496E54A0A18641AB9DDDF139`. No csv file was left on disk after `csvprofile stop` |
+| Second physical machine | **NOT RUN** | Only this PC |
+| Shipping cook, shared combat implementation | **NOT RUN** | The plan is in the architecture doc. No combat port was started |
 
 ---
 

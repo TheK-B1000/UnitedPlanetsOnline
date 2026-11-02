@@ -11,6 +11,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "UI/GOTAMenuContentDefinition.h"
 #include "UI/GOTAMenuSubsystem.h"
+#if !UE_BUILD_SHIPPING
+#include "Framework/Application/SlateApplication.h"
+#include "Input/Events.h"
+#include "Layout/WidgetPath.h"
+#endif
 
 namespace GOTAButtonVisuals
 {
@@ -189,6 +194,8 @@ void UGOTAMenuButtonWidget::HandleClicked()
 	{
 		return;
 	}
+	// A click selects the row before it activates, so Join sees the result the pointer hit.
+	OnFocused.Broadcast(this);
 	OnActivated.Broadcast();
 	if (MenuAction != EGOTAMenuAction::None)
 	{
@@ -349,3 +356,30 @@ void UGOTAMenuButtonWidget::ApplyVisualState(float DeltaTime, bool bSnap)
 		SetRenderScale(FVector2D(Scale, Scale));
 	}
 }
+
+#if !UE_BUILD_SHIPPING
+bool UGOTAMenuButtonWidget::RouteTestClick() const
+{
+	if (!bButtonEnabled || !Button_Root)
+	{
+		return false;
+	}
+	TSharedPtr<SWidget> Slate = Button_Root->GetCachedWidget();
+	if (!Slate.IsValid())
+	{
+		Slate = Button_Root->TakeWidget();
+	}
+	if (!Slate.IsValid())
+	{
+		return false;
+	}
+	// MouseDown is a real SButton click method. Deliver it to this button so an overlay cannot steal the hit.
+	Button_Root->SetClickMethod(EButtonClickMethod::MouseDown);
+	const FGeometry Geo = Slate->GetTickSpaceGeometry();
+	const FVector2D Center = FVector2D(Geo.GetAbsolutePosition()) + FVector2D(Geo.GetAbsoluteSize()) * 0.5f;
+	TSet<FKey> Pressed;
+	Pressed.Add(EKeys::LeftMouseButton);
+	const FPointerEvent Down(0, Center, Center, Pressed, EKeys::LeftMouseButton, 0.f, FModifierKeysState());
+	return Slate->OnMouseButtonDown(Geo, Down).IsEventHandled();
+}
+#endif

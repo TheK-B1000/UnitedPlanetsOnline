@@ -59,6 +59,8 @@ public:
 	FString DescribeState() const;
 
 	bool IsAttacking() const { return State == EGOTABossState::Attacking; }
+	/** True while a charge attack is rushing. Replicated so a remote defender can time the dodge. */
+	bool IsCharging() const { return bCharging; }
 	/** The attack in progress, or null. */
 	const FGOTABossAttack* GetCurrentAttack() const
 	{
@@ -89,6 +91,9 @@ public:
 protected:
 	UFUNCTION()
 	void OnRep_Definition();
+
+	UFUNCTION()
+	void OnRep_Charging();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_PlaySequence(UAnimSequenceBase* Sequence, float PlayRate, bool bHoldLastFrame, int32 LoopCount);
@@ -146,6 +151,10 @@ protected:
 	UPROPERTY(Replicated)
 	double AttackStart = 0.0;
 
+	/** The rush itself. Direction and hit resolution stay on the server; clients only need this to read the arrival lead. */
+	UPROPERTY(ReplicatedUsing = OnRep_Charging)
+	bool bCharging = false;
+
 	UPROPERTY(Replicated)
 	FText LastTelegraph;
 
@@ -167,8 +176,7 @@ protected:
 	int32 ChainRemaining = 0;
 	TSet<int32> ResolvedWindows;
 	bool bAttackLanded = false;
-	// Charge
-	bool bCharging = false;
+	// Charge movement stays on the server. bCharging is replicated above.
 	FVector ChargeDir = FVector::ForwardVector;
 	double ChargeEnd = 0.0;
 	double ChargeStartedAt = 0.0;

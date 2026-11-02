@@ -12,7 +12,7 @@
 
 See `GOTA_MULTIPLAYER_AUDIT.md` for findings and `GOTA_MULTIPLAYER_TEST_MATRIX.md` for what is verified.
 
-**Packaged checks (2026-11-02):** RC1 is `B:\Unreal\GOTA_Builds\RC1_0a93ace` (from `0a93ace`). RC2 is `B:\Unreal\GOTA_Builds\RC2` (`11f2602`: script clock, Story HUD, respawn spread, dilation guard). RC3 is `B:\Unreal\GOTA_Builds\RC3`: that cook, plus a later Development exe for per-player menu travel, a remote duel defender, camera-only parry feedback, and session cleanup on disconnect. RC2 was not overwritten. Pass/fail is in the audit's Packaged RC1, RC2, and RC3 sections.
+**Packaged checks (2026-11-02):** RC1 is `B:\Unreal\GOTA_Builds\RC1_0a93ace`. RC2 is `B:\Unreal\GOTA_Builds\RC2` (`11f2602`). RC3 is `B:\Unreal\GOTA_Builds\RC3` (`8b886f0`). RC4 is a copy of the RC3 cook at `B:\Unreal\GOTA_Builds\RC4` with the Story-lobby, charge-replication, and menu-click exe. RC2 and RC3 were not overwritten. Pass/fail is in the audit.
 
 ## 1. Topology and session flow
 
@@ -160,5 +160,31 @@ These are the rules for the next passes. RC3 added the menu travel, remote-defen
 - Keep Unreal's native replication. Do not move this game to Iris, Replication Graph, or GAS just to look newer. Four players do not need that machinery until a measured profile says otherwise.
 - One source of truth, several observers. `UStatsComponent` remains the replicated health mirror. HUD and animation subscribe locally (`OnRep` / `OnHealthChanged`) and drop the subscription when the pawn ends play. Story, Horde, and Duel already share that mirror. Each mode still decides what a death means (respawn timer, team wipe, round award). Unifying the *reactions* further is the shared-combat phase, after RC2, not a rewrite of the modes that already work.
 - Listen server first. Dedicated-server compatibility means GameMode stays server-only and clients do not trust their own damage. It does not mean standing up a dedicated host for this release.
-- LAN / direct IP stays. A session-service interface for Epic Online Services is a later phase. Menu Host → Find → Join was driven in RC3 (`rc3menu3`) through the session subsystem, not by clicking the widgets.
+- LAN / direct IP stays. A session-service interface for Epic Online Services is a later phase. RC3 drove Host → Find → Join through the session subsystem. RC4 clicked the Story, Find, session-row, and Start buttons.
 - Observers are local. Do not add RPCs whose only job is to tell a widget to refresh.
+
+## 8. Shared combat plan (not implemented)
+
+Duel parry, dodge, Divine Counter, momentum, and hero abilities stop at one check. `UGOTADuelFighterComponent::IsRoundLive`, `UGOTAHeroAbilityComponent::IsRoundLive`, and `UGOTABossComponent::IsRoundLive` all require `ADuelGameState` in `InRound` with `bCombatEnabled`. Story and Horde have no duel game state, so those components do nothing there. That is the whole gate. Do not copy the fighter into a second class.
+
+**Already shared**
+
+- `UStatsComponent` is the replicated health and momentum mirror. `BPC_DamageSystem` stays the health authority. `UGOTACombatantObserver` only reads it.
+- `UGOTAHeroBodyComponent` already replicates the mesh. RC4 showed Drakon, Nyx, Varoth, and Kairos on one Story listen server.
+- The boss already replicates `State`, `AttackIndex`, `AttackStart`, and, as of RC4, `bCharging`. The client turns that into a lead (`distance / ChargeSpeed`). Charge direction and the hit test stay on the server.
+
+**What to add, and nothing else**
+
+- One combat-live query the three `IsRoundLive` functions call. The GameMode sets it. Duel sets it from the current phase, so a duel round does not change behavior. Story sets it while the mission is in progress. Horde sets it during a wave. It is a bool, not a new framework.
+- Boss target selection stays on the server. `FindTarget` today reads the duel opponent. For co-op it should return the pawn the boss is already chasing. Do not replicate a target list.
+- Momentum, the parry and dodge grants, and `Server_RequestDivineCounter` stay on `UGOTADuelFighterComponent`. The client keeps sending that one RPC. RC4 already landed it against Quarry Behemoth from a remote defender (90 damage, boss stunned).
+- Ability requests stay on `UGOTAHeroAbilityComponent`. The server still checks cost, range, and cooldown. Only the live-round check changes.
+- HUD, animation, and VFX keep subscribing to `UStatsComponent` OnRep and to the existing duel cue multicast. No widget RPCs.
+
+**What stays in the GameMode**
+
+Respawn, team wipe, Horde score and waves, Story objectives, and Duel rounds and forfeit. Those are not combat timing.
+
+**Regression before any of that code lands**
+
+RC2 Horde victory and defeat, RC2 Story HUD, `rc3parry3` perfect parry, `rc4combat` Divine Counter, `rc4story4` two-hero Story travel, and the forged `SR_ParryAttack` rejection. The charge dodge is not in that list: the rush is visible, and the hit still landed (`rc4charge`, 18 damage).

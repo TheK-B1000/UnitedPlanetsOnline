@@ -77,6 +77,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GOTA|Menu")
 	void FocusButton();
 
+#if !UE_BUILD_SHIPPING
+	/** Routes a left-click through this button's Slate widget. Development tests only. */
+	bool RouteTestClick() const;
+#endif
+
 	UFUNCTION(BlueprintPure, Category = "GOTA|Menu")
 	bool HasFocusedButton() const { return bHasFocus; }
 

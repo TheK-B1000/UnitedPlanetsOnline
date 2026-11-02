@@ -119,6 +119,21 @@ Cook `B:\Unreal\GOTA_Builds\RC3`, then the Development exe with the menu, defend
 | R3-6 | Story from the menu, mouse clicks, remote Divine Counter, charge dodge | **NOT RUN** | |
 | R3-7 | Four rendered windows, second machine, Shipping | **NOT RUN** | |
 
+## Packaged RC4 (2026-11-02)
+
+Copy of the RC3 cook at `B:\Unreal\GOTA_Builds\RC4`, plus the Development exe from this pass. RC2 and RC3 directories were not written. Logs: `Saved/MPTests/rc4*.log`. One machine.
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R4-1 | Mouse clicks: Story, co-op host, find, session row, start | **PASS** | `rc4story4`. `SButton` mouse-down. Lobby `mode=Story`, button `START MISSION` |
+| R4-2 | Both players arrive in the prologue with their heroes | **PASS** | Client URL `Hero=Nyx`, host `Hero=Drakon`. Client sees Countess and Greystone. `players=2` at login |
+| R4-3 | Remote Divine Counter under 120 ms / 5% loss | **PASS** | `rc4combat`. Momentum 69, counter, boss stunned, 90 damage |
+| R4-4 | Replicated charge rush | **PASS** | `charging=1` and `Boss charge replicated` on the client |
+| R4-5 | Charge dodge avoids damage | **FAIL** | `rc4charge`. Sidestep inputs during the rush. Hit landed for 18 |
+| R4-6 | Four Story players, two rendered | **PASS** | `rc4four`. Four bodies. Clients 2 and 3 were `-nullrhi` |
+| R4-7 | 20 s frame / GPU / net sample | **PASS** | avg 16.78 ms frame, 6.52 ms GPU, one 360 ms hitch at the fourth login, GPU 8.8 ms on that frame |
+| R4-8 | Second machine, four rendered windows, Shipping | **NOT RUN** | |
+
 ## How to re-run
 
 ```text
@@ -145,8 +160,7 @@ python Tools/GOTA_MPSession.py --tag horde4 --url "/Game/Arenas/Maps/L_Arena_Tit
 
 ## Recommended follow-up tests
 
-1. Enter Story from the lobby the same way Horde was entered in `rc3menu3`.
-2. Remote Divine Counter, and a charge dodge once charge state is replicated to the defender.
-3. Click Host, Find, and Join with the mouse. The subsystem path is already the one those buttons call.
-4. A second machine, then a Shipping cook. Do not put four rendered windows on one GPU.
-5. After those, share Duel parry, dodge, Divine Counter, and hero abilities with Story and Horde. Do not start that while the rows above are still open.
+1. Make the Behemoth Charge sidestep actually miss, then re-run `rc4charge`. The rush is already visible to the client.
+2. A second machine. Do not open four rendered windows on one GPU.
+3. A Shipping cook.
+4. Shared combat, using the plan in the architecture doc. Regression before that port: RC2 Horde win and wipe, RC2 Story HUD, `rc3parry3`, `rc4combat` counter, `rc4story4`, and the forged-parry rejection.

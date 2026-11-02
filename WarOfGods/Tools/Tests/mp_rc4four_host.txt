@@ -1,0 +1,8 @@
+wait 28
+gota.Net.Players
+csvprofile start
+gota.Net.Perf 20
+wait 22
+csvprofile stop
+gota.Net.Players
+quit

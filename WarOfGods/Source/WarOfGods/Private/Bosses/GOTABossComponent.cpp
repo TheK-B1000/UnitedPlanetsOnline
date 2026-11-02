@@ -73,7 +73,16 @@ void UGOTABossComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(UGOTABossComponent, State);
 	DOREPLIFETIME(UGOTABossComponent, AttackIndex);
 	DOREPLIFETIME(UGOTABossComponent, AttackStart);
+	DOREPLIFETIME(UGOTABossComponent, bCharging);
 	DOREPLIFETIME(UGOTABossComponent, LastTelegraph);
+}
+
+void UGOTABossComponent::OnRep_Charging()
+{
+	if (bCharging)
+	{
+		UE_LOG(LogGOTABoss, Log, TEXT("Boss charge replicated; defensive lead uses distance / ChargeSpeed"));
+	}
 }
 
 void UGOTABossComponent::BeginPlay()
@@ -806,6 +815,11 @@ bool UGOTABossComponent::GetIncomingImpact(float& OutLead, bool& bOutBlockable, 
 		if (bCharging)
 		{
 			const AActor* Target = FindTarget();
+			if (!Target && GetOwner() && !GetOwner()->HasAuthority())
+			{
+				const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+				Target = PC ? PC->GetPawn() : nullptr;
+			}
 			const float Dist = Target ? FVector::Dist2D(Target->GetActorLocation(), GetOwner()->GetActorLocation()) : 0.f;
 			OutLead = Dist / FMath::Max(A.ChargeSpeed, 1.f);
 			return true;

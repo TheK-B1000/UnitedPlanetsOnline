@@ -1,0 +1,12 @@
+wait 5
+gota.Menu.Click STORY
+wait 2
+gota.Menu.Click NEW CO-OP
+wait 10
+gota.Menu.Session hero Drakon
+gota.Menu.Session dump
+wait 40
+gota.Menu.Click START
+wait 25
+gota.Net.Players
+quit

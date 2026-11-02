@@ -324,6 +324,8 @@ namespace GOTANetTest
 	static float RemoteParryLead = 0.35f;
 	static int32 RemoteParryBlocks = 0;
 	static int32 RemoteParryDodges = 0;
+	static int32 RemoteCounters = 0;
+	static bool bRemoteCounterDone = false;
 	static FString RemoteMode = TEXT("parry");
 
 	static bool TickRemoteParry(float)
@@ -331,7 +333,7 @@ namespace GOTANetTest
 		UWorld* World = GameWorld();
 		if (!World || World->GetTimeSeconds() > RemoteParryUntil)
 		{
-			UE_LOG(LogGOTANet, Log, TEXT("REMOTE parry finished blocks=%d dodges=%d mode=%s"), RemoteParryBlocks, RemoteParryDodges, *RemoteMode);
+			UE_LOG(LogGOTANet, Log, TEXT("REMOTE parry finished blocks=%d dodges=%d counters=%d mode=%s"), RemoteParryBlocks, RemoteParryDodges, RemoteCounters, *RemoteMode);
 			RemoteParryHandle.Reset();
 			return false;
 		}
@@ -363,6 +365,19 @@ namespace GOTANetTest
 		float Lead = -1.f;
 		bool bBlockable = false;
 		bool bParryable = false;
+		if (!bRemoteCounterDone && (RemoteMode == TEXT("both") || RemoteMode == TEXT("counter")))
+		{
+			if (UGOTADuelFighterComponent* Fighter = Me->FindComponentByClass<UGOTADuelFighterComponent>())
+			{
+				if (Fighter->CanDivineCounter() && Boss->IsOpen() && BestDist < 450.f)
+				{
+					Fighter->RequestDivineCounter();
+					bRemoteCounterDone = true;
+					++RemoteCounters;
+					UE_LOG(LogGOTANet, Log, TEXT("REMOTE counter mom=%.0f dist=%.0f (legitimate local input)"), Fighter->GetMomentum(), BestDist);
+				}
+			}
+		}
 		const bool bIncoming = Boss->GetIncomingImpact(Lead, bBlockable, bParryable);
 		const bool bWantDodge = RemoteMode == TEXT("dodge") || (RemoteMode == TEXT("both") && !bParryable);
 		const bool bWantBlock = !bWantDodge && bBlockable && (RemoteMode == TEXT("parry") || RemoteMode == TEXT("both"));
@@ -379,10 +394,12 @@ namespace GOTANetTest
 			else if (bWantDodge && BestDist < 1300.f)
 			{
 				const FVector Away = (Me->GetActorLocation() - Boss->GetOwner()->GetActorLocation()).GetSafeNormal2D();
-				CallVector(Me, TEXT("DodgeToLocation"), Me->GetActorLocation() + Away * 380.f);
+				const FVector Side = FVector::CrossProduct(Away, FVector::UpVector);
+				const FVector Dest = Boss->IsCharging() ? Me->GetActorLocation() + Side * 500.f : Me->GetActorLocation() + Away * 380.f;
+				CallVector(Me, TEXT("DodgeToLocation"), Dest);
 				RemoteParryNext = Now + 0.45;
 				++RemoteParryDodges;
-				UE_LOG(LogGOTANet, Log, TEXT("REMOTE dodge lead=%.2f dist=%.0f attack=%s (legitimate local input)"), Lead, BestDist, *AttackId.ToString());
+				UE_LOG(LogGOTANet, Log, TEXT("REMOTE dodge lead=%.2f dist=%.0f attack=%s charging=%d (legitimate local input)"), Lead, BestDist, *AttackId.ToString(), Boss->IsCharging() ? 1 : 0);
 			}
 		}
 		return true;
@@ -403,6 +420,8 @@ namespace GOTANetTest
 		RemoteParryUntil = World->GetTimeSeconds() + FMath::Max(Seconds, 1.f);
 		RemoteParryBlocks = 0;
 		RemoteParryDodges = 0;
+		RemoteCounters = 0;
+		bRemoteCounterDone = false;
 		RemoteParryNext = 0.0;
 		if (!RemoteParryHandle.IsValid())
 		{
@@ -457,7 +476,16 @@ namespace GOTANetTest
 		}, 0.5f, false);
 	}
 
-	static void Perf(const TArray<FString>&)
+	static FTSTicker::FDelegateHandle PerfHandle;
+	static double PerfUntil = 0.0;
+	static int32 PerfSamples = 0;
+	static int32 PerfHitch = 0;
+	static float PerfFrameSum = 0.f;
+	static float PerfFrameMax = 0.f;
+	static float PerfGpuSum = 0.f;
+	static float PerfGpuMax = 0.f;
+
+	static void LogPerfSample(const TCHAR* Tag)
 	{
 		UWorld* World = GameWorld();
 		if (!World)
@@ -499,9 +527,63 @@ namespace GOTANetTest
 				}
 			}
 		}
-		UE_LOG(LogGOTANet, Log, TEXT("PERF frame=%.2fms gpu=%.2fms usedPhys=%.0fMB peakPhys=%.0fMB netIn=%dKB netOut=%dKB lostIn=%d lostOut=%d"),
-			FrameMs, GpuMs, Mem.UsedPhysical / 1048576.0, Mem.PeakUsedPhysical / 1048576.0,
+		UE_LOG(LogGOTANet, Log, TEXT("%s frame=%.2fms gpu=%.2fms usedPhys=%.0fMB peakPhys=%.0fMB netIn=%dKB netOut=%dKB lostIn=%d lostOut=%d"),
+			Tag, FrameMs, GpuMs, Mem.UsedPhysical / 1048576.0, Mem.PeakUsedPhysical / 1048576.0,
 			InBytes / 1024, OutBytes / 1024, InLost, OutLost);
+	}
+
+	static bool TickPerf(float)
+	{
+		UWorld* World = GameWorld();
+		const float FrameMs = FApp::GetDeltaTime() * 1000.f;
+		const float GpuMs = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles());
+		++PerfSamples;
+		PerfFrameSum += FrameMs;
+		PerfGpuSum += GpuMs;
+		PerfFrameMax = FMath::Max(PerfFrameMax, FrameMs);
+		PerfGpuMax = FMath::Max(PerfGpuMax, GpuMs);
+		if (FrameMs >= 100.f)
+		{
+			++PerfHitch;
+			UE_LOG(LogGOTANet, Warning, TEXT("PERF hitch frame=%.1fms gpu=%.1fms"), FrameMs, GpuMs);
+		}
+		if (!World || World->GetTimeSeconds() > PerfUntil)
+		{
+			UE_LOG(LogGOTANet, Log, TEXT("PERF summary samples=%d avgFrame=%.2fms maxFrame=%.2fms avgGpu=%.2fms maxGpu=%.2fms hitches=%d"),
+				PerfSamples, PerfSamples ? PerfFrameSum / PerfSamples : 0.f, PerfFrameMax,
+				PerfSamples ? PerfGpuSum / PerfSamples : 0.f, PerfGpuMax, PerfHitch);
+			LogPerfSample(TEXT("PERF end"));
+			PerfHandle.Reset();
+			return false;
+		}
+		return true;
+	}
+
+	static void Perf(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		if (!World)
+		{
+			return;
+		}
+		const float Seconds = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 0.f;
+		if (Seconds < 1.f)
+		{
+			LogPerfSample(TEXT("PERF"));
+			return;
+		}
+		PerfUntil = World->GetTimeSeconds() + Seconds;
+		PerfSamples = 0;
+		PerfHitch = 0;
+		PerfFrameSum = 0.f;
+		PerfFrameMax = 0.f;
+		PerfGpuSum = 0.f;
+		PerfGpuMax = 0.f;
+		if (!PerfHandle.IsValid())
+		{
+			PerfHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&TickPerf), 0.f);
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("PERF sampling for %.0fs"), Seconds);
 	}
 
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
@@ -511,7 +593,7 @@ namespace GOTANetTest
 	static FAutoConsoleCommand CmdRemote(TEXT("gota.Net.RemoteParry"), TEXT("Client: time StartBlock on the local pawn against the nearest boss. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteParry));
 	static FAutoConsoleCommand CmdDefend(TEXT("gota.Net.RemoteDefend"), TEXT("Client: parry, dodge, or both against the nearest boss. Args: parry|dodge|both [seconds] [lead]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteDefend));
 	static FAutoConsoleCommand CmdLeave(TEXT("gota.Net.Leave"), TEXT("Clear the session and return this process to the main menu. A listen host tells clients to return first."), FConsoleCommandWithArgsDelegate::CreateStatic(&Leave));
-	static FAutoConsoleCommand CmdPerf(TEXT("gota.Net.Perf"), TEXT("Log one frame time, GPU time, memory, and replication byte totals."), FConsoleCommandWithArgsDelegate::CreateStatic(&Perf));
+	static FAutoConsoleCommand CmdPerf(TEXT("gota.Net.Perf"), TEXT("Log frame, GPU, memory, and net totals. Optional seconds samples a window and counts hitches over 100ms."), FConsoleCommandWithArgsDelegate::CreateStatic(&Perf));
 	static FAutoConsoleCommand CmdAudit(TEXT("gota.Net.AuditRPCs"), TEXT("List loaded game classes' network RPCs and replicated properties."), FConsoleCommandWithArgsDelegate::CreateStatic(&AuditRPCs));
 	static FAutoConsoleCommand CmdInspect(TEXT("gota.Net.InspectDamage"), TEXT("Damage-system props/delegates of the first pawn whose class contains <substring>."), FConsoleCommandWithArgsDelegate::CreateStatic(&InspectDamage));
 }

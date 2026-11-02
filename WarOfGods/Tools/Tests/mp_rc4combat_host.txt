@@ -1,0 +1,21 @@
+wait 50
+gota.Boss.Skip
+wait 6
+gota.Boss.PlaceTarget 140 0
+gota.Duel.Face 0
+gota.Boss.Attack ClawCombo
+wait 6
+gota.Boss.PlaceTarget 140 0
+gota.Duel.Face 0
+gota.Boss.Attack ClawCombo
+wait 6
+gota.Boss.PlaceTarget 140 0
+gota.Duel.Face 0
+gota.Boss.Attack ClawCombo
+wait 8
+gota.Boss.PlaceTarget 700 0
+gota.Duel.Face 0
+gota.Boss.Attack BehemothCharge
+wait 8
+gota.Net.Players
+quit

@@ -104,6 +104,14 @@ void UGOTALobbyWidget::HandleLobbyUpdated()
 	if (Btn_StartMatch)
 	{
 		Btn_StartMatch->SetButtonEnabled(bCanStart);
+		if (Sessions)
+		{
+			const EArenaMode Mode = Sessions->GetSelectedMode();
+			const FText StartLabel = Mode == EArenaMode::Story ? NSLOCTEXT("GOTA", "StartStory", "START MISSION")
+				: Mode == EArenaMode::PvEHorde ? NSLOCTEXT("GOTA", "StartHorde", "START HORDE")
+				: NSLOCTEXT("GOTA", "StartMatch", "START DUEL");
+			Btn_StartMatch->SetLabel(StartLabel);
+		}
 	}
 
 	if (const UGOTALobbyViewModel* Lobby = GetLobby())
