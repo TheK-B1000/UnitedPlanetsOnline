@@ -53,12 +53,14 @@ def main():
     ap.add_argument("--timeout", type=float, default=420.0)
     ap.add_argument("--render-clients", type=int, default=99, help="only the first N clients render; the rest run -nullrhi")
     ap.add_argument("--host-nullrhi", action="store_true", help="host does not render (keeps the server at full speed)")
+    ap.add_argument("--host-exec", default="", help="extra console commands for the host (e.g. NetEmulation.PktLag 120)")
+    ap.add_argument("--kill-client", type=int, default=0, help="which client --kill-client-at kills (1-based; 0 = last)")
     a = ap.parse_args()
     os.makedirs(LOGS, exist_ok=True)
     heroes = [h for h in a.client_heroes.split(",") if h]
     host_url = a.url + ("?Hero=%s" % a.host_hero if a.host_hero else "") + "?DevHeroes=1?listen"
     host_log = os.path.join(LOGS, "%s_host.log" % a.tag)
-    procs = [("host", launch(a.packaged, host_url, a.host_script, host_log, pos=(0, 0), nullrhi=a.host_nullrhi))]
+    procs = [("host", launch(a.packaged, host_url, a.host_script, host_log, a.host_exec, pos=(0, 0), nullrhi=a.host_nullrhi))]
     start = time.time()
     time.sleep(a.join_delay)
     last_join = start
@@ -74,9 +76,10 @@ def main():
     killed_client = killed_host = False
     while time.time() - start < a.timeout:
         if a.kill_client_at > 0 and not killed_client and time.time() - last_join >= a.kill_client_at:
-            procs[-1][1].kill()
+            victim = procs[a.kill_client] if 0 < a.kill_client < len(procs) else procs[-1]
+            victim[1].kill()
             killed_client = True
-            print("killed %s at %.0fs" % (procs[-1][0], time.time() - start))
+            print("killed %s at %.0fs" % (victim[0], time.time() - start))
         if a.kill_host_at > 0 and not killed_host and time.time() - start >= a.kill_host_at:
             procs[0][1].kill()
             killed_host = True

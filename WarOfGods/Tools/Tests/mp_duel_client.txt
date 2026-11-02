@@ -1,0 +1,82 @@
+wait 15
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+gota.Net.Players
+wait 5
+quit
