@@ -4,6 +4,7 @@
 #include "Characters/GOTAHeroBodyComponent.h"
 #include "Characters/GOTAHeroRegistry.h"
 #include "Arenas/Duel/DuelPlayerState.h"
+#include "Combat/GOTACombatLive.h"
 #include "Multiplayer/GOTAPlayerState.h"
 
 #include "Arenas/ArenaEncounterDirector.h"
@@ -371,6 +372,11 @@ void AArenaGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 		Hero = CoopPS->GetHeroId(); // Horde: each player's own validated hero
 	}
 	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, Hero);
+	// Shared combat for Horde (and any non-Duel arena). Duel still wires fighters in InitDuelCombat.
+	if (ArenaMode != EArenaMode::PvPDuel)
+	{
+		GOTACombatLive::EnsurePlayerCombat(PlayerPawn, Hero);
+	}
 }
 
 FString AArenaGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)

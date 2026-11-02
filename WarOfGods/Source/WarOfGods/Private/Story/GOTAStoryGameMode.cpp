@@ -11,6 +11,7 @@
 #include "Arenas/ArenaVisualDressDefinition.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
 #include "Blueprint/UserWidget.h"
+#include "Combat/GOTACombatLive.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Multiplayer/GOTAPlayerState.h"
 #include "Components/BoxComponent.h"
@@ -947,7 +948,9 @@ void AGOTAStoryGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 {
 	Super::SetPlayerDefaults(PlayerPawn);
 	const AGOTAPlayerState* PS = PlayerPawn && PlayerPawn->GetController() ? PlayerPawn->GetController()->GetPlayerState<AGOTAPlayerState>() : nullptr;
-	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, PS ? PS->GetHeroId() : NAME_None);
+	const FName HeroId = PS ? PS->GetHeroId() : NAME_None;
+	UGOTAHeroBodyComponent::ApplyForHeroOrDefault(PlayerPawn, HeroId);
+	GOTACombatLive::EnsurePlayerCombat(PlayerPawn, HeroId);
 }
 
 FString AGOTAStoryGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)

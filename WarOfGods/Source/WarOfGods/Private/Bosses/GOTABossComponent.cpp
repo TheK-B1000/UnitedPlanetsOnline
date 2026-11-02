@@ -7,6 +7,7 @@
 #include "Animation/AnimSequenceBase.h"
 #include "Arenas/Duel/DuelGameState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
+#include "Combat/GOTACombatLive.h"
 #include "BrainComponent.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
@@ -206,15 +207,41 @@ FString UGOTABossComponent::DescribeState() const
 
 bool UGOTABossComponent::IsRoundLive() const
 {
-	const ADuelGameState* GS = GetWorld() ? GetWorld()->GetGameState<ADuelGameState>() : nullptr;
-	return GS && GS->DuelPhase == EDuelPhase::InRound && GS->bCombatEnabled;
+	return GOTACombatLive::IsCombatLive(GetWorld());
 }
 
 APawn* UGOTABossComponent::FindTarget() const
 {
+	// 1v1 Fight AI still uses the duel opponent when the boss carries a fighter component.
 	const UGOTADuelFighterComponent* Fighter = GetOwner() ? GetOwner()->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr;
 	APawn* Opp = Fighter ? Fighter->GetOpponent() : nullptr;
-	return (IsValid(Opp) && !UGOTACombatantObserver::IsCombatantDefeated(Opp)) ? Opp : nullptr;
+	if (IsValid(Opp) && !UGOTACombatantObserver::IsCombatantDefeated(Opp))
+	{
+		return Opp;
+	}
+	// Co-op: chase the nearest living player. Authority stays on the server.
+	APawn* Best = nullptr;
+	float BestDistSq = TNumericLimits<float>::Max();
+	const FVector Origin = GetOwner() ? GetOwner()->GetActorLocation() : FVector::ZeroVector;
+	if (UWorld* World = GetWorld())
+	{
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		{
+			APlayerController* PC = It->Get();
+			APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+			if (!IsValid(Pawn) || UGOTACombatantObserver::IsCombatantDefeated(Pawn))
+			{
+				continue;
+			}
+			const float DistSq = FVector::DistSquared(Pawn->GetActorLocation(), Origin);
+			if (DistSq < BestDistSq)
+			{
+				BestDistSq = DistSq;
+				Best = Pawn;
+			}
+		}
+	}
+	return Best;
 }
 
 float UGOTABossComponent::CurrentAttackGap() const
@@ -717,10 +744,15 @@ bool UGOTABossComponent::DamageTarget(APawn* Target, const FGOTABossAttack& A, f
 {
 	// The victim's own BPC_DamageSystem decides block / parry / i-frames: the single health authority.
 	// A perfect dodge timed against this impact is honoured even past the Blueprint's short i-frames.
-	if (const UGOTADuelFighterComponent* Fighter = Target->FindComponentByClass<UGOTADuelFighterComponent>(); Fighter && Fighter->IsDodgeProtected())
+	if (const UGOTADuelFighterComponent* Fighter = Target->FindComponentByClass<UGOTADuelFighterComponent>())
 	{
-		UE_LOG(LogGOTABoss, Log, TEXT("Boss %s on %s: perfect-dodged"), *A.AttackId.ToString(), *GetNameSafe(Target));
-		return false;
+		if (Fighter->IsDodgeProtected())
+		{
+			UE_LOG(LogGOTABoss, Log, TEXT("Boss %s on %s: perfect-dodged"), *A.AttackId.ToString(), *GetNameSafe(Target));
+			return false;
+		}
+		UE_LOG(LogGOTABoss, Verbose, TEXT("Boss %s on %s: dodgeProtect=0 dist=%.0f"), *A.AttackId.ToString(), *GetNameSafe(Target),
+			FVector::Dist2D(Target->GetActorLocation(), GetOwner()->GetActorLocation()));
 	}
 	// A parry there reaches us through the challenger's UGOTADuelFighterComponent::HandleBlocked -> NotifyParried.
 	const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Target, GetOwner(), Amount, A.bCanBeBlocked, A.bCanBeBlocked && A.bCanBeParried, A.HitResponse);

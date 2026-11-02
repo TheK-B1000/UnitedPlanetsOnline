@@ -15,6 +15,7 @@
 #include "Arenas/Horde/HordePlayerState.h"
 #include "Characters/GOTAHeroBodyComponent.h"
 #include "Characters/GOTAPlayerCharacter.h"
+#include "Combat/GOTACombatLive.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "HAL/PlatformMemory.h"
 #include "Misc/App.h"
@@ -95,6 +96,11 @@ namespace GOTANetTest
 				Mode = FString::Printf(TEXT("eliminated=%d kills=%d elites=%d score=%d"), H->bIsEliminated ? 1 : 0, H->Eliminations, H->EliteEliminations, H->PersonalScore);
 			}
 			const UGOTADuelFighterComponent* F = Pawn ? Pawn->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr;
+			if (F)
+			{
+				Mode += FString::Printf(TEXT(" dodgeProtect=%d opp=%s"), F->IsDodgeProtected() ? 1 : 0, *GetNameSafe(F->GetOpponent()));
+			}
+			Mode += FString::Printf(TEXT(" combatLive=%d"), GOTACombatLive::IsCombatLive(W) ? 1 : 0);
 			if (const AGOTAPlayerCharacter* Guarded = Cast<AGOTAPlayerCharacter>(Pawn))
 			{
 				Mode += FString::Printf(TEXT(" rejectedRPCs=%d dilation=%.2f"), Guarded->GetRejectedRPCs(), Guarded->CustomTimeDilation);
@@ -397,6 +403,10 @@ namespace GOTANetTest
 				const FVector Side = FVector::CrossProduct(Away, FVector::UpVector);
 				const FVector Dest = Boss->IsCharging() ? Me->GetActorLocation() + Side * 500.f : Me->GetActorLocation() + Away * 380.f;
 				CallVector(Me, TEXT("DodgeToLocation"), Dest);
+				if (UGOTADuelFighterComponent* Fighter = Me->FindComponentByClass<UGOTADuelFighterComponent>())
+				{
+					Fighter->RequestDodgeNotify(); // BP IsInvincible is client-local; notify the server immediately
+				}
 				RemoteParryNext = Now + 0.45;
 				++RemoteParryDodges;
 				UE_LOG(LogGOTANet, Log, TEXT("REMOTE dodge lead=%.2f dist=%.0f attack=%s charging=%d (legitimate local input)"), Lead, BestDist, *AttackId.ToString(), Boss->IsCharging() ? 1 : 0);

@@ -23,7 +23,7 @@ and Trial of Champions (Duel).
 | P3 Story safe respawn | **Fixed (editor + packaged)** | `pkgstory2`: 4 downs, 4 protected respawns |
 | P4 Packaged 4P | **Partial** | Cook succeeded. PvP, Story, slow-mo, and Drakon vs Rampage ran in the package. Horde kill/wipe/results did not. Menu flow not run |
 
-**Production readiness:** **not a release candidate.** RC2 (`11f2602`) and RC3 (`8b886f0`) were not re-cooked and their directories were not overwritten. RC4 is a copy of the RC3 cook at `B:\Unreal\GOTA_Builds\RC4` with a newer Development exe. Story can be hosted from the lobby and traveled with two heroes. A lagged remote Divine Counter landed. Charge rush state now replicates, and the charge dodge still got hit. One machine only. Shared combat is planned in the architecture doc and is not implemented.
+**Production readiness:** **not a release candidate.** RC2–RC4 packages were preserved. RC5 is a copy of the RC4 cook at `B:\Unreal\GOTA_Builds\RC5` with a newer Development exe. Shared combat is live via `GOTACombatLive`. Remote charge dodge under lag now perfect-dodges without making mistimed dodges free. Four-player Story vs spawned Quarry Behemoth exercised shared parry/dodge/momentum. One machine only. No Shipping cook.
 
 ## Packaged RC1 (2026-11-02)
 
@@ -120,11 +120,24 @@ Menu clicks are a left mouse-down delivered to that button's `SButton` (`gota.Me
 | Hero appearance on that travel | **PASS** | Client dump: local Nyx `mesh=SM_Countess`, remote Drakon `mesh=Greystone`, ping 18 ms. Host applied `SM_Countess` with authority. The lobby has no hero tiles. The hero id was stored with `gota.Menu.Session hero` after the clicks. The hero-select screen launches a local arena and was not the multiplayer path |
 | Remote Divine Counter, 120 ms / 5% loss | **PASS** | `rc4combat`, client rendered, host `-nullrhi`, client `PktLag 120` variance 30 `PktLoss 5`. Three perfect parries to momentum 69, then `REMOTE counter mom=66`. Server `Boss STUNNED by Divine Counter` and `90 damage (landed=1, momentum left 19)` |
 | Charge state visible to the defender | **PASS** | Same fight and `rc4charge`. Client: `Boss charge replicated; defensive lead uses distance / ChargeSpeed`, then `REMOTE dodge … BehemothCharge charging=1`. Only `bCharging` was replicated. Direction and the hit stay on the server |
-| Charge dodge avoids the hit | **FAIL** | `rc4charge`: sidestep dodges at lead 0.42 and 0.31 while `charging=1`. Server `BehemothCharge hit … for 18.0 (landed=1)`. The rush was readable. The dodge did not clear it |
+| Charge dodge avoids the hit | **FAIL (RC4)** | `rc4charge`: sidestep while `charging=1`, hit 18. Fixed in RC5 |
 | Four players, rendered where practical | **PASS (two windows)** | `rc4four`, Story prologue, port 7814. Host and client 1 rendered. Clients 2 and 3 `-nullrhi`. `players=4`. Drakon/Greystone, Nyx/SM_Countess, Varoth/Sevarog, Kairos/Gideon. Four rendered windows were not opened. That previously removed the D3D12 device |
 | CPU / GPU / net sample, shader hitches | **PASS (20 s)** | Same host. 1193 samples, avg frame 16.78 ms, max 359.55 ms, avg GPU 6.52 ms, max GPU 17.54 ms, 1 hitch. The hitch is the frame the fourth player logged in; GPU on that frame was 8.8 ms, so it was not a GPU shader stall. Two `PSO/Encountered new graphics PSO` events at capture frame 2. End sample: 1731 MB used, 1977 MB peak, net in 380 KB, net out 222 KB, lost 0. CSV id `B363489D496E54A0A18641AB9DDDF139`. No csv file was left on disk after `csvprofile stop` |
 | Second physical machine | **NOT RUN** | Only this PC |
-| Shipping cook, shared combat implementation | **NOT RUN** | The plan is in the architecture doc. No combat port was started |
+| Shipping cook, shared combat implementation | **NOT RUN (RC4)** | Implemented in RC5 |
+
+## Packaged RC5 (2026-11-02)
+
+**Build:** `B:\Unreal\GOTA_Builds\RC5` is a file copy of the RC4 cook. Inner exe is the Development binary with shared combat + charge-dodge fix. RC2–RC4 were not modified. One machine.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Remote charge dodge under 120 ms / 5% loss | **PASS** | `rc5charge3`. Client notifies; server `perfect-dodged`; defender `hp=130/130`, momentum +15 |
+| Mistimed charge dodge still takes damage | **PASS** | `rc5miss`. Lead gate 0.05 — no charge dodge armed; `BehemothCharge hit … 18.0 (landed=1)`, `hp=112/130` |
+| Shared combat-live in Story | **PASS** | `rc5coop2`. Four fighters, `combatLive=1`, all `opp=BP_Boss_QuarryBehemoth` |
+| Four-player Story vs Quarry Behemoth | **PASS** | `rc5coop2` via `gota.Boss.Spawn`. Earthshaker and BehemothCharge `perfect-dodged`. Nyx mom=45, Varoth mom=15. All four at 100/100 |
+| Join hitch root cause | **OPEN** | RC4 hitch was game-thread (GPU 8.8 ms). `rc5coop2` nullrhi host: avg 5.72 ms, max 94 ms, 0 hitches in a 12 s sample after join. No definitive sync-load culprit isolated yet |
+| Horde wave combat, full Divine Counter in Story, Shipping, second PC | **NOT RUN** | |
 
 ---
 

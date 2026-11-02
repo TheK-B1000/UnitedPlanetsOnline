@@ -132,6 +132,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Duel|Combat")
 	void RequestDivineCounter();
 
+	/** Local / autonomous: notify the server that a dodge just started (arms IsDodgeProtected if valid). */
+	UFUNCTION(BlueprintCallable, Category = "Duel|Combat")
+	void RequestDodgeNotify();
+
 	/** Server: award momentum (stored in UStatsComponent, mirrored here for every peer's HUD). */
 	void GrantMomentum(float Amount, const TCHAR* Reason);
 
@@ -161,6 +165,13 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_RequestDivineCounter();
 
+	/**
+	 * Autonomous client → server: Blueprint dodge sets IsInvincible only on the owning client.
+	 * The server validates an incoming impact and arms IsDodgeProtected for that window.
+	 */
+	UFUNCTION(Server, Reliable)
+	void Server_NotifyDodgeAttempt();
+
 	UFUNCTION(Client, Reliable)
 	void Client_CounterDenied(uint8 Reason);
 
@@ -171,6 +182,9 @@ protected:
 	void ApplyHitStop(AActor* Actor, float Seconds);
 	void TryBindLocalInput();
 	void TickChallengerServer();
+	void TickChallengerClient();
+	/** Server: arm dodge protection if Opp has a timely incoming impact. Returns true when armed/extended. */
+	bool TryArmPerfectDodge(APawn* Opp, const TCHAR* Reason);
 	ADuelGameState* GetDuelGS() const;
 	UStatsComponent* FindOrAddStats() const;
 	bool IsRoundLive() const;
@@ -194,7 +208,9 @@ protected:
 	float LastOwnHealth = -1.f;
 	float LastOpponentHealth = -1.f;
 	bool bWasInvincible = false;
+	bool bClientWasInvincible = false;
 	bool bSuppressDodgeDetect = false;
+	double NextDodgeNotifyTime = 0.0;
 	// Perfect-dodge candidate (server)
 	bool bDodgeArmed = false;
 	double DodgeResolveTime = 0.0;

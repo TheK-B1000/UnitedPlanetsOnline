@@ -134,6 +134,19 @@ Copy of the RC3 cook at `B:\Unreal\GOTA_Builds\RC4`, plus the Development exe fr
 | R4-7 | 20 s frame / GPU / net sample | **PASS** | avg 16.78 ms frame, 6.52 ms GPU, one 360 ms hitch at the fourth login, GPU 8.8 ms on that frame |
 | R4-8 | Second machine, four rendered windows, Shipping | **NOT RUN** | |
 
+## Packaged RC5 (2026-11-02)
+
+Copy of the RC4 cook at `B:\Unreal\GOTA_Builds\RC5`, plus the Development exe from this pass. RC2–RC4 directories were not written. Logs: `Saved/MPTests/rc5*.log`. One machine.
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R5-1 | Remote BehemothCharge perfect-dodge under lag | **PASS** | `rc5charge3`. `perfect-dodged`, `hp=130/130`, mom +15 |
+| R5-2 | Mistimed dodge still damaged | **PASS** | `rc5miss`. Lead 0.05; charge hit 18, `hp=112` |
+| R5-3 | Shared combat-live + fighters in Story | **PASS** | `rc5coop2`. Four `combatLive=1`, opponents bound to Behemoth |
+| R5-4 | Four-player Story Behemoth (spawned) | **PASS** | `rc5coop2`. Charge + Earthshaker perfect-dodged; all 100 HP |
+| R5-5 | Join hitch isolation | **OPEN** | Still game-thread suspicion from RC4; no sync-load smoking gun yet |
+| R5-6 | Horde shared combat wave, Story Divine Counter, Shipping, 2nd PC | **NOT RUN** | |
+
 ## How to re-run
 
 ```text

@@ -13,6 +13,7 @@
 #include "Characters/GOTAHeroDefinition.h"
 #include "Characters/GOTAHeroRegistry.h"
 #include "Characters/StatsComponent.h"
+#include "Combat/GOTACombatLive.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -214,8 +215,7 @@ bool UGOTAHeroAbilityComponent::IsSlotReady(int32 Slot) const
 
 bool UGOTAHeroAbilityComponent::IsRoundLive() const
 {
-	const ADuelGameState* GS = GetWorld() ? GetWorld()->GetGameState<ADuelGameState>() : nullptr;
-	return GS && GS->DuelPhase == EDuelPhase::InRound && GS->bCombatEnabled;
+	return GOTACombatLive::IsCombatLive(GetWorld());
 }
 
 bool UGOTAHeroAbilityComponent::IsOwnerDead() const

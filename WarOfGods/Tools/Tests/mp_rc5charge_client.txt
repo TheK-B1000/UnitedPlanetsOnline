@@ -1,0 +1,6 @@
+wait 6
+gota.Net.RemoteDefend dodge 25 0.45
+wait 16
+gota.Net.Players
+wait 8
+quit

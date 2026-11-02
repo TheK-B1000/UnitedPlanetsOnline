@@ -14,7 +14,9 @@
 #include "BrainComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Characters/StatsComponent.h"
+#include "Combat/GOTACombatLive.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Bosses/GOTABossTypes.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
@@ -446,8 +448,7 @@ ADuelGameState* UGOTADuelFighterComponent::GetDuelGS() const
 
 bool UGOTADuelFighterComponent::IsRoundLive() const
 {
-	const ADuelGameState* GS = GetDuelGS();
-	return GS && GS->DuelPhase == EDuelPhase::InRound && GS->bCombatEnabled;
+	return GOTACombatLive::IsCombatLive(GetWorld());
 }
 
 UStatsComponent* UGOTADuelFighterComponent::FindOrAddStats() const
@@ -473,10 +474,127 @@ void UGOTADuelFighterComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	{
 		TryBindLocalInput();
 	}
-	if (GetOwner() && GetOwner()->HasAuthority() && !bIsChampion)
+	if (!GetOwner() || bIsChampion)
+	{
+		return;
+	}
+	if (GetOwner()->HasAuthority())
 	{
 		TickChallengerServer();
 	}
+	else if (GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		TickChallengerClient();
+	}
+}
+
+void UGOTADuelFighterComponent::TickChallengerClient()
+{
+	if (!DamageSystem.IsValid())
+	{
+		DamageSystem = UGOTACombatantObserver::FindDamageSystem(GetOwner());
+	}
+	UActorComponent* DS = DamageSystem.Get();
+	if (!DS || !IsRoundLive())
+	{
+		bClientWasInvincible = false;
+		return;
+	}
+	const bool bInvincible = FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible"));
+	// BP dodge i-frames are client-local; tell the server once per rising edge so charge/slam protection can arm.
+	if (bInvincible && !bClientWasInvincible)
+	{
+		RequestDodgeNotify();
+	}
+	bClientWasInvincible = bInvincible;
+}
+
+bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reason)
+{
+	if (!IsValid(Opp) || !GetWorld())
+	{
+		return false;
+	}
+	const double Now = GetWorld()->GetTimeSeconds();
+	if (Now <= CounterInvulnEndTime)
+	{
+		return false;
+	}
+	const float Dist = FVector::Dist(Opp->GetActorLocation(), GetOwner()->GetActorLocation());
+	if (const UGOTABossComponent* Boss = Opp->FindComponentByClass<UGOTABossComponent>())
+	{
+		float Lead = -1.f;
+		bool bBlockable = false, bParryable = false;
+		const bool bIncoming = Boss->GetIncomingImpact(Lead, bBlockable, bParryable);
+		const FGOTABossAttack* Attack = Boss->GetCurrentAttack();
+		const bool bCharge = Boss->IsCharging() || (Attack && Attack->Kind == EGOTABossAttackKind::Charge);
+		const float LeadLimit = bCharge ? FMath::Max(PerfectDodgeLeadSeconds, 0.55f) : PerfectDodgeLeadSeconds;
+		// Charge contact is late in the rush; remote lag needs a longer hold than a melee swing.
+		const float Grace = bCharge ? 0.45f : 0.12f;
+		if (bIncoming && Lead <= LeadLimit && Dist < 1100.f)
+		{
+			const double PrevProtect = DodgeProtectedUntil;
+			bDodgeArmed = true;
+			HealthAtDodge = UGOTACombatantObserver::ReadVitals(GetOwner()).Health;
+			// While charging, keep at least 0.55s of protection left so a shrinking lead cannot expire mid-rush.
+			const float Hold = bCharge ? FMath::Max(Lead + Grace, 0.55f) : (Lead + Grace);
+			const float ProtectUntil = static_cast<float>(Now + Hold);
+			DodgeResolveTime = FMath::Max(DodgeResolveTime, ProtectUntil + 0.1);
+			DodgeProtectedUntil = FMath::Max(DodgeProtectedUntil, ProtectUntil);
+			if (DodgeProtectedUntil > PrevProtect + 0.01)
+			{
+				UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge protect until=%.2f lead=%.2f grace=%.2f charge=%d dist=%.0f via %s"),
+					DodgeProtectedUntil, Lead, Grace, bCharge ? 1 : 0, Dist, Reason);
+			}
+			return true;
+		}
+		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge arm miss (%s): incoming=%d lead=%.2f limit=%.2f charging=%d dist=%.0f"),
+			Reason, bIncoming ? 1 : 0, Lead, LeadLimit, Boss->IsCharging() ? 1 : 0, Dist);
+		return false;
+	}
+	float Pos = 0.f;
+	UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Opp, &Pos);
+	const bool bOppAttacking = FGOTABlueprintCombat::GetBool(Opp, TEXT("Attacking"));
+	const float Impact = FGOTABlueprintCombat::FindNextImpactTime(M, Pos);
+	const float Lead = Impact - Pos;
+	if (bOppAttacking && M && Impact >= 0.f && Lead <= PerfectDodgeLeadSeconds && Dist < 650.f)
+	{
+		bDodgeArmed = true;
+		HealthAtDodge = UGOTACombatantObserver::ReadVitals(GetOwner()).Health;
+		DodgeResolveTime = Now + FMath::Max(Lead, 0.f) / FMath::Max(M->RateScale, 0.1f) + 0.2;
+		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge arm (%s): montage lead=%.2f dist=%.0f"), Reason, Lead, Dist);
+		return true;
+	}
+	return false;
+}
+
+void UGOTADuelFighterComponent::RequestDodgeNotify()
+{
+	Server_NotifyDodgeAttempt();
+}
+
+void UGOTADuelFighterComponent::Server_NotifyDodgeAttempt_Implementation()
+{
+	if (!GetOwner() || !GetOwner()->HasAuthority() || !IsRoundLive())
+	{
+		return;
+	}
+	const double Now = GetWorld()->GetTimeSeconds();
+	if (Now < NextDodgeNotifyTime)
+	{
+		return;
+	}
+	NextDodgeNotifyTime = Now + 0.2; // blocks spam; still allows a second dodge mid-charge
+	APawn* Opp = Opponent.Get();
+	if (!IsValid(Opp) || UGOTACombatantObserver::IsCombatantDefeated(Opp))
+	{
+		Opp = GOTACombatLive::FindNearestBoss(Cast<APawn>(GetOwner()));
+		if (Opp)
+		{
+			Opponent = Opp;
+		}
+	}
+	TryArmPerfectDodge(Opp, TEXT("client-notify"));
 }
 
 void UGOTADuelFighterComponent::TryBindLocalInput()
@@ -502,6 +620,14 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 	}
 	UActorComponent* DS = DamageSystem.Get();
 	APawn* Opp = Opponent.Get();
+	if (!IsValid(Opp) || UGOTACombatantObserver::IsCombatantDefeated(Opp))
+	{
+		Opp = GOTACombatLive::FindNearestBoss(Cast<APawn>(GetOwner()));
+		if (Opp)
+		{
+			Opponent = Opp;
+		}
+	}
 	if (!IsRoundLive() || !DS || !IsValid(Opp))
 	{
 		bDodgeArmed = false;
@@ -518,43 +644,17 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 		GrantMomentum(HitLandedMomentum, TEXT("hit landed"));
 	}
 
-	// Perfect dodge: BP_Player's dodge raises IsInvincible for its i-frames. If that happens while the
-	// opponent's attack montage is within PerfectDodgeLeadSeconds of its impact notify, and the attack
-	// then fails to damage us, it was a perfect dodge.
+	// Listen-server / AI: BP dodge raises IsInvincible on the authority pawn.
 	const bool bInvincible = FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible"));
 	if (bInvincible && !bWasInvincible && Now > CounterInvulnEndTime)
 	{
-		const float Dist = FVector::Dist(Opp->GetActorLocation(), GetOwner()->GetActorLocation());
-		if (const UGOTABossComponent* Boss = Opp->FindComponentByClass<UGOTABossComponent>())
+		TryArmPerfectDodge(Opp, TEXT("server-edge"));
+	}
+	else if (bInvincible && Now > CounterInvulnEndTime)
+	{
+		if (const UGOTABossComponent* Boss = Opp->FindComponentByClass<UGOTABossComponent>(); Boss && Boss->IsCharging())
 		{
-			// Boss: lead to the next unresolved hit window (already in real seconds).
-			float Lead = -1.f;
-			bool bBlockable = false, bParryable = false;
-			const bool bIncoming = Boss->GetIncomingImpact(Lead, bBlockable, bParryable);
-			UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge i-frames vs boss: incoming=%d lead=%.2f dist=%.0f"), bIncoming ? 1 : 0, Lead, Dist);
-			if (bIncoming && Lead <= PerfectDodgeLeadSeconds && Dist < 1100.f)
-			{
-				bDodgeArmed = true;
-				HealthAtDodge = OwnHealth;
-				DodgeResolveTime = Now + Lead + 0.25;
-				DodgeProtectedUntil = Now + Lead + 0.12;
-			}
-		}
-		else
-		{
-		float Pos = 0.f;
-		UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Opp, &Pos);
-		const bool bOppAttacking = FGOTABlueprintCombat::GetBool(Opp, TEXT("Attacking"));
-		const float Impact = FGOTABlueprintCombat::FindNextImpactTime(M, Pos);
-		const float Lead = Impact - Pos;
-		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge i-frames: oppAttacking=%d montage=%s pos=%.2f impact=%.2f lead=%.2f dist=%.0f"),
-			bOppAttacking ? 1 : 0, *GetNameSafe(M), Pos, Impact, Lead, Dist);
-		if (bOppAttacking && M && Impact >= 0.f && Lead <= PerfectDodgeLeadSeconds && Dist < 650.f)
-		{
-			bDodgeArmed = true;
-			HealthAtDodge = OwnHealth;
-			DodgeResolveTime = Now + FMath::Max(Lead, 0.f) / FMath::Max(M->RateScale, 0.1f) + 0.2;
-		}
+			TryArmPerfectDodge(Opp, TEXT("server-charge"));
 		}
 	}
 	bWasInvincible = bInvincible;
@@ -919,8 +1019,7 @@ void UGOTAChampionDirectorComponent::EndPlay(const EEndPlayReason::Type Reason)
 
 bool UGOTAChampionDirectorComponent::IsRoundLive() const
 {
-	const ADuelGameState* GS = GetWorld() ? GetWorld()->GetGameState<ADuelGameState>() : nullptr;
-	return GS && GS->DuelPhase == EDuelPhase::InRound && GS->bCombatEnabled;
+	return GOTACombatLive::IsCombatLive(GetWorld());
 }
 
 bool UGOTAChampionDirectorComponent::IsGuardBroken() const
