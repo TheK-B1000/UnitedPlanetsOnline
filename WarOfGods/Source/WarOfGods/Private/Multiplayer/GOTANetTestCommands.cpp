@@ -10,6 +10,7 @@
 
 #if !UE_BUILD_SHIPPING
 
+#include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
 #include "Arenas/Horde/HordePlayerState.h"
@@ -596,12 +597,97 @@ namespace GOTANetTest
 		UE_LOG(LogGOTANet, Log, TEXT("PERF sampling for %.0fs"), Seconds);
 	}
 
+	static APawn* PlayerPawn(int32 Index)
+	{
+		UWorld* W = GameWorld();
+		const AGameStateBase* GS = W ? W->GetGameState() : nullptr;
+		if (!GS || !GS->PlayerArray.IsValidIndex(Index) || !GS->PlayerArray[Index])
+		{
+			return nullptr;
+		}
+		return GS->PlayerArray[Index]->GetPawn();
+	}
+
+	/** Server: grant Divine Momentum to player <index> (Story/Horde/Duel PlayerArray order). */
+	static void Momentum(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		const int32 Index = Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0;
+		const float Amount = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 50.f;
+		if (!W || W->GetNetMode() == NM_Client)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET momentum: server only"));
+			return;
+		}
+		APawn* Pawn = PlayerPawn(Index);
+		UGOTADuelFighterComponent* F = Pawn ? Pawn->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr;
+		if (!F)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET momentum: player %d has no fighter"), Index);
+			return;
+		}
+		F->GrantMomentum(Amount, TEXT("net test grant"));
+		UE_LOG(LogGOTANet, Log, TEXT("NET momentum [%d] +%.0f -> %.0f"), Index, Amount, F->GetMomentum());
+	}
+
+	/** Local or server-owned pawn: request Divine Counter for player <index> (must be the local controller's pawn on clients). */
+	static void Counter(const TArray<FString>& Args)
+	{
+		const int32 Index = Args.Num() > 0 ? FCString::Atoi(*Args[0]) : -1;
+		UWorld* W = GameWorld();
+		APawn* Pawn = nullptr;
+		if (Index >= 0)
+		{
+			Pawn = PlayerPawn(Index);
+		}
+		else if (APlayerController* PC = W ? W->GetFirstPlayerController() : nullptr)
+		{
+			Pawn = PC->GetPawn();
+		}
+		UGOTADuelFighterComponent* F = Pawn ? Pawn->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr;
+		if (!F)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET counter: no fighter on target"));
+			return;
+		}
+		F->RequestDivineCounter();
+		UE_LOG(LogGOTANet, Log, TEXT("NET counter requested on %s mom=%.0f can=%d"), *GetNameSafe(Pawn), F->GetMomentum(), F->CanDivineCounter() ? 1 : 0);
+	}
+
+	/** Local: activate hero ability slot on the local pawn (or player <index> when server). */
+	static void AbilityUse(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		const int32 Index = Args.Num() > 0 ? FCString::Atoi(*Args[0]) : -1;
+		const int32 Slot = Args.Num() > 1 ? FCString::Atoi(*Args[1]) : 0;
+		APawn* Pawn = nullptr;
+		if (Index >= 0)
+		{
+			Pawn = PlayerPawn(Index);
+		}
+		else if (APlayerController* PC = W ? W->GetFirstPlayerController() : nullptr)
+		{
+			Pawn = PC->GetPawn();
+		}
+		UGOTAHeroAbilityComponent* A = Pawn ? Pawn->FindComponentByClass<UGOTAHeroAbilityComponent>() : nullptr;
+		if (!A)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET ability: no abilities on %s"), *GetNameSafe(Pawn));
+			return;
+		}
+		A->RequestActivate(Slot);
+		UE_LOG(LogGOTANet, Log, TEXT("NET ability use on %s slot=%d"), *GetNameSafe(Pawn), Slot);
+	}
+
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
 	static FAutoConsoleCommand CmdHurt(TEXT("gota.Net.Hurt"), TEXT("Server: damage player <index> <amount> through its own damage system."), FConsoleCommandWithArgsDelegate::CreateStatic(&Hurt));
 	static FAutoConsoleCommand CmdKillEnemy(TEXT("gota.Net.KillEnemy"), TEXT("Server: player <index> defeats the nearest living enemy (kill-credit test)."), FConsoleCommandWithArgsDelegate::CreateStatic(&KillEnemy));
 	static FAutoConsoleCommand CmdForge(TEXT("gota.Net.ForgeParry"), TEXT("Exploit test (client): forged SR_ParryAttack at the farthest pawn; the server must reject it."), FConsoleCommandWithArgsDelegate::CreateStatic(&ForgeParry));
 	static FAutoConsoleCommand CmdRemote(TEXT("gota.Net.RemoteParry"), TEXT("Client: time StartBlock on the local pawn against the nearest boss. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteParry));
 	static FAutoConsoleCommand CmdDefend(TEXT("gota.Net.RemoteDefend"), TEXT("Client: parry, dodge, or both against the nearest boss. Args: parry|dodge|both [seconds] [lead]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteDefend));
+	static FAutoConsoleCommand CmdMomentum(TEXT("gota.Net.Momentum"), TEXT("Server: grant Divine Momentum to player <index> [amount=50]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Momentum));
+	static FAutoConsoleCommand CmdCounter(TEXT("gota.Net.Counter"), TEXT("Request Divine Counter on local pawn, or player <index>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Counter));
+	static FAutoConsoleCommand CmdAbility(TEXT("gota.Net.Ability"), TEXT("Activate ability slot on local pawn, or player <index> <slot>."), FConsoleCommandWithArgsDelegate::CreateStatic(&AbilityUse));
 	static FAutoConsoleCommand CmdLeave(TEXT("gota.Net.Leave"), TEXT("Clear the session and return this process to the main menu. A listen host tells clients to return first."), FConsoleCommandWithArgsDelegate::CreateStatic(&Leave));
 	static FAutoConsoleCommand CmdPerf(TEXT("gota.Net.Perf"), TEXT("Log frame, GPU, memory, and net totals. Optional seconds samples a window and counts hitches over 100ms."), FConsoleCommandWithArgsDelegate::CreateStatic(&Perf));
 	static FAutoConsoleCommand CmdAudit(TEXT("gota.Net.AuditRPCs"), TEXT("List loaded game classes' network RPCs and replicated properties."), FConsoleCommandWithArgsDelegate::CreateStatic(&AuditRPCs));

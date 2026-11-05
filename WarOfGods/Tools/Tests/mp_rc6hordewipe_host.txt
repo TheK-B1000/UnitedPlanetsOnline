@@ -1,0 +1,14 @@
+wait 70
+gota.Net.Players
+gota.Horde.SkipPrep
+wait 2
+gota.Horde.Dump
+gota.Net.Hurt 0 999
+gota.Net.Hurt 1 999
+gota.Net.Hurt 2 999
+gota.Net.Hurt 3 999
+wait 2
+gota.Horde.Dump
+gota.Net.Players
+wait 2
+quit

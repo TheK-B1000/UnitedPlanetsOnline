@@ -1,0 +1,60 @@
+# RC6: four-player Horde lifecycle + shared combat vs spawned Quarry Behemoth mid-wave.
+wait 70
+gota.Net.Players
+gota.Horde.SkipPrep
+wait 2
+gota.Horde.Dump
+gota.Net.Players
+gota.Boss.Spawn QuarryBehemoth
+wait 2
+gota.Boss.Skip
+wait 1
+gota.Boss.PlaceTarget 500 0
+gota.Net.Ability 0 0
+wait 1
+gota.Net.KillEnemy 0
+gota.Net.Hurt 3 999
+wait 1.2
+gota.Net.Players
+gota.Horde.ForceClear
+wait 1
+gota.Horde.SkipPrep
+wait 2
+gota.Horde.Dump
+gota.Net.KillEnemy 1
+wait 0.4
+gota.Horde.ForceClear
+wait 1
+gota.Horde.SkipPrep
+wait 2
+gota.Horde.Dump
+gota.Net.KillEnemy 2
+wait 0.4
+gota.Horde.ForceClear
+wait 1
+gota.Horde.SkipPrep
+wait 2
+gota.Horde.Dump
+gota.Net.KillEnemy 3
+wait 0.4
+gota.Horde.ForceClear
+wait 1
+gota.Horde.SkipPrep
+wait 2
+gota.Horde.Dump
+gota.Net.KillEnemy 0
+wait 0.4
+gota.Horde.ForceClear
+wait 1
+gota.Horde.SkipPrep
+wait 2
+gota.Horde.Dump
+gota.Net.KillEnemy 1
+wait 0.4
+gota.Horde.ForceClear
+wait 2
+gota.Horde.Dump
+gota.Net.Players
+gota.Net.Perf 10
+wait 12
+quit

@@ -1,0 +1,16 @@
+# Story: spawn Behemoth, grant momentum to two remotes, force open stun window for counters.
+wait 28
+gota.Boss.Spawn QuarryBehemoth
+wait 3
+gota.Boss.Skip
+wait 2
+gota.Boss.PlaceTarget 280 0
+gota.Net.Momentum 1 60
+gota.Net.Momentum 2 60
+wait 1
+gota.Net.Players
+wait 8
+gota.Boss.Dump
+gota.Net.Players
+wait 2
+quit
