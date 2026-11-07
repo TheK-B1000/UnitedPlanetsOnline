@@ -72,6 +72,41 @@ APawn* GOTACombatLive::FindNearestBoss(APawn* From)
 	return Best;
 }
 
+APawn* GOTACombatLive::FindCombatTarget(APawn* From)
+{
+	if (APawn* Boss = FindNearestBoss(From))
+	{
+		return Boss;
+	}
+	UWorld* World = From ? From->GetWorld() : nullptr;
+	if (!World)
+	{
+		return nullptr;
+	}
+	APawn* Best = nullptr;
+	float BestDistSq = TNumericLimits<float>::Max();
+	const FVector Origin = From->GetActorLocation();
+	for (TActorIterator<APawn> It(World); It; ++It)
+	{
+		APawn* Candidate = *It;
+		if (!IsValid(Candidate) || Candidate == From || Candidate->IsPlayerControlled())
+		{
+			continue;
+		}
+		if (!UGOTACombatantObserver::FindDamageSystem(Candidate) || UGOTACombatantObserver::IsCombatantDefeated(Candidate))
+		{
+			continue;
+		}
+		const float DistSq = FVector::DistSquared(Candidate->GetActorLocation(), Origin);
+		if (DistSq < BestDistSq)
+		{
+			BestDistSq = DistSq;
+			Best = Candidate;
+		}
+	}
+	return Best;
+}
+
 void GOTACombatLive::EnsurePlayerCombat(APawn* PlayerPawn, FName HeroId)
 {
 	if (!IsValid(PlayerPawn) || !PlayerPawn->HasAuthority())
@@ -85,12 +120,13 @@ void GOTACombatLive::EnsurePlayerCombat(APawn* PlayerPawn, FName HeroId)
 		Fighter->SetIsReplicated(true);
 		Fighter->RegisterComponent();
 	}
-	// Prefer a living boss. Never wipe a valid non-boss opponent (Duel PvP / AI champion).
-	APawn* Boss = FindNearestBoss(PlayerPawn);
+	// Prefer a living boss, then the nearest Horde enemy. Never replace a living player opponent (Duel PvP).
+	APawn* Hostile = FindCombatTarget(PlayerPawn);
 	APawn* Current = Fighter->GetOpponent();
-	if (Boss && (!IsValid(Current) || UGOTACombatantObserver::IsCombatantDefeated(Current) || Current != Boss))
+	const bool bCurrentPlayer = IsValid(Current) && Current->IsPlayerControlled() && !UGOTACombatantObserver::IsCombatantDefeated(Current);
+	if (!bCurrentPlayer && Hostile && Current != Hostile)
 	{
-		Fighter->InitFighter(false, Boss);
+		Fighter->InitFighter(false, Hostile);
 	}
 	else if (!IsValid(Current))
 	{

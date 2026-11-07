@@ -139,6 +139,27 @@ Menu clicks are a left mouse-down delivered to that button's `SButton` (`gota.Me
 | Join hitch root cause | **OPEN** | RC4 hitch was game-thread (GPU 8.8 ms). `rc5coop2` nullrhi host: avg 5.72 ms, max 94 ms, 0 hitches in a 12 s sample after join. No definitive sync-load culprit isolated yet |
 | Horde wave combat, full Divine Counter in Story, Shipping, second PC | **NOT RUN** | |
 
+## Packaged RC6 (2026-11-07)
+
+**Build:** fresh `BuildCookRun` Win64 Development archive `B:\Unreal\GOTA_Builds\RC6`. Inner exe `Windows\WarOfGods\Binaries\Win64\WarOfGods.exe` (343490048 bytes, cooked with the content). RC2–RC5 were not overwritten. One machine. Detail and the ability inventory are in `GOTA_HORDE_COOP_COMBAT.md`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Four heroes spawn with their real sets | **PASS** | `rc6fight2` / `rc6fight3`. Drakon 4, Nyx 4, Varoth 4, Kairos 1 |
+| Real ability damage clears Horde waves | **PASS** | `rc6fight2`. Waves 1–5 intermission scores 650, 1900, 3250, 5700, 7275. No `KillEnemy` / `ForceClear` |
+| Quarry Behemoth in the Horde finale | **PASS** | One configure, hp 900, 4 attacks. Kill credit +2500 to Nyx's player id |
+| Boss damages a non-host and the host | **PASS** | ClawCombo landed on the host (hp 100→33) and was attempted on Kairos (`landed=0` on some windows) |
+| Single Horde victory | **FAIL** | Boss died, 3 grunts remained, `outcome=None` when the harness timed out |
+| Team wipe from enemy damage | **FAIL** | `rc6wipe`. Four idle players, four grunts, `living=4/4` for the whole run. No `Hurt` |
+| Horde parry, perfect dodge, Divine Counter | **NOT OBSERVED** | RemoteDefend's window ended before the boss in `rc6fight2`. The boss only used ClawCombo while players stood in melee |
+| Four processes, two rendered, through five waves | **PARTIAL** | `rc6fight2` lost the rendered Varoth client to `GPUSkinVertexFactory.cpp:1348` (`bPrevious`) while applying cloth. `rc6fight3` kept 4/4 and both rendered clients, then stalled on wave 2 |
+| Join hitch / Insights | **NOT RUN** | RC4 359 ms hitch is still unexplained |
+| Story four logins from the lobby | **PASS** | `rc6story`. PostLogin 4. Client script then quits; the follow-up player dump listed 2 |
+| Drakon vs Rampage scripted attacks | **PASS** | `rc6rampage`. Parry, perfect dodge, Divine Counter stun, Rampage mesh, player 130/130 |
+| Client departure | **PASS** | `rc6leave`. Host 2→1. Client back on Main Menu |
+| Remote charge dodge on RC6 | **FAIL** | `rc6charge`. Spectator pawn was None, so the dodge input never ran. Host took 18 |
+| Duel PvP, HUD respawn, Insights, Shipping, second PC | **NOT RUN** | |
+
 ---
 
 Status legend:

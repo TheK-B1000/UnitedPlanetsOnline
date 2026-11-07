@@ -12,7 +12,7 @@
 
 See `GOTA_MULTIPLAYER_AUDIT.md` for findings and `GOTA_MULTIPLAYER_TEST_MATRIX.md` for what is verified.
 
-**Packaged checks (2026-11-02):** RC1–RC4 preserved. RC5 is a copy of the RC4 cook at `B:\Unreal\GOTA_Builds\RC5` with shared combat (`GOTACombatLive`) and the remote charge-dodge fix. Pass/fail is in the audit.
+**Packaged checks:** RC1–RC5 directories were not modified. RC6 is a fresh Win64 Development cook at `B:\Unreal\GOTA_Builds\RC6` (not an exe copied over an older cook). Horde coop combat results are in `GOTA_HORDE_COOP_COMBAT.md` and the audit.
 
 ## 1. Topology and session flow
 
@@ -182,3 +182,16 @@ Respawn, team wipe, Horde score and waves, Story objectives, and Duel rounds and
 **Verified in RC5**
 
 Remote charge perfect-dodge (`rc5charge3`), intentional mistime still hits (`rc5miss`), four-player Story Behemoth with shared combat (`rc5coop2`).
+
+## 9. Horde coop combat (RC6)
+
+Horde still owns waves, score, wipe, and victory. Combat uses the same fighter, ability, and boss components as Duel. No new ability framework.
+
+- `GOTACombatLive::FindCombatTarget` returns a living boss if one exists, otherwise the nearest living non-player with a damage system. Player pawns are never targets.
+- `EnsurePlayerCombat` will not replace a living player opponent, so Duel PvP stays intact. With no target it still inits the fighter so block notifies bind. Hero abilities apply only when `HeroId` is set.
+- The fighter's dodge and challenger ticks keep a living player opponent. Otherwise they adopt `FindCombatTarget`. Divine Counter returns immediately if the owner is already defeated.
+- `GetOpponentPawn` uses that same fallback. `DamageInArc` skips other player pawns with the same `TeamNumber`, so a Horde ability does not hit teammates. A different team number still allows Duel damage.
+- The runtime Horde finale spawns `/Game/Bosses/BP_Boss_QuarryBehemoth` and, when that pawn has no boss component yet, applies `DA_Boss_QuarryBehemoth` (900 health, 4 attacks). The boss wave is still one boss plus grunts (`CountPerExtraPlayer` 0 on the boss, 1 on grunts).
+- Each spawn calls `EnsurePlayerCombat` on connected players so their opponent refreshes. `NAME_None` does not re-apply ability sets.
+- Dead owners are rejected in `ValidateServer` (`IsOwnerDead`) and in the Divine Counter RPC.
+- `gota.Net.Fight` is a Development local-pawn driver only. It adds movement input toward the fighter opponent or `FindCombatTarget`, faces that actor, calls Blueprint `MeleeAttack` inside 260 cm every 0.85 s, and `RequestActivate` on the next real slot inside 500 cm every 3 s. It does not grant momentum, inject kills, or force a match outcome. Each process drives only its own pawn.

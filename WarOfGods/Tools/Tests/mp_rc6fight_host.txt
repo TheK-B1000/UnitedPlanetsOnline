@@ -1,0 +1,12 @@
+# Real Horde fight. SkipPrep only skips the opening countdown.
+# gota.Net.Fight drives the local pawn: movement, MeleeAttack, and RequestActivate. It does not inject kills.
+wait 36
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Net.Fight 1400
+wait 1410
+gota.Horde.Dump
+gota.Net.Players
+gota.Net.Perf 8
+wait 10
+quit

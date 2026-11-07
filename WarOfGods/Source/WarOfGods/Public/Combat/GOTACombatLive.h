@@ -22,6 +22,12 @@ namespace GOTACombatLive
 	WAROFGODS_API APawn* FindNearestBoss(APawn* From);
 
 	/**
+	 * Server combat target: a living boss if one exists, otherwise the nearest living non-player
+	 * with a damage system. Same-team players are never targets.
+	 */
+	WAROFGODS_API APawn* FindCombatTarget(APawn* From);
+
+	/**
 	 * Server: ensure the player has a duel fighter + hero abilities for the shared combat path.
 	 * Opponent is refreshed to the nearest boss when missing or defeated.
 	 */

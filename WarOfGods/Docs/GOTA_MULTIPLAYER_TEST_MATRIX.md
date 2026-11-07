@@ -147,6 +147,26 @@ Copy of the RC4 cook at `B:\Unreal\GOTA_Builds\RC5`, plus the Development exe fr
 | R5-5 | Join hitch isolation | **OPEN** | Still game-thread suspicion from RC4; no sync-load smoking gun yet |
 | R5-6 | Horde shared combat wave, Story Divine Counter, Shipping, 2nd PC | **NOT RUN** | |
 
+## Packaged RC6 (2026-11-07)
+
+Fresh cook at `B:\Unreal\GOTA_Builds\RC6`. Logs: `Saved/MPTests/rc6*.log`. Clients in the fight runs used `NetEmulation.PktLag 120`, variance 30, loss 5. Host `-nullrhi`. Two clients rendered (`--render-clients 2`) except where noted. `gota.Net.Fight` drives each local pawn's movement, `MeleeAttack`, and `RequestActivate`. It does not inject kills.
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R6-1 | Four heroes, real ability sets | **PASS** | `rc6fight2`, `rc6fight3`. Counts 4/4/4/1 |
+| R6-2 | Five Horde waves by ability damage | **PASS** | `rc6fight2`. Intermission after each wave. Scores 650, 1900, 3250, 5700, 7275 |
+| R6-3 | Quarry Behemoth kill credit | **PASS** | `rc6fight2` 22:54:14 `Horde kill credit … +2500`. MoltenStrike, DragonRoar, MindSpike, TimeLash hit that pawn |
+| R6-4 | One victory after the boss wave | **FAIL** | `enemies=3`, `outcome=None`, score 9875. Boss score is 2500; grunt adds were still alive |
+| R6-5 | Idle team wipe, no Hurt | **FAIL** | `rc6wipe`. `living=4/4`, wave 1, four grunts, ~2 min |
+| R6-6 | Horde claw parry / dodge / Divine Counter | **NOT OBSERVED** | Zero `perfect-dodged`, perfect parry, or `DIVINE COUNTER` lines in `rc6fight2` |
+| R6-7 | Four living players for a full clear | **FAIL** | `rc6fight2` dropped to 3/3 after the Varoth client's GPU-skin assert. `rc6fight3` stayed 4/4 and stalled on wave 2 (casts at 135 cm with no further hits) |
+| R6-8 | Host frame sample during combat | **PASS (sample)** | `rc6fight` nullrhi host: avg 9.62 ms, max 71.79 ms, 0 hitches. Not the fourth-player hitch |
+| R6-9 | Story Host/Find/Join, four logins | **PASS** | `rc6story`. Lobby `mode=Story`, travel to the prologue, PostLogin 1→4, Drakon 4 abilities and three Nyx (the client script selects Nyx). A later dump listed 2 pawns because the client script quits |
+| R6-10 | Drakon vs Rampage (scripted attacks) | **PASS** | `rc6rampage`. 2 perfect parries, Earthshaker/Charge/Grasp perfect-dodged, `Boss STUNNED` 2.6 s, hp 800/900, player 130/130, mesh Rampage. `gota.Boss.Attack` forces the swings. `outcome=2` is the script quitting |
+| R6-11 | Client leaves, host stays | **PASS** | `rc6leave`. Host `players=2` then `players=1`. Client `NET leave` and `screen=MainMenu` |
+| R6-12 | Remote charge dodge on this cook | **FAIL** | `rc6charge`. Joining Nyx had `pawn=None` (Duel vs AI). Host took BehemothCharge 18, hp 52/130. No `perfect-dodged` |
+| R6-13 | Duel PvP 1v1, HUD respawn lifecycle, Insights, Shipping, second PC | **NOT RUN** | |
+
 ## How to re-run
 
 ```text

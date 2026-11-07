@@ -1,0 +1,9 @@
+# Stand still after the wave starts so living enemies can down the team. No Hurt injection.
+wait 36
+gota.Net.Players
+gota.Horde.SkipPrep
+wait 90
+gota.Horde.Dump
+gota.Net.Players
+wait 4
+quit

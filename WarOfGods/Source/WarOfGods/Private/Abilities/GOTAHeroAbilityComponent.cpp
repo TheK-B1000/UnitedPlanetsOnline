@@ -227,7 +227,11 @@ APawn* UGOTAHeroAbilityComponent::GetOpponentPawn() const
 {
 	const UGOTADuelFighterComponent* Fighter = GetOwner() ? GetOwner()->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr;
 	APawn* Opp = Fighter ? Fighter->GetOpponent() : nullptr;
-	return (IsValid(Opp) && !UGOTACombatantObserver::IsCombatantDefeated(Opp)) ? Opp : nullptr;
+	if (IsValid(Opp) && !UGOTACombatantObserver::IsCombatantDefeated(Opp))
+	{
+		return Opp;
+	}
+	return GOTACombatLive::FindCombatTarget(Cast<APawn>(GetOwner()));
 }
 
 float UGOTAHeroAbilityComponent::GetOutgoingDamageScale() const
@@ -807,6 +811,22 @@ int32 UGOTAHeroAbilityComponent::DamageInArc(const FGOTAAbilityDef& Def, float R
 		if (P == Owner || !UGOTACombatantObserver::FindDamageSystem(P) || UGOTACombatantObserver::IsCombatantDefeated(P))
 		{
 			continue;
+		}
+		// Co-op: do not strike another player on the same team. Duel PvP uses a different TeamNumber per slot.
+		if (Owner->IsPlayerControlled() && P->IsPlayerControlled())
+		{
+			auto TeamOf = [](const APawn* Pawn) -> int32
+			{
+				if (const FIntProperty* TeamProp = FindFProperty<FIntProperty>(Pawn->GetClass(), TEXT("TeamNumber")))
+				{
+					return TeamProp->GetPropertyValue_InContainer(Pawn);
+				}
+				return 0;
+			};
+			if (TeamOf(Owner) == TeamOf(P))
+			{
+				continue;
+			}
 		}
 		const UGOTAHeroAbilityComponent* Other = P->FindComponentByClass<UGOTAHeroAbilityComponent>();
 		if (Other && Other->IsUntargetable())

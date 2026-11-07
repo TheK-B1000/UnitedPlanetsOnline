@@ -35,7 +35,8 @@ AHordeGameMode::AHordeGameMode()
 
 	SoftRangedEnemyClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Enemies/BP_Enemy_Ranged.BP_Enemy_Ranged_C")));
 	SoftEliteEnemyClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Enemies/MeleeEnemy/BP_Enemy_Melee.BP_Enemy_Melee_C")));
-	SoftBossEnemyClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Enemies/BossEnemy/BP_Enemy_Boss.BP_Enemy_Boss_C")));
+	// Finale is Quarry Behemoth (shared boss brain). The director applies DA_Boss_QuarryBehemoth on spawn.
+	SoftBossEnemyClass = TSoftClassPtr<APawn>(FSoftObjectPath(TEXT("/Game/Bosses/BP_Boss_QuarryBehemoth.BP_Boss_QuarryBehemoth_C")));
 	// Prefer authored WBPs when present; C++ UGOTAHorde*Widget is the runtime fallback.
 	HordeHudWidgetClass = TSoftClassPtr<UUserWidget>(FSoftObjectPath(TEXT("/Game/UI/Horde/WBP_GOTA_HordeHUD.WBP_GOTA_HordeHUD_C")));
 	HordeResultsWidgetClass = TSoftClassPtr<UUserWidget>(FSoftObjectPath(TEXT("/Game/UI/Horde/WBP_GOTA_HordeResults.WBP_GOTA_HordeResults_C")));

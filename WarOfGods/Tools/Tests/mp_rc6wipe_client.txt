@@ -1,0 +1,3 @@
+wait 120
+gota.Net.Players
+quit

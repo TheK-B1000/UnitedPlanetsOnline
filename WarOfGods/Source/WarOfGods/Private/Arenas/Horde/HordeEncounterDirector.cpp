@@ -1,6 +1,10 @@
 // White Tiger Studios 2024
 
 #include "Arenas/Horde/HordeEncounterDirector.h"
+#include "Arenas/Duel/GOTADuelCombat.h"
+#include "Bosses/GOTABossComponent.h"
+#include "Bosses/GOTABossTypes.h"
+#include "Combat/GOTACombatLive.h"
 
 #include "Arenas/Horde/HordeGameState.h"
 #include "Arenas/Horde/HordeSpawnPoint.h"
@@ -10,6 +14,7 @@
 #include "GameFramework/PlayerState.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -273,6 +278,23 @@ bool AHordeEncounterDirector::TrySpawnOne(const FHordeEnemySpawnEntry& Entry)
 	if (!Enemy)
 	{
 		return false;
+	}
+
+	if (Entry.Role == EHordeEnemyRole::Boss && !Enemy->FindComponentByClass<UGOTABossComponent>())
+	{
+		if (UGOTABossDefinition* Def = LoadObject<UGOTABossDefinition>(nullptr, TEXT("/Game/Bosses/DA_Boss_QuarryBehemoth.DA_Boss_QuarryBehemoth")))
+		{
+			UGOTABossComponent::ApplyToPawn(Enemy, Def);
+			FGOTABlueprintCombat::ConfigureHealth(Enemy, Def->MaxHealth);
+			UE_LOG(LogTemp, Log, TEXT("Horde boss: Quarry Behemoth configured hp=%.0f"), Def->MaxHealth);
+		}
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (APawn* PlayerPawn = It->Get() ? It->Get()->GetPawn() : nullptr)
+		{
+			GOTACombatLive::EnsurePlayerCombat(PlayerPawn, NAME_None);
+		}
 	}
 
 	RegisterEnemy(Enemy, Entry.Role, Entry.ScoreValue);

@@ -679,6 +679,94 @@ namespace GOTANetTest
 		UE_LOG(LogGOTANet, Log, TEXT("NET ability use on %s slot=%d"), *GetNameSafe(Pawn), Slot);
 	}
 
+	static double FightUntil = 0.0;
+	static double FightNextAttack = 0.0;
+	static double FightNextAbility = 0.0;
+	static int32 FightAttacks = 0;
+	static int32 FightAbilities = 0;
+	static FTSTicker::FDelegateHandle FightHandle;
+
+	/** Local pawn only. Walks at the current combat target, uses MeleeAttack and RequestActivate. Not a kill injector. */
+	static bool TickFight(float)
+	{
+		UWorld* World = GameWorld();
+		if (!World || World->GetTimeSeconds() > FightUntil)
+		{
+			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d"), FightAttacks, FightAbilities);
+			FightHandle.Reset();
+			return false;
+		}
+		APlayerController* PC = World->GetFirstPlayerController();
+		APawn* Me = PC ? PC->GetPawn() : nullptr;
+		if (!Me || UGOTACombatantObserver::IsCombatantDefeated(Me) || !GOTACombatLive::IsCombatLive(World))
+		{
+			return true;
+		}
+		APawn* Target = nullptr;
+		if (const UGOTADuelFighterComponent* Fighter = Me->FindComponentByClass<UGOTADuelFighterComponent>())
+		{
+			Target = Fighter->GetOpponent();
+		}
+		if (!IsValid(Target) || UGOTACombatantObserver::IsCombatantDefeated(Target))
+		{
+			Target = GOTACombatLive::FindCombatTarget(Me);
+		}
+		if (!Target)
+		{
+			return true;
+		}
+		const FVector To = Target->GetActorLocation() - Me->GetActorLocation();
+		const float Dist = To.Size2D();
+		Me->AddMovementInput(To.GetSafeNormal2D(), 1.f);
+		FRotator Face = To.Rotation();
+		Face.Pitch = 0.f;
+		PC->SetControlRotation(Face);
+		const double Now = World->GetTimeSeconds();
+		if (Dist < 260.f && Now >= FightNextAttack)
+		{
+			FGOTABlueprintCombat::Call(Me, TEXT("MeleeAttack"));
+			FightNextAttack = Now + 0.85;
+			++FightAttacks;
+		}
+		if (Dist < 500.f && Now >= FightNextAbility)
+		{
+			if (UGOTAHeroAbilityComponent* Abilities = Me->FindComponentByClass<UGOTAHeroAbilityComponent>())
+			{
+				const int32 Count = Abilities->GetNumAbilities();
+				if (Count > 0)
+				{
+					const int32 Slot = FightAbilities % Count;
+					Abilities->RequestActivate(Slot);
+					++FightAbilities;
+					UE_LOG(LogGOTANet, Log, TEXT("FIGHT ability slot=%d dist=%.0f on %s"), Slot, Dist, *GetNameSafe(Me));
+				}
+			}
+			FightNextAbility = Now + 3.0;
+		}
+		return true;
+	}
+
+	static void Fight(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		if (!World)
+		{
+			return;
+		}
+		const float Seconds = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 90.f;
+		FightUntil = World->GetTimeSeconds() + FMath::Max(Seconds, 1.f);
+		FightNextAttack = 0.0;
+		FightNextAbility = 0.0;
+		FightAttacks = 0;
+		FightAbilities = 0;
+		if (!FightHandle.IsValid())
+		{
+			FightHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&TickFight), 0.f);
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("FIGHT armed %.0fs (local MeleeAttack + RequestActivate, no injected kills)"), Seconds);
+	}
+
+	static FAutoConsoleCommand CmdFight(TEXT("gota.Net.Fight"), TEXT("Local pawn fights the current target with MeleeAttack and real ability slots. Args: seconds."), FConsoleCommandWithArgsDelegate::CreateStatic(&Fight));
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
 	static FAutoConsoleCommand CmdHurt(TEXT("gota.Net.Hurt"), TEXT("Server: damage player <index> <amount> through its own damage system."), FConsoleCommandWithArgsDelegate::CreateStatic(&Hurt));
 	static FAutoConsoleCommand CmdKillEnemy(TEXT("gota.Net.KillEnemy"), TEXT("Server: player <index> defeats the nearest living enemy (kill-credit test)."), FConsoleCommandWithArgsDelegate::CreateStatic(&KillEnemy));

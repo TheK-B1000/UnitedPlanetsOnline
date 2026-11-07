@@ -586,11 +586,12 @@ void UGOTADuelFighterComponent::Server_NotifyDodgeAttempt_Implementation()
 	}
 	NextDodgeNotifyTime = Now + 0.2; // blocks spam; still allows a second dodge mid-charge
 	APawn* Opp = Opponent.Get();
-	if (!IsValid(Opp) || UGOTACombatantObserver::IsCombatantDefeated(Opp))
+	const bool bKeepPlayer = IsValid(Opp) && Opp->IsPlayerControlled() && !UGOTACombatantObserver::IsCombatantDefeated(Opp);
+	if (!bKeepPlayer)
 	{
-		Opp = GOTACombatLive::FindNearestBoss(Cast<APawn>(GetOwner()));
-		if (Opp)
+		if (APawn* Hostile = GOTACombatLive::FindCombatTarget(Cast<APawn>(GetOwner())))
 		{
+			Opp = Hostile;
 			Opponent = Opp;
 		}
 	}
@@ -620,11 +621,12 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 	}
 	UActorComponent* DS = DamageSystem.Get();
 	APawn* Opp = Opponent.Get();
-	if (!IsValid(Opp) || UGOTACombatantObserver::IsCombatantDefeated(Opp))
+	const bool bKeepPlayer = IsValid(Opp) && Opp->IsPlayerControlled() && !UGOTACombatantObserver::IsCombatantDefeated(Opp);
+	if (!bKeepPlayer)
 	{
-		Opp = GOTACombatLive::FindNearestBoss(Cast<APawn>(GetOwner()));
-		if (Opp)
+		if (APawn* Hostile = GOTACombatLive::FindCombatTarget(Cast<APawn>(GetOwner())))
 		{
+			Opp = Hostile;
 			Opponent = Opp;
 		}
 	}
@@ -736,7 +738,7 @@ void UGOTADuelFighterComponent::Server_RequestDivineCounter_Implementation()
 	AActor* Owner = GetOwner();
 	APawn* Opp = Opponent.Get();
 	UStatsComponent* Stats = FindOrAddStats();
-	if (!Owner || !IsRoundLive() || !Stats || bIsChampion)
+	if (!Owner || !IsRoundLive() || !Stats || bIsChampion || UGOTACombatantObserver::IsCombatantDefeated(Owner))
 	{
 		return;
 	}

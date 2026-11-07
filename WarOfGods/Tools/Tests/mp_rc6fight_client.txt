@@ -1,0 +1,6 @@
+wait 8
+gota.Net.RemoteDefend both 400 0.45
+gota.Net.Fight 1450
+wait 1470
+gota.Net.Players
+quit
