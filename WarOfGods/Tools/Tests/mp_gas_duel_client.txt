@@ -1,0 +1,9 @@
+# No index: the local possessed pawn. A second press inside 12s must be denied by the ability component.
+wait 22
+gota.Net.Ability
+wait 2
+gota.Net.Ability
+wait 4
+gota.Net.Ability
+wait 18
+quit

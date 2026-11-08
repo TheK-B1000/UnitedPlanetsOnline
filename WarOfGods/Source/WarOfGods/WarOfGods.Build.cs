@@ -16,6 +16,8 @@ public class WarOfGods : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"GameplayTags",
+			"GameplayTasks",
+			"GameplayAbilities",
 			"UMG",
 			"Slate",
 			"SlateCore",

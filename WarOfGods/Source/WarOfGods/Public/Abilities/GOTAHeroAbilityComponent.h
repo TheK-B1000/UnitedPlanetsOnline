@@ -207,6 +207,8 @@ protected:
 	int32 LastCastSlot = INDEX_NONE;
 
 	void LogMissedResolve(const FGOTAAbilityDef& Def);
+	/** Slowed is owned by the Time Lash gameplay effect. Every other status stays on this component. */
+	void ApplyDefStatus(APawn* Victim, const FGOTAAbilityDef& Def, AActor* Source);
 };
 
 /** Server totals: Landed means the resolve reached a victim's damage system. Missed means it hit nobody. */

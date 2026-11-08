@@ -3,6 +3,7 @@
 **Status:** Accepted recommendation — **Defer GAS until after networked combat vertical slice**  
 **Date:** 2026-10-27  
 **Reconfirmed:** 2026-10-28 — **Implementation 07**  
+**Narrowed:** 2026-11-07 — Time Lash's slow only. See `GOTA_GAS_ENHANCEMENT_PLAN.md`. The plugin is enabled. Health, momentum, cooldowns, parry, dodge, block, melee, and boss attacks are still not GAS.  
 **Engine:** UE 5.8  
 **Project:** WarOfGods / Gods of the Arena
 

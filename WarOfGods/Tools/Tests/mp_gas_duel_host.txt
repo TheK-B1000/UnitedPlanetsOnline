@@ -1,0 +1,6 @@
+# Kairos and the champion already close during the round. Do not Place: the player start faces a wall.
+wait 36
+gota.Ability.Dump
+wait 20
+gota.Ability.Dump
+quit

@@ -1,0 +1,8 @@
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 12
+gota.Net.Fight 40
+wait 46
+gota.Horde.Dump
+quit

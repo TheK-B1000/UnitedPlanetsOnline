@@ -1,6 +1,8 @@
 // White Tiger Studios 2024
 
 #include "Abilities/GOTAHeroAbilityComponent.h"
+#include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GOTAAbilityTypes.h"
 #include "AIController.h"
 #include "Animation/AnimInstance.h"
@@ -254,7 +256,12 @@ FString UGOTAHeroAbilityComponent::DescribeState() const
 	{
 		S += FString::Printf(TEXT("%s%s:%.1f"), i ? TEXT(" ") : TEXT(""), *GetAbility(i)->AbilityId.ToString(), GetCooldownRemaining(i));
 	}
-	return S + TEXT("]");
+	S += TEXT("]");
+	if (const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner()))
+	{
+		S += FString::Printf(TEXT(" gas=[%s] walkx=%.2f"), *ASC->DescribeStatusEffects(), ASC->GetMoveSpeedMultiplier());
+	}
+	return S;
 }
 
 // ============================================================================ input
@@ -640,24 +647,14 @@ void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)
 		DamageInArc(*Def, Def->Radius, 360.f, Def->Radius, true, Hit);
 		for (APawn* P : Hit)
 		{
-			if (UGOTAHeroAbilityComponent* Other = P->FindComponentByClass<UGOTAHeroAbilityComponent>())
-			{
-				Other->ApplyStatus(Def->Status, Def->StatusDuration, Def->Magnitude, Owner);
-			}
-			else
-			{
-				// Opponents without an ability component still get the movement debuff.
-				UGOTAHeroAbilityComponent* Added = NewObject<UGOTAHeroAbilityComponent>(P, TEXT("GOTAHeroAbilities"));
-				Added->RegisterComponent();
-				Added->ApplyStatus(Def->Status, Def->StatusDuration, Def->Magnitude, Owner);
-			}
+			ApplyDefStatus(P, *Def, Owner);
 		}
 		FxLoc = Owner->GetActorLocation();
 		break;
 	}
 	case EGOTAAbilityKind::SelfGuard:
 	{
-		ApplyStatus(Def->Status, Def->StatusDuration, Def->Magnitude, Owner);
+		ApplyDefStatus(Cast<APawn>(Owner), *Def, Owner);
 		FxLoc = Owner->GetActorLocation();
 		break;
 	}
@@ -678,7 +675,7 @@ void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)
 			UE_LOG(LogGOTAAbility, Log, TEXT("%s: teleport %s -> %s"), *GetNameSafe(Owner), *From.ToCompactString(), *Dest.ToCompactString());
 			if (Def->StatusDuration > 0.f && Def->Status != EGOTAStatus::None)
 			{
-				ApplyStatus(Def->Status, Def->StatusDuration, Def->Magnitude, Owner);
+				ApplyDefStatus(Owner, *Def, Owner);
 			}
 			if (Def->Damage > 0.f)
 			{
@@ -791,6 +788,10 @@ void UGOTAHeroAbilityComponent::ResetAbilities(bool bClearCooldowns)
 {
 	CancelCastServer(TEXT("reset"));
 	ApplyStatus(EGOTAStatus::None, 0.f, 0.f, nullptr);
+	if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner()))
+	{
+		ASC->ClearStatusEffects();
+	}
 	if (bClearCooldowns)
 	{
 		for (float& C : CooldownEnd)
@@ -1049,11 +1050,33 @@ bool UGOTAHeroAbilityComponent::FindTeleportDestination(APawn* Target, float Ran
 	return false;
 }
 
+void UGOTAHeroAbilityComponent::ApplyDefStatus(APawn* Victim, const FGOTAAbilityDef& Def, AActor* Source)
+{
+	if (!Victim || Def.Status == EGOTAStatus::None || Def.StatusDuration <= 0.f)
+	{
+		return;
+	}
+	// Opponents without an ability component still get the status: this component is the one that ticks walk speed.
+	UGOTAHeroAbilityComponent* Comp = Victim->FindComponentByClass<UGOTAHeroAbilityComponent>();
+	if (!Comp)
+	{
+		Comp = NewObject<UGOTAHeroAbilityComponent>(Victim, TEXT("GOTAHeroAbilities"));
+		Comp->RegisterComponent();
+	}
+	Comp->ApplyStatus(Def.Status, Def.StatusDuration, Def.Magnitude, Source);
+}
+
 void UGOTAHeroAbilityComponent::ApplyStatus(EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)
 {
 	AActor* Owner = GetOwner();
 	if (!Owner || !Owner->HasAuthority())
 	{
+		return;
+	}
+	// GAS-owned statuses (Slowed) are gameplay effects and never touch this slot, so they coexist with it.
+	if (Duration > 0.f && GOTAGAS::OwnsStatus(Status))
+	{
+		GOTAGAS::ApplyStatus(Cast<APawn>(Owner), Status, Duration, Magnitude, Source);
 		return;
 	}
 	UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Owner);
@@ -1113,6 +1136,11 @@ void UGOTAHeroAbilityComponent::OnRep_Status()
 	case EGOTAStatus::Slowed: Path = GOTAAbilityAssets::OverlaySlowed; break;
 	default: break;
 	}
+	// No slot status: hand the overlay back to a GAS status cue that is still running (Slowed), instead of clearing it.
+	if (!Path && GOTAGAS::HasStatus(GetOwner(), EGOTAStatus::Slowed))
+	{
+		Path = GOTAAbilityAssets::OverlaySlowed;
+	}
 	if (Mesh)
 	{
 		Mesh->SetOverlayMaterial(Path ? LoadObject<UMaterialInterface>(nullptr, Path, nullptr, LOAD_NoWarn) : nullptr);
@@ -1128,17 +1156,32 @@ void UGOTAHeroAbilityComponent::ApplyMovementStatusLocally()
 	{
 		return;
 	}
-	const bool bSlowsMovement = (ActiveStatus == EGOTAStatus::Dread || ActiveStatus == EGOTAStatus::Slowed) && GetStatusRemaining() > 0.f;
+	float GasMultiplier = 1.f;
+	if (const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner()))
+	{
+		GasMultiplier = ASC->GetMoveSpeedMultiplier();
+	}
+	const bool bGasSlow = GasMultiplier < 0.999f;
+	// The ability-component slot still owns Dread. If both are present, that slot wins so the speeds are not multiplied twice.
+	const bool bSlotSlows = (ActiveStatus == EGOTAStatus::Dread || ActiveStatus == EGOTAStatus::Slowed) && GetStatusRemaining() > 0.f;
+	const bool bSlowsMovement = bSlotSlows || bGasSlow;
+	const float SlowFraction = bSlotSlows ? StatusMagnitude : (1.f - GasMultiplier);
 	if (bSlowsMovement)
 	{
 		// Capture the base once; if something else (a Blueprint stance change...) wrote MaxWalkSpeed since our last
 		// write, that value is the new base. Only movement speed is touched.
-		if (BaseWalkSpeed < 0.f || !FMath::IsNearlyEqual(Move->MaxWalkSpeed, AppliedWalkSpeed, 0.5f))
+		const bool bStartingSlow = BaseWalkSpeed < 0.f;
+		if (bStartingSlow || !FMath::IsNearlyEqual(Move->MaxWalkSpeed, AppliedWalkSpeed, 0.5f))
 		{
 			BaseWalkSpeed = Move->MaxWalkSpeed;
 		}
-		AppliedWalkSpeed = BaseWalkSpeed * FMath::Clamp(1.f - StatusMagnitude, 0.2f, 1.f);
+		AppliedWalkSpeed = BaseWalkSpeed * FMath::Clamp(1.f - SlowFraction, 0.2f, 1.f);
 		Move->MaxWalkSpeed = AppliedWalkSpeed;
+		if (bStartingSlow && bGasSlow && !bSlotSlows)
+		{
+			UE_LOG(LogTemp, Log, TEXT("GAS move %s fraction=%.2f walk %.0f -> %.0f"),
+				*GetNameSafe(GetOwner()), SlowFraction, BaseWalkSpeed, AppliedWalkSpeed);
+		}
 	}
 	else if (BaseWalkSpeed >= 0.f)
 	{

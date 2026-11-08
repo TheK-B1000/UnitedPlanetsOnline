@@ -1,0 +1,6 @@
+wait 42
+gota.Net.Players
+gota.Net.Fight 36
+wait 42
+gota.Net.Players
+quit
