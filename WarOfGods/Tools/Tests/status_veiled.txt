@@ -1,0 +1,27 @@
+# Veiled on GAS: untargetable by abilities and immune to Blueprint hits while it lasts; coexists with Dread (the old
+# slot replaced Dread); expiry hands the body back to the Dread overlay and the next hit lands.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Status 1 Dread 9 0.35
+gota.Ability.Status 1 Veiled 3 0
+wait 0.3
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 1.2
+gota.Duel.Hurt 1 20
+wait 0.3
+gota.Ability.Dump
+wait 2.0
+gota.Ability.Dump
+gota.Duel.Hurt 1 20
+wait 0.3
+gota.Ability.Dump
+gota.Ability.ResetCooldowns 0
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 1.6
+quit

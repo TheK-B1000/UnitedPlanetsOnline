@@ -1,0 +1,14 @@
+# Remote player Unbreakable + Slowed: the server refunds half of the host's Molten Strike; the client keeps both.
+r.MotionBlurQuality 0
+wait 25
+gota.Ability.Place 250
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Status 1 Unbreakable 4 0.5
+gota.Ability.Status 1 Slowed 6 0.4
+wait 0.2
+gota.Ability.Use 0 0
+wait 2
+gota.Ability.Dump
+wait 5
+quit

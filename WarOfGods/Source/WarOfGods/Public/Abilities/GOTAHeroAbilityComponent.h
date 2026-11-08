@@ -88,7 +88,10 @@ public:
 	float GetOutgoingDamageScale() const;
 	/** Server: incoming ability damage scale from own status (Unbreakable). */
 	float GetIncomingDamageScale() const;
-	bool IsUntargetable() const { return ActiveStatus == EGOTAStatus::Veiled && GetStatusRemaining() > 0.f; }
+	/** Any peer: Veiled (GAS tag, or the legacy slot) makes this fighter untargetable by abilities. */
+	bool IsUntargetable() const;
+	/** Server: Unbreakable is up (hyper armour + damage refund), and its strength. */
+	bool IsUnbreakable(float* OutMagnitude = nullptr) const;
 
 	/** Server: apply a status to this fighter (used by the opponent's abilities too). */
 	void ApplyStatus(EGOTAStatus Status, float Duration, float Magnitude, AActor* Source);
@@ -191,6 +194,8 @@ protected:
 	float BaseWalkSpeed = -1.f;
 	/** Speed this component last wrote; anything else changing MaxWalkSpeed meanwhile becomes the new base. */
 	float AppliedWalkSpeed = -1.f;
+	/** Last slow scale written to the log (each change is logged once, for the regression suite). */
+	float LastLoggedSpeedScale = 1.f;
 	double NextAIDecisionTime = 0.0;
 	double LastAIUseTime = -100.0;
 	int32 ForcedAISlot = INDEX_NONE;

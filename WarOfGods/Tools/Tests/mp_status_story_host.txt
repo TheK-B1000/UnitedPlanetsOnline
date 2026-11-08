@@ -1,0 +1,16 @@
+# Four-player Story at the Divine Shrine checkpoint, same heroes and momentum grants as the Horde status run.
+wait 42
+gota.Net.Players
+gota.Net.Momentum 0 100
+gota.Net.Momentum 1 100
+gota.Net.Momentum 2 100
+gota.Net.Momentum 3 100
+gota.Net.Fight 50
+wait 25
+gota.Net.Momentum 0 100
+gota.Net.Momentum 1 100
+gota.Net.Momentum 2 100
+gota.Net.Momentum 3 100
+wait 30
+gota.Net.Players
+quit

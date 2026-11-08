@@ -6,9 +6,9 @@ namespace GOTATags
 {
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status, "GOTA.Status", "Parent of every status granted by a status effect.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Slowed, "GOTA.Status.Slowed", "Movement speed reduced (Kairos Time Lash).");
-	UE_DEFINE_GAMEPLAY_TAG(Status_Dread, "GOTA.Status.Dread");
-	UE_DEFINE_GAMEPLAY_TAG(Status_Veiled, "GOTA.Status.Veiled");
-	UE_DEFINE_GAMEPLAY_TAG(Status_Unbreakable, "GOTA.Status.Unbreakable");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Dread, "GOTA.Status.Dread", "Slower and weaker ability damage (Nyx Soul Drain, Varoth World Burn).");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Veiled, "GOTA.Status.Veiled", "Untargetable by abilities and immune to Blueprint hits (Nyx Void Shield).");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Unbreakable, "GOTA.Status.Unbreakable", "Hyper armour and partial damage refund (Varoth Colossus Form).");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Burning, "GOTA.Status.Burning");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Frozen, "GOTA.Status.Frozen");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Stunned, "GOTA.Status.Stunned");
@@ -25,6 +25,10 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG(Data_Duration, "GOTA.Data.Duration");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Multiplier, "GOTA.Data.Multiplier");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Magnitude, "GOTA.Data.Magnitude");
+	UE_DEFINE_GAMEPLAY_TAG(Data_DamageMultiplier, "GOTA.Data.DamageMultiplier");
 
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Slowed, "GameplayCue.GOTA.Status.Slowed");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Dread, "GameplayCue.GOTA.Status.Dread");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Veiled, "GameplayCue.GOTA.Status.Veiled");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Unbreakable, "GameplayCue.GOTA.Status.Unbreakable");
 }

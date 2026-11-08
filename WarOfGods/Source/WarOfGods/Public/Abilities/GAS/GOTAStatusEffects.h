@@ -1,8 +1,8 @@
 // White Tiger Studios 2024
 //
 // Status effects owned by GAS, and the adapter UGOTAHeroAbilityComponent calls. A status listed by
-// GOTAGAS::OwnsStatus is applied here; every other status stays on the ability component's slot until
-// its own migration step (Docs/GOTA_GAS_ARCHITECTURE.md, "Migration order").
+// GOTAGAS::OwnsStatus is a gameplay effect; anything else still uses the ability component's single slot
+// (Docs/GOTA_GAS_ENHANCEMENT_PLAN.md, "Status interaction rules").
 
 #pragma once
 
@@ -16,22 +16,61 @@ class AActor;
 class APawn;
 
 /**
- * Kairos Time Lash's slow. Multiplies MoveSpeedMultiplier by Data.Multiplier (1 - the ability's Magnitude) for
- * Data.Duration seconds. Grants GOTA.Status.Slowed and the Slowed cue. One stack per target; a new application
- * refreshes the duration (the pre-GAS timer reset). Blocked by GOTA.Immunity.Slow.
+ * Shared shape of every status: duration from Data.Duration, one stack per target, re-application refreshes the
+ * duration (the pre-GAS timer reset) and keeps the running effect's strength, grants one GOTA.Status tag, and
+ * fires one cue. Subclasses only add their attribute modifiers.
  */
-UCLASS()
-class WAROFGODS_API UGOTAGameplayEffect_Slowed : public UGameplayEffect
+UCLASS(Abstract)
+class WAROFGODS_API UGOTAStatusGameplayEffect : public UGameplayEffect
 {
 	GENERATED_BODY()
 
+protected:
+	/** Constructor only: native effects must declare their components while the CDO is being built. */
+	void ConfigureStatus(const FGameplayTag& StatusTag, const FGameplayTag& CueTag, const FGameplayTag& ImmunityTag = FGameplayTag());
+	/** Constructor only: multiply Attribute by the SetByCaller value DataTag. */
+	void AddMultiplier(const FGameplayAttribute& Attribute, const FGameplayTag& DataTag);
+};
+
+/** Kairos Time Lash: walk speed x(1 - Magnitude). Blocked by GOTA.Immunity.Slow. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Slowed : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
 public:
 	UGOTAGameplayEffect_Slowed();
 };
 
+/** Nyx Soul Drain, Varoth World Burn: walk speed x(1 - Magnitude), hero-ability damage x(1 - Magnitude * 0.5). */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Dread : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Dread();
+};
+
+/** Nyx Void Shield: tag only. The ASC turns it into Blueprint IsInvincible; abilities read the tag as untargetable. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Veiled : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Veiled();
+};
+
+/** Varoth Colossus Form: tag only. The ASC clears Blueprint IsInterruptible; the ability component refunds damage. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Unbreakable : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Unbreakable();
+};
+
 /**
- * Status overlay material on the visible body. Cosmetic only: one class serves every status cue tag and picks
- * the overlay from the cue tag it was routed for. Removal only clears the overlay it set.
+ * Status overlay on the visible body. Cosmetic only. One class serves every status cue; on any add or remove it
+ * re-picks the overlay from everything the actor still has, by priority Veiled > Unbreakable > Dread > Slowed.
  */
 UCLASS()
 class WAROFGODS_API UGOTAGameplayCue_StatusOverlay : public UGameplayCueNotify_Static
@@ -46,17 +85,26 @@ public:
 
 namespace GOTAGAS
 {
-	/** True for statuses GAS applies. Phase 1: Slowed only. */
+	/** True for statuses GAS applies (see the plan's migration order). */
 	bool OwnsStatus(EGOTAStatus Status);
 
 	/** Server: apply (or refresh) a GAS-owned status. False if GAS does not own it or the target is immune. */
 	bool ApplyStatus(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source);
 
-	/** Any peer: does the actor carry the status tag (replicated to everyone)? */
+	/** Any peer: does the actor carry the status tag (tags replicate to everyone)? */
 	bool HasStatus(const AActor* Actor, EGOTAStatus Status);
 
 	/** Server and owning client: seconds left on a GAS-owned status (0 when absent). */
 	float GetStatusRemaining(const AActor* Actor, EGOTAStatus Status);
+
+	/** Server and owning client: the ability definition's Magnitude on the running status (0 when absent). */
+	float GetStatusMagnitude(const AActor* Actor, EGOTAStatus Status);
+
+	/**
+	 * Any peer: put the highest-priority overlay on the body, from GAS tags and the ability component's slot.
+	 * Adding/Removing name a status whose cue is changing right now, in case its tag has not caught up yet.
+	 */
+	void RefreshStatusOverlay(AActor* Actor, EGOTAStatus Adding = EGOTAStatus::None, EGOTAStatus Removing = EGOTAStatus::None);
 
 	/** Every peer: map the native cue classes into the runtime cue set (idempotent). */
 	void RegisterNativeCues();

@@ -4,21 +4,28 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
+#include "Events/CombatEvents.h"
 #include "GOTAAbilitySystemComponent.generated.h"
 
 class APawn;
 
 /**
- * The combatant's Ability System Component. Owner and avatar are both the pawn (Docs/GOTA_GAS_ARCHITECTURE.md,
- * "Owner and avatar"): health already lives on the pawn's BPC_DamageSystem, and a respawn is a new pawn with a
- * clean combat state. The PlayerState keeps the hero choice (HeroId) and is where a future loadout would live.
+ * The combatant's Ability System Component. Owner and avatar are both the pawn: health already lives on the pawn's
+ * BPC_DamageSystem, and every respawn (Duel, Horde, Story all use RestartPlayer) is a new pawn with a clean combat
+ * state. The PlayerState keeps the hero choice (HeroId), which is where a future loadout would live.
  *
- * Attached on the server by UCombatBootstrapSubsystem to every pawn with a Blueprint damage system (players,
- * AI fighters, Horde enemies, bosses). Clients receive the replicated instance and never create their own.
- * Replication is Mixed: full effects to the owning client, tags and cues to everyone, attributes to everyone.
+ * Attached on the server by UCombatBootstrapSubsystem to every pawn with a Blueprint damage system (players, AI
+ * fighters, Horde enemies, bosses), or on the first status if a pawn somehow has none. Clients receive the
+ * replicated instance and never create their own. Replication is Mixed: full effects to the owning client, tags and
+ * cues to everyone, attributes to everyone.
  *
- * Phase 1 owns status effects (only Slowed so far) and the combat AttributeSet. It does not own health,
- * momentum, cooldowns, ability activation, parry, dodge, block or melee.
+ * Owns status effects and the combat AttributeSet. Does not own health, momentum, cooldowns, ability activation,
+ * parry, dodge, block or melee.
+ *
+ * Server-only bridges to the Blueprint damage system, driven by status tags being added and removed:
+ *   GOTA.Status.Veiled      -> BPC_DamageSystem.IsInvincible
+ *   GOTA.Status.Unbreakable -> BPC_DamageSystem.IsInterruptible = false
+ * Death (UStatsComponent::OnDied) removes every status effect.
  */
 UCLASS(ClassGroup = (GOTA))
 class WAROFGODS_API UGOTAAbilitySystemComponent : public UAbilitySystemComponent
@@ -34,13 +41,27 @@ public:
 	static UGOTAAbilitySystemComponent* Find(const AActor* Actor);
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	/** Combat AttributeSet value, or 1 when the set has not replicated yet. Clamped to the attribute's range. */
+	/** Combat AttributeSet values, or 1 when the set has not replicated yet. Clamped to the attribute's range. */
 	float GetMoveSpeedMultiplier() const;
+	float GetOutgoingAbilityDamageMultiplier() const;
 
 	/** Server: remove every effect that grants a GOTA.Status tag (death, round reset, test reset). */
-	int32 ClearStatusEffects();
+	int32 ClearStatusEffects(const TCHAR* Why = TEXT("reset"));
 
-	/** "Slowed 2.4s x0.60" for each active status effect visible on this peer; empty when none. */
+	/** "Slowed 2.4s x0.40" for each active status effect visible on this peer; empty when none. */
 	FString DescribeStatusEffects() const;
+
+protected:
+	void BindServerEvents();
+	void HandleVeiledChanged(const FGameplayTag Tag, int32 NewCount);
+	void HandleUnbreakableChanged(const FGameplayTag Tag, int32 NewCount);
+
+	UFUNCTION()
+	void HandleOwnerDied(const FCombatActorEvent& Event);
+
+	float ReadMultiplier(const FGameplayAttribute& Attribute) const;
+
+	bool bServerEventsBound = false;
 };

@@ -5,11 +5,12 @@ gota.Ability.AI off
 gota.Ability.Place 300 1
 wait 0.3
 gota.Ability.Dump
+# The second press must come after the 0.9 s cast + recovery (otherwise it is refused as Busy) and inside the 12 s cooldown.
 gota.Ability.Use 0 0
-wait 0.7
+wait 1.2
 gota.Ability.Dump
 gota.Ability.Use 0 0
-wait 4.0
+wait 3.5
 gota.Ability.Dump
 gota.Ability.ResetCooldowns 0
 gota.Ability.Place 700 1

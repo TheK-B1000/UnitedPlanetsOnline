@@ -1,0 +1,14 @@
+# Statuses are removed on death: Dread + Slowed on the champion, then a lethal hit.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 400 1
+wait 0.3
+gota.Ability.Status 1 Dread 20 0.35
+gota.Ability.Status 1 Slowed 20 0.4
+wait 0.3
+gota.Ability.Dump
+gota.Duel.Hurt 1 9999
+wait 1.0
+gota.Ability.Dump
+quit

@@ -12,9 +12,9 @@ namespace GOTATags
 	// --- Statuses: granted to the target while a status effect is active (one tag per status) ---
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Slowed);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Dread);       // reserved: Phase 2 (still on the ability-component slot)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Veiled);      // reserved: Phase 2
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Unbreakable); // reserved: Phase 2
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Dread);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Veiled);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Unbreakable);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Burning);     // reserved: Phase 2
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Frozen);      // reserved: Phase 2
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Stunned);     // reserved: Phase 2
@@ -36,7 +36,12 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Multiplier);
 	/** The ability definition's original Magnitude, kept on the spec for HUD and logs. */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Magnitude);
+	/** Outgoing ability damage multiplier (Dread: 1 - Magnitude * 0.5). */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_DamageMultiplier);
 
 	// --- Gameplay Cues (presentation only) ---
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Slowed);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Dread);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Veiled);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Unbreakable);
 }

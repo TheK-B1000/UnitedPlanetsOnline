@@ -11,6 +11,8 @@ wait 0.35
 gota.Test.Shot 82_gravity_cast
 wait 0.35
 gota.Test.Shot 83_gravity_pull
+# Cooldown press: after the 0.9 s cast + recovery (else it is refused as Busy), inside the cooldown.
+wait 0.5
 gota.Ability.Use 0 0
 wait 1.0
 gota.Duel.Dump

@@ -1,0 +1,27 @@
+# Dread on GAS (deterministic): walk x0.65 and hero-ability damage x0.825 applied once; Time Lash overlap keeps the
+# strongest slow (x0.60, not x0.39); each status expires on its own; damage returns to full afterwards.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Dump
+gota.Ability.Status 0 Dread 7 0.35
+wait 0.3
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 1.6
+gota.Ability.Status 0 Slowed 3 0.4
+wait 0.3
+gota.Ability.Dump
+wait 3.3
+gota.Ability.Dump
+wait 3.5
+gota.Ability.Dump
+gota.Ability.ResetCooldowns 0
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 1.6
+gota.Ability.Dump
+quit

@@ -18,6 +18,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
+#include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Bosses/GOTABossComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
@@ -308,17 +309,23 @@ void UGOTADuelHUDWidget::RefreshAbilityBar()
 	}
 	if (Text_AbilityStatus)
 	{
+		// Every status the local fighter has, highest priority first. GAS statuses come from the replicated effects
+		// (the owning client receives them in Mixed mode); a status still on the legacy slot is read from the slot.
+		struct FLabel { EGOTAStatus Status; const TCHAR* Text; };
+		static const FLabel Labels[] = {
+			{ EGOTAStatus::Veiled, TEXT("VEILED") }, { EGOTAStatus::Unbreakable, TEXT("UNBREAKABLE") },
+			{ EGOTAStatus::Dread, TEXT("DREAD  -  SLOWED") }, { EGOTAStatus::Slowed, TEXT("TIME-LASHED  -  SLOWED") },
+		};
 		FString Status;
-		switch (A->GetStatus())
+		for (const FLabel& L : Labels)
 		{
-		case EGOTAStatus::Unbreakable: Status = TEXT("UNBREAKABLE"); break;
-		case EGOTAStatus::Veiled: Status = TEXT("VEILED"); break;
-		case EGOTAStatus::Dread: Status = TEXT("DREAD  -  SLOWED"); break;
-		case EGOTAStatus::Slowed: Status = TEXT("TIME-LASHED  -  SLOWED"); break;
-		default: break;
+			const float Left = A->GetStatus() == L.Status ? A->GetStatusRemaining() : GOTAGAS::GetStatusRemaining(A->GetOwner(), L.Status);
+			if (Left > 0.f)
+			{
+				Status += FString::Printf(TEXT("%s%s  %.1fs"), Status.IsEmpty() ? TEXT("") : TEXT("     "), L.Text, Left);
+			}
 		}
-		const float Left = A->GetStatusRemaining();
-		Text_AbilityStatus->SetText(Status.IsEmpty() || Left <= 0.f ? FText::GetEmpty() : FText::FromString(FString::Printf(TEXT("%s  %.1fs"), *Status, Left)));
+		Text_AbilityStatus->SetText(FText::FromString(Status));
 	}
 	// Server refusals (cooldown / momentum / range / line of sight ...).
 	double When = 0.0;

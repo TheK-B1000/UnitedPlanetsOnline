@@ -1,0 +1,29 @@
+# Unbreakable on GAS: half of each hit refunded, the cast is not interrupted while it lasts; coexists with Time Lash's
+# slow (the old slot replaced it); after expiry a hit during the wind-up interrupts again.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Status 0 Unbreakable 4 0.5
+gota.Ability.Status 0 Slowed 7 0.4
+wait 0.3
+gota.Ability.Dump
+gota.Duel.Hurt 0 20
+wait 0.3
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 0.25
+gota.Duel.Hurt 0 10
+wait 1.5
+gota.Ability.Dump
+wait 2.3
+gota.Ability.Dump
+gota.Ability.ResetCooldowns 0
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 0.25
+gota.Duel.Hurt 0 10
+wait 1.5
+quit

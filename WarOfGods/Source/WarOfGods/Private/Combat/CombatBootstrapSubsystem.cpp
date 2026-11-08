@@ -2,6 +2,7 @@
 
 #include "Combat/CombatBootstrapSubsystem.h"
 
+#include "Abilities/GAS/GOTAAbilitySystemComponent.h"
 #include "Characters/StatsComponent.h"
 #include "Combat/CombatComponent.h"
 #include "Combat/GOTACombatantObserver.h"
@@ -170,6 +171,8 @@ UStatsComponent* UCombatBootstrapSubsystem::EnsureReplicatedVitals(APawn* Pawn)
 		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Attached replicated UStatsComponent to %s"), *GetNameSafe(Pawn));
 	}
 	Stats->BeginObservingBlueprintDamage();
+	// Every combatant gets its ability system here, after its stats (the ASC clears statuses on Stats->OnDied).
+	UGOTAAbilitySystemComponent::EnsureOnPawn(Pawn);
 	return Stats;
 }
 

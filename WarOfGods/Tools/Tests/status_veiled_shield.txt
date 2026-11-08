@@ -1,0 +1,15 @@
+# Nyx Void Shield (slot 2) puts Veiled on Nyx for 1.3 s; the AI champion's hits are refused meanwhile.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.3
+gota.Ability.Use 0 2
+wait 0.3
+gota.Ability.Dump
+gota.Duel.Hurt 0 20
+wait 0.2
+gota.Ability.Dump
+wait 1.5
+gota.Ability.Dump
+quit

@@ -8,6 +8,8 @@ gota.Duel.Face 0
 gota.Duel.Dump
 gota.Ability.Use 0 0
 wait 0.45
+# Cooldown press: after the 0.8 s cast + recovery (else it is refused as Busy), inside the cooldown.
+wait 0.6
 gota.Ability.Use 0 0
 wait 1.2
 gota.Duel.Dump

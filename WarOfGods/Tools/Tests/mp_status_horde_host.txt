@@ -1,0 +1,21 @@
+# Four-player Horde, every status from real abilities: Varoth (host) World Burn / Colossus Form, remote Nyx Void Shield /
+# Soul Drain, remote Kairos Time Lash. Momentum is granted so the ultimates are in the fight driver's slot cycle.
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 12
+wait 3
+gota.Net.Momentum 0 100
+gota.Net.Momentum 1 100
+gota.Net.Momentum 2 100
+gota.Net.Momentum 3 100
+gota.Net.Fight 55
+wait 27
+gota.Net.Momentum 0 100
+gota.Net.Momentum 1 100
+gota.Net.Momentum 2 100
+gota.Net.Momentum 3 100
+wait 32
+gota.Horde.Dump
+gota.Net.Players
+quit

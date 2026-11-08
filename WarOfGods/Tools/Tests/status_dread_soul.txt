@@ -1,0 +1,15 @@
+# Dread from the real abilities: Nyx Soul Drain (ultimate) on the champion, then a reset clears it.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Duel.Momentum 0 100
+gota.Ability.Place 300 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 3
+wait 1.4
+gota.Ability.Dump
+gota.Ability.ResetCooldowns 1
+wait 0.3
+gota.Ability.Dump
+quit

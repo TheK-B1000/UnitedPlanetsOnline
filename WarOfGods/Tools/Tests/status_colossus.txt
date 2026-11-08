@@ -1,0 +1,14 @@
+# Varoth Colossus Form (ultimate) puts Unbreakable 6 s x0.5 on Varoth.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Duel.Momentum 0 100
+gota.Ability.Place 400 1
+wait 0.3
+gota.Ability.Use 0 3
+wait 1.0
+gota.Ability.Dump
+gota.Duel.Hurt 0 20
+wait 0.3
+gota.Ability.Dump
+quit

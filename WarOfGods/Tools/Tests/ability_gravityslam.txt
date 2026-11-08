@@ -11,6 +11,8 @@ wait 0.3
 gota.Test.Shot 86_slam_windup
 wait 0.45
 gota.Test.Shot 87_slam_impact
+# Cooldown press: after the 1.3 s cast + recovery (else it is refused as Busy), inside the cooldown.
+wait 0.8
 gota.Ability.Use 0 0
 wait 0.8
 gota.Duel.Dump

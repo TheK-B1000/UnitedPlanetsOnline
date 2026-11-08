@@ -1,0 +1,16 @@
+# Remote player: Nyx (host) Soul Drain on the remote client, then Time Lash's slow on top, then both expire.
+r.MotionBlurQuality 0
+wait 25
+gota.Duel.Momentum 0 100
+gota.Ability.Place 300
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 3
+wait 1.5
+gota.Ability.Status 1 Slowed 2 0.4
+wait 0.4
+gota.Ability.Dump
+wait 4
+gota.Ability.Dump
+wait 3
+quit

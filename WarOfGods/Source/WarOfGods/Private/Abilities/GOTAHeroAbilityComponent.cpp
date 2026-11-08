@@ -238,7 +238,31 @@ APawn* UGOTAHeroAbilityComponent::GetOpponentPawn() const
 
 float UGOTAHeroAbilityComponent::GetOutgoingDamageScale() const
 {
-	return (ActiveStatus == EGOTAStatus::Dread && GetStatusRemaining() > 0.f) ? FMath::Clamp(1.f - StatusMagnitude * 0.5f, 0.2f, 1.f) : 1.f;
+	// Dread is a gameplay effect on the OutgoingAbilityDamageMultiplier attribute. The legacy slot term only matters if
+	// Dread is ever handed back to the slot; the strongest penalty wins, so the two are never multiplied.
+	const float SlotScale = (ActiveStatus == EGOTAStatus::Dread && GetStatusRemaining() > 0.f) ? FMath::Clamp(1.f - StatusMagnitude * 0.5f, 0.2f, 1.f) : 1.f;
+	const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner());
+	return FMath::Min(SlotScale, ASC ? ASC->GetOutgoingAbilityDamageMultiplier() : 1.f);
+}
+
+bool UGOTAHeroAbilityComponent::IsUntargetable() const
+{
+	return (ActiveStatus == EGOTAStatus::Veiled && GetStatusRemaining() > 0.f) || GOTAGAS::HasStatus(GetOwner(), EGOTAStatus::Veiled);
+}
+
+bool UGOTAHeroAbilityComponent::IsUnbreakable(float* OutMagnitude) const
+{
+	if (ActiveStatus == EGOTAStatus::Unbreakable && GetStatusRemaining() > 0.f)
+	{
+		if (OutMagnitude) { *OutMagnitude = StatusMagnitude; }
+		return true;
+	}
+	if (GOTAGAS::HasStatus(GetOwner(), EGOTAStatus::Unbreakable))
+	{
+		if (OutMagnitude) { *OutMagnitude = GOTAGAS::GetStatusMagnitude(GetOwner(), EGOTAStatus::Unbreakable); }
+		return true;
+	}
+	return false;
 }
 
 float UGOTAHeroAbilityComponent::GetIncomingDamageScale() const
@@ -493,16 +517,18 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 		ApplyStatus(EGOTAStatus::None, 0.f, 0.f, nullptr);
 	}
 	const float Health = UGOTACombatantObserver::ReadVitals(Owner).Health;
-	if (ActiveStatus == EGOTAStatus::Unbreakable && StatusTrackedHealth >= 0.f && Health < StatusTrackedHealth - 0.5f && Health > 0.f)
+	float UnbreakableMagnitude = 0.f;
+	const bool bUnbreakable = IsUnbreakable(&UnbreakableMagnitude);
+	if (bUnbreakable && StatusTrackedHealth >= 0.f && Health < StatusTrackedHealth - 0.5f && Health > 0.f)
 	{
-		const float Refund = (StatusTrackedHealth - Health) * FMath::Clamp(StatusMagnitude, 0.f, 0.9f);
+		const float Refund = (StatusTrackedHealth - Health) * FMath::Clamp(UnbreakableMagnitude, 0.f, 0.9f);
 		if (UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Owner))
 		{
 			FGOTABlueprintCombat::Call(DS, TEXT("Heal"), nullptr, FString(), Refund);
 			UE_LOG(LogGOTAAbility, Log, TEXT("%s: Unbreakable absorbed %.1f of %.1f"), *GetNameSafe(Owner), Refund, StatusTrackedHealth - Health);
 		}
 	}
-	StatusTrackedHealth = ActiveStatus == EGOTAStatus::Unbreakable ? UGOTACombatantObserver::ReadVitals(Owner).Health : -1.f;
+	StatusTrackedHealth = bUnbreakable ? UGOTACombatantObserver::ReadVitals(Owner).Health : -1.f;
 
 	if (!Owner->IsPlayerControlled())
 	{
@@ -533,7 +559,7 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 	}
 
 	// Interrupt: hit during the wind-up (before the first resolve).
-	if (Def->bInterruptible && NextHitIndex == 0 && Now < CastResolveTime && ActiveStatus != EGOTAStatus::Unbreakable
+	if (Def->bInterruptible && NextHitIndex == 0 && Now < CastResolveTime && !bUnbreakable
 		&& Health < HealthAtCastStart - 0.5f)
 	{
 		CancelCastServer(TEXT("interrupted"));
@@ -1112,39 +1138,8 @@ void UGOTAHeroAbilityComponent::ApplyStatus(EGOTAStatus Status, float Duration, 
 
 void UGOTAHeroAbilityComponent::OnRep_Status()
 {
-	// Visible status: an overlay material on the body (or pawn mesh). Purely cosmetic.
-	const ACharacter* Char = Cast<ACharacter>(GetOwner());
-	if (!Char)
-	{
-		return;
-	}
-	USkeletalMeshComponent* Mesh = nullptr;
-	if (const UGOTAHeroBodyComponent* BodyComp = Char->FindComponentByClass<UGOTAHeroBodyComponent>())
-	{
-		Mesh = BodyComp->GetBodyMesh();
-	}
-	if (!Mesh)
-	{
-		Mesh = Char->GetMesh();
-	}
-	const TCHAR* Path = nullptr;
-	switch (ActiveStatus)
-	{
-	case EGOTAStatus::Unbreakable: Path = GOTAAbilityAssets::OverlayUnbreakable; break;
-	case EGOTAStatus::Veiled: Path = GOTAAbilityAssets::OverlayVeiled; break;
-	case EGOTAStatus::Dread: Path = GOTAAbilityAssets::OverlayDread; break;
-	case EGOTAStatus::Slowed: Path = GOTAAbilityAssets::OverlaySlowed; break;
-	default: break;
-	}
-	// No slot status: hand the overlay back to a GAS status cue that is still running (Slowed), instead of clearing it.
-	if (!Path && GOTAGAS::HasStatus(GetOwner(), EGOTAStatus::Slowed))
-	{
-		Path = GOTAAbilityAssets::OverlaySlowed;
-	}
-	if (Mesh)
-	{
-		Mesh->SetOverlayMaterial(Path ? LoadObject<UMaterialInterface>(nullptr, Path, nullptr, LOAD_NoWarn) : nullptr);
-	}
+	// Visible status: one overlay material on the body, picked by priority from GAS tags and this slot. Cosmetic only.
+	GOTAGAS::RefreshStatusOverlay(GetOwner());
 }
 
 void UGOTAHeroAbilityComponent::ApplyMovementStatusLocally()
@@ -1156,16 +1151,14 @@ void UGOTAHeroAbilityComponent::ApplyMovementStatusLocally()
 	{
 		return;
 	}
-	float GasMultiplier = 1.f;
-	if (const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner()))
-	{
-		GasMultiplier = ASC->GetMoveSpeedMultiplier();
-	}
-	const bool bGasSlow = GasMultiplier < 0.999f;
-	// The ability-component slot still owns Dread. If both are present, that slot wins so the speeds are not multiplied twice.
+	// Two sources: the legacy slot and the GAS MoveSpeedMultiplier attribute (Slowed, Dread; already "strongest penalty
+	// wins" inside GAS). The strongest of the two applies. This component is the only MaxWalkSpeed writer.
 	const bool bSlotSlows = (ActiveStatus == EGOTAStatus::Dread || ActiveStatus == EGOTAStatus::Slowed) && GetStatusRemaining() > 0.f;
-	const bool bSlowsMovement = bSlotSlows || bGasSlow;
-	const float SlowFraction = bSlotSlows ? StatusMagnitude : (1.f - GasMultiplier);
+	const float SlotScale = bSlotSlows ? FMath::Clamp(1.f - StatusMagnitude, 0.2f, 1.f) : 1.f;
+	const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner());
+	const float GasScale = ASC ? ASC->GetMoveSpeedMultiplier() : 1.f;
+	const float SpeedScale = FMath::Clamp(FMath::Min(SlotScale, GasScale), 0.2f, 1.f);
+	const bool bSlowsMovement = SpeedScale < 0.999f;
 	if (bSlowsMovement)
 	{
 		// Capture the base once; if something else (a Blueprint stance change...) wrote MaxWalkSpeed since our last
@@ -1175,12 +1168,13 @@ void UGOTAHeroAbilityComponent::ApplyMovementStatusLocally()
 		{
 			BaseWalkSpeed = Move->MaxWalkSpeed;
 		}
-		AppliedWalkSpeed = BaseWalkSpeed * FMath::Clamp(1.f - SlowFraction, 0.2f, 1.f);
+		AppliedWalkSpeed = BaseWalkSpeed * SpeedScale;
 		Move->MaxWalkSpeed = AppliedWalkSpeed;
-		if (bStartingSlow && bGasSlow && !bSlotSlows)
+		if (bStartingSlow || !FMath::IsNearlyEqual(SpeedScale, LastLoggedSpeedScale, 0.01f))
 		{
-			UE_LOG(LogTemp, Log, TEXT("GAS move %s fraction=%.2f walk %.0f -> %.0f"),
-				*GetNameSafe(GetOwner()), SlowFraction, BaseWalkSpeed, AppliedWalkSpeed);
+			LastLoggedSpeedScale = SpeedScale;
+			UE_LOG(LogGOTAAbility, Log, TEXT("%s: GAS move scale=%.2f walk %.0f -> %.0f (slot x%.2f gas x%.2f)"),
+				*GetNameSafe(GetOwner()), SpeedScale, BaseWalkSpeed, AppliedWalkSpeed, SlotScale, GasScale);
 		}
 	}
 	else if (BaseWalkSpeed >= 0.f)
@@ -1190,8 +1184,10 @@ void UGOTAHeroAbilityComponent::ApplyMovementStatusLocally()
 		{
 			Move->MaxWalkSpeed = BaseWalkSpeed;
 		}
+		UE_LOG(LogGOTAAbility, Log, TEXT("%s: GAS move restored walk %.0f"), *GetNameSafe(GetOwner()), Move->MaxWalkSpeed);
 		BaseWalkSpeed = -1.f;
 		AppliedWalkSpeed = -1.f;
+		LastLoggedSpeedScale = 1.f;
 	}
 	// Status ran out locally before the server's replication caught up: drop the overlay now.
 	if (ActiveStatus != EGOTAStatus::None && GetStatusRemaining() <= 0.f && !GetOwner()->HasAuthority() && !bStatusVisualExpired)
