@@ -205,4 +205,15 @@ protected:
 	EGOTAAbilityDenied LastDenied = EGOTAAbilityDenied::None;
 	double LastDeniedTime = -100.0;
 	int32 LastCastSlot = INDEX_NONE;
+
+	void LogMissedResolve(const FGOTAAbilityDef& Def);
 };
+
+/** Server totals: Landed means the resolve reached a victim's damage system. Missed means it hit nobody. */
+struct FGOTAAbilityResolveStats
+{
+	int32 Landed = 0;
+	int32 Missed = 0;
+};
+
+FGOTAAbilityResolveStats GOTAGetAbilityResolveStats();

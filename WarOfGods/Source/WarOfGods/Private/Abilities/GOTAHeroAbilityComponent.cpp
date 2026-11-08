@@ -558,6 +558,7 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 		}
 		if (bCharging && Now >= CastResolveTime + Def->HitInterval)
 		{
+			LogMissedResolve(*Def);
 			bCharging = false; // ran out of charge (missed)
 			// Stop at the end of the dash ("up to Range"); otherwise the launch velocity slides the caster on.
 			if (ACharacter* Dasher = Cast<ACharacter>(Owner))
@@ -740,6 +741,12 @@ void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)
 		return;
 	}
 	}
+	if (Hit.Num() == 0 && Def->Damage > 0.f
+		&& (Def->Kind == EGOTAAbilityKind::MeleeArc || Def->Kind == EGOTAAbilityKind::MultiHit
+			|| Def->Kind == EGOTAAbilityKind::AreaBurst || Def->Kind == EGOTAAbilityKind::Aura))
+	{
+		LogMissedResolve(*Def);
+	}
 	Multicast_Impact(static_cast<uint8>(Slot), FxLoc, Hit.Num() > 0 ? Hit[0] : nullptr, static_cast<uint8>(HitIndex));
 }
 
@@ -859,6 +866,51 @@ int32 UGOTAHeroAbilityComponent::DamageInArc(const FGOTAAbilityDef& Def, float R
 	return OutHit.Num();
 }
 
+static int32 GOTAAbilityLandedCount = 0;
+static int32 GOTAAbilityMissedCount = 0;
+
+FGOTAAbilityResolveStats GOTAGetAbilityResolveStats()
+{
+	return { GOTAAbilityLandedCount, GOTAAbilityMissedCount };
+}
+
+void UGOTAHeroAbilityComponent::LogMissedResolve(const FGOTAAbilityDef& Def)
+{
+	++GOTAAbilityMissedCount;
+	const APawn* Owner = Cast<APawn>(GetOwner());
+	if (!Owner || !GetWorld())
+	{
+		return;
+	}
+	const APawn* Nearest = nullptr;
+	float BestHoriz = TNumericLimits<float>::Max();
+	float Vertical = 0.f;
+	for (TActorIterator<APawn> It(GetWorld()); It; ++It)
+	{
+		const APawn* P = *It;
+		if (P == Owner || P->IsPlayerControlled() || !UGOTACombatantObserver::FindDamageSystem(P)
+			|| UGOTACombatantObserver::IsCombatantDefeated(P))
+		{
+			continue;
+		}
+		const FVector Delta = P->GetActorLocation() - Owner->GetActorLocation();
+		const float Horiz = FVector(Delta.X, Delta.Y, 0.f).Size();
+		if (Horiz < BestHoriz)
+		{
+			BestHoriz = Horiz;
+			Vertical = Delta.Z;
+			Nearest = P;
+		}
+	}
+	if (!Nearest || BestHoriz > 800.f)
+	{
+		return;
+	}
+	const bool bLos = HasLineOfSight(Owner, Nearest);
+	UE_LOG(LogGOTAAbility, Log, TEXT("%s: %s missed nearest=%s horiz=%.0f vert=%.0f los=%d"),
+		*GetNameSafe(Owner), *Def.AbilityId.ToString(), *GetNameSafe(Nearest), BestHoriz, Vertical, bLos ? 1 : 0);
+}
+
 bool UGOTAHeroAbilityComponent::DealDamage(APawn* Victim, const FGOTAAbilityDef& Def, float Amount)
 {
 	if (!Victim || Amount <= 0.f)
@@ -868,6 +920,7 @@ bool UGOTAHeroAbilityComponent::DealDamage(APawn* Victim, const FGOTAAbilityDef&
 	const float Scaled = Amount * GetOutgoingDamageScale();
 	// The victim's own BPC_DamageSystem applies (and may block) the hit: the single health authority.
 	const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Victim, GetOwner(), Scaled, Def.bCanBeBlocked, false, Def.HitResponse);
+	++GOTAAbilityLandedCount;
 	UE_LOG(LogGOTAAbility, Log, TEXT("%s: %s hit %s for %.1f (landed=%d)"), *GetNameSafe(GetOwner()), *Def.AbilityId.ToString(), *GetNameSafe(Victim), Scaled, bLanded ? 1 : 0);
 	if (bLanded)
 	{

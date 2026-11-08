@@ -101,6 +101,20 @@ Nullrhi host sample from the shorter `rc6fight` (waves 1–3, harness timeout wh
 | 120 ms ±30 / 5% loss on the clients | Test setup | Yes, on the fight runs |
 | Two rendered clients alive for the whole clear | — | No. `rc6fight3` kept them and stalled; `rc6fight2` crashed one |
 
+## Wave 2 stall (`rc6fight3`)
+
+The run was stopped on purpose. The exit code is that stop, not a crash. The server never stopped accepting casts.
+
+Last damage was Nyx's Mind Spike on `BP_Enemy_Ranged_C_2147481993` at 23:11:44, the same second as that pawn's +125 kill credit. After that, Drakon kept being granted Molten Strike, Titan Charge, and Dragon Roar against `BP_Enemy_Ranged_C_2147482002`, and Nyx kept casting at `BP_Enemy_Melee_C_2147482045`. The only denials were cooldown, momentum, and Shadow Step `NoSafeDestination`. There is no rejected cast RPC and no "not live" denial.
+
+The host's fight distance stayed 135 cm from 23:05 through 23:19. Charge reach is about 130 cm, and Dragon Roar / Molten Strike / Time Lash are all larger than 135 cm, so range, cooldown, and "untargetable" do not explain a total miss. Those two enemies had already taken hits (the ranged pawn four times, the last at 23:10:20; the melee pawn nine times, the last at 23:11:15). They were still alive and still had a damage system, which is why Horde kept counting them.
+
+Varoth was the only pawn whose distance was still changing, and that client stopped sending attacks at 23:10:27 while its rendered frame rate fell to about one frame per second on `FlushAsyncLoading`. The other three fighters were already pinned. Straight-line `AddMovementInput` holds a pawn against quarry geometry; ability resolves then correctly refuse the hit because line of sight fails. That is the test driver, not a new networking fault and not a corrupted enemy.
+
+`gota.Net.Fight` now strafes when the gap has not closed for a second and is still past 110 cm. A cast that hits nobody logs `missed nearest=… horiz vert los`. `gota.Horde.Watch <seconds>` logs `HORDE STALL` if a player stays within 500 cm and neither kills nor ability contacts advance. `mp_rc6stall_*.txt` runs that check in under a minute.
+
+Editor retest `rc6stall` (uncooked, RC6 package not modified): four heroes joined, 32 ability hits, 3 kill credits, 1 miss at 496 cm with `los=1` (outside the roar), 0 `HORDE STALL`. A client logged `FIGHT strafe` when its gap stopped closing. No crash.
+
 ## Blockers
 
 1. Finale victory requires the grunt adds to die after the Behemoth. The fight driver did not finish them before timeout, and a later four-player run stalled on wave 2 when casts stopped landing (likely LOS or a target the bots would not close).

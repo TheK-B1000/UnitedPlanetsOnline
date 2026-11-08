@@ -1,0 +1,11 @@
+# Detect a Horde stall in seconds. gota.Horde.Watch logs HORDE STALL if a player stays
+# within 500cm of a living enemy and neither kills nor ability contacts advance.
+# gota.Net.Fight strafes when straight-line movement stops closing. No kill injection.
+wait 24
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 12
+gota.Net.Fight 45
+wait 48
+gota.Horde.Dump
+quit

@@ -166,6 +166,7 @@ Fresh cook at `B:\Unreal\GOTA_Builds\RC6`. Logs: `Saved/MPTests/rc6*.log`. Clien
 | R6-11 | Client leaves, host stays | **PASS** | `rc6leave`. Host `players=2` then `players=1`. Client `NET leave` and `screen=MainMenu` |
 | R6-12 | Remote charge dodge on this cook | **FAIL** | `rc6charge`. Joining Nyx had `pawn=None` (Duel vs AI). Host took BehemothCharge 18, hp 52/130. No `perfect-dodged` |
 | R6-13 | Duel PvP 1v1, HUD respawn lifecycle, Insights, Shipping, second PC | **NOT RUN** | |
+| R6-14 | Horde stall watch (editor, not a recook) | **PASS** | `rc6stall`. 32 ability hits, 3 kills, 0 `HORDE STALL`. The one miss was horiz 496, `los=1`. Client logged `FIGHT strafe` |
 
 ## How to re-run
 

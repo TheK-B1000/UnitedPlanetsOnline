@@ -13,6 +13,7 @@
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
+#include "Arenas/Horde/HordeEncounterDirector.h"
 #include "Arenas/Horde/HordePlayerState.h"
 #include "Characters/GOTAHeroBodyComponent.h"
 #include "Characters/GOTAPlayerCharacter.h"
@@ -684,6 +685,11 @@ namespace GOTANetTest
 	static double FightNextAbility = 0.0;
 	static int32 FightAttacks = 0;
 	static int32 FightAbilities = 0;
+	static double FightStuckSince = 0.0;
+	static double FightStrafeFlip = 0.0;
+	static float FightBestDist = 0.f;
+	static FVector FightStrafe = FVector::ZeroVector;
+	static TWeakObjectPtr<APawn> FightStuckTarget;
 	static FTSTicker::FDelegateHandle FightHandle;
 
 	/** Local pawn only. Walks at the current combat target, uses MeleeAttack and RequestActivate. Not a kill injector. */
@@ -717,11 +723,37 @@ namespace GOTANetTest
 		}
 		const FVector To = Target->GetActorLocation() - Me->GetActorLocation();
 		const float Dist = To.Size2D();
-		Me->AddMovementInput(To.GetSafeNormal2D(), 1.f);
+		const double Now = World->GetTimeSeconds();
+		if (FightStuckTarget.Get() != Target)
+		{
+			FightStuckTarget = Target;
+			FightBestDist = Dist;
+			FightStuckSince = Now;
+			FightStrafe = FVector::ZeroVector;
+		}
+		else if (Dist < FightBestDist - 20.f)
+		{
+			FightBestDist = Dist;
+			FightStuckSince = Now;
+			FightStrafe = FVector::ZeroVector;
+		}
+		FVector Move = To.GetSafeNormal2D();
+		// Straight-line input pins the pawn on arena geometry (rc6fight3 held 135 cm with los=0). Strafe until the gap closes.
+		if (Now - FightStuckSince > 1.0 && Dist > 110.f)
+		{
+			if (FightStrafe.IsNearlyZero() || Now >= FightStrafeFlip)
+			{
+				const FVector Side = FVector::CrossProduct(Move, FVector::UpVector);
+				FightStrafe = FightStrafe.IsNearlyZero() || FVector::DotProduct(FightStrafe, Side) > 0.f ? -Side : Side;
+				FightStrafeFlip = Now + 2.5;
+				UE_LOG(LogGOTANet, Log, TEXT("FIGHT strafe dist=%.0f on %s"), Dist, *GetNameSafe(Me));
+			}
+			Move = (Move + FightStrafe * 1.4f).GetSafeNormal();
+		}
+		Me->AddMovementInput(Move, 1.f);
 		FRotator Face = To.Rotation();
 		Face.Pitch = 0.f;
 		PC->SetControlRotation(Face);
-		const double Now = World->GetTimeSeconds();
 		if (Dist < 260.f && Now >= FightNextAttack)
 		{
 			FGOTABlueprintCombat::Call(Me, TEXT("MeleeAttack"));
@@ -759,6 +791,11 @@ namespace GOTANetTest
 		FightNextAbility = 0.0;
 		FightAttacks = 0;
 		FightAbilities = 0;
+		FightStuckSince = 0.0;
+		FightStrafeFlip = 0.0;
+		FightBestDist = 0.f;
+		FightStrafe = FVector::ZeroVector;
+		FightStuckTarget = nullptr;
 		if (!FightHandle.IsValid())
 		{
 			FightHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&TickFight), 0.f);
@@ -766,7 +803,117 @@ namespace GOTANetTest
 		UE_LOG(LogGOTANet, Log, TEXT("FIGHT armed %.0fs (local MeleeAttack + RequestActivate, no injected kills)"), Seconds);
 	}
 
+	static double WatchLimit = 15.0;
+	static double WatchCloseSince = -1.0;
+	static int32 WatchLanded = -1;
+	static int32 WatchDefeated = -1;
+	static bool bWatchReported = false;
+	static FTSTicker::FDelegateHandle WatchHandle;
+
+	static bool TickWatch(float)
+	{
+		UWorld* World = GameWorld();
+		if (!World || World->GetNetMode() == NM_Client)
+		{
+			return true;
+		}
+		int32 Defeated = 0;
+		for (TActorIterator<AHordeEncounterDirector> It(World); It; ++It)
+		{
+			Defeated = It->GetDefeatedCount();
+			break;
+		}
+		const FGOTAAbilityResolveStats Stats = GOTAGetAbilityResolveStats();
+		APawn* NearEnemy = nullptr;
+		APawn* NearPlayer = nullptr;
+		float BestHoriz = TNumericLimits<float>::Max();
+		float Vertical = 0.f;
+		for (TActorIterator<APawn> It(World); It; ++It)
+		{
+			APawn* Enemy = *It;
+			if (!Enemy || Enemy->IsPlayerControlled() || !UGOTACombatantObserver::FindDamageSystem(Enemy)
+				|| UGOTACombatantObserver::IsCombatantDefeated(Enemy))
+			{
+				continue;
+			}
+			for (FConstPlayerControllerIterator PCIt = World->GetPlayerControllerIterator(); PCIt; ++PCIt)
+			{
+				APawn* Player = PCIt->Get() ? PCIt->Get()->GetPawn() : nullptr;
+				if (!Player)
+				{
+					continue;
+				}
+				const FVector Delta = Enemy->GetActorLocation() - Player->GetActorLocation();
+				const float Horiz = FVector(Delta.X, Delta.Y, 0.f).Size();
+				if (Horiz < BestHoriz)
+				{
+					BestHoriz = Horiz;
+					Vertical = Delta.Z;
+					NearEnemy = Enemy;
+					NearPlayer = Player;
+				}
+			}
+		}
+		const bool bClose = NearEnemy && NearPlayer && BestHoriz <= 500.f;
+		if (!bClose)
+		{
+			WatchCloseSince = -1.0;
+			return true;
+		}
+		const double Now = World->GetTimeSeconds();
+		if (WatchLanded < 0 || Stats.Landed != WatchLanded || Defeated != WatchDefeated)
+		{
+			WatchLanded = Stats.Landed;
+			WatchDefeated = Defeated;
+			WatchCloseSince = Now;
+			return true;
+		}
+		if (WatchCloseSince < 0.0)
+		{
+			WatchCloseSince = Now;
+		}
+		if (!bWatchReported && Now - WatchCloseSince >= WatchLimit)
+		{
+			bWatchReported = true;
+			bool bLos = false;
+			if (NearPlayer && NearEnemy)
+			{
+				FCollisionQueryParams Params(SCENE_QUERY_STAT(GOTAWatchLOS), false, NearPlayer);
+				Params.AddIgnoredActor(NearEnemy);
+				bLos = !World->LineTraceTestByChannel(
+					NearPlayer->GetActorLocation() + FVector(0, 0, 50),
+					NearEnemy->GetActorLocation() + FVector(0, 0, 50),
+					ECC_WorldStatic, Params);
+			}
+			UE_LOG(LogGOTANet, Warning, TEXT("HORDE STALL no damage for %.0fs nearest=%s horiz=%.0f vert=%.0f los=%d defeated=%d abilityHits=%d abilityMisses=%d"),
+				WatchLimit, *GetNameSafe(NearEnemy), BestHoriz, Vertical, bLos ? 1 : 0, Defeated, Stats.Landed, Stats.Missed);
+			WatchHandle.Reset();
+			return false;
+		}
+		return true;
+	}
+
+	static void Watch(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		if (!World || World->GetNetMode() == NM_Client)
+		{
+			return;
+		}
+		WatchLimit = Args.Num() > 0 ? FMath::Max(5.f, FCString::Atof(*Args[0])) : 15.f;
+		WatchCloseSince = -1.0;
+		WatchLanded = -1;
+		WatchDefeated = -1;
+		bWatchReported = false;
+		if (!WatchHandle.IsValid())
+		{
+			WatchHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&TickWatch), 0.25f);
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("HORDE WATCH armed %.0fs (stall if a player stays within 500cm and nothing lands)"), WatchLimit);
+	}
+
 	static FAutoConsoleCommand CmdFight(TEXT("gota.Net.Fight"), TEXT("Local pawn fights the current target with MeleeAttack and real ability slots. Args: seconds."), FConsoleCommandWithArgsDelegate::CreateStatic(&Fight));
+	static FAutoConsoleCommand CmdWatch(TEXT("gota.Horde.Watch"), TEXT("Server: log HORDE STALL if players stay within 500cm of a living enemy and neither kills nor ability hits advance. Args: seconds (min 5)."), FConsoleCommandWithArgsDelegate::CreateStatic(&Watch));
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
 	static FAutoConsoleCommand CmdHurt(TEXT("gota.Net.Hurt"), TEXT("Server: damage player <index> <amount> through its own damage system."), FConsoleCommandWithArgsDelegate::CreateStatic(&Hurt));
 	static FAutoConsoleCommand CmdKillEnemy(TEXT("gota.Net.KillEnemy"), TEXT("Server: player <index> defeats the nearest living enemy (kill-credit test)."), FConsoleCommandWithArgsDelegate::CreateStatic(&KillEnemy));
