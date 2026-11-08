@@ -211,7 +211,7 @@ namespace GOTAGAS
 	bool OwnsStatus(EGOTAStatus Status)
 	{
 		// Migration order (one status per verified step): Slowed, Dread, Veiled, Unbreakable.
-		return Status == EGOTAStatus::Slowed || Status == EGOTAStatus::Dread;
+		return Status == EGOTAStatus::Slowed || Status == EGOTAStatus::Dread || Status == EGOTAStatus::Veiled;
 	}
 
 	bool ApplyStatus(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)
