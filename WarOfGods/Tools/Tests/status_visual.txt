@@ -1,0 +1,26 @@
+# Rendered check of the status overlays on the champion: none, Slowed, Dread (beats Slowed), Veiled (beats Dread),
+# Veiled expires (back to Dread), all cleared.
+r.MotionBlurQuality 0
+wait 6
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 1 80 420 50 40
+wait 1.0
+gota.Test.Shot gas_overlay_0_none
+gota.Ability.Status 1 Slowed 20 0.4
+wait 1.0
+gota.Test.Shot gas_overlay_1_slowed
+gota.Ability.Status 1 Dread 20 0.35
+wait 1.0
+gota.Test.Shot gas_overlay_2_dread
+gota.Ability.Status 1 Veiled 2 0
+wait 1.0
+gota.Test.Shot gas_overlay_3_veiled
+wait 2.0
+gota.Test.Shot gas_overlay_4_back_to_dread
+gota.Ability.ResetCooldowns 1
+wait 1.0
+gota.Test.Shot gas_overlay_5_cleared
+quit

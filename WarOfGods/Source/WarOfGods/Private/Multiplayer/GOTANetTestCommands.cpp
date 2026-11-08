@@ -920,6 +920,37 @@ namespace GOTANetTest
 	static FAutoConsoleCommand CmdForge(TEXT("gota.Net.ForgeParry"), TEXT("Exploit test (client): forged SR_ParryAttack at the farthest pawn; the server must reject it."), FConsoleCommandWithArgsDelegate::CreateStatic(&ForgeParry));
 	static FAutoConsoleCommand CmdRemote(TEXT("gota.Net.RemoteParry"), TEXT("Client: time StartBlock on the local pawn against the nearest boss. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteParry));
 	static FAutoConsoleCommand CmdDefend(TEXT("gota.Net.RemoteDefend"), TEXT("Client: parry, dodge, or both against the nearest boss. Args: parry|dodge|both [seconds] [lead]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteDefend));
+	/**
+	 * gota.Net.Status <pN|eN> <Status> <seconds> <magnitude>: server, any mode. pN = player N's pawn, eN = the living enemy
+	 * nearest player N. Goes through UGOTAHeroAbilityComponent::ApplyStatus, the path every ability uses (GAS for the four
+	 * migrated statuses). For replication, overlap and cue tests where the fight driver cannot reach a target.
+	 */
+	static void NetStatus(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		if (!W || W->GetNetMode() == NM_Client || Args.Num() < 4 || Args[0].Len() < 2)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET status: server only, args <pN|eN> <Status> <seconds> <magnitude>"));
+			return;
+		}
+		APawn* Player = PlayerPawn(FCString::Atoi(*Args[0].Mid(1)));
+		APawn* Target = Args[0][0] == TEXT('e') ? GOTACombatLive::FindCombatTarget(Player) : Player;
+		const int64 Value = StaticEnum<EGOTAStatus>()->GetValueByNameString(Args[1]);
+		if (!Target || Value == INDEX_NONE)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET status: no target for %s or unknown status %s"), *Args[0], *Args[1]);
+			return;
+		}
+		UGOTAHeroAbilityComponent* A = Target->FindComponentByClass<UGOTAHeroAbilityComponent>();
+		if (!A)
+		{
+			A = NewObject<UGOTAHeroAbilityComponent>(Target, TEXT("GOTAHeroAbilities"));
+			A->RegisterComponent();
+		}
+		A->ApplyStatus(static_cast<EGOTAStatus>(Value), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), nullptr);
+		UE_LOG(LogGOTANet, Log, TEXT("NET status %s %s on %s"), *Args[1], *Args[0], *GetNameSafe(Target));
+	}
+	static FAutoConsoleCommand CmdStatus(TEXT("gota.Net.Status"), TEXT("Server: apply a status to <pN|eN> (player N / enemy nearest player N): <Status> <seconds> <magnitude>."), FConsoleCommandWithArgsDelegate::CreateStatic(&NetStatus));
 	static FAutoConsoleCommand CmdMomentum(TEXT("gota.Net.Momentum"), TEXT("Server: grant Divine Momentum to player <index> [amount=50]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Momentum));
 	static FAutoConsoleCommand CmdCounter(TEXT("gota.Net.Counter"), TEXT("Request Divine Counter on local pawn, or player <index>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Counter));
 	static FAutoConsoleCommand CmdAbility(TEXT("gota.Net.Ability"), TEXT("Activate ability slot on local pawn, or player <index> <slot>."), FConsoleCommandWithArgsDelegate::CreateStatic(&AbilityUse));

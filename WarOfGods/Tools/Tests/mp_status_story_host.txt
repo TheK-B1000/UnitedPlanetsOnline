@@ -1,16 +1,24 @@
-# Four-player Story at the Divine Shrine checkpoint, same heroes and momentum grants as the Horde status run.
+# Four-player Story at the Divine Shrine: every GAS status on remote players and on a shrine enemy, under client lag.
+# The fight driver cannot reach the shrine enemies (line of sight), so statuses go through gota.Net.Status, which uses
+# the same ApplyStatus path as the abilities. Overlaps: Dread + Slowed (enemy, player 3), Unbreakable + Slowed (player 2).
 wait 42
 gota.Net.Players
-gota.Net.Momentum 0 100
-gota.Net.Momentum 1 100
-gota.Net.Momentum 2 100
-gota.Net.Momentum 3 100
-gota.Net.Fight 50
-wait 25
-gota.Net.Momentum 0 100
-gota.Net.Momentum 1 100
-gota.Net.Momentum 2 100
-gota.Net.Momentum 3 100
-wait 30
+gota.Net.Status p1 Veiled 3 0
+gota.Net.Status p2 Unbreakable 4 0.5
+gota.Net.Status p2 Slowed 6 0.4
+gota.Net.Status p3 Dread 5 0.35
+gota.Net.Status p3 Slowed 2.5 0.4
+gota.Net.Status e0 Dread 5 0.35
+gota.Net.Status e0 Slowed 3 0.4
+wait 1
+gota.Net.Hurt 1 20
+gota.Net.Hurt 2 20
+wait 8
+gota.Net.Players
+gota.Net.Status p3 Dread 20 0.35
+gota.Net.Status p3 Slowed 20 0.4
+wait 1
+gota.Net.Hurt 3 9999
+wait 8
 gota.Net.Players
 quit
