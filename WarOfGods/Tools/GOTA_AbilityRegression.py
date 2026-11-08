@@ -146,15 +146,18 @@ MP = {
 MP_STATUS = {
     "Dread": ("Nyx", "dread_mp_host.txt",
               [(r"SoulDrain hit BP_Player\S+ for [0-9.]+ \(landed=1\)", True), (r"status Dread 4\.0s x0\.35", True)],
-              [(r"cue GameplayCue\.GOTA\.Status\.Dread on BP_Player", True), (r"BP_Player\S*: GAS move scale=0\.65", True),
+              [(r"cue GameplayCue\.GOTA\.Status\.Dread on BP_Player", True), (r"overlay \S+ -> M_GOTA_Overlay_Dread on BP_Player", True), (r"BP_Player\S*: GAS move scale=0\.65", True),
                (r"BP_Player\S*: GAS move scale=0\.60", True), (r"BP_Player\S*: GAS move restored", True),
                (r"GAS move scale=0\.(39|3[0-9]|2)", False), (r"cue GameplayCue\.GOTA\.Status\.Dread removed from BP_Player", True)]),
     "Veiled": ("Drakon", "veiled_mp_host.txt",
                [(r"Veiled on -> IsInvincible=1", True), (r"MoltenStrike hit BP_Player\S+ for 22\.0 \(landed=1\)", 1)],
-               [(r"cue GameplayCue\.GOTA\.Status\.Veiled on BP_Player", True), (r"cue GameplayCue\.GOTA\.Status\.Veiled removed from BP_Player", True)]),
+               [(r"cue GameplayCue\.GOTA\.Status\.Veiled on BP_Player", True), (r"overlay \S+ -> M_GOTA_Overlay_Veiled on BP_Player", True),
+                (r"overlay M_GOTA_Overlay_Veiled -> None on BP_Player", True), (r"cue GameplayCue\.GOTA\.Status\.Veiled removed from BP_Player", True)]),
     "Unbreakable": ("Drakon", "unbreakable_mp_host.txt",
                     [(r"Unbreakable on -> IsInterruptible=0", True), (r"Unbreakable absorbed 11\.0 of 22\.0", True)],
-                    [(r"cue GameplayCue\.GOTA\.Status\.Unbreakable on BP_Player", True), (r"BP_Player\S*: GAS move scale=0\.60", True),
+                    [(r"cue GameplayCue\.GOTA\.Status\.Unbreakable on BP_Player", True), (r"overlay \S+ -> M_GOTA_Overlay_Unbreakable on BP_Player", True),
+                     (r"overlay M_GOTA_Overlay_Unbreakable -> M_GOTA_Overlay_Slowed on BP_Player", True),   # priority hand-off at expiry
+                     (r"BP_Player\S*: GAS move scale=0\.60", True),
                      (r"cue GameplayCue\.GOTA\.Status\.Unbreakable removed from BP_Player", True)]),
 }
 

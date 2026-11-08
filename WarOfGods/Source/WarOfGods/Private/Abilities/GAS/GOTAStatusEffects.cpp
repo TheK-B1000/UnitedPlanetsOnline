@@ -193,6 +193,8 @@ bool UGOTAGameplayCue_StatusOverlay::OnActive_Implementation(AActor* MyTarget, c
 
 bool UGOTAGameplayCue_StatusOverlay::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
 {
+	// A replicated effect can reach a client as WhileActive only (no OnActive), so this logs the same way.
+	UE_LOG(LogGOTAStatus, Log, TEXT("cue %s on %s (while active)"), *Parameters.MatchedTagName.ToString(), *GetNameSafe(MyTarget));
 	GOTAGAS::RefreshStatusOverlay(MyTarget, StatusForCue(Parameters));
 	return true;
 }
@@ -211,7 +213,7 @@ namespace GOTAGAS
 	bool OwnsStatus(EGOTAStatus Status)
 	{
 		// Migration order (one status per verified step): Slowed, Dread, Veiled, Unbreakable.
-		return Status == EGOTAStatus::Slowed || Status == EGOTAStatus::Dread || Status == EGOTAStatus::Veiled;
+		return Status == EGOTAStatus::Slowed || Status == EGOTAStatus::Dread || Status == EGOTAStatus::Veiled || Status == EGOTAStatus::Unbreakable;
 	}
 
 	bool ApplyStatus(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)
@@ -299,6 +301,7 @@ namespace GOTAGAS
 		UMaterialInterface* Overlay = Path ? LoadObject<UMaterialInterface>(nullptr, Path, nullptr, LOAD_NoWarn) : nullptr;
 		if (Mesh->GetOverlayMaterial() != Overlay)
 		{
+			UE_LOG(LogGOTAStatus, Log, TEXT("overlay %s -> %s on %s"), *GetNameSafe(Mesh->GetOverlayMaterial()), *GetNameSafe(Overlay), *GetNameSafe(Actor));
 			Mesh->SetOverlayMaterial(Overlay);
 		}
 	}

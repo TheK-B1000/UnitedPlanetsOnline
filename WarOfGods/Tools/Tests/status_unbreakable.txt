@@ -1,3 +1,4 @@
+# Each wind-up runs at 0.2x game speed so the hit lands inside the 0.6 s wind-up even through a slow frame.
 # Unbreakable on GAS: half of each hit refunded, the cast is not interrupted while it lasts; coexists with Time Lash's
 # slow (the old slot replaced it); after expiry a hit during the wind-up interrupts again.
 r.MotionBlurQuality 0
@@ -13,17 +14,21 @@ gota.Ability.Dump
 gota.Duel.Hurt 0 20
 wait 0.3
 gota.Ability.Dump
+gota.Ability.Slomo 0.2
 gota.Ability.Use 0 0
-wait 0.25
+wait 0.1
 gota.Duel.Hurt 0 10
+gota.Ability.Slomo 1
 wait 1.5
 gota.Ability.Dump
 wait 2.3
 gota.Ability.Dump
 gota.Ability.ResetCooldowns 0
 gota.Duel.Face 0
+gota.Ability.Slomo 0.2
 gota.Ability.Use 0 0
-wait 0.25
+wait 0.1
 gota.Duel.Hurt 0 10
+gota.Ability.Slomo 1
 wait 1.5
 quit
