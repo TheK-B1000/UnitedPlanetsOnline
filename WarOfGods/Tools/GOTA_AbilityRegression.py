@@ -131,6 +131,24 @@ CASES = {
         ("Varoth Colossus Form applies it", "?Opponent=AI?Hero=Varoth?DevHeroes=1", "status_colossus.txt",
          [(r"status Unbreakable 6\.0s x0\.50", True), (r"Unbreakable absorbed 10\.0 of 20\.0", True)]),
     ],
+    # Boss status policy (Quarry Behemoth: immune to Slow and Stun). No multiplayer case: a boss duel is one player.
+    "Boss": [
+        ("Time Lash slow resisted + feedback, Dread weakens only", "?Opponent=AI?Hero=Kairos?DevHeroes=1?Boss=QuarryBehemoth", "boss_policy.txt",
+         [(r"status policy QuarryBehemoth immune=\[Slow Stun\]", True),
+          (r"TimeLash hit BP_Boss\S+ for 6\.0 \(landed=1\)", True),                         # the damage still lands
+          (r"BP_Boss\S*: status Slowed resisted \(whole movement \) from BP_Player", True),
+          (r"FEEDBACK THE QUARRY BEHEMOTH RESISTS SLOW", True),
+          (r"BP_Boss\S*: status Slowed [0-9]", False), (r"BP_Boss\S*: GAS move", False),     # never slowed
+          (r"BP_Boss\S*: status Dread 9\.0s x0\.35 .*\[GAS walk x1\.00 dmg x0\.8[23]\]", True),
+          (r"Boss ClawCombo hit BP_Player\S+ for 9\.0 \(landed=1\)", True),                   # before Dread
+          (r"Boss ClawCombo hit BP_Player\S+ for 7\.4 \(landed=1\)", True),                   # 9 x 0.825 with Dread
+          (r"ABILITY f1 gas=\[Dread [0-9.]+s x0\.35\] immune=\[Slow Stun\] walkx=1\.00 dmgx=0\.8[23]", True)]),
+        ("Divine Counter, parry and dodge unchanged", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "slice_mechanics.txt",
+         [(r"Boss STUNNED by Divine Counter from \S+ for 2\.6s", 2), (r"DIVINE COUNTER by \S+ on BP_Boss\S+: 90 damage \(landed=1", 2),
+          (r"Boss PARRIED by", True), (r"perfect dodge", True), (r"status policy QuarryBehemoth immune=\[Slow Stun\]", True)]),
+        ("boss death clears statuses, keeps policy", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "boss_death.txt",
+         [(r"BP_Boss\S*: cleared 1 status effect\(s\) \(death\)", True), (r"Combatant BP_Boss\S+ defeated", True)]),
+    ],
 }
 # Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.
 MP = {
@@ -227,6 +245,8 @@ def main():
             print("%-5s %-12s %-42s %s" % ("PASS" if ok else "FAIL", ability, name, "" if ok else
                   "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
             sys.stdout.flush()
+        if ability not in MP_STATUS and ability not in MP:
+            continue
         if ability in MP_STATUS:
             hero, host_script, host_checks, client_checks = MP_STATUS[ability]
         else:

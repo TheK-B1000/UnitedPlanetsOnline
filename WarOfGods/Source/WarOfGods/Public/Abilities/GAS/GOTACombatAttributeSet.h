@@ -34,12 +34,13 @@ public:
 	ATTRIBUTE_ACCESSORS_BASIC(UGOTACombatAttributeSet, MoveSpeedMultiplier);
 
 	/**
-	 * Hero-ability damage this combatant deals. Read once per hit by UGOTAHeroAbilityComponent::DealDamage before the
-	 * amount goes to the victim's BPC_DamageSystem. Blueprint melee does not read it (it did not read Dread either).
+	 * Damage this combatant deals through the C++ damage paths, read once per hit just before the amount goes to the
+	 * victim's BPC_DamageSystem: hero abilities (UGOTAHeroAbilityComponent::DealDamage) and boss attacks
+	 * (UGOTABossComponent::DamageTarget). Blueprint melee does not read it (it did not read Dread either).
 	 */
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_OutgoingAbilityDamageMultiplier, Category = "GOTA|Attributes")
-	FGameplayAttributeData OutgoingAbilityDamageMultiplier;
-	ATTRIBUTE_ACCESSORS_BASIC(UGOTACombatAttributeSet, OutgoingAbilityDamageMultiplier);
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_OutgoingDamageMultiplier, Category = "GOTA|Attributes")
+	FGameplayAttributeData OutgoingDamageMultiplier;
+	ATTRIBUTE_ACCESSORS_BASIC(UGOTACombatAttributeSet, OutgoingDamageMultiplier);
 
 	/** Lowest value any combination of effects can reach (matches the pre-GAS clamps). */
 	static constexpr float MinMultiplier = 0.2f;
@@ -49,5 +50,5 @@ protected:
 	UFUNCTION()
 	void OnRep_MoveSpeedMultiplier(const FGameplayAttributeData& OldValue);
 	UFUNCTION()
-	void OnRep_OutgoingAbilityDamageMultiplier(const FGameplayAttributeData& OldValue);
+	void OnRep_OutgoingDamageMultiplier(const FGameplayAttributeData& OldValue);
 };

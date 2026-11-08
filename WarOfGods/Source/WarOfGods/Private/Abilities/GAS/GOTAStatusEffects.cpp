@@ -148,7 +148,7 @@ void UGOTAStatusGameplayEffect::ConfigureStatus(const FGameplayTag& StatusTag, c
 	}
 }
 
-void UGOTAStatusGameplayEffect::AddMultiplier(const FGameplayAttribute& Attribute, const FGameplayTag& DataTag)
+void UGOTAStatusGameplayEffect::AddMultiplier(const FGameplayAttribute& Attribute, const FGameplayTag& DataTag, const FGameplayTag& ImmunityTag)
 {
 	FSetByCallerFloat Caller;
 	Caller.DataTag = DataTag;
@@ -156,20 +156,28 @@ void UGOTAStatusGameplayEffect::AddMultiplier(const FGameplayAttribute& Attribut
 	Mod.Attribute = Attribute;
 	Mod.ModifierOp = EGameplayModOp::MultiplyAdditive;
 	Mod.ModifierMagnitude = FGameplayEffectModifierMagnitude(Caller);
+	// For instant and periodic effects the engine skips this modifier on an immune target. Duration effects aggregate
+	// without target tags (an engine limitation), so GOTAGAS::ApplyStatus neutralises a blocked aspect's SetByCaller.
+	Mod.TargetTags.IgnoreTags.AddTag(ImmunityTag);
 	Modifiers.Add(Mod);
+}
+
+UGOTAGameplayEffect_StatusPolicy::UGOTAGameplayEffect_StatusPolicy()
+{
+	DurationPolicy = EGameplayEffectDurationType::Infinite; // tags come from the spec (DynamicGrantedTags)
 }
 
 UGOTAGameplayEffect_Slowed::UGOTAGameplayEffect_Slowed()
 {
 	ConfigureStatus(GOTATags::Status_Slowed, GOTATags::Cue_Status_Slowed, GOTATags::Immunity_Slow);
-	AddMultiplier(UGOTACombatAttributeSet::GetMoveSpeedMultiplierAttribute(), GOTATags::Data_Multiplier);
+	AddMultiplier(UGOTACombatAttributeSet::GetMoveSpeedMultiplierAttribute(), GOTATags::Data_Multiplier, GOTATags::Immunity_Slow);
 }
 
 UGOTAGameplayEffect_Dread::UGOTAGameplayEffect_Dread()
 {
 	ConfigureStatus(GOTATags::Status_Dread, GOTATags::Cue_Status_Dread);
-	AddMultiplier(UGOTACombatAttributeSet::GetMoveSpeedMultiplierAttribute(), GOTATags::Data_Multiplier);
-	AddMultiplier(UGOTACombatAttributeSet::GetOutgoingAbilityDamageMultiplierAttribute(), GOTATags::Data_DamageMultiplier);
+	AddMultiplier(UGOTACombatAttributeSet::GetMoveSpeedMultiplierAttribute(), GOTATags::Data_Multiplier, GOTATags::Immunity_Slow);
+	AddMultiplier(UGOTACombatAttributeSet::GetOutgoingDamageMultiplierAttribute(), GOTATags::Data_DamageMultiplier, GOTATags::Immunity_Weaken);
 }
 
 UGOTAGameplayEffect_Veiled::UGOTAGameplayEffect_Veiled()
@@ -206,10 +214,41 @@ bool UGOTAGameplayCue_StatusOverlay::OnRemove_Implementation(AActor* MyTarget, c
 	return true;
 }
 
+// ============================================================================ resisted cue
+
+bool UGOTAGameplayCue_Resisted::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
+{
+	const EGOTAStatus Status = static_cast<EGOTAStatus>(FMath::RoundToInt(Parameters.RawMagnitude));
+	const int32 Aspects = FMath::RoundToInt(Parameters.NormalizedMagnitude);
+	AActor* Instigator = Parameters.Instigator.Get();
+	UE_LOG(LogGOTAStatus, Log, TEXT("cue Resisted %s aspects=%d on %s by %s"), *StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Status)),
+		Aspects, *GetNameSafe(MyTarget), *GetNameSafe(Instigator));
+	GOTAGAS::OnStatusResisted.Broadcast(MyTarget, Status, Aspects, Instigator);
+	return true;
+}
+
 // ============================================================================ adapter
 
 namespace GOTAGAS
 {
+	FOnStatusResisted OnStatusResisted;
+
+	int32 AspectsOf(EGOTAStatus Status)
+	{
+		switch (Status)
+		{
+		case EGOTAStatus::Slowed: return Aspect_Movement;
+		case EGOTAStatus::Dread: return Aspect_Movement | Aspect_Weaken;
+		default: return 0;
+		}
+	}
+
+	bool HasTag(const AActor* Actor, const FGameplayTag& Tag)
+	{
+		const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Actor);
+		return ASC && ASC->HasMatchingGameplayTag(Tag);
+	}
+
 	bool OwnsStatus(EGOTAStatus Status)
 	{
 		// Migration order (one status per verified step): Slowed, Dread, Veiled, Unbreakable.
@@ -230,6 +269,51 @@ namespace GOTAGAS
 			return false;
 		}
 		const FString Name = StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Status));
+
+		// Status policy (bosses): aspect immunities, then per-status resistance. Damage was already dealt by the ability.
+		const int32 Aspects = AspectsOf(Status);
+		int32 Blocked = 0;
+		if ((Aspects & Aspect_Movement) && ASC->HasMatchingGameplayTag(GOTATags::Immunity_Slow))
+		{
+			Blocked |= Aspect_Movement;
+		}
+		if ((Aspects & Aspect_Weaken) && ASC->HasMatchingGameplayTag(GOTATags::Immunity_Weaken))
+		{
+			Blocked |= Aspect_Weaken;
+		}
+		bool bWhole = Aspects != 0 && Blocked == Aspects;
+		if (const FGOTAStatusResistance* Rule = ASC->FindStatusResistance(Status))
+		{
+			Duration *= Rule->DurationScale;
+			Magnitude *= Rule->MagnitudeScale;
+			if (Duration <= 0.f)
+			{
+				bWhole = true;
+			}
+			else if (Rule->DurationScale < 1.f || Rule->MagnitudeScale < 1.f)
+			{
+				Blocked |= Aspect_Reduced;
+			}
+		}
+		if (bWhole || Blocked != 0)
+		{
+			const int32 Report = Blocked | (bWhole ? Aspect_Whole : 0);
+			UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s resisted (%s%s%s%s) from %s"), *GetNameSafe(Victim), *Name,
+				bWhole ? TEXT("whole ") : TEXT(""), (Report & Aspect_Movement) ? TEXT("movement ") : TEXT(""),
+				(Report & Aspect_Weaken) ? TEXT("weaken ") : TEXT(""), (Report & Aspect_Reduced) ? TEXT("reduced") : TEXT(""), *GetNameSafe(Source));
+			FGameplayCueParameters Feedback;
+			Feedback.RawMagnitude = static_cast<float>(Status);
+			Feedback.NormalizedMagnitude = static_cast<float>(Report);
+			Feedback.Instigator = Source;
+			Feedback.EffectCauser = Source;
+			Feedback.Location = Victim->GetActorLocation();
+			ASC->ExecuteGameplayCue(GOTATags::Cue_Resisted, Feedback);
+		}
+		if (bWhole)
+		{
+			return false;
+		}
+
 		FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
 		Context.AddInstigator(Source, Source);
 		Context.AddSourceObject(Source);
@@ -242,8 +326,11 @@ namespace GOTAGAS
 		// Every number comes from the ability definition. The pre-GAS formulas and clamps, unchanged.
 		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Duration, Duration);
 		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Magnitude, Magnitude);
-		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Multiplier, FMath::Clamp(1.f - Magnitude, UGOTACombatAttributeSet::MinMultiplier, 1.f));
-		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_DamageMultiplier, FMath::Clamp(1.f - Magnitude * 0.5f, UGOTACombatAttributeSet::MinMultiplier, 1.f));
+		// A blocked aspect gets a neutral x1 (it then never wins the "strongest penalty" aggregation).
+		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Multiplier,
+			(Blocked & Aspect_Movement) ? 1.f : FMath::Clamp(1.f - Magnitude, UGOTACombatAttributeSet::MinMultiplier, 1.f));
+		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_DamageMultiplier,
+			(Blocked & Aspect_Weaken) ? 1.f : FMath::Clamp(1.f - Magnitude * 0.5f, UGOTACombatAttributeSet::MinMultiplier, 1.f));
 		const FActiveGameplayEffectHandle Handle = ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 		if (!Handle.WasSuccessfullyApplied())
 		{
@@ -252,7 +339,7 @@ namespace GOTAGAS
 		}
 		// Same leading wording as the ability component's slot log, so the regression suite reads both.
 		UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s %.1fs x%.2f (from %s) [GAS walk x%.2f dmg x%.2f]"), *GetNameSafe(Victim), *Name, Duration, Magnitude,
-			*GetNameSafe(Source), ASC->GetMoveSpeedMultiplier(), ASC->GetOutgoingAbilityDamageMultiplier());
+			*GetNameSafe(Source), ASC->GetMoveSpeedMultiplier(), ASC->GetOutgoingDamageMultiplier());
 		return true;
 	}
 
@@ -314,12 +401,18 @@ namespace GOTAGAS
 		{
 			return;
 		}
-		TArray<FGameplayCueReferencePair> Missing;
+		TArray<TPair<FGameplayTag, UClass*>> Wanted;
 		for (const FStatusInfo& Entry : Statuses)
 		{
-			if (!Set->GameplayCueDataMap.Contains(Entry.CueTag.GetTag()))
+			Wanted.Emplace(Entry.CueTag.GetTag(), UGOTAGameplayCue_StatusOverlay::StaticClass());
+		}
+		Wanted.Emplace(GOTATags::Cue_Resisted.GetTag(), UGOTAGameplayCue_Resisted::StaticClass());
+		TArray<FGameplayCueReferencePair> Missing;
+		for (const TPair<FGameplayTag, UClass*>& W : Wanted)
+		{
+			if (!Set->GameplayCueDataMap.Contains(W.Key))
 			{
-				Missing.Emplace(Entry.CueTag.GetTag(), FSoftObjectPath(UGOTAGameplayCue_StatusOverlay::StaticClass()));
+				Missing.Emplace(W.Key, FSoftObjectPath(W.Value));
 			}
 		}
 		if (Missing.Num() == 0)
@@ -335,7 +428,7 @@ namespace GOTAGAS
 			{
 				if (Data.GameplayCueTag == Pair.GameplayCueTag)
 				{
-					Data.LoadedGameplayCueClass = UGOTAGameplayCue_StatusOverlay::StaticClass();
+					Data.LoadedGameplayCueClass = Cast<UClass>(Pair.StringRef.ResolveObject());
 				}
 			}
 		}

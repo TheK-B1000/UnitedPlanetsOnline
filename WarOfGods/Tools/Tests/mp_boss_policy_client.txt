@@ -1,0 +1,24 @@
+wait 22
+gota.Net.Fight 60
+wait 2.5
+gota.Test.Shot mp_resist_1
+wait 2.5
+gota.Test.Shot mp_resist_2
+wait 2.5
+gota.Test.Shot mp_resist_3
+wait 2.5
+gota.Test.Shot mp_resist_4
+wait 2.5
+gota.Test.Shot mp_resist_5
+wait 2.5
+gota.Test.Shot mp_resist_6
+wait 2.5
+gota.Test.Shot mp_resist_7
+wait 2.5
+gota.Test.Shot mp_resist_8
+wait 2.5
+gota.Test.Shot mp_resist_9
+wait 2.5
+gota.Test.Shot mp_resist_10
+wait 40
+quit

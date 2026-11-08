@@ -1,0 +1,12 @@
+# Boss death clears its statuses (its status policy stays: it is not a status).
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+wait 2
+gota.Ability.Status 1 Dread 20 0.35
+wait 0.3
+gota.Ability.Dump
+gota.Duel.Hurt 1 9999
+wait 1.5
+gota.Ability.Dump
+quit

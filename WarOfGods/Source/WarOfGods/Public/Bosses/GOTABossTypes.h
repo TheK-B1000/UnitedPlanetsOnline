@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Abilities/GAS/GOTAStatusPolicy.h"
 #include "GOTABossTypes.generated.h"
 
 class UAnimSequenceBase;
@@ -92,6 +93,8 @@ class WAROFGODS_API UGOTABossDefinition : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
+	UGOTABossDefinition();
+
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override { return FPrimaryAssetId(TEXT("GOTABoss"), GetFName()); }
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Identity") FName BossId;
@@ -148,4 +151,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation") TSoftObjectPtr<UParticleSystem> PhaseTwoFX;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attacks") TArray<FGOTABossAttack> Attacks;
+
+	/**
+	 * How hero status effects land on this boss. Default for every boss: immune to movement slows (they would fight the
+	 * boss's own walk and charge speeds) and to hard crowd control; damage, Dread's weakening, and the boss's own
+	 * stagger, parry recoil and Divine Counter stun are unaffected. Override per boss in its data asset.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Status") FGOTAStatusPolicy StatusPolicy;
 };

@@ -1,0 +1,11 @@
+# Replication-cost sample: 30 extra enemies plus the live wave, everyone fighting, host samples a 30 s window.
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Net.SpawnEnemies 30 2600
+wait 6
+gota.Net.Perf
+gota.Net.Perf 30
+wait 32
+gota.Net.Players
+quit

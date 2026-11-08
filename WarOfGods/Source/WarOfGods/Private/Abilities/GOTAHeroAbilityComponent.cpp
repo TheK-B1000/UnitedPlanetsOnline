@@ -3,6 +3,7 @@
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
+#include "Abilities/GAS/GOTAGameplayTags.h"
 #include "Abilities/GOTAAbilityTypes.h"
 #include "AIController.h"
 #include "Animation/AnimInstance.h"
@@ -238,11 +239,11 @@ APawn* UGOTAHeroAbilityComponent::GetOpponentPawn() const
 
 float UGOTAHeroAbilityComponent::GetOutgoingDamageScale() const
 {
-	// Dread is a gameplay effect on the OutgoingAbilityDamageMultiplier attribute. The legacy slot term only matters if
+	// Dread is a gameplay effect on the OutgoingDamageMultiplier attribute. The legacy slot term only matters if
 	// Dread is ever handed back to the slot; the strongest penalty wins, so the two are never multiplied.
 	const float SlotScale = (ActiveStatus == EGOTAStatus::Dread && GetStatusRemaining() > 0.f) ? FMath::Clamp(1.f - StatusMagnitude * 0.5f, 0.2f, 1.f) : 1.f;
 	const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner());
-	return FMath::Min(SlotScale, ASC ? ASC->GetOutgoingAbilityDamageMultiplier() : 1.f);
+	return FMath::Min(SlotScale, ASC ? ASC->GetOutgoingDamageMultiplier() : 1.f);
 }
 
 bool UGOTAHeroAbilityComponent::IsUntargetable() const
@@ -559,7 +560,7 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 	}
 
 	// Interrupt: hit during the wind-up (before the first resolve).
-	if (Def->bInterruptible && NextHitIndex == 0 && Now < CastResolveTime && !bUnbreakable
+	if (Def->bInterruptible && NextHitIndex == 0 && Now < CastResolveTime && !bUnbreakable && !GOTAGAS::HasTag(Owner, GOTATags::Immunity_Interrupt)
 		&& Health < HealthAtCastStart - 0.5f)
 	{
 		CancelCastServer(TEXT("interrupted"));

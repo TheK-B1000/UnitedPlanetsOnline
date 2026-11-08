@@ -13,8 +13,11 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG(Status_Frozen, "GOTA.Status.Frozen");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Stunned, "GOTA.Status.Stunned");
 
-	UE_DEFINE_GAMEPLAY_TAG(Immunity_Slow, "GOTA.Immunity.Slow");
-	UE_DEFINE_GAMEPLAY_TAG(Immunity_Stun, "GOTA.Immunity.Stun");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity, "GOTA.Immunity", "Parent of the effect-aspect immunities a status policy grants.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Slow, "GOTA.Immunity.Slow", "Immune to movement impairment from effects.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Weaken, "GOTA.Immunity.Weaken", "Immune to attack-power reduction from effects.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Stun, "GOTA.Immunity.Stun", "Immune to hard crowd-control effects (not a boss's own staggers).");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Interrupt, "GOTA.Immunity.Interrupt", "Hero-ability casts are not interrupted by damage.");
 
 	UE_DEFINE_GAMEPLAY_TAG(Element_Fire, "GOTA.Element.Fire");
 	UE_DEFINE_GAMEPLAY_TAG(Element_Frost, "GOTA.Element.Frost");
@@ -31,4 +34,5 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Dread, "GameplayCue.GOTA.Status.Dread");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Veiled, "GameplayCue.GOTA.Status.Veiled");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Unbreakable, "GameplayCue.GOTA.Status.Unbreakable");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Resisted, "GameplayCue.GOTA.Resisted");
 }

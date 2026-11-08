@@ -1,0 +1,48 @@
+# Four-player Horde with the Quarry Behemoth: boss resists slows (remote Kairos is told), Dread on the boss is partial,
+# regular enemies still slowed by real Time Lash casts, waves keep going.
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 12
+gota.Boss.Spawn QuarryBehemoth
+wait 2
+gota.Net.Momentum 0 100
+gota.Net.Momentum 1 100
+gota.Net.Momentum 2 100
+gota.Net.Momentum 3 100
+gota.Net.Status b Dread 8 0.35 p2
+gota.Net.Fight 50
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Net.Status b Slowed 2 0.4 p1
+wait 1.5
+gota.Boss.Dump
+wait 28
+gota.Boss.Dump
+gota.Horde.Dump
+gota.Net.Players
+quit

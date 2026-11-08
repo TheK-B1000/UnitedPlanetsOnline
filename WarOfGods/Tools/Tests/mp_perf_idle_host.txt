@@ -1,0 +1,10 @@
+# Controlled replication-cost sample: no wave, nobody fights, 30 enemies walking in from 2600 cm.
+wait 40
+gota.Net.Players
+gota.Net.SpawnEnemies 30 2600
+wait 4
+gota.Net.Perf
+gota.Net.Perf 20
+wait 22
+gota.Net.Players
+quit

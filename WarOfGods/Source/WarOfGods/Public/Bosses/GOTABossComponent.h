@@ -52,6 +52,8 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
 	const UGOTABossDefinition* GetDefinition() const { return Definition.Get(); }
+	/** The replicated reference. Clients only hold it softly, so the asset can be unloaded after the body is built. */
+	const TSoftObjectPtr<UGOTABossDefinition>& GetDefinitionRef() const { return Definition; }
 	int32 GetPhase() const { return Phase; }
 	EGOTABossState GetState() const { return State; }
 	bool IsIntroActive() const { return State == EGOTABossState::Intro; }

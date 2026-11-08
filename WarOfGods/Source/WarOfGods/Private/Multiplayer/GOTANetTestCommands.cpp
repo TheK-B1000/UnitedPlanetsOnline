@@ -921,20 +921,36 @@ namespace GOTANetTest
 	static FAutoConsoleCommand CmdRemote(TEXT("gota.Net.RemoteParry"), TEXT("Client: time StartBlock on the local pawn against the nearest boss. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteParry));
 	static FAutoConsoleCommand CmdDefend(TEXT("gota.Net.RemoteDefend"), TEXT("Client: parry, dodge, or both against the nearest boss. Args: parry|dodge|both [seconds] [lead]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteDefend));
 	/**
-	 * gota.Net.Status <pN|eN> <Status> <seconds> <magnitude>: server, any mode. pN = player N's pawn, eN = the living enemy
-	 * nearest player N. Goes through UGOTAHeroAbilityComponent::ApplyStatus, the path every ability uses (GAS for the four
-	 * migrated statuses). For replication, overlap and cue tests where the fight driver cannot reach a target.
+	 * gota.Net.Status <pN|eN|b> <Status> <seconds> <magnitude> [pM]: server, any mode. pN = player N's pawn, eN = the living
+	 * enemy nearest player N, b = the first living boss. The optional pM makes player M the source (who gets resist
+	 * feedback). Goes through UGOTAHeroAbilityComponent::ApplyStatus, the path every ability uses.
 	 */
 	static void NetStatus(const TArray<FString>& Args)
 	{
 		UWorld* W = GameWorld();
-		if (!W || W->GetNetMode() == NM_Client || Args.Num() < 4 || Args[0].Len() < 2)
+		if (!W || W->GetNetMode() == NM_Client || Args.Num() < 4 || (Args[0] != TEXT("b") && Args[0].Len() < 2))
 		{
 			UE_LOG(LogGOTANet, Warning, TEXT("NET status: server only, args <pN|eN> <Status> <seconds> <magnitude>"));
 			return;
 		}
-		APawn* Player = PlayerPawn(FCString::Atoi(*Args[0].Mid(1)));
-		APawn* Target = Args[0][0] == TEXT('e') ? GOTACombatLive::FindCombatTarget(Player) : Player;
+		APawn* Target = nullptr;
+		if (Args[0] == TEXT("b"))
+		{
+			for (TActorIterator<APawn> It(W); It; ++It)
+			{
+				if (It->FindComponentByClass<UGOTABossComponent>() && !UGOTACombatantObserver::IsCombatantDefeated(*It))
+				{
+					Target = *It;
+					break;
+				}
+			}
+		}
+		else
+		{
+			APawn* Player = PlayerPawn(FCString::Atoi(*Args[0].Mid(1)));
+			Target = Args[0][0] == TEXT('e') ? GOTACombatLive::FindCombatTarget(Player) : Player;
+		}
+		AActor* Source = Args.Num() > 4 && Args[4].StartsWith(TEXT("p")) ? PlayerPawn(FCString::Atoi(*Args[4].Mid(1))) : nullptr;
 		const int64 Value = StaticEnum<EGOTAStatus>()->GetValueByNameString(Args[1]);
 		if (!Target || Value == INDEX_NONE)
 		{
@@ -947,10 +963,46 @@ namespace GOTANetTest
 			A = NewObject<UGOTAHeroAbilityComponent>(Target, TEXT("GOTAHeroAbilities"));
 			A->RegisterComponent();
 		}
-		A->ApplyStatus(static_cast<EGOTAStatus>(Value), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), nullptr);
-		UE_LOG(LogGOTANet, Log, TEXT("NET status %s %s on %s"), *Args[1], *Args[0], *GetNameSafe(Target));
+		A->ApplyStatus(static_cast<EGOTAStatus>(Value), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), Source);
+		UE_LOG(LogGOTANet, Log, TEXT("NET status %s %s on %s from %s"), *Args[1], *Args[0], *GetNameSafe(Target), *GetNameSafe(Source));
 	}
-	static FAutoConsoleCommand CmdStatus(TEXT("gota.Net.Status"), TEXT("Server: apply a status to <pN|eN> (player N / enemy nearest player N): <Status> <seconds> <magnitude>."), FConsoleCommandWithArgsDelegate::CreateStatic(&NetStatus));
+	/**
+	 * gota.Net.SpawnEnemies <count> [radius=2200]: server stress test. Spawns plain BP_Enemy_Melee in a ring around player 0,
+	 * outside the Horde wave director (waves, score and victory are not touched). For replication-cost measurements.
+	 */
+	static void SpawnEnemies(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		APawn* Anchor = PlayerPawn(0);
+		UClass* EnemyClass = LoadClass<APawn>(nullptr, TEXT("/Game/Enemies/MeleeEnemy/BP_Enemy_Melee.BP_Enemy_Melee_C"));
+		if (!W || W->GetNetMode() == NM_Client || !Anchor || !EnemyClass || Args.Num() < 1)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET spawn enemies: server only, needs <count>"));
+			return;
+		}
+		const int32 Count = FMath::Clamp(FCString::Atoi(*Args[0]), 1, 64);
+		const float Radius = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 2200.f;
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		int32 Spawned = 0;
+		for (int32 i = 0; i < Count; ++i)
+		{
+			const FVector Dir = FRotator(0.f, 360.f * i / Count, 0.f).Vector();
+			FVector Loc = Anchor->GetActorLocation() + Dir * Radius;
+			Loc.Z = Anchor->GetActorLocation().Z;
+			if (APawn* Enemy = W->SpawnActor<APawn>(EnemyClass, Loc, (-Dir).Rotation(), Params))
+			{
+				if (!Enemy->GetController())
+				{
+					Enemy->SpawnDefaultController();
+				}
+				++Spawned;
+			}
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("NET spawned %d/%d enemies at radius %.0f"), Spawned, Count, Radius);
+	}
+	static FAutoConsoleCommand CmdSpawnEnemies(TEXT("gota.Net.SpawnEnemies"), TEXT("Server stress test: spawn <count> plain melee enemies around player 0 [radius]."), FConsoleCommandWithArgsDelegate::CreateStatic(&SpawnEnemies));
+	static FAutoConsoleCommand CmdStatus(TEXT("gota.Net.Status"), TEXT("Server: apply a status to <pN|eN|b> (player N / enemy nearest player N / boss): <Status> <seconds> <magnitude> [source pM]."), FConsoleCommandWithArgsDelegate::CreateStatic(&NetStatus));
 	static FAutoConsoleCommand CmdMomentum(TEXT("gota.Net.Momentum"), TEXT("Server: grant Divine Momentum to player <index> [amount=50]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Momentum));
 	static FAutoConsoleCommand CmdCounter(TEXT("gota.Net.Counter"), TEXT("Request Divine Counter on local pawn, or player <index>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Counter));
 	static FAutoConsoleCommand CmdAbility(TEXT("gota.Net.Ability"), TEXT("Activate ability slot on local pawn, or player <index> <slot>."), FConsoleCommandWithArgsDelegate::CreateStatic(&AbilityUse));

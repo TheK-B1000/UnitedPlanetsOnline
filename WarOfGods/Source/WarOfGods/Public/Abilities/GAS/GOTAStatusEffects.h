@@ -28,8 +28,17 @@ class WAROFGODS_API UGOTAStatusGameplayEffect : public UGameplayEffect
 protected:
 	/** Constructor only: native effects must declare their components while the CDO is being built. */
 	void ConfigureStatus(const FGameplayTag& StatusTag, const FGameplayTag& CueTag, const FGameplayTag& ImmunityTag = FGameplayTag());
-	/** Constructor only: multiply Attribute by the SetByCaller value DataTag. */
-	void AddMultiplier(const FGameplayAttribute& Attribute, const FGameplayTag& DataTag);
+	/** Constructor only: multiply Attribute by the SetByCaller value DataTag, unless the target has ImmunityTag. */
+	void AddMultiplier(const FGameplayAttribute& Attribute, const FGameplayTag& DataTag, const FGameplayTag& ImmunityTag);
+};
+
+/** Grants a status policy's immunity tags for the pawn's life (tags come from the spec, so one class serves all). */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_StatusPolicy : public UGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_StatusPolicy();
 };
 
 /** Kairos Time Lash: walk speed x(1 - Magnitude). Blocked by GOTA.Immunity.Slow. */
@@ -83,8 +92,39 @@ public:
 	virtual bool OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
 };
 
+/**
+ * Executed on a target that resisted all or part of a status. Cosmetic: logs on every peer and raises
+ * GOTAGAS::OnStatusResisted, which the local combat-feedback line turns into "QUARRY BEHEMOTH RESISTS SLOW".
+ * RawMagnitude = the status, NormalizedMagnitude = the GOTAGAS::Aspect_* bits, Instigator = who applied it.
+ */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayCue_Resisted : public UGameplayCueNotify_Static
+{
+	GENERATED_BODY()
+
+public:
+	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
+};
+
 namespace GOTAGAS
 {
+	/** What a status does to its target, for policy checks and feedback. */
+	enum EAspect : int32
+	{
+		Aspect_Movement = 1,  // walk speed (GOTA.Immunity.Slow)
+		Aspect_Weaken = 2,    // outgoing damage (GOTA.Immunity.Weaken)
+		Aspect_Reduced = 4,   // a resistance rule shortened or weakened it
+		Aspect_Whole = 8,     // nothing was applied
+	};
+	int32 AspectsOf(EGOTAStatus Status);
+
+	/** Any peer, local: a status was resisted on Target (from the Resisted cue). */
+	DECLARE_MULTICAST_DELEGATE_FourParams(FOnStatusResisted, AActor* /*Target*/, EGOTAStatus /*Status*/, int32 /*Aspects*/, AActor* /*Instigator*/);
+	extern WAROFGODS_API FOnStatusResisted OnStatusResisted;
+
+	/** Any peer: does the actor's ASC carry Tag (tags replicate to everyone)? */
+	bool HasTag(const AActor* Actor, const FGameplayTag& Tag);
+
 	/** True for statuses GAS applies (see the plan's migration order). */
 	bool OwnsStatus(EGOTAStatus Status);
 

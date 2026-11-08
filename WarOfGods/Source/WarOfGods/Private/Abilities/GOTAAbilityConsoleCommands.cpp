@@ -5,6 +5,7 @@
 #include "Arenas/Duel/DuelGameMode.h"
 #include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Abilities/GAS/GOTAAbilitySystemComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "HAL/IConsoleManager.h"
@@ -81,6 +82,11 @@ namespace GOTAAbilityTest
 			UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY f%d %s hp=%.1f/%.1f momentum=%.0f at=%s %s"), F, *GetNameSafe(Pawn), V.Health, V.MaxHealth,
 				Stats ? Stats->GetDivineMomentum() : -1.f, Pawn ? *Pawn->GetActorLocation().ToCompactString() : TEXT("-"),
 				A ? *A->DescribeState() : TEXT("(no abilities)"));
+			if (const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Pawn))
+			{
+				UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY f%d gas=[%s] immune=[%s] walkx=%.2f dmgx=%.2f"), F, *ASC->DescribeStatusEffects(),
+					*ASC->DescribeImmunities(), ASC->GetMoveSpeedMultiplier(), ASC->GetOutgoingDamageMultiplier());
+			}
 			if (const ACharacter* Char = Cast<ACharacter>(Pawn))
 			{
 				const UGOTAHeroBodyComponent* BodyComp = Char->FindComponentByClass<UGOTAHeroBodyComponent>();

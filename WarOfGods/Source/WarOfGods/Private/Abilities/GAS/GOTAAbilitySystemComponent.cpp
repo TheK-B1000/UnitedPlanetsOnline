@@ -110,6 +110,43 @@ void UGOTAAbilitySystemComponent::HandleOwnerDied(const FCombatActorEvent& Event
 	ClearStatusEffects(TEXT("death"));
 }
 
+void UGOTAAbilitySystemComponent::ApplyStatusPolicy(const FGOTAStatusPolicy& InPolicy, FName PolicyOwner)
+{
+	if (!IsOwnerActorAuthoritative())
+	{
+		return;
+	}
+	if (PolicyHandle.IsValid())
+	{
+		RemoveActiveGameplayEffect(PolicyHandle);
+		PolicyHandle.Invalidate();
+	}
+	Policy = InPolicy;
+	if (!Policy.Immunities.IsEmpty())
+	{
+		const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(UGOTAGameplayEffect_StatusPolicy::StaticClass(), 1.f, MakeEffectContext());
+		if (Spec.IsValid())
+		{
+			Spec.Data->DynamicGrantedTags.AppendTags(Policy.Immunities);
+			PolicyHandle = ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+		}
+	}
+	UE_LOG(LogGOTAGAS, Log, TEXT("%s: status policy %s immune=[%s] resistances=%d"), *GetNameSafe(GetOwner()), *PolicyOwner.ToString(),
+		*DescribeImmunities(), Policy.Resistances.Num());
+}
+
+FString UGOTAAbilitySystemComponent::DescribeImmunities() const
+{
+	FGameplayTagContainer Owned;
+	GetOwnedGameplayTags(Owned);
+	FString Out;
+	for (const FGameplayTag& Tag : Owned.Filter(FGameplayTagContainer(GOTATags::Immunity)))
+	{
+		Out += (Out.IsEmpty() ? TEXT("") : TEXT(" ")) + Tag.GetTagName().ToString().RightChop(14); // drop "GOTA.Immunity."
+	}
+	return Out;
+}
+
 float UGOTAAbilitySystemComponent::ReadMultiplier(const FGameplayAttribute& Attribute) const
 {
 	if (!GetSet<UGOTACombatAttributeSet>())
@@ -124,9 +161,9 @@ float UGOTAAbilitySystemComponent::GetMoveSpeedMultiplier() const
 	return ReadMultiplier(UGOTACombatAttributeSet::GetMoveSpeedMultiplierAttribute());
 }
 
-float UGOTAAbilitySystemComponent::GetOutgoingAbilityDamageMultiplier() const
+float UGOTAAbilitySystemComponent::GetOutgoingDamageMultiplier() const
 {
-	return ReadMultiplier(UGOTACombatAttributeSet::GetOutgoingAbilityDamageMultiplierAttribute());
+	return ReadMultiplier(UGOTACombatAttributeSet::GetOutgoingDamageMultiplierAttribute());
 }
 
 int32 UGOTAAbilitySystemComponent::ClearStatusEffects(const TCHAR* Why)

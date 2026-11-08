@@ -16,6 +16,12 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTACombatBootstrap, Log, All);
 
+// Default 0: measured on 2026-11-08, an idle ability system on 34 extra Horde enemies cost ~95 KB per 20 s of host
+// upload (+31%) and ~1.5 ms host frame time. Plain enemies get one from GOTAGAS::ApplyStatus on their first status.
+static TAutoConsoleVariable<int32> CVarGOTAEnemyASC(TEXT("gota.GAS.EnemyASC"), 0,
+	TEXT("1 = every AI combatant gets its ability system at spawn. 0 (default) = plain AI enemies get one only when a ")
+	TEXT("status first lands. Players and bosses always get one at spawn."));
+
 void UCombatBootstrapSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -172,7 +178,11 @@ UStatsComponent* UCombatBootstrapSubsystem::EnsureReplicatedVitals(APawn* Pawn)
 	}
 	Stats->BeginObservingBlueprintDamage();
 	// Every combatant gets its ability system here, after its stats (the ASC clears statuses on Stats->OnDied).
-	UGOTAAbilitySystemComponent::EnsureOnPawn(Pawn);
+	// With gota.GAS.EnemyASC 0, plain AI waits until GOTAGAS::ApplyStatus needs one; bosses get theirs from ApplyToPawn.
+	if (CVarGOTAEnemyASC.GetValueOnGameThread() != 0 || Pawn->IsPlayerControlled())
+	{
+		UGOTAAbilitySystemComponent::EnsureOnPawn(Pawn);
+	}
 	return Stats;
 }
 

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
 #include "Events/CombatEvents.h"
+#include "Abilities/GAS/GOTAStatusPolicy.h"
 #include "GOTAAbilitySystemComponent.generated.h"
 
 class APawn;
@@ -43,9 +44,19 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	/**
+	 * Server: grant a status policy for this pawn's life. Immunities become tags (an infinite effect, so clients and
+	 * the HUD see them); resistances are kept here for GOTAGAS::ApplyStatus. Replaces any earlier policy.
+	 */
+	void ApplyStatusPolicy(const FGOTAStatusPolicy& Policy, FName PolicyOwner);
+	/** Server: the resistance rule for Status from the current policy, if any. */
+	const FGOTAStatusResistance* FindStatusResistance(EGOTAStatus Status) const { return Policy.FindResistance(Status); }
+	/** "Slow Stun" for the GOTA.Immunity.* tags this actor carries on this peer; empty when none. */
+	FString DescribeImmunities() const;
+
 	/** Combat AttributeSet values, or 1 when the set has not replicated yet. Clamped to the attribute's range. */
 	float GetMoveSpeedMultiplier() const;
-	float GetOutgoingAbilityDamageMultiplier() const;
+	float GetOutgoingDamageMultiplier() const;
 
 	/** Server: remove every effect that grants a GOTA.Status tag (death, round reset, test reset). */
 	int32 ClearStatusEffects(const TCHAR* Why = TEXT("reset"));
@@ -64,4 +75,7 @@ protected:
 	float ReadMultiplier(const FGameplayAttribute& Attribute) const;
 
 	bool bServerEventsBound = false;
+	/** Server: the current status policy and the effect that grants its immunity tags. */
+	FGOTAStatusPolicy Policy;
+	FActiveGameplayEffectHandle PolicyHandle;
 };

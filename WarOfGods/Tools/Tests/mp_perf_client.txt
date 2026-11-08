@@ -1,0 +1,7 @@
+wait 22
+gota.Net.Fight 75
+wait 30
+gota.Net.Perf
+gota.Net.Perf 30
+wait 50
+quit

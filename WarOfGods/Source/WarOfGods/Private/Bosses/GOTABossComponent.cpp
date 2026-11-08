@@ -1,6 +1,8 @@
 // White Tiger Studios 2024
 
 #include "Bosses/GOTABossComponent.h"
+#include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAGameplayTags.h"
 #include "AIController.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
@@ -46,6 +48,12 @@ UGOTABossComponent::UGOTABossComponent()
 	SetIsReplicatedByDefault(true);
 }
 
+UGOTABossDefinition::UGOTABossDefinition()
+{
+	StatusPolicy.Immunities.AddTag(GOTATags::Immunity_Slow);
+	StatusPolicy.Immunities.AddTag(GOTATags::Immunity_Stun);
+}
+
 UGOTABossComponent* UGOTABossComponent::ApplyToPawn(APawn* Pawn, UGOTABossDefinition* InDefinition)
 {
 	if (!Pawn || !InDefinition || !Pawn->HasAuthority())
@@ -63,6 +71,10 @@ UGOTABossComponent* UGOTABossComponent::ApplyToPawn(APawn* Pawn, UGOTABossDefini
 	Comp->ApplyBody();
 	Comp->CooldownUntil.Init(0.0, InDefinition->Attacks.Num());
 	UE_LOG(LogGOTABoss, Log, TEXT("Boss %s configured on %s (%d attacks)"), *InDefinition->BossId.ToString(), *GetNameSafe(Pawn), InDefinition->Attacks.Num());
+	if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::EnsureOnPawn(Pawn))
+	{
+		ASC->ApplyStatusPolicy(InDefinition->StatusPolicy, InDefinition->BossId);
+	}
 	return Comp;
 }
 
@@ -755,6 +767,11 @@ bool UGOTABossComponent::DamageTarget(APawn* Target, const FGOTABossAttack& A, f
 			FVector::Dist2D(Target->GetActorLocation(), GetOwner()->GetActorLocation()));
 	}
 	// A parry there reaches us through the challenger's UGOTADuelFighterComponent::HandleBlocked -> NotifyParried.
+	// Weakening effects on the boss (Dread) scale its attacks here, once, before the victim's damage system.
+	if (const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner()))
+	{
+		Amount *= ASC->GetOutgoingDamageMultiplier();
+	}
 	const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Target, GetOwner(), Amount, A.bCanBeBlocked, A.bCanBeBlocked && A.bCanBeParried, A.HitResponse);
 	UE_LOG(LogGOTABoss, Log, TEXT("Boss %s hit %s for %.1f (landed=%d)"), *A.AttackId.ToString(), *GetNameSafe(Target), Amount, bLanded ? 1 : 0);
 	return bLanded;
