@@ -4,17 +4,24 @@
 
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
 #include "Abilities/GAS/GOTACombatAttributeSet.h"
+#include "Abilities/GAS/GOTAElements.h"
 #include "Abilities/GAS/GOTAGameplayTags.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "AbilitySystemGlobals.h"
+#include "Arenas/Duel/GOTADuelCombat.h"
 #include "Characters/GOTAHeroBodyComponent.h"
+#include "Combat/GOTACombatLive.h"
+#include "Combat/GOTACombatantObserver.h"
 #include "GameFramework/Character.h"
 #include "GameplayCueManager.h"
 #include "GameplayCueSet.h"
 #include "GameplayEffectComponents/TargetTagRequirementsGameplayEffectComponent.h"
 #include "GameplayEffectComponents/TargetTagsGameplayEffectComponent.h"
 #include "GameplayEffectComponents/AssetTagsGameplayEffectComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemComponent.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GOTAStatusEffects)
 
@@ -27,9 +34,12 @@ namespace
 		EGOTAStatus Status;
 		const FNativeGameplayTag& Tag;
 		const FNativeGameplayTag& CueTag;
-		/** Overlay materials authored by Tools/GOTA_BuildHeroAbilities.py. A missing asset just means no overlay. */
+		/** Overlay materials authored by Tools/GOTA_BuildHeroAbilities.py. Null or a missing asset means no overlay. */
 		const TCHAR* OverlayPath;
 	};
+
+	/** Marks the one looping status effect component a burning actor carries. */
+	const FName BurnFXTag(TEXT("GOTA_BurnFX"));
 
 	// Overlay priority order: the first active entry wins the body's single overlay slot.
 	const FStatusInfo Statuses[] = {
@@ -37,6 +47,8 @@ namespace
 		{ EGOTAStatus::Unbreakable, GOTATags::Status_Unbreakable, GOTATags::Cue_Status_Unbreakable, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Unbreakable.M_GOTA_Overlay_Unbreakable") },
 		{ EGOTAStatus::Dread, GOTATags::Status_Dread, GOTATags::Cue_Status_Dread, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Dread.M_GOTA_Overlay_Dread") },
 		{ EGOTAStatus::Slowed, GOTATags::Status_Slowed, GOTATags::Cue_Status_Slowed, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Slowed.M_GOTA_Overlay_Slowed") },
+		// Burning shows as attached flames (UGOTAGameplayCue_Burning), not as an overlay, so it never hides another status.
+		{ EGOTAStatus::Burning, GOTATags::Status_Burning, GOTATags::Cue_Status_Burning, nullptr },
 	};
 
 	const FStatusInfo* Info(EGOTAStatus Status)
@@ -72,6 +84,7 @@ namespace
 		case EGOTAStatus::Dread: return UGOTAGameplayEffect_Dread::StaticClass();
 		case EGOTAStatus::Veiled: return UGOTAGameplayEffect_Veiled::StaticClass();
 		case EGOTAStatus::Unbreakable: return UGOTAGameplayEffect_Unbreakable::StaticClass();
+		case EGOTAStatus::Burning: return UGOTAGameplayEffect_Burning::StaticClass();
 		default: return nullptr;
 		}
 	}
@@ -105,11 +118,62 @@ namespace
 		}
 		return Char->GetMesh();
 	}
+
+	UParticleSystemComponent* FindBurnFX(const AActor* Actor)
+	{
+		TInlineComponentArray<UParticleSystemComponent*> Found(Actor);
+		for (UParticleSystemComponent* PSC : Found)
+		{
+			if (PSC && PSC->ComponentHasTag(BurnFXTag))
+			{
+				return PSC;
+			}
+		}
+		return nullptr;
+	}
+
+	/** One looping flame per burning actor, however many times the cue arrives. Owned by the actor, so it dies with it. */
+	void EnsureBurnFX(AActor* Actor)
+	{
+		if (!Actor || Actor->GetNetMode() == NM_DedicatedServer || FindBurnFX(Actor))
+		{
+			return;
+		}
+		const FGOTAElementDef* Element = UGOTAElementSettings::FindByStatus(EGOTAStatus::Burning);
+		UParticleSystem* FX = Element ? Element->StatusFX.LoadSynchronous() : nullptr;
+		if (!FX || !Actor->GetRootComponent())
+		{
+			UE_LOG(LogGOTAStatus, Warning, TEXT("burn fx missing for %s (element StatusFX not set or not cooked)"), *GetNameSafe(Actor));
+			return;
+		}
+		// The root (capsule centre) rather than the mesh: chest height on every body, and unaffected by mesh scale.
+		if (UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAttached(FX, Actor->GetRootComponent(), NAME_None, FVector::ZeroVector,
+			FRotator::ZeroRotator, FVector(Element->StatusFXScale), EAttachLocation::KeepRelativeOffset, false))
+		{
+			PSC->ComponentTags.Add(BurnFXTag);
+			UE_LOG(LogGOTAStatus, Log, TEXT("burn fx %s on %s"), *GetNameSafe(FX), *GetNameSafe(Actor));
+		}
+	}
+
+	void RemoveBurnFX(AActor* Actor)
+	{
+		while (UParticleSystemComponent* PSC = Actor ? FindBurnFX(Actor) : nullptr)
+		{
+			PSC->ComponentTags.Remove(BurnFXTag);
+			PSC->DeactivateSystem();
+			PSC->DestroyComponent();
+			UE_LOG(LogGOTAStatus, Log, TEXT("burn fx removed from %s"), *GetNameSafe(Actor));
+		}
+	}
+
+	int32 StatusDamageTicks = 0;
+	float StatusDamageTotal = 0.f;
 }
 
 // ============================================================================ effects
 
-void UGOTAStatusGameplayEffect::ConfigureStatus(const FGameplayTag& StatusTag, const FGameplayTag& CueTag, const FGameplayTag& ImmunityTag)
+void UGOTAStatusGameplayEffect::ConfigureStatus(const FGameplayTag& StatusTag, const FGameplayTag& CueTag, const FGameplayTag& ImmunityTag,
+	const FGameplayTag& ElementTag)
 {
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
 	FSetByCallerFloat DurationCaller;
@@ -136,6 +200,10 @@ void UGOTAStatusGameplayEffect::ConfigureStatus(const FGameplayTag& StatusTag, c
 
 	FInheritedTagContainer Asset;
 	Asset.Added.AddTag(StatusTag);
+	if (ElementTag.IsValid())
+	{
+		Asset.Added.AddTag(ElementTag); // the damage type, for future per-element resistances
+	}
 	UAssetTagsGameplayEffectComponent* AssetTags = CreateDefaultSubobject<UAssetTagsGameplayEffectComponent>(TEXT("AssetTags"));
 	GEComponents.Add(AssetTags);
 	AssetTags->SetAndApplyAssetTagChanges(Asset);
@@ -190,12 +258,42 @@ UGOTAGameplayEffect_Unbreakable::UGOTAGameplayEffect_Unbreakable()
 	ConfigureStatus(GOTATags::Status_Unbreakable, GOTATags::Cue_Status_Unbreakable);
 }
 
+UGOTAGameplayEffect_Burning::UGOTAGameplayEffect_Burning()
+{
+	ConfigureStatus(GOTATags::Status_Burning, GOTATags::Cue_Status_Burning, GOTATags::Immunity_Burn, GOTATags::Element_Fire);
+	// Periodic. The spec overrides the period with the element's TickInterval (GOTAGAS::ApplyStatus).
+	Period.SetValue(1.f);
+	bExecutePeriodicEffectOnApplication = false; // no free tick the moment it lands
+	// Re-application refreshes the duration but keeps the running tick timer: the damage rate cannot be raised or
+	// starved by re-applying faster than the period.
+	StackPeriodResetPolicy = EGameplayEffectStackingPeriodPolicy::NeverReset;
+	FGameplayEffectExecutionDefinition Tick;
+	Tick.CalculationClass = UGOTABurnTickExecution::StaticClass();
+	Executions.Add(Tick);
+}
+
+void UGOTABurnTickExecution::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
+	FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
+{
+	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
+	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
+	APawn* Victim = TargetASC ? Cast<APawn>(TargetASC->GetOwner()) : nullptr;
+	if (!Victim || !Victim->HasAuthority())
+	{
+		return;
+	}
+	// The instigator is whoever applied (or last refreshed) the effect; null once that pawn is gone.
+	GOTAGAS::DealStatusDamage(Victim, Spec.GetContext().GetInstigator(), Spec.GetSetByCallerMagnitude(GOTATags::Data_TickDamage, false, 0.f),
+		EGOTAStatus::Burning, GOTATags::Element_Fire);
+}
+
 // ============================================================================ overlay cue
 
 bool UGOTAGameplayCue_StatusOverlay::OnActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
 {
 	UE_LOG(LogGOTAStatus, Log, TEXT("cue %s on %s"), *Parameters.MatchedTagName.ToString(), *GetNameSafe(MyTarget));
 	GOTAGAS::RefreshStatusOverlay(MyTarget, StatusForCue(Parameters));
+	GOTAGAS::OnStatusCue.Broadcast(MyTarget, StatusForCue(Parameters), true);
 	return true;
 }
 
@@ -204,6 +302,7 @@ bool UGOTAGameplayCue_StatusOverlay::WhileActive_Implementation(AActor* MyTarget
 	// A replicated effect can reach a client as WhileActive only (no OnActive), so this logs the same way.
 	UE_LOG(LogGOTAStatus, Log, TEXT("cue %s on %s (while active)"), *Parameters.MatchedTagName.ToString(), *GetNameSafe(MyTarget));
 	GOTAGAS::RefreshStatusOverlay(MyTarget, StatusForCue(Parameters));
+	GOTAGAS::OnStatusCue.Broadcast(MyTarget, StatusForCue(Parameters), true);
 	return true;
 }
 
@@ -211,7 +310,28 @@ bool UGOTAGameplayCue_StatusOverlay::OnRemove_Implementation(AActor* MyTarget, c
 {
 	UE_LOG(LogGOTAStatus, Log, TEXT("cue %s removed from %s"), *Parameters.MatchedTagName.ToString(), *GetNameSafe(MyTarget));
 	GOTAGAS::RefreshStatusOverlay(MyTarget, EGOTAStatus::None, StatusForCue(Parameters));
+	GOTAGAS::OnStatusCue.Broadcast(MyTarget, StatusForCue(Parameters), false);
 	return true;
+}
+
+// ============================================================================ burning cue
+
+bool UGOTAGameplayCue_Burning::OnActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
+{
+	EnsureBurnFX(MyTarget);
+	return Super::OnActive_Implementation(MyTarget, Parameters);
+}
+
+bool UGOTAGameplayCue_Burning::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
+{
+	EnsureBurnFX(MyTarget);
+	return Super::WhileActive_Implementation(MyTarget, Parameters);
+}
+
+bool UGOTAGameplayCue_Burning::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
+{
+	RemoveBurnFX(MyTarget);
+	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }
 
 // ============================================================================ resisted cue
@@ -232,6 +352,8 @@ bool UGOTAGameplayCue_Resisted::OnExecute_Implementation(AActor* MyTarget, const
 namespace GOTAGAS
 {
 	FOnStatusResisted OnStatusResisted;
+	FOnStatusCue OnStatusCue;
+	FOnStatusDamage OnStatusDamage;
 
 	int32 AspectsOf(EGOTAStatus Status)
 	{
@@ -239,6 +361,7 @@ namespace GOTAGAS
 		{
 		case EGOTAStatus::Slowed: return Aspect_Movement;
 		case EGOTAStatus::Dread: return Aspect_Movement | Aspect_Weaken;
+		case EGOTAStatus::Burning: return Aspect_Burn;
 		default: return 0;
 		}
 	}
@@ -252,7 +375,9 @@ namespace GOTAGAS
 	bool OwnsStatus(EGOTAStatus Status)
 	{
 		// Migration order (one status per verified step): Slowed, Dread, Veiled, Unbreakable.
-		return Status == EGOTAStatus::Slowed || Status == EGOTAStatus::Dread || Status == EGOTAStatus::Veiled || Status == EGOTAStatus::Unbreakable;
+		// Burning has only ever been a gameplay effect.
+		return Status == EGOTAStatus::Slowed || Status == EGOTAStatus::Dread || Status == EGOTAStatus::Veiled || Status == EGOTAStatus::Unbreakable
+			|| Status == EGOTAStatus::Burning;
 	}
 
 	bool ApplyStatus(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)
@@ -281,6 +406,10 @@ namespace GOTAGAS
 		{
 			Blocked |= Aspect_Weaken;
 		}
+		if ((Aspects & Aspect_Burn) && ASC->HasMatchingGameplayTag(GOTATags::Immunity_Burn))
+		{
+			Blocked |= Aspect_Burn;
+		}
 		bool bWhole = Aspects != 0 && Blocked == Aspects;
 		if (const FGOTAStatusResistance* Rule = ASC->FindStatusResistance(Status))
 		{
@@ -298,9 +427,10 @@ namespace GOTAGAS
 		if (bWhole || Blocked != 0)
 		{
 			const int32 Report = Blocked | (bWhole ? Aspect_Whole : 0);
-			UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s resisted (%s%s%s%s) from %s"), *GetNameSafe(Victim), *Name,
+			UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s resisted (%s%s%s%s%s) from %s"), *GetNameSafe(Victim), *Name,
 				bWhole ? TEXT("whole ") : TEXT(""), (Report & Aspect_Movement) ? TEXT("movement ") : TEXT(""),
-				(Report & Aspect_Weaken) ? TEXT("weaken ") : TEXT(""), (Report & Aspect_Reduced) ? TEXT("reduced") : TEXT(""), *GetNameSafe(Source));
+				(Report & Aspect_Weaken) ? TEXT("weaken ") : TEXT(""), (Report & Aspect_Burn) ? TEXT("burn ") : TEXT(""),
+				(Report & Aspect_Reduced) ? TEXT("reduced") : TEXT(""), *GetNameSafe(Source));
 			FGameplayCueParameters Feedback;
 			Feedback.RawMagnitude = static_cast<float>(Status);
 			Feedback.NormalizedMagnitude = static_cast<float>(Report);
@@ -331,6 +461,18 @@ namespace GOTAGAS
 			(Blocked & Aspect_Movement) ? 1.f : FMath::Clamp(1.f - Magnitude, UGOTACombatAttributeSet::MinMultiplier, 1.f));
 		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_DamageMultiplier,
 			(Blocked & Aspect_Weaken) ? 1.f : FMath::Clamp(1.f - Magnitude * 0.5f, UGOTACombatAttributeSet::MinMultiplier, 1.f));
+		// Damage over time: Magnitude is damage per second; the element row gives the tick interval.
+		float TickInterval = 0.f;
+		float TickDamage = 0.f;
+		const bool bRefresh = HasStatus(Victim, Status);
+		if (Status == EGOTAStatus::Burning)
+		{
+			const FGOTAElementDef* Element = UGOTAElementSettings::FindByStatus(Status);
+			TickInterval = FMath::Max(Element ? Element->TickInterval : 1.f, 0.1f);
+			TickDamage = Magnitude * TickInterval;
+			Spec.Data->Period = TickInterval;
+			Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_TickDamage, TickDamage);
+		}
 		const FActiveGameplayEffectHandle Handle = ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 		if (!Handle.WasSuccessfullyApplied())
 		{
@@ -340,7 +482,44 @@ namespace GOTAGAS
 		// Same leading wording as the ability component's slot log, so the regression suite reads both.
 		UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s %.1fs x%.2f (from %s) [GAS walk x%.2f dmg x%.2f]"), *GetNameSafe(Victim), *Name, Duration, Magnitude,
 			*GetNameSafe(Source), ASC->GetMoveSpeedMultiplier(), ASC->GetOutgoingDamageMultiplier());
+		if (TickInterval > 0.f)
+		{
+			UE_LOG(LogGOTAStatus, Log, TEXT("%s: %s %s: %.1f per tick every %.2fs for %.1fs, owner %s"), *GetNameSafe(Victim), *Name,
+				bRefresh ? TEXT("refreshed") : TEXT("applied"), TickDamage, TickInterval, Duration, *GetNameSafe(Source));
+		}
 		return true;
+	}
+
+	float DealStatusDamage(APawn* Victim, AActor* Instigator, float Amount, EGOTAStatus Status, const FGameplayTag& Element)
+	{
+		if (!Victim || !Victim->HasAuthority() || Amount <= 0.f || UGOTACombatantObserver::IsCombatantDefeated(Victim)
+			|| !GOTACombatLive::IsCombatLive(Victim->GetWorld()))
+		{
+			return 0.f;
+		}
+		const float Before = UGOTACombatantObserver::ReadVitals(Victim).Health;
+		// "None" response and no forced interrupt: a tick is not a hit, so it must not stagger or cancel an attack.
+		const double Started = FPlatformTime::Seconds();
+		const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Victim, Instigator, Amount, false, false, TEXT("None"), false);
+		const double DamageMs = (FPlatformTime::Seconds() - Started) * 1000.0; // the Blueprint damage call alone, for Horde load checks
+		const float After = UGOTACombatantObserver::ReadVitals(Victim).Health;
+		const float Dealt = FMath::Max(0.f, Before - After);
+		++StatusDamageTicks;
+		StatusDamageTotal += Dealt;
+		UE_LOG(LogGOTAStatus, Log, TEXT("%s: %s tick on %s for %.1f (landed=%d) hp %.1f -> %.1f [%s] %.2fms"), *GetNameSafe(Instigator),
+			*StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Status)), *GetNameSafe(Victim), Amount, bLanded ? 1 : 0, Before, After,
+			*Element.ToString(), DamageMs);
+		if (Dealt > 0.f)
+		{
+			// Hit-driven rules (cast interrupt, "hit landed" momentum) watch health, so tell them this was not a hit.
+			OnStatusDamage.Broadcast(Victim, Dealt);
+		}
+		return Dealt;
+	}
+
+	FStatusDamageStats GetStatusDamageStats()
+	{
+		return { StatusDamageTicks, StatusDamageTotal };
 	}
 
 	bool HasStatus(const AActor* Actor, EGOTAStatus Status)
@@ -404,7 +583,8 @@ namespace GOTAGAS
 		TArray<TPair<FGameplayTag, UClass*>> Wanted;
 		for (const FStatusInfo& Entry : Statuses)
 		{
-			Wanted.Emplace(Entry.CueTag.GetTag(), UGOTAGameplayCue_StatusOverlay::StaticClass());
+			Wanted.Emplace(Entry.CueTag.GetTag(), Entry.Status == EGOTAStatus::Burning
+				? UGOTAGameplayCue_Burning::StaticClass() : UGOTAGameplayCue_StatusOverlay::StaticClass());
 		}
 		Wanted.Emplace(GOTATags::Cue_Resisted.GetTag(), UGOTAGameplayCue_Resisted::StaticClass());
 		TArray<FGameplayCueReferencePair> Missing;

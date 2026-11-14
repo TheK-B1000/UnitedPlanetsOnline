@@ -95,6 +95,17 @@ public:
 
 	/** Server: apply a status to this fighter (used by the opponent's abilities too). */
 	void ApplyStatus(EGOTAStatus Status, float Duration, float Magnitude, AActor* Source);
+	/**
+	 * Server: Whose just lost Amount health to something that is not a hit (a status tick; GOTAGAS::OnStatusDamage).
+	 * If Whose is this fighter, the loss does not interrupt its cast; if it is the opponent this AI tracks, it earns
+	 * no "hit landed" momentum.
+	 */
+	void IgnoreHealthLoss(const APawn* Whose, float Amount);
+	/**
+	 * Server: apply a status to any combatant, the way abilities do. Creates the victim's ability component only when
+	 * the status needs one (walk speed, refund, targeting); Burning does not.
+	 */
+	static void ApplyStatusTo(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source);
 	/** Server: end casts, statuses and timers (round reset / death). */
 	void ResetAbilities(bool bClearCooldowns);
 
@@ -143,6 +154,10 @@ protected:
 	// Effect helpers (server)
 	int32 DamageInArc(const FGOTAAbilityDef& Def, float Range, float ArcDegrees, float Radius, bool bCenteredOnCaster, TArray<APawn*>& OutHit);
 	bool DealDamage(APawn* Victim, const FGOTAAbilityDef& Def, float Amount);
+	/** Server: after Def's damage landed on Victim, apply its element's status (Fire: Burning) if the ability inflicts one. */
+	void ApplyElementStatus(APawn* Victim, const FGOTAAbilityDef& Def);
+	/** Server: the fighter's ability component, created if missing (statuses need one to tick walk speed). */
+	static UGOTAHeroAbilityComponent* EnsureOn(APawn* Pawn);
 	void Knockback(APawn* Victim, float Speed, float Up);
 	bool FindTeleportDestination(APawn* Target, float Range, FVector& OutLocation, FRotator& OutRotation) const;
 	bool HasLineOfSight(const AActor* A, const AActor* B) const;

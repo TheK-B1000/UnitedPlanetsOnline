@@ -1,0 +1,69 @@
+# Legitimate five-wave Horde attempt: four players fight with melee and real abilities (both Drakons ignite). No kill,
+# wave or outcome is injected; SkipPrep only ends the opening preparation timer. The run records how far it gets.
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 30
+gota.Net.Fight 1500
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+gota.Net.Players
+quit

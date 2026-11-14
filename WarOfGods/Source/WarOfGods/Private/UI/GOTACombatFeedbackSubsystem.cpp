@@ -56,6 +56,32 @@ void UGOTACombatFeedbackWidget::EnsureLayout()
 		LineSlot->SetAnchors(FAnchors(0.5f, 0.2f));
 		LineSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 	}
+	// Status indicator: above the ability bar, below the centre of the screen. Hidden until a status event shows it.
+	StatusLine = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("FeedbackStatus"));
+	Font.Size = 18;
+	StatusLine->SetFont(Font);
+	StatusLine->SetShadowOffset(FVector2D(1.5f, 1.5f));
+	StatusLine->SetShadowColorAndOpacity(FLinearColor(0.f, 0.f, 0.f, 0.8f));
+	StatusLine->SetJustification(ETextJustify::Center);
+	StatusLine->SetVisibility(ESlateVisibility::Collapsed);
+	if (UCanvasPanelSlot* StatusSlot = Root->AddChildToCanvas(StatusLine))
+	{
+		StatusSlot->SetAutoSize(true);
+		StatusSlot->SetAnchors(FAnchors(0.5f, 0.78f));
+		StatusSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+	}
+}
+
+void UGOTACombatFeedbackWidget::SetStatus(const FText& Text, const FLinearColor& Color)
+{
+	EnsureLayout();
+	if (!StatusLine)
+	{
+		return;
+	}
+	StatusLine->SetText(Text);
+	StatusLine->SetColorAndOpacity(FSlateColor(Color));
+	StatusLine->SetVisibility(Text.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
 }
 
 void UGOTACombatFeedbackWidget::Show(const FText& Text, const FLinearColor& Color, float Seconds)
@@ -87,22 +113,24 @@ void UGOTACombatFeedbackSubsystem::Initialize(FSubsystemCollectionBase& Collecti
 {
 	Super::Initialize(Collection);
 	ResistedHandle = GOTAGAS::OnStatusResisted.AddUObject(this, &UGOTACombatFeedbackSubsystem::HandleStatusResisted);
+	StatusCueHandle = GOTAGAS::OnStatusCue.AddUObject(this, &UGOTACombatFeedbackSubsystem::HandleStatusCue);
 }
 
 void UGOTACombatFeedbackSubsystem::Deinitialize()
 {
 	GOTAGAS::OnStatusResisted.Remove(ResistedHandle);
+	GOTAGAS::OnStatusCue.Remove(StatusCueHandle);
 	Super::Deinitialize();
 }
 
-void UGOTACombatFeedbackSubsystem::ShowMessage(const FText& Text, const FLinearColor& Color, float Seconds)
+UGOTACombatFeedbackWidget* UGOTACombatFeedbackSubsystem::EnsureWidget()
 {
 	ULocalPlayer* LP = GetLocalPlayer();
 	UWorld* World = LP ? LP->GetWorld() : nullptr;
 	APlayerController* PC = LP ? LP->GetPlayerController(World) : nullptr;
 	if (!PC)
 	{
-		return;
+		return nullptr;
 	}
 	// The viewport is cleared on every map change, so a widget from an earlier world is rebuilt.
 	if (!Widget || !Widget->IsInViewport() || Widget->GetWorld() != World)
@@ -113,11 +141,71 @@ void UGOTACombatFeedbackSubsystem::ShowMessage(const FText& Text, const FLinearC
 			Widget->AddToViewport(50);
 		}
 	}
-	if (Widget)
+	return Widget;
+}
+
+void UGOTACombatFeedbackSubsystem::ShowMessage(const FText& Text, const FLinearColor& Color, float Seconds)
+{
+	if (UGOTACombatFeedbackWidget* Live = EnsureWidget())
 	{
-		Widget->Show(Text, Color, Seconds);
+		Live->Show(Text, Color, Seconds);
+		UE_LOG(LogGOTAFeedback, Log, TEXT("FEEDBACK %s"), *Text.ToString());
 	}
-	UE_LOG(LogGOTAFeedback, Log, TEXT("FEEDBACK %s"), *Text.ToString());
+}
+
+void UGOTACombatFeedbackSubsystem::SetBurningIndicator(AActor* Pawn)
+{
+	if (AActor* Old = BurningPawn.Get(); Old && Old != Pawn)
+	{
+		Old->OnDestroyed.RemoveDynamic(this, &UGOTACombatFeedbackSubsystem::HandleStatusPawnDestroyed);
+	}
+	const bool bWasOn = BurningPawn.IsValid();
+	BurningPawn = Pawn;
+	if (Pawn)
+	{
+		Pawn->OnDestroyed.AddUniqueDynamic(this, &UGOTACombatFeedbackSubsystem::HandleStatusPawnDestroyed);
+	}
+	UGOTACombatFeedbackWidget* Live = (Pawn || bWasOn) ? EnsureWidget() : nullptr;
+	if (Live)
+	{
+		Live->SetStatus(Pawn ? NSLOCTEXT("GOTA", "StatusBurning", "BURNING") : FText::GetEmpty(), FLinearColor(1.f, 0.45f, 0.12f, 1.f));
+	}
+	if ((Pawn != nullptr) != bWasOn)
+	{
+		UE_LOG(LogGOTAFeedback, Log, TEXT("FEEDBACK STATUS BURNING %s"), Pawn ? TEXT("on") : TEXT("off"));
+	}
+}
+
+void UGOTACombatFeedbackSubsystem::HandleStatusCue(AActor* Target, EGOTAStatus Status, bool bActive)
+{
+	if (Status != EGOTAStatus::Burning || !Target)
+	{
+		return;
+	}
+	if (!bActive)
+	{
+		if (Target == BurningPawn.Get())
+		{
+			SetBurningIndicator(nullptr);
+		}
+		return;
+	}
+	// Only the player whose own pawn burns sees the indicator; everyone sees the flames.
+	ULocalPlayer* LP = GetLocalPlayer();
+	UWorld* World = LP ? LP->GetWorld() : nullptr;
+	const APlayerController* PC = LP ? LP->GetPlayerController(World) : nullptr;
+	if (PC && PC->GetPawn() == Target && Target != BurningPawn.Get())
+	{
+		SetBurningIndicator(Target);
+	}
+}
+
+void UGOTACombatFeedbackSubsystem::HandleStatusPawnDestroyed(AActor* Destroyed)
+{
+	if (Destroyed == BurningPawn.Get() || !BurningPawn.IsValid())
+	{
+		SetBurningIndicator(nullptr);
+	}
 }
 
 FText UGOTACombatFeedbackSubsystem::DescribeResist(const AActor* Target, EGOTAStatus Status, int32 Aspects)
@@ -136,6 +224,7 @@ FText UGOTACombatFeedbackSubsystem::DescribeResist(const AActor* Target, EGOTASt
 	case EGOTAStatus::Dread: What = NSLOCTEXT("GOTA", "ResistDread", "DREAD"); break;
 	case EGOTAStatus::Veiled: What = NSLOCTEXT("GOTA", "ResistVeiled", "VEIL"); break;
 	case EGOTAStatus::Unbreakable: What = NSLOCTEXT("GOTA", "ResistUnbreakable", "UNBREAKABLE"); break;
+	case EGOTAStatus::Burning: What = NSLOCTEXT("GOTA", "ResistBurning", "BURNING"); break;
 	default: What = NSLOCTEXT("GOTA", "ResistEffect", "EFFECT"); break;
 	}
 	if (Aspects & GOTAGAS::Aspect_Whole)

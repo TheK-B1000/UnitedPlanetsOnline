@@ -1,0 +1,21 @@
+# Molten Strike ignites (Drakon vs a frozen champion, 260 hp). Impact 22 once, then Burning: no tick on application,
+# 2.0 at 1, 2 and 3 s (238 -> 236 -> 234 -> 232), then the effect and its flames are gone. No fourth tick.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 1.0
+gota.Ability.Dump
+gota.Net.GAS
+wait 1.2
+gota.Test.Shot burn_flames
+wait 3.0
+gota.Ability.Dump
+gota.Net.GAS
+wait 2.0
+gota.Ability.Dump
+quit

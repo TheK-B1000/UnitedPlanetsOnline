@@ -14,7 +14,8 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Unbreakable on GAS; all four statuses are effects | `6f1d135` | Done |
 | Four-player Story / Horde status runs, `gota.Net.Status`, this document | `d103007` | Done |
 | Boss status policies, resist feedback, lazy enemy ASC, cost measurement | `0a9f852` | Done |
-| Packaged (RC7) regression and this record | next commit | see test record |
+| Packaged (RC7) regression and this record | `bb69d11` | Done |
+| Burning (damage over time), Molten Strike ignites, element definitions, BURNING indicator | this commit | see test record |
 
 ## Ownership
 
@@ -23,7 +24,12 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Health, damage outcome, block, death | `BPC_DamageSystem` via `FGOTABlueprintCombat::ApplyDamage` | none |
 | Momentum | `UStatsComponent` / `UGOTADuelFighterComponent` | none |
 | Ability cooldowns, costs, cast timeline, range, LOS, hit detection | `UGOTAHeroAbilityComponent` | none |
-| Statuses Slowed, Dread, Veiled, Unbreakable | **`UGOTAAbilitySystemComponent` (gameplay effects)** | owner |
+| Statuses Slowed, Dread, Veiled, Unbreakable, Burning | **`UGOTAAbilitySystemComponent` (gameplay effects)** | owner |
+| When a Burning tick happens, who owns it, how much it asks for | **`UGOTAGameplayEffect_Burning`** (period, instigator, `Data.TickDamage`) | owner |
+| What a Burning tick does to health | `BPC_DamageSystem`, called by `GOTAGAS::DealStatusDamage` | caller only |
+| Element tuning (which status, duration, strength, tick interval, effect) | `UGOTAElementSettings` (Project Settings > GOTA Elements) | data |
+| Which abilities are elemental and ignite | `FGOTAAbilityDef::Element`, `bInflictsElementStatus` (`Tools/GOTA_BuildHeroAbilities.py`) | data |
+| "BURNING" line for the local player, flames on a burning body | `UGOTACombatFeedbackSubsystem`, `UGOTAGameplayCue_Burning` | presentation |
 | Walk speed multiplier, outgoing damage multiplier | **`UGOTACombatAttributeSet`** | owner |
 | Which effect aspects a combatant ignores (bosses) | **status policy** on `UGOTABossDefinition`, granted as tags by the ASC | owner |
 | "Resists" feedback on screen | `UGOTACombatFeedbackSubsystem` (local), fed by the Resisted cue | presentation |
@@ -41,10 +47,11 @@ The legacy status slot on `UGOTAHeroAbilityComponent` still compiles. `GOTAGAS::
 - **ASC owner and avatar are the pawn.** Health already lives on the pawn, and every respawn (`RestartPlayer` in Duel, Horde, and Story) creates a new pawn, so statuses can never carry over. The PlayerState keeps `HeroId`, which is where a future loadout or perk choice would live.
 - **Who gets one, and when.** Players get theirs from `UCombatBootstrapSubsystem` at possession; bosses from `UGOTABossComponent::ApplyToPawn` (with their status policy). Plain AI enemies get one only when their first status lands (`gota.GAS.EnemyASC 0`, the default). An idle ASC on 34 extra enemies measured +31% host upload and about 1.5 ms host frame time, so regular enemies only pay when GAS is used on them. Clients receive the replicated component.
 - **Replication: Mixed.** The owning client gets full effects (its HUD shows time left). Everyone gets tags, cues, and attribute values.
-- **Effects are native C++ classes** (`UGOTAStatusGameplayEffect` and four subclasses). Duration and strength are SetByCaller values taken from the existing `FGOTAAbilityDef`, so balance numbers stay in one table.
+- **Effects are native C++ classes** (`UGOTAStatusGameplayEffect` and five subclasses; Burning adds a period and `UGOTABurnTickExecution`). Duration and strength are SetByCaller values taken from the existing `FGOTAAbilityDef`, so balance numbers stay in one table.
 - **Cues:** one native `UGOTAGameplayCue_StatusOverlay` is registered for all four cue tags in the runtime cue set on every peer.
 - **Cues:** a second native cue, `UGOTAGameplayCue_Resisted`, is executed when a target resists all or part of a status.
-- **Tags:** `GOTA.Status.*`, `GOTA.Immunity.*` (Slow, Weaken, Stun, Interrupt), `GOTA.Element.*`, `GOTA.Data.*`, `GameplayCue.GOTA.*` (`GOTAGameplayTags.h`). Burning, Frozen, Stunned and the elements are reserved names with no reader yet.
+- **Cues:** a third native cue, `UGOTAGameplayCue_Burning`, attaches the Fire element's looping effect to a burning body.
+- **Tags:** `GOTA.Status.*`, `GOTA.Immunity.*` (Slow, Weaken, Stun, Interrupt, Burn), `GOTA.Element.*`, `GOTA.Data.*`, `GameplayCue.GOTA.*` (`GOTAGameplayTags.h`). Frozen and Stunned are reserved names with no reader yet.
 
 ## Status interaction rules
 
@@ -58,8 +65,75 @@ The legacy status slot on `UGOTAHeroAbilityComponent` still compiles. `GOTAGAS::
 | Removal | Death (`UStatsComponent::OnDied`), ability reset, and test reset remove every `GOTA.Status` effect. Respawn is a new pawn. Session travel is a full map load; no seamless travel is configured, so nothing survives it. |
 | Overlay priority | Veiled > Unbreakable > Dread > Slowed. One overlay material at a time; when the top status ends, the next one shows. |
 | Immunity and resistance | From a status policy; see below. |
+| Burning beside other statuses | Coexists with all four. It has no attribute modifier, so it never takes part in "strongest penalty wins", and it has no overlay, so it never hides another status's overlay. |
+| Burning again | One effect per target. Re-applying refreshes the duration and hands ownership to the new applier; the tick timer keeps its beat, so the rate never exceeds one tick per interval. |
 
 Formulas kept from the slot: walk ×clamp(1 − Magnitude, 0.2, 1); Dread damage ×clamp(1 − 0.5 × Magnitude, 0.2, 1); Unbreakable refund = health lost × clamp(Magnitude, 0, 0.9).
+
+## Burning and elements
+
+### What Burning is
+
+`GOTA.Status.Burning` is a duration effect with a period. Numbers come from the Fire row of `UGOTAElementSettings`: **3 s, 2 damage per second, 1 s tick interval** (three ticks of 2.0, 6 damage). Molten Strike is the first user: impact 22 as before, then the burn, 28 in total on a target that stays alive. The card text "Ignites enemies" is now true and the in-game description says so.
+
+Burning is not Molten Strike code. Any ability with `Element = GOTA.Element.Fire` and `bInflictsElementStatus` ignites, and `gota.Ability.Status` / `gota.Net.Status` can apply it directly.
+
+### Tick schedule (server clock)
+
+| Moment | What happens |
+|---|---|
+| Applied at t = 0 | Tag, cue and flames. **No tick.** |
+| t = 1, 2, 3 | One tick each, `Data.TickDamage` = damage per second x interval. |
+| t = 3 | The tick that falls on expiry still fires, then the effect is removed. Exactly three ticks; the engine's own duration check runs the last one (`CheckDuration`), there is no fourth. |
+| Re-applied at t = 1.5 | Duration restarts (ends at 4.5). The period timer is **not** reset: ticks stay at 2, 3, 4. New applier, new numbers. |
+| Target dies | `ClearStatusEffects` removes it; a tick that kills ends the effect inside the same tick. |
+
+Ticks only run on the server. Clients get the tag, the cue and (owner only) the effect; no per-tick message is sent.
+
+### Damage ownership
+
+A tick calls `GOTAGAS::DealStatusDamage`, which calls `FGOTABlueprintCombat::ApplyDamage` on the victim's `BPC_DamageSystem::TakeDamage`. GAS has no health attribute and writes no health. One call per tick; the log line carries health before and after.
+
+A tick is damage but **not a hit**:
+
+| Rule | Hit (Molten Strike impact) | Burning tick |
+|---|---|---|
+| Block / parry | Blockable | Cannot be blocked or parried |
+| Blueprint response | `Stagger`, forces an interrupt | `None`, no forced interrupt |
+| Hero-ability cast interrupt | Interrupts the wind-up | Does not (`OnStatusDamage` discounts it) |
+| Divine Momentum | +3 hit landed, +2 ability hit | None |
+| Dread on the attacker | Scales the damage (x0.825) | Not scaled; the burn is the element's number |
+| Veiled (`IsInvincible`) | Untargetable | Tick does nothing while veiled; the effect keeps running |
+| Unbreakable | Half refunded | Half refunded (1.0 of 2.0) |
+| Boss stagger threshold | Counts | Counts (the boss component sums health lost) |
+| Combat not live (between rounds, intermission) | No casts | Tick skipped |
+
+### Attribution
+
+- The effect's instigator is the pawn that applied it. Each tick is credited to it through `UStatsComponent::NoteDamageFrom`, the same call ability hits use, so kill credit, score and Horde eliminations follow.
+- Re-application replaces the instigator. With two players burning one enemy, ticks after the second application belong to the second player. Whoever dealt the last damage before death gets the kill, as for every other damage source.
+- If the applier's pawn no longer exists, ticks still deal damage and credit nobody.
+
+### Elements
+
+| Piece | Where | Notes |
+|---|---|---|
+| Damage type | `GOTA.Element.Fire / Frost / Lightning / Shadow / Void / Time` | No tag = untyped (physical). |
+| Per-element row | `FGOTAElementDef` in `UGOTAElementSettings` | Status, duration, strength, tick interval, looping effect. Fire is filled in; Frost, Lightning and Shadow are named rows with no status. |
+| Ability | `FGOTAAbilityDef::Element`, `bInflictsElementStatus` | Read once when a hit lands. Nothing per frame. |
+| Effect | Element tag is an asset tag on the status effect | So a future resistance can match on it. |
+| Immunity | `GOTA.Immunity.Burn` in a status policy | Refuses Burning; the impact still lands. |
+| Resistance | `FGOTAStatusResistance` for Burning | `DurationScale` shortens, `MagnitudeScale` lowers damage per second. |
+| Future per-element damage scaling | `UGOTAHeroAbilityComponent::DealDamage` and `GOTAGAS::DealStatusDamage` | The only two places elemental damage is dealt. Not implemented. |
+| Rollback | `gota.GAS.ElementStatus 0` | Abilities deal damage only; nothing ignites. |
+
+Elemental combinations (for example Frost on a Burning target) are not designed and not implemented.
+
+### Presentation
+
+- **Flames:** the Fire row's `StatusFX` (`P_Fire_Small` from Realistic Starter VFX Vol 2, the brazier fire the arenas already use) attached to the body's root. One component per actor, found by tag, so re-application cannot stack them. Removed by the cue's `OnRemove` (expiry, death, reset) and owned by the actor, so it is destroyed with it.
+- **Local indicator:** `UGOTACombatFeedbackSubsystem` shows "BURNING" while the local player's own pawn burns. It is driven by `GOTAGAS::OnStatusCue` (raised by the status cues) and by the pawn's `OnDestroyed`; nothing polls. It works in Duel, Horde and Story. The Duel HUD's older per-tick status text is unchanged and does not list Burning.
+- **Boss immunity:** the existing resist line, "THE QUARRY BEHEMOTH RESISTS BURNING" or "... SHRUGS OFF PART OF BURNING".
 
 ## Status policies (boss immunity and resistance)
 
@@ -73,6 +147,7 @@ Statuses are split into independent **aspects**, each with its own immunity tag:
 | Attack-power reduction | `GOTA.Immunity.Weaken` | Dread (its damage modifier) |
 | Hard crowd control | `GOTA.Immunity.Stun` | reserved for future Frozen / Stunned effects |
 | Cast interruption | `GOTA.Immunity.Interrupt` | the hero-ability interrupt check (as Unbreakable) |
+| Fire damage over time | `GOTA.Immunity.Burn` | Burning (all of it). No boss has it by default: the Quarry Behemoth burns. |
 
 How a status meets a policy (`GOTAGAS::ApplyStatus`, server):
 
@@ -95,6 +170,9 @@ Engine limitation, and how it is handled: for persistent effects, Unreal evaluat
 4. Bosses are no longer slowed by Time Lash or by Dread. Before, a slow also slowed the boss's charge rush.
 5. Dread on a boss now weakens its attacks (×0.825). Before, boss attacks ignored Dread.
 6. Plain Horde enemies get an ability system only when a status lands on them.
+
+7. Molten Strike ignites: 6 more damage over 3 s on each enemy it lands on. Its impact, cooldown, animation, hit detection and momentum are unchanged.
+8. `FGOTABlueprintCombat::ApplyDamage` takes an optional `bForceInterrupt` (default true, the old behaviour). Only status ticks pass false.
 
 Nothing else changed: the same numbers, the same Blueprint flags, the same damage path.
 

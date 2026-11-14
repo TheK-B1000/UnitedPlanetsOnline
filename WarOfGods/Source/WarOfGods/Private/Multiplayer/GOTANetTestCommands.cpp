@@ -10,6 +10,9 @@
 
 #if !UE_BUILD_SHIPPING
 
+#include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAGameplayTags.h"
+#include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
@@ -32,6 +35,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -920,6 +924,103 @@ namespace GOTANetTest
 	static FAutoConsoleCommand CmdForge(TEXT("gota.Net.ForgeParry"), TEXT("Exploit test (client): forged SR_ParryAttack at the farthest pawn; the server must reject it."), FConsoleCommandWithArgsDelegate::CreateStatic(&ForgeParry));
 	static FAutoConsoleCommand CmdRemote(TEXT("gota.Net.RemoteParry"), TEXT("Client: time StartBlock on the local pawn against the nearest boss. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteParry));
 	static FAutoConsoleCommand CmdDefend(TEXT("gota.Net.RemoteDefend"), TEXT("Client: parry, dodge, or both against the nearest boss. Args: parry|dodge|both [seconds] [lead]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteDefend));
+	/** pN = player N's pawn, eN = the living enemy nearest player N, b = the first living boss. */
+	static APawn* ResolveTarget(const FString& Arg)
+	{
+		UWorld* W = GameWorld();
+		if (!W || Arg.IsEmpty())
+		{
+			return nullptr;
+		}
+		if (Arg == TEXT("b"))
+		{
+			for (TActorIterator<APawn> It(W); It; ++It)
+			{
+				if (It->FindComponentByClass<UGOTABossComponent>() && !UGOTACombatantObserver::IsCombatantDefeated(*It))
+				{
+					return *It;
+				}
+			}
+			return nullptr;
+		}
+		APawn* Player = PlayerPawn(FCString::Atoi(*Arg.Mid(1)));
+		return Arg[0] == TEXT('e') ? GOTACombatLive::FindCombatTarget(Player) : Player;
+	}
+
+	/**
+	 * gota.Net.Policy <pN|eN|b> <Slow,Stun,Burn|none> [Status durationScale magnitudeScale]: server test. Replaces the
+	 * target's status policy: the listed GOTA.Immunity.* aspects, plus one optional per-status resistance.
+	 */
+	static void NetPolicy(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		APawn* Target = Args.Num() >= 2 && W && W->GetNetMode() != NM_Client ? ResolveTarget(Args[0]) : nullptr;
+		UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::EnsureOnPawn(Target);
+		if (!ASC)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET policy: server only, args <pN|eN|b> <Slow,Stun,Burn|none> [Status durScale magScale]"));
+			return;
+		}
+		FGOTAStatusPolicy Policy;
+		TArray<FString> Names;
+		Args[1].ParseIntoArray(Names, TEXT(","));
+		for (const FString& Name : Names)
+		{
+			const FGameplayTag Tag = FGameplayTag::RequestGameplayTag(FName(*(TEXT("GOTA.Immunity.") + Name)), false);
+			if (Tag.IsValid())
+			{
+				Policy.Immunities.AddTag(Tag);
+			}
+		}
+		if (Args.Num() >= 5)
+		{
+			const int64 Value = StaticEnum<EGOTAStatus>()->GetValueByNameString(Args[2]);
+			if (Value != INDEX_NONE)
+			{
+				FGOTAStatusResistance Rule;
+				Rule.Status = static_cast<EGOTAStatus>(Value);
+				Rule.DurationScale = FCString::Atof(*Args[3]);
+				Rule.MagnitudeScale = FCString::Atof(*Args[4]);
+				Policy.Resistances.Add(Rule);
+			}
+		}
+		ASC->ApplyStatusPolicy(Policy, TEXT("test"));
+		UE_LOG(LogGOTANet, Log, TEXT("NET policy on %s: immune=[%s] resistances=%d"), *GetNameSafe(Target), *ASC->DescribeImmunities(), Policy.Resistances.Num());
+	}
+
+	/**
+	 * gota.Net.GAS: any machine. One line of ability-system totals for this process: ability system components, active
+	 * Burning statuses (by tag, so it also counts on clients), live flame effects, and the server's status-damage and
+	 * ability-hit counters. For Horde performance captures and cleanup checks.
+	 */
+	static void GasReport(const TArray<FString>&)
+	{
+		UWorld* W = GameWorld();
+		if (!W)
+		{
+			return;
+		}
+		int32 ASCs = 0, Burning = 0, Statuses = 0, Flames = 0;
+		for (TActorIterator<APawn> It(W); It; ++It)
+		{
+			if (const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(*It))
+			{
+				++ASCs;
+				Burning += ASC->HasMatchingGameplayTag(GOTATags::Status_Burning) ? 1 : 0;
+				Statuses += ASC->HasMatchingGameplayTag(GOTATags::Status) ? 1 : 0;
+			}
+			TInlineComponentArray<UParticleSystemComponent*> Emitters(*It);
+			for (const UParticleSystemComponent* PSC : Emitters)
+			{
+				Flames += PSC && PSC->ComponentHasTag(TEXT("GOTA_BurnFX")) ? 1 : 0;
+			}
+		}
+		const GOTAGAS::FStatusDamageStats Dot = GOTAGAS::GetStatusDamageStats();
+		const FGOTAAbilityResolveStats Hits = GOTAGetAbilityResolveStats();
+		UE_LOG(LogGOTANet, Log, TEXT("GAS %s ascs=%d withStatus=%d burning=%d flames=%d burnTicks=%d burnDamage=%.1f abilityHits=%d abilityMisses=%d"),
+			NetModeName(W), ASCs, Statuses, Burning, Flames, Dot.Ticks, Dot.Damage, Hits.Landed, Hits.Missed);
+	}
+
 	/**
 	 * gota.Net.Status <pN|eN|b> <Status> <seconds> <magnitude> [pM]: server, any mode. pN = player N's pawn, eN = the living
 	 * enemy nearest player N, b = the first living boss. The optional pM makes player M the source (who gets resist
@@ -933,23 +1034,25 @@ namespace GOTANetTest
 			UE_LOG(LogGOTANet, Warning, TEXT("NET status: server only, args <pN|eN> <Status> <seconds> <magnitude>"));
 			return;
 		}
-		APawn* Target = nullptr;
-		if (Args[0] == TEXT("b"))
+		AActor* AllSource = Args.Num() > 4 && Args[4].StartsWith(TEXT("p")) ? PlayerPawn(FCString::Atoi(*Args[4].Mid(1))) : nullptr;
+		const int64 AllValue = StaticEnum<EGOTAStatus>()->GetValueByNameString(Args[1]);
+		if (Args[0] == TEXT("ea") && AllValue != INDEX_NONE)
 		{
+			// Every living non-player combatant at once (concurrent-status load for performance runs).
+			int32 Count = 0;
 			for (TActorIterator<APawn> It(W); It; ++It)
 			{
-				if (It->FindComponentByClass<UGOTABossComponent>() && !UGOTACombatantObserver::IsCombatantDefeated(*It))
+				if (It->IsPlayerControlled() || !UGOTACombatantObserver::FindDamageSystem(*It) || UGOTACombatantObserver::IsCombatantDefeated(*It))
 				{
-					Target = *It;
-					break;
+					continue;
 				}
+				UGOTAHeroAbilityComponent::ApplyStatusTo(*It, static_cast<EGOTAStatus>(AllValue), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), AllSource);
+				++Count;
 			}
+			UE_LOG(LogGOTANet, Log, TEXT("NET status %s on all %d living enemies from %s"), *Args[1], Count, *GetNameSafe(AllSource));
+			return;
 		}
-		else
-		{
-			APawn* Player = PlayerPawn(FCString::Atoi(*Args[0].Mid(1)));
-			Target = Args[0][0] == TEXT('e') ? GOTACombatLive::FindCombatTarget(Player) : Player;
-		}
+		APawn* Target = ResolveTarget(Args[0]);
 		AActor* Source = Args.Num() > 4 && Args[4].StartsWith(TEXT("p")) ? PlayerPawn(FCString::Atoi(*Args[4].Mid(1))) : nullptr;
 		const int64 Value = StaticEnum<EGOTAStatus>()->GetValueByNameString(Args[1]);
 		if (!Target || Value == INDEX_NONE)
@@ -957,13 +1060,7 @@ namespace GOTANetTest
 			UE_LOG(LogGOTANet, Warning, TEXT("NET status: no target for %s or unknown status %s"), *Args[0], *Args[1]);
 			return;
 		}
-		UGOTAHeroAbilityComponent* A = Target->FindComponentByClass<UGOTAHeroAbilityComponent>();
-		if (!A)
-		{
-			A = NewObject<UGOTAHeroAbilityComponent>(Target, TEXT("GOTAHeroAbilities"));
-			A->RegisterComponent();
-		}
-		A->ApplyStatus(static_cast<EGOTAStatus>(Value), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), Source);
+		UGOTAHeroAbilityComponent::ApplyStatusTo(Target, static_cast<EGOTAStatus>(Value), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), Source);
 		UE_LOG(LogGOTANet, Log, TEXT("NET status %s %s on %s from %s"), *Args[1], *Args[0], *GetNameSafe(Target), *GetNameSafe(Source));
 	}
 	/**
@@ -1002,7 +1099,9 @@ namespace GOTANetTest
 		UE_LOG(LogGOTANet, Log, TEXT("NET spawned %d/%d enemies at radius %.0f"), Spawned, Count, Radius);
 	}
 	static FAutoConsoleCommand CmdSpawnEnemies(TEXT("gota.Net.SpawnEnemies"), TEXT("Server stress test: spawn <count> plain melee enemies around player 0 [radius]."), FConsoleCommandWithArgsDelegate::CreateStatic(&SpawnEnemies));
-	static FAutoConsoleCommand CmdStatus(TEXT("gota.Net.Status"), TEXT("Server: apply a status to <pN|eN|b> (player N / enemy nearest player N / boss): <Status> <seconds> <magnitude> [source pM]."), FConsoleCommandWithArgsDelegate::CreateStatic(&NetStatus));
+	static FAutoConsoleCommand CmdPolicy(TEXT("gota.Net.Policy"), TEXT("Server test: replace a status policy on <pN|eN|b>: <Slow,Stun,Burn|none> [Status durScale magScale]."), FConsoleCommandWithArgsDelegate::CreateStatic(&NetPolicy));
+	static FAutoConsoleCommand CmdGas(TEXT("gota.Net.GAS"), TEXT("Log ability-system totals: components, Burning statuses, flame effects, burn ticks and damage."), FConsoleCommandWithArgsDelegate::CreateStatic(&GasReport));
+	static FAutoConsoleCommand CmdStatus(TEXT("gota.Net.Status"), TEXT("Server: apply a status to <pN|eN|b|ea> (player N / enemy nearest player N / boss / every living enemy): <Status> <seconds> <magnitude> [source pM]."), FConsoleCommandWithArgsDelegate::CreateStatic(&NetStatus));
 	static FAutoConsoleCommand CmdMomentum(TEXT("gota.Net.Momentum"), TEXT("Server: grant Divine Momentum to player <index> [amount=50]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Momentum));
 	static FAutoConsoleCommand CmdCounter(TEXT("gota.Net.Counter"), TEXT("Request Divine Counter on local pawn, or player <index>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Counter));
 	static FAutoConsoleCommand CmdAbility(TEXT("gota.Net.Ability"), TEXT("Activate ability slot on local pawn, or player <index> <slot>."), FConsoleCommandWithArgsDelegate::CreateStatic(&AbilityUse));

@@ -1,0 +1,12 @@
+# Remote player set alight by the host's Molten Strike: the server ticks, the client sees flames and its own BURNING line.
+r.MotionBlurQuality 0
+wait 25
+gota.Ability.Place 250
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 5
+gota.Ability.Dump
+gota.Net.GAS
+wait 3
+quit

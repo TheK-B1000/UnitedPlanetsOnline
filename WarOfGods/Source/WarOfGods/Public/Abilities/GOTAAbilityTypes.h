@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "GameplayTagContainer.h"
 #include "GOTAAbilityTypes.generated.h"
 
 class UAnimSequenceBase;
@@ -44,7 +45,9 @@ enum class EGOTAStatus : uint8
 	/** Movement speed scaled by (1 - Magnitude) and outgoing ability damage scaled by (1 - Magnitude * 0.5). */
 	Dread,
 	/** Movement speed only, scaled by (1 - Magnitude). No effect on attacks, cooldowns or abilities. */
-	Slowed
+	Slowed,
+	/** Fire damage over time: Magnitude damage per second, dealt in ticks through the victim's Blueprint damage system. */
+	Burning
 };
 
 /** Cosmetic family used to pick placeholder VFX/SFX until hero-specific effects exist. */
@@ -92,6 +95,10 @@ struct WAROFGODS_API FGOTAAbilityDef
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") bool bInterruptible = true;
 	/** "Stagger", "Knockback" ... — the Blueprint E_DamageResponse entry used for hits. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") FString HitResponse = TEXT("Stagger");
+	/** Damage type (GOTA.Element.*). Empty = untyped. Tuning for the element lives in UGOTAElementSettings. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance", meta = (Categories = "GOTA.Element")) FGameplayTag Element;
+	/** Every enemy this ability's damage lands on also receives its element's status (Fire: Burning). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") bool bInflictsElementStatus = false;
 
 	// --- presentation ---
 	/** Hero-specific animation played on the visible body (Paragon sequence). */

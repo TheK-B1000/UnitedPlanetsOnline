@@ -1,0 +1,9 @@
+wait 34
+gota.Net.GAS
+wait 4
+gota.Net.GAS
+gota.Test.Shot mp_burn_story
+wait 8
+gota.Net.GAS
+wait 40
+quit

@@ -46,10 +46,12 @@ HEROES = {
     # Card-aligned sets (Docs/GOTA_HERO_ABILITIES_PLAN.md, "Card alignment"). Names and descriptions follow the hero
     # cards (Tools/GOTA_HeroContent.py); mechanics map onto existing kinds. Unimplemented card effects are noted per entry.
     "Drakon": dict(health=1.15, gap=4.0, look=LOOK.TITAN, abilities=[
-        # Card: "Burst damage. Ignites enemies." (ignite / burning DoT not implemented yet)
+        # Card: "Burst damage. Ignites enemies." Fire: every enemy the swing lands on is set Burning. The burn's
+        # numbers (2 damage per second for 3 s) are the Fire element's, in Project Settings > GOTA Elements.
         dict(id="MoltenStrike", name="Molten Strike", short="Molten Strike", kind=K.MELEE_ARC,
-             desc="Burst damage. A heavy molten swing across a wide arc in front of Drakon.",
-             damage=22, cooldown=6, cast=0.55, recovery=0.6, range=300, arc=150,
+             desc="Burst damage. A heavy molten swing across a wide arc in front of Drakon. Ignites enemies: "
+                  "they burn for 2 damage per second for 3 s.",
+             damage=22, cooldown=6, cast=0.55, recovery=0.6, range=300, arc=150, element="GOTA.Element.Fire", ignite=True,
              anim=GA + "Ability_Q", cast_fx=None, impact_fx=GFX + "P_Greystone_ClearAPath_Impact", fx_scale=1.0,
              cast_sfx="/Game/ParagonGreystone/Audio/Cues/Greystone_Effort_Ability_Q", kick=1.3,
              ai=dict(priority=1.0, min=0, max=320)),
@@ -259,6 +261,13 @@ def build_set(hero, cfg):
         d.set_editor_property("magnitude", float(a.get("magnitude", 0)))
         d.set_editor_property("can_be_blocked", bool(a.get("blockable", True)))
         d.set_editor_property("interruptible", bool(a.get("interruptible", True)))
+        if a.get("element"):
+            tag = unreal.GameplayTag()
+            tag.import_text('(TagName="%s")' % a["element"])
+            d.set_editor_property("element", tag)
+            if a["element"] not in d.get_editor_property("element").export_text():
+                raise RuntimeError("element tag %s did not import" % a["element"])
+        d.set_editor_property("inflicts_element_status", bool(a.get("ignite", False)))
         d.set_editor_property("look", cfg["look"])
         d.set_editor_property("impact_kick", float(a.get("kick", 1.0)))
         d.set_editor_property("anim_play_rate", float(a.get("rate", 1.0)))
@@ -287,7 +296,8 @@ def build_set(hero, cfg):
         d.set_editor_property("ai_max_distance", float(ai.get("max", 400)))
         d.set_editor_property("ai_max_own_health_fraction", float(ai.get("max_hp", 1.0)))
         defs.append(d)
-        P(" ", hero, a["id"], "anim=%s castfx=%s impactfx=%s" % (bool(anim), bool(d.get_editor_property("cast_fx")), bool(d.get_editor_property("impact_fx"))))
+        P(" ", hero, a["id"], "anim=%s castfx=%s impactfx=%s element=%s ignite=%s" % (bool(anim), bool(d.get_editor_property("cast_fx")),
+          bool(d.get_editor_property("impact_fx")), d.get_editor_property("element").export_text(), d.get_editor_property("inflicts_element_status")))
     da.set_editor_property("abilities", defs)
     da.set_editor_property("max_health_scale", float(cfg["health"]))
     da.set_editor_property("ai_global_gap", float(cfg["gap"]))

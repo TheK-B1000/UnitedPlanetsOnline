@@ -2,6 +2,7 @@
 
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAElements.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GAS/GOTAGameplayTags.h"
 #include "Abilities/GOTAAbilityTypes.h"
@@ -42,6 +43,8 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTAAbility, Log, All);
 
+static TAutoConsoleVariable<int32> CVarGOTAElementStatus(TEXT("gota.GAS.ElementStatus"), 1,
+	TEXT("1 = abilities inflict their element's status (Molten Strike ignites). 0 = damage only: the rollback switch, and the non-Burning baseline for performance runs."));
 static TAutoConsoleVariable<int32> CVarGOTAAbilityAnimDebug(TEXT("gota.Ability.AnimDebug"), 0, TEXT("1 = log when hero ability body montages end."));
 
 namespace GOTAAbilityAssets
@@ -107,10 +110,15 @@ void UGOTAHeroAbilityComponent::BeginPlay()
 		LoadAbilitySet();
 	}
 	TryBindLocalInput();
+	if (GetOwner() && GetOwner()->HasAuthority())
+	{
+		GOTAGAS::OnStatusDamage.AddUObject(this, &UGOTAHeroAbilityComponent::IgnoreHealthLoss);
+	}
 }
 
 void UGOTAHeroAbilityComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+	GOTAGAS::OnStatusDamage.RemoveAll(this);
 	if (GetOwner() && GetOwner()->HasAuthority())
 	{
 		ResetAbilities(false);
@@ -531,17 +539,16 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 	}
 	StatusTrackedHealth = bUnbreakable ? UGOTACombatantObserver::ReadVitals(Owner).Health : -1.f;
 
-	if (!Owner->IsPlayerControlled())
+	// AI momentum from landed hits. Only a duel fighter has momentum to gain: a plain Horde enemy that merely carries a
+	// status skips this, and with it a combat-target search every frame.
+	if (UGOTADuelFighterComponent* Fighter = Owner->IsPlayerControlled() ? nullptr : Owner->FindComponentByClass<UGOTADuelFighterComponent>())
 	{
 		if (APawn* Opp = GetOpponentPawn())
 		{
 			const float OppHealth = UGOTACombatantObserver::ReadVitals(Opp).Health;
 			if (AITrackedOpponentHealth >= 0.f && OppHealth < AITrackedOpponentHealth - 0.5f && IsRoundLive())
 			{
-				if (UGOTADuelFighterComponent* Fighter = Owner->FindComponentByClass<UGOTADuelFighterComponent>())
-				{
-					Fighter->GrantMomentum(Fighter->HitLandedMomentum, TEXT("AI hit landed"));
-				}
+				Fighter->GrantMomentum(Fighter->HitLandedMomentum, TEXT("AI hit landed"));
 			}
 			AITrackedOpponentHealth = OppHealth;
 		}
@@ -956,8 +963,67 @@ bool UGOTAHeroAbilityComponent::DealDamage(APawn* Victim, const FGOTAAbilityDef&
 		{
 			Fighter->GrantMomentum(Def.bUltimate ? 0.f : 2.f, TEXT("ability hit"));
 		}
+		// After the impact, never instead of it: a blocked or veiled hit does not ignite.
+		ApplyElementStatus(Victim, Def);
 	}
 	return bLanded;
+}
+
+void UGOTAHeroAbilityComponent::ApplyElementStatus(APawn* Victim, const FGOTAAbilityDef& Def)
+{
+	const FGOTAElementDef* Element = Def.bInflictsElementStatus ? UGOTAElementSettings::Find(Def.Element) : nullptr;
+	if (!Element || Element->Status == EGOTAStatus::None || Element->StatusDuration <= 0.f || UGOTACombatantObserver::IsCombatantDefeated(Victim)
+		|| CVarGOTAElementStatus.GetValueOnGameThread() == 0)
+	{
+		return;
+	}
+	// The same entry point every status uses: policies, immunity feedback, refresh and replication all come with it.
+	ApplyStatusTo(Victim, Element->Status, Element->StatusDuration, Element->StatusMagnitude, GetOwner());
+}
+
+void UGOTAHeroAbilityComponent::ApplyStatusTo(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)
+{
+	if (!Victim || !Victim->HasAuthority())
+	{
+		return;
+	}
+	// Burning asks nothing of this component (no walk speed, no refund, no targeting rule), so a victim without one
+	// is not given one: a burning Horde enemy carries its ability system and nothing that ticks every frame.
+	if (Status == EGOTAStatus::Burning && Duration > 0.f && GOTAGAS::OwnsStatus(Status) && !Victim->FindComponentByClass<UGOTAHeroAbilityComponent>())
+	{
+		GOTAGAS::ApplyStatus(Victim, Status, Duration, Magnitude, Source);
+		return;
+	}
+	if (UGOTAHeroAbilityComponent* Comp = EnsureOn(Victim))
+	{
+		Comp->ApplyStatus(Status, Duration, Magnitude, Source);
+	}
+}
+
+UGOTAHeroAbilityComponent* UGOTAHeroAbilityComponent::EnsureOn(APawn* Pawn)
+{
+	UGOTAHeroAbilityComponent* Comp = Pawn ? Pawn->FindComponentByClass<UGOTAHeroAbilityComponent>() : nullptr;
+	if (!Comp && Pawn && Pawn->HasAuthority())
+	{
+		Comp = NewObject<UGOTAHeroAbilityComponent>(Pawn, TEXT("GOTAHeroAbilities"));
+		Comp->RegisterComponent();
+	}
+	return Comp;
+}
+
+void UGOTAHeroAbilityComponent::IgnoreHealthLoss(const APawn* Whose, float Amount)
+{
+	if (Whose == GetOwner())
+	{
+		if (HealthAtCastStart >= 0.f)
+		{
+			HealthAtCastStart -= Amount;
+		}
+	}
+	else if (AITrackedOpponentHealth >= 0.f && Whose == GetOpponentPawn())
+	{
+		AITrackedOpponentHealth -= Amount;
+	}
 }
 
 void UGOTAHeroAbilityComponent::Knockback(APawn* Victim, float Speed, float Up)
@@ -1084,13 +1150,7 @@ void UGOTAHeroAbilityComponent::ApplyDefStatus(APawn* Victim, const FGOTAAbility
 		return;
 	}
 	// Opponents without an ability component still get the status: this component is the one that ticks walk speed.
-	UGOTAHeroAbilityComponent* Comp = Victim->FindComponentByClass<UGOTAHeroAbilityComponent>();
-	if (!Comp)
-	{
-		Comp = NewObject<UGOTAHeroAbilityComponent>(Victim, TEXT("GOTAHeroAbilities"));
-		Comp->RegisterComponent();
-	}
-	Comp->ApplyStatus(Def.Status, Def.StatusDuration, Def.Magnitude, Source);
+	ApplyStatusTo(Victim, Def.Status, Def.StatusDuration, Def.Magnitude, Source);
 }
 
 void UGOTAHeroAbilityComponent::ApplyStatus(EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)

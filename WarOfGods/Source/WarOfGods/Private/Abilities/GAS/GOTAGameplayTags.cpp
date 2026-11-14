@@ -9,7 +9,7 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Dread, "GOTA.Status.Dread", "Slower and weaker ability damage (Nyx Soul Drain, Varoth World Burn).");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Veiled, "GOTA.Status.Veiled", "Untargetable by abilities and immune to Blueprint hits (Nyx Void Shield).");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Unbreakable, "GOTA.Status.Unbreakable", "Hyper armour and partial damage refund (Varoth Colossus Form).");
-	UE_DEFINE_GAMEPLAY_TAG(Status_Burning, "GOTA.Status.Burning");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Burning, "GOTA.Status.Burning", "Fire damage over time (Drakon Molten Strike).");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Frozen, "GOTA.Status.Frozen");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Stunned, "GOTA.Status.Stunned");
 
@@ -18,8 +18,11 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Weaken, "GOTA.Immunity.Weaken", "Immune to attack-power reduction from effects.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Stun, "GOTA.Immunity.Stun", "Immune to hard crowd-control effects (not a boss's own staggers).");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Interrupt, "GOTA.Immunity.Interrupt", "Hero-ability casts are not interrupted by damage.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Burn, "GOTA.Immunity.Burn", "Cannot be set alight (Burning is refused).");
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element, "GOTA.Element", "Parent of the damage types. No element tag means untyped (physical) damage.");
 	UE_DEFINE_GAMEPLAY_TAG(Element_Fire, "GOTA.Element.Fire");
+	UE_DEFINE_GAMEPLAY_TAG(Element_Lightning, "GOTA.Element.Lightning");
 	UE_DEFINE_GAMEPLAY_TAG(Element_Frost, "GOTA.Element.Frost");
 	UE_DEFINE_GAMEPLAY_TAG(Element_Shadow, "GOTA.Element.Shadow");
 	UE_DEFINE_GAMEPLAY_TAG(Element_Void, "GOTA.Element.Void");
@@ -29,10 +32,12 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG(Data_Multiplier, "GOTA.Data.Multiplier");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Magnitude, "GOTA.Data.Magnitude");
 	UE_DEFINE_GAMEPLAY_TAG(Data_DamageMultiplier, "GOTA.Data.DamageMultiplier");
+	UE_DEFINE_GAMEPLAY_TAG(Data_TickDamage, "GOTA.Data.TickDamage");
 
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Slowed, "GameplayCue.GOTA.Status.Slowed");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Dread, "GameplayCue.GOTA.Status.Dread");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Veiled, "GameplayCue.GOTA.Status.Veiled");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Unbreakable, "GameplayCue.GOTA.Status.Unbreakable");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Burning, "GameplayCue.GOTA.Status.Burning");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Resisted, "GameplayCue.GOTA.Resisted");
 }

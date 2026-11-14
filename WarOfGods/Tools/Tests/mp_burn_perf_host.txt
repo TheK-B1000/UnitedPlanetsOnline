@@ -1,0 +1,51 @@
+# Horde load with Burning: 20 extra enemies, everyone fighting, every living enemy re-ignited every 2.5 s for 30 s
+# while both Drakons ignite with Molten Strike. Compare with mp_burn_perf_base_host.txt (same fight, no Burning).
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 15
+gota.Net.SpawnEnemies 20 2600
+gota.Net.Fight 60
+wait 6
+gota.Net.GAS
+gota.Net.Perf
+gota.Net.Perf 30
+gota.Net.Status ea Burning 3 2 p0
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p1
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p0
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p1
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p0
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p1
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p0
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p1
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p0
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p1
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p0
+wait 2.5
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p1
+wait 6
+gota.Net.GAS
+gota.Horde.Dump
+gota.Net.Players
+quit

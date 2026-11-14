@@ -1,0 +1,28 @@
+# Re-application refreshes, never compounds. Burning 3 s at t=0, again at t=1.5: one effect, ticks stay on the first
+# application's 1 s beat (t=1, 2, 3, 4), it ends at 4.5. Four ticks of 2.0 = 8 damage (260 -> 252); never two in one second.
+# Then four apply-and-expire cycles of 2 s (two ticks each): flames on and off four times, nothing left behind.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 400 1
+wait 0.3
+gota.Ability.Status 1 Burning 3 2 0
+wait 1.5
+gota.Ability.Status 1 Burning 3 2 0
+wait 0.2
+gota.Ability.Dump
+gota.Net.GAS
+wait 3.6
+gota.Ability.Dump
+gota.Net.GAS
+gota.Ability.Status 1 Burning 2 2 0
+wait 2.6
+gota.Ability.Status 1 Burning 2 2 0
+wait 2.6
+gota.Ability.Status 1 Burning 2 2 0
+wait 2.6
+gota.Ability.Status 1 Burning 2 2 0
+wait 2.6
+gota.Ability.Dump
+gota.Net.GAS
+quit

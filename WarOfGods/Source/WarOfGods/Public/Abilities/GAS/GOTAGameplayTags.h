@@ -15,7 +15,8 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Dread);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Veiled);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Unbreakable);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Burning);     // reserved: Phase 2
+	/** Damage over time (Drakon Molten Strike). Ticks go through BPC_DamageSystem; see UGOTABurnTickExecution. */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Burning);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Frozen);      // reserved: Phase 2
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Stunned);     // reserved: Phase 2
 
@@ -31,9 +32,14 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Stun);
 	/** A hero-ability cast is not interrupted by taking damage (the same check Unbreakable passes). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Interrupt);
+	/** Cannot be set alight: Burning is refused (the hit that carried it still lands). */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Burn);
 
-	// --- Elements: asset tags on effects, for resistances and vulnerabilities (reserved: Phase 2) ---
+	// --- Elements: the damage type of an ability or a status. No element tag means untyped (physical) damage.
+	// Each element's tuning is one FGOTAElementDef row (Abilities/GAS/GOTAElements.h). Only Fire has gameplay so far. ---
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Fire);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Lightning);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Frost);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Shadow);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Void);
@@ -47,12 +53,15 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Magnitude);
 	/** Outgoing damage multiplier (Dread: 1 - Magnitude * 0.5). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_DamageMultiplier);
+	/** Damage one periodic tick deals (Burning: damage per second x tick interval). */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_TickDamage);
 
 	// --- Gameplay Cues (presentation only) ---
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Slowed);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Dread);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Veiled);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Unbreakable);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Burning);
 	/** Executed on a target that resisted all or part of a status (immunity / resistance feedback). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Resisted);
 }

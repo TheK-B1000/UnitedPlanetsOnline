@@ -1,0 +1,50 @@
+# Four-player Horde with Burning. Host Drakon; remote Drakon (p1), Kairos (p2), Nyx (p3). Clients start fighting at
+# about host-time 56 s, so the first block is a quiet, deterministic ownership test on one enemy:
+#   p0 ignites it, p1 re-applies 1.2 s later -> one effect; the first tick is p0's, the rest are p1's.
+#   p1 then applies a lethal burn -> the kill is credited to p1 (the remote Drakon), not to the host.
+# Then everyone fights with real abilities (both Drakons ignite with Molten Strike), a remote player is set alight,
+# and every enemy is set alight at once for the cleanup and load check.
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 12
+wait 4
+gota.Net.GAS
+gota.Net.Status e0 Burning 3 2 p0
+wait 1.2
+gota.Net.Status e0 Burning 3 2 p1
+wait 4.2
+gota.Net.GAS
+gota.Net.Status e0 Burning 2 5000 p1
+wait 2.5
+gota.Net.GAS
+gota.Horde.Dump
+gota.Net.Momentum 0 100
+gota.Net.Momentum 1 100
+gota.Net.Momentum 2 100
+gota.Net.Momentum 3 100
+gota.Net.Fight 70
+wait 8
+gota.Net.Status p1 Burning 3 2
+gota.Net.Status p2 Burning 3 2
+gota.Net.GAS
+wait 6
+gota.Net.GAS
+gota.Net.Status ea Burning 3 2 p1
+wait 0.5
+gota.Net.GAS
+wait 1.5
+gota.Net.Status ea Burning 3 2 p0
+wait 5
+gota.Net.GAS
+gota.Net.Perf
+gota.Net.Perf 30
+wait 10
+gota.Net.GAS
+wait 10
+gota.Net.GAS
+wait 12
+gota.Net.GAS
+gota.Horde.Dump
+gota.Net.Players
+quit

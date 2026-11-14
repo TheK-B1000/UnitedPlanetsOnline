@@ -1,0 +1,29 @@
+# Four-player Story at the Divine Shrine with Burning. As in mp_status_story_host.txt the fight driver cannot reach the
+# shrine enemies, so statuses go through gota.Net.Status (the same ApplyStatus path the abilities use).
+#  - a shrine enemy burns, owned by p1, then re-applied by p2 (ownership hand-off)
+#  - remote players burn: beside Slowed (p1), under Veiled (p2: ticks do nothing), under Unbreakable (p3: half refunded)
+#  - a remote player is killed while burning: the effect is cleared, the respawned pawn is clean
+wait 42
+gota.Net.Players
+gota.Net.GAS
+gota.Net.Status e0 Burning 3 2 p1
+wait 1.2
+gota.Net.Status e0 Burning 3 2 p2
+gota.Net.Status p1 Burning 3 2
+gota.Net.Status p1 Slowed 3 0.4
+gota.Net.Status p2 Veiled 2.5 0
+gota.Net.Status p2 Burning 3 2
+gota.Net.Status p3 Unbreakable 4 0.5
+gota.Net.Status p3 Burning 3 2
+wait 1.5
+gota.Net.GAS
+wait 4
+gota.Net.GAS
+gota.Net.Players
+gota.Net.Status p3 Burning 20 2
+wait 1.5
+gota.Net.Hurt 3 9999
+wait 8
+gota.Net.GAS
+gota.Net.Players
+quit

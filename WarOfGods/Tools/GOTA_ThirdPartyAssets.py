@@ -27,6 +27,8 @@ REQUIRED_FILES = [
     "ParagonSevarog/Characters/Heroes/Sevarog/Meshes/Sevarog.uasset",
     "ParagonRampage/Characters/Heroes/Rampage/Meshes/Rampage.uasset",
     "ParagonRampage/Characters/Heroes/Rampage/RampagePlayerCharacter.uasset",
+    # Arena braziers and the Burning status flame (Abilities/GAS/GOTAElements.cpp).
+    "Realistic_Starter_VFX_Pack_Vol2/Particles/Fire/P_Fire_Small.uasset",
 ]
 
 

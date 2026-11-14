@@ -1,0 +1,37 @@
+# Burning against the Quarry Behemoth (default policy: immune to Slow and Stun, not to Burn).
+#  1. Molten Strike: 22 lands, the boss burns for three ticks of 2.0.
+#  2. With Burn immunity added: 22 still lands, Burning is refused, the caster is told. No ticks.
+#  3. With a 50% Burning resistance instead: 1.5 s at 1.0 a tick (one tick), the caster is told it was partly shrugged off.
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+wait 3
+gota.Boss.AI 0
+wait 3.5
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 250 0
+gota.Duel.Face 0
+wait 0.2
+gota.Ability.Use 0 0
+wait 4.2
+gota.Ability.Dump
+gota.Net.Policy b Slow,Stun,Burn
+gota.Ability.ResetCooldowns 0
+gota.Boss.PlaceTarget 250 0
+gota.Duel.Face 0
+wait 0.2
+gota.Ability.Use 0 0
+wait 1.0
+gota.Test.Shot burn_boss_resist
+wait 3.0
+gota.Ability.Dump
+gota.Net.Policy b Slow,Stun Burning 0.5 0.5
+gota.Ability.ResetCooldowns 0
+gota.Boss.PlaceTarget 250 0
+gota.Duel.Face 0
+wait 0.2
+gota.Ability.Use 0 0
+wait 3.5
+gota.Ability.Dump
+gota.Net.GAS
+quit

@@ -21,6 +21,7 @@ It prints `OK` per pack, or lists each missing or different file, and exits with
 | Paragon: Countess | Fab, free | `Content/ParagonCountess` | key files present |
 | Paragon: Sevarog | Fab, free | `Content/ParagonSevarog` | key files present |
 | Paragon: Rampage | Fab, free | `Content/ParagonRampage` | key files present; patched by step 3 below |
+| Realistic Starter VFX Pack Vol 2 | Fab, free | `Content/Realistic_Starter_VFX_Pack_Vol2` | key file present (`P_Fire_Small`: arena braziers and the Burning status flame). Without it a burning fighter has no flames; damage is unaffected. |
 
 ## Setting up a new machine
 

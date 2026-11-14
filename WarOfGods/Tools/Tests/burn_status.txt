@@ -1,0 +1,52 @@
+# Burning beside the other statuses and damage rules (champion = fighter 1, 260 hp, frozen).
+#  A. Burning + Dread + Slowed at once: all three listed, walk x0.60, ticks unchanged at 2.0.
+#  B. Veiled over a burn: ticks at 1 and 2 s do nothing (hp unchanged), the tick at 3 s lands after the veil ends.
+#  C. Unbreakable over a burn: each 2.0 tick is refunded 1.0.
+#  D. Dread on Drakon weakens Molten Strike's impact (22 -> 18.1) but not the burn it starts (still 2.0 a tick).
+#  E. A burn tick does not interrupt the burning fighter's own cast.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 400 1
+wait 0.3
+# --- A
+gota.Ability.Status 1 Burning 3 2 0
+gota.Ability.Status 1 Dread 3 0.35
+gota.Ability.Status 1 Slowed 3 0.4
+wait 0.4
+gota.Ability.Dump
+wait 3.4
+gota.Ability.Dump
+# --- B
+gota.Ability.Status 1 Burning 3 2 0
+wait 0.2
+gota.Ability.Status 1 Veiled 2.5 0
+wait 3.6
+gota.Ability.Dump
+# --- C
+gota.Ability.Status 1 Unbreakable 4 0.5
+gota.Ability.Status 1 Burning 3 2 0
+wait 4.4
+gota.Ability.Dump
+# --- D
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Status 0 Dread 2 0.35
+wait 0.2
+gota.Ability.Use 0 0
+wait 4.6
+gota.Ability.Dump
+# --- E: Drakon burns; his Molten Strike starts 0.7 s in, so the 1 s tick lands inside the 0.55 s wind-up.
+gota.Ability.ResetCooldowns 0
+gota.Ability.ResetCooldowns 1
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Status 0 Burning 3 2 1
+wait 0.7
+gota.Ability.Use 0 0
+wait 4.5
+gota.Ability.Dump
+gota.Net.GAS
+quit

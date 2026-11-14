@@ -1,0 +1,15 @@
+# Death by burning: the champion is brought to 3 hp, then set alight by fighter 0. Tick 1 leaves 1 hp, tick 2 kills.
+# The kill is credited to the fighter who applied the burn; the effect and flames are cleared; there is no third tick.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 400 1
+wait 0.3
+gota.Duel.Hurt 1 257
+wait 0.3
+gota.Ability.Dump
+gota.Ability.Status 1 Burning 3 2 0
+wait 3.6
+gota.Ability.Dump
+gota.Net.GAS
+quit

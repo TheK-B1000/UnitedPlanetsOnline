@@ -8,6 +8,7 @@
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "Arenas/Duel/DuelGameMode.h"
 #include "Arenas/Duel/DuelGameState.h"
+#include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Abilities/GOTAAbilityTypes.h"
 #include "Bosses/GOTABossComponent.h"
@@ -191,7 +192,8 @@ bool FGOTABlueprintCombat::Call(UObject* Obj, FName Function, UObject* Target, c
 	return true;
 }
 
-bool FGOTABlueprintCombat::ApplyDamage(AActor* Victim, AActor* Causer, float Amount, bool bCanBeBlocked, bool bCanBeParried, const FString& Response)
+bool FGOTABlueprintCombat::ApplyDamage(AActor* Victim, AActor* Causer, float Amount, bool bCanBeBlocked, bool bCanBeParried, const FString& Response,
+	bool bForceInterrupt)
 {
 	UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Victim);
 	UFunction* Fn = nullptr;
@@ -234,7 +236,7 @@ bool FGOTABlueprintCombat::ApplyDamage(AActor* Victim, AActor* Causer, float Amo
 				{
 					if (N.StartsWith(TEXT("CanBeBlocked"))) { B->SetPropertyValue_InContainer(Info, bCanBeBlocked); }
 					else if (N.StartsWith(TEXT("CanBeParried"))) { B->SetPropertyValue_InContainer(Info, bCanBeParried); }
-					else if (N.StartsWith(TEXT("ShouldForceInterrupt"))) { B->SetPropertyValue_InContainer(Info, true); }
+					else if (N.StartsWith(TEXT("ShouldForceInterrupt"))) { B->SetPropertyValue_InContainer(Info, bForceInterrupt); }
 					else { B->SetPropertyValue_InContainer(Info, false); }
 				}
 				else if (N.StartsWith(TEXT("DamageResponse")))
@@ -395,14 +397,27 @@ void UGOTADuelFighterComponent::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	DOREPLIFETIME(UGOTADuelFighterComponent, MaxMomentum);
 }
 
+void UGOTADuelFighterComponent::IgnoreOpponentHealthLoss(const APawn* Whose, float Amount)
+{
+	if (Whose && Whose == Opponent.Get() && LastOpponentHealth >= 0.f)
+	{
+		LastOpponentHealth -= Amount;
+	}
+}
+
 void UGOTADuelFighterComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	TryBindLocalInput();
+	if (GetOwner() && GetOwner()->HasAuthority())
+	{
+		GOTAGAS::OnStatusDamage.AddUObject(this, &UGOTADuelFighterComponent::IgnoreOpponentHealthLoss);
+	}
 }
 
 void UGOTADuelFighterComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+	GOTAGAS::OnStatusDamage.RemoveAll(this);
 	if (bDelegatesBound)
 	{
 		FGOTABlueprintCombat::UnbindDelegate(DamageSystem.Get(), TEXT("OnBlocked"), this, GET_FUNCTION_NAME_CHECKED(UGOTADuelFighterComponent, HandleBlocked));

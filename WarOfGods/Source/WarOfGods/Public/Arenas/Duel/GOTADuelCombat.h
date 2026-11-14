@@ -74,8 +74,12 @@ struct WAROFGODS_API FGOTABlueprintCombat
 	static bool Call(UObject* Obj, FName Function, UObject* Target = nullptr, const FString& EnumEntry = FString(), double Number = 0.0);
 	/** Value of a Blueprint user-defined enum entry by display name (e.g. E_DamageResponse "Stagger"). */
 	static int64 FindEnumValue(const UEnum* Enum, const FString& DisplayName, int64 Fallback = 0);
-	/** Damage through the victim's own BPC_DamageSystem::TakeDamage — the only damage path. */
-	static bool ApplyDamage(AActor* Victim, AActor* Causer, float Amount, bool bCanBeBlocked, bool bCanBeParried, const FString& Response);
+	/**
+	 * Damage through the victim's own BPC_DamageSystem::TakeDamage — the only damage path. bForceInterrupt is the
+	 * Blueprint's ShouldForceInterrupt: true for hits; false for damage that must not cut an action short (status ticks).
+	 */
+	static bool ApplyDamage(AActor* Victim, AActor* Causer, float Amount, bool bCanBeBlocked, bool bCanBeParried, const FString& Response,
+		bool bForceInterrupt = true);
 	/** Spawn-time tuning of the Blueprint health authority's own MaxHealth/Health (before combat). */
 	static bool ConfigureHealth(AActor* Fighter, float MaxHealth);
 	static UAnimMontage* GetActiveMontage(const AActor* Actor, float* OutPosition = nullptr);
@@ -207,6 +211,8 @@ protected:
 	bool bInputBound = false;
 	float LastOwnHealth = -1.f;
 	float LastOpponentHealth = -1.f;
+	/** Server (GOTAGAS::OnStatusDamage): a status tick on the opponent is not a landed hit, so it earns no momentum. */
+	void IgnoreOpponentHealthLoss(const APawn* Whose, float Amount);
 	bool bWasInvincible = false;
 	bool bClientWasInvincible = false;
 	bool bSuppressDodgeDetect = false;

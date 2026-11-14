@@ -1,0 +1,30 @@
+# Legitimate team wipe: the wave starts and nobody fights. The enemies' own attacks kill all four players; no damage
+# is injected. Defeat must be declared once.
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+quit

@@ -1,0 +1,21 @@
+# Remote client. Fights from about host-time 56 s with real abilities. Screenshots only matter on the rendered client.
+wait 38
+gota.Net.Fight 75
+wait 9
+gota.Net.GAS
+gota.Test.Shot mp_burn_self_1
+wait 1
+gota.Test.Shot mp_burn_self_2
+wait 5.5
+gota.Test.Shot mp_burn_all_1
+wait 1
+gota.Test.Shot mp_burn_all_2
+gota.Net.GAS
+wait 2
+gota.Net.Perf
+gota.Net.Perf 30
+wait 20
+gota.Net.GAS
+wait 30
+gota.Net.GAS
+quit

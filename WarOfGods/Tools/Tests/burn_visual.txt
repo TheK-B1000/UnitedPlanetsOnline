@@ -1,0 +1,24 @@
+# Rendered check of Burning: flames on the champion, the local BURNING line when the player burns, nothing left after.
+r.MotionBlurQuality 0
+wait 6
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 1 80 420 50 40
+wait 1.0
+gota.Test.Shot burn_visual_0_none
+gota.Ability.Status 1 Burning 20 2 0
+wait 5.0
+gota.Test.Shot burn_visual_1_burning
+wait 1.3
+gota.Test.Shot burn_visual_2_burning
+gota.Ability.Status 0 Burning 6 1 1
+wait 1.5
+gota.Test.Shot burn_visual_3_player_line
+gota.Ability.ResetCooldowns 1
+gota.Ability.ResetCooldowns 0
+wait 1.5
+gota.Test.Shot burn_visual_4_cleared
+gota.Net.GAS
+quit

@@ -233,7 +233,10 @@ namespace GOTAAbilityTest
 			return true;
 		}));
 	}
-	/** gota.Ability.Status <fighter> <None|Unbreakable|Veiled|Dread|Slowed> <seconds> <magnitude>: server-side status (tests). */
+	/**
+	 * gota.Ability.Status <fighter> <None|Unbreakable|Veiled|Dread|Slowed|Burning> <seconds> <magnitude> [source fighter]:
+	 * server-side status (tests). The optional source fighter is who applied it (kill credit, resist feedback).
+	 */
 	static void Status(const TArray<FString>& Args)
 	{
 		if (Args.Num() < 4)
@@ -248,13 +251,18 @@ namespace GOTAAbilityTest
 		{
 			return;
 		}
-		UGOTAHeroAbilityComponent* A = Pawn->FindComponentByClass<UGOTAHeroAbilityComponent>();
-		if (!A)
+		const EGOTAStatus Status = static_cast<EGOTAStatus>(Value);
+		AActor* Source = Args.Num() > 4 ? GM->GetFighterPawn(FCString::Atoi(*Args[4])) : nullptr;
+		if (Status == EGOTAStatus::None)
 		{
-			A = NewObject<UGOTAHeroAbilityComponent>(Pawn, TEXT("GOTAHeroAbilities"));
-			A->RegisterComponent();
+			// Clearing the legacy slot is a call on the component itself.
+			if (UGOTAHeroAbilityComponent* A = Pawn->FindComponentByClass<UGOTAHeroAbilityComponent>())
+			{
+				A->ApplyStatus(Status, 0.f, 0.f, Source);
+			}
+			return;
 		}
-		A->ApplyStatus(static_cast<EGOTAStatus>(Value), FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), nullptr);
+		UGOTAHeroAbilityComponent::ApplyStatusTo(Pawn, Status, FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), Source);
 	}
 	/**
 	 * gota.Test.SetupBlocker <minDist> <maxDist> [place 0|1] [behind=150]: find solid WorldStatic geometry around fighter 0
@@ -393,7 +401,7 @@ namespace GOTAAbilityTest
 		}
 	}
 	static FAutoConsoleCommand CmdResetCooldowns(TEXT("gota.Ability.ResetCooldowns"), TEXT("Clear a fighter's cooldowns/casts/status [fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&ResetCooldowns));
-	static FAutoConsoleCommand CmdStatus(TEXT("gota.Ability.Status"), TEXT("Apply a status: <fighter> <Status> <seconds> <magnitude>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Status));
+	static FAutoConsoleCommand CmdStatus(TEXT("gota.Ability.Status"), TEXT("Apply a status: <fighter> <Status> <seconds> <magnitude> [source fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Status));
 	static FAutoConsoleCommand CmdPlaceOnCast(TEXT("gota.Ability.PlaceOnCast"), TEXT("After fighter 0's next cast starts, wait <delay>s then Place <dist> (frozen) [side]."), FConsoleCommandWithArgsDelegate::CreateStatic(&PlaceOnCast));
 	static FAutoConsoleCommand CmdPlace(TEXT("gota.Ability.Place"), TEXT("Test: place fighter 1 <dist> in front of fighter 0 [freeze 0|1] [side cm]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Place));
 	static FAutoConsoleCommand CmdUse(TEXT("gota.Ability.Use"), TEXT("Use hero ability: <fighter 0|1> <slot 0-3>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Use));

@@ -149,6 +149,67 @@ CASES = {
         ("boss death clears statuses, keeps policy", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "boss_death.txt",
          [(r"BP_Boss\S*: cleared 1 status effect\(s\) \(death\)", True), (r"Combatant BP_Boss\S+ defeated", True)]),
     ],
+    # Burning (Fire): damage over time through the Blueprint damage system. 2.0 a tick, one tick a second, no tick on
+    # application. "Burning tick on" lines carry the health before and after, which is the proof of the damage.
+    "Burning": [
+        ("Molten Strike ignites: impact once, three exact ticks", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "burn_molten.txt",
+         [(r"MoltenStrike hit BP_Enemy\S+ for 22\.0 \(landed=1\)", 1),
+          (r"BP_Enemy\S+: status Burning 3\.0s x2\.00 \(from BP_Player", 1),
+          (r"Burning applied: 2\.0 per tick every 1\.00s for 3\.0s, owner BP_Player", 1),
+          (r"BP_Player\S+: Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\) hp 238\.0 -> 236\.0 \[GOTA\.Element\.Fire\]", 1),
+          (r"Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\) hp 236\.0 -> 234\.0", 1),
+          (r"Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\) hp 234\.0 -> 232\.0", 1),
+          (r"Burning tick on", 3),                                                          # no tick on application, no fourth
+          (r"Momentum BP_Player\S+ \+3 \(hit landed\)", 1),                                  # the strike; ticks are not hits
+          (r"ABILITY f0 BP_Player\S+ hp=\S+ momentum=5 ", 3),                                # 3 + 2 from the strike, unchanged by the burn
+          (r"ABILITY f1 BP_Enemy\S+ hp=238\.0/", 1), (r"ABILITY f1 BP_Enemy\S+ hp=232\.0/", 2),   # still 232 two seconds later
+          (r"ABILITY f1 gas=\[Burning [0-9.]+s x2\.00\]", 1),
+          (r"GAS standalone ascs=2 withStatus=1 burning=1 flames=1 burnTicks=0", 1),
+          (r"GAS standalone ascs=2 withStatus=0 burning=0 flames=0 burnTicks=3 burnDamage=6\.0", 1),
+          (r"cue GameplayCue\.GOTA\.Status\.Burning on BP_Enemy", True), (r"cue GameplayCue\.GOTA\.Status\.Burning removed from BP_Enemy", 1),
+          (r"burn fx P_Fire_Small on BP_Enemy", 1), (r"burn fx removed from BP_Enemy", 1), (r"burn fx missing", False)]),
+        ("re-application refreshes, never compounds; repeated cycles clean up", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "burn_refresh.txt",
+         [(r"Burning applied: 2\.0 per tick", 5), (r"Burning refreshed: 2\.0 per tick", 1), (r"\(hit landed\)", False),
+          (r"GAS standalone ascs=2 withStatus=1 burning=1 flames=1 burnTicks=1 ", 1),        # one effect, one flame after the refresh
+          (r"GAS standalone ascs=2 withStatus=0 burning=0 flames=0 burnTicks=4 burnDamage=8\.0", 1),
+          (r"ABILITY f1 BP_Enemy\S+ hp=252\.0/", 1),
+          (r"GAS standalone ascs=2 withStatus=0 burning=0 flames=0 burnTicks=12 burnDamage=24\.0", 1),
+          (r"ABILITY f1 BP_Enemy\S+ hp=236\.0/", 1),
+          (r"burn fx P_Fire_Small on BP_Enemy", 5), (r"burn fx removed from BP_Enemy", 5)]),
+        ("coexists with Dread and Slowed; obeys Veiled, Unbreakable; no cast interrupt", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "burn_status.txt",
+         [(r"ABILITY f1 gas=\[(?=[^\]]*Burning)(?=[^\]]*Dread)(?=[^\]]*Slowed)[^\]]*\] immune=\[\] walkx=0\.60", 1),   # A
+          (r"GAS move scale=0\.(39|3[0-9]|2)", False),
+          (r"Burning tick on BP_Enemy\S+ for 2\.0 \(landed=\d\) hp ([0-9.]+) -> \1 ", 2),     # B: two ticks under the veil do nothing
+          (r"Veiled on -> IsInvincible=1", 1), (r"Veiled off -> IsInvincible=0", 1),
+          (r"Unbreakable absorbed 1\.0 of 2\.0", 3),                                         # C
+          (r"MoltenStrike hit BP_Enemy\S+ for 18\.[12] \(landed=1\)", 1),                     # D: impact weakened by Dread
+          (r"BP_Player\S+: Burning tick on BP_Enemy\S+ for 2\.0 ", 15),                       # A3 + B3 + C3 + D3 + E3 (his strike ignites again), all 2.0
+          (r"Burning tick on BP_Player\S+ for 2\.0 \(landed=1\)", 3),                         # E: Drakon burns
+          (r"MoltenStrike hit BP_Enemy\S+ for 22\.0 \(landed=1\)", 1),                        # E: his cast went through
+          (r"MoltenStrike cancelled", False),
+          (r"GAS standalone ascs=2 withStatus=0 burning=0 flames=0 burnTicks=18 burnDamage=32\.0", 1)]),   # 18 ticks, two blocked by the veil
+        ("death by burning: kill credit, cleanup, no tick after death", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "burn_death.txt",
+         [(r"ABILITY f1 BP_Enemy\S+ hp=3\.0/", 1),
+          (r"Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\) hp 3\.0 -> 1\.0", 1),
+          (r"Burning tick on", 2),
+          (r"Combatant BP_Enemy\S+ defeated \(by BP_Player", 1),
+          (r"BP_Enemy\S*: cleared 1 status effect\(s\) \(death\)", 1),
+          (r"burn fx removed from BP_Enemy", 1),
+          (r"GAS standalone ascs=2 withStatus=0 burning=0 flames=0 burnTicks=2 ", 1)]),
+        ("boss: burns by default; Burn immunity and resistance + feedback", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "burn_boss.txt",
+         [(r"status policy QuarryBehemoth immune=\[Slow Stun\]", True),
+          (r"MoltenStrike hit BP_Boss\S+ for 22\.0 \(landed=1\)", 3),                         # the impact never changes
+          (r"BP_Boss\S*: status Burning 3\.0s x2\.00", 1),
+          (r"Burning tick on BP_Boss\S+ for 2\.0 \(landed=1\)", 3),
+          (r"BP_Boss\S*: status Burning resisted \(whole burn \) from BP_Player", 1),
+          (r"FEEDBACK THE QUARRY BEHEMOTH RESISTS BURNING", 1),
+          (r"BP_Boss\S*: status Burning resisted \(reduced\) from BP_Player", 1),
+          (r"FEEDBACK THE QUARRY BEHEMOTH SHRUGS OFF PART OF BURNING", 1),
+          (r"BP_Boss\S*: status Burning 1\.5s x1\.00", 1),
+          (r"Burning tick on BP_Boss\S+ for 1\.0 \(landed=1\)", 1),
+          (r"Burning tick on", 4),
+          (r"GAS standalone ascs=2 withStatus=0 burning=0 flames=0 burnTicks=4 burnDamage=7\.0", 1)]),
+    ],
 }
 # Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.
 MP = {
@@ -177,6 +238,14 @@ MP_STATUS = {
                      (r"overlay M_GOTA_Overlay_Unbreakable -> M_GOTA_Overlay_Slowed on BP_Player", True),   # priority hand-off at expiry
                      (r"BP_Player\S*: GAS move scale=0\.60", True),
                      (r"cue GameplayCue\.GOTA\.Status\.Unbreakable removed from BP_Player", True)]),
+    "Burning": ("Drakon", "burn_mp_host.txt",
+                [(r"MoltenStrike hit BP_Player\S+ for 22\.0 \(landed=1\)", 1), (r"BP_Player\S+: status Burning 3\.0s x2\.00", 1),
+                 (r"Burning tick on BP_Player\S+ for 2\.0 \(landed=1\)", 3),
+                 (r"GAS listen-server ascs=2 withStatus=0 burning=0 flames=0 burnTicks=3 burnDamage=6\.0", 1)],
+                [(r"cue GameplayCue\.GOTA\.Status\.Burning on BP_Player", True), (r"burn fx P_Fire_Small on BP_Player", 1),
+                 (r"FEEDBACK STATUS BURNING on", 1), (r"FEEDBACK STATUS BURNING off", 1),
+                 (r"burn fx removed from BP_Player", 1), (r"cue GameplayCue\.GOTA\.Status\.Burning removed from BP_Player", 1),
+                 (r"Burning tick on", False)]),                                               # ticks are server-only
 }
 
 
