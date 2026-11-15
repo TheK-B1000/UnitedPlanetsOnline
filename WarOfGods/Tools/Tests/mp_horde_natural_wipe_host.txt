@@ -1,0 +1,35 @@
+# Natural team wipe in a standard match: no extra enemies, no injected damage. Wave-1 enemies only fight back once hurt,
+# so each player swings once at each enemy and never attacks again; the enemies' own attacks decide. One Defeat expected.
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 20
+gota.Net.Fight 600 provoke
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+wait 30
+gota.Horde.Dump
+gota.Net.Players
+quit

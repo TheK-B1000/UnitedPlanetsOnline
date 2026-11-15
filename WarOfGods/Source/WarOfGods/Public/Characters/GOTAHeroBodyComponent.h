@@ -33,6 +33,8 @@ public:
 
 	void SetHeroId(FName InHeroId);
 	FName GetHeroId() const { return HeroId; }
+	/** Development: rebuild the visible body on this machine (cloth stress tests). */
+	void DebugRebuildBody() { ApplyBody(); }
 
 	UFUNCTION(BlueprintPure, Category = "GOTA|Heroes")
 	USkeletalMeshComponent* GetBodyMesh() const { return Body; }

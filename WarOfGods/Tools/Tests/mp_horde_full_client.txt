@@ -1,0 +1,4 @@
+wait 24
+gota.Net.Fight 2200
+wait 2180
+quit

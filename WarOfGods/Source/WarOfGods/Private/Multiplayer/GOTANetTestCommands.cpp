@@ -28,6 +28,8 @@
 #include "RHI.h"
 #include "TimerManager.h"
 #include "Bosses/GOTABossComponent.h"
+#include "AIController.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
 #include "Containers/Ticker.h"
 #include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
@@ -286,6 +288,38 @@ namespace GOTANetTest
 			}
 		}
 		UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Target);
+		if (Target)
+		{
+			UE_LOG(LogGOTANet, Log, TEXT("INSPECT actor %s CanBeDamaged=%d hidden=%d hp=%.1f at=%s"), *GetNameSafe(Target), Target->CanBeDamaged() ? 1 : 0, Target->IsHidden() ? 1 : 0,
+				UGOTACombatantObserver::ReadVitals(Target).Health, *Target->GetActorLocation().ToCompactString());
+			// The actor Blueprint's own variables (not inherited engine ones): state such as floating or teleporting.
+			for (TFieldIterator<FProperty> It(Target->GetClass()); It; ++It)
+			{
+				if (It->GetOwnerClass() && It->GetOwnerClass()->IsNative())
+				{
+					continue;
+				}
+				if (It->IsA<FBoolProperty>() || It->IsA<FNumericProperty>() || It->IsA<FObjectPropertyBase>() || It->IsA<FEnumProperty>())
+				{
+					FString Value;
+					It->ExportTextItem_InContainer(Value, Target, nullptr, nullptr, PPF_None);
+					UE_LOG(LogGOTANet, Log, TEXT("INSPECT  actor.%s = %s"), *It->GetName(), *Value.Left(100));
+				}
+			}
+			if (const APawn* TargetPawn = Cast<APawn>(Target))
+			{
+				const AAIController* AIC = Cast<AAIController>(TargetPawn->GetController());
+				if (const UBehaviorTreeComponent* BT = AIC ? Cast<UBehaviorTreeComponent>(AIC->GetBrainComponent()) : nullptr)
+				{
+					UE_LOG(LogGOTANet, Log, TEXT("INSPECT  brain running=%d paused=%d task=%s"), BT->IsRunning() ? 1 : 0, BT->IsPaused() ? 1 : 0,
+						*BT->DescribeActiveTasks().Replace(TEXT("\n"), TEXT(" | ")));
+				}
+				else
+				{
+					UE_LOG(LogGOTANet, Log, TEXT("INSPECT  brain none (controller %s)"), *GetNameSafe(TargetPawn->GetController()));
+				}
+			}
+		}
 		if (!DS)
 		{
 			UE_LOG(LogGOTANet, Warning, TEXT("INSPECT no damage system on %s"), *GetNameSafe(Target));
@@ -304,7 +338,12 @@ namespace GOTANetTest
 				UE_LOG(LogGOTANet, Log, TEXT("INSPECT  delegate %s(%s)"), *It->GetName(), *Sig.TrimEnd());
 				continue;
 			}
-			UE_LOG(LogGOTANet, Log, TEXT("INSPECT  prop %s : %s%s"), *It->GetName(), *It->GetCPPType(), It->HasAnyPropertyFlags(CPF_Net) ? TEXT(" [replicated]") : TEXT(""));
+			FString Value;
+			if (It->IsA<FBoolProperty>() || It->IsA<FNumericProperty>() || It->IsA<FEnumProperty>() || It->IsA<FNameProperty>() || It->IsA<FObjectPropertyBase>())
+			{
+				It->ExportTextItem_InContainer(Value, DS, nullptr, nullptr, PPF_None);
+			}
+			UE_LOG(LogGOTANet, Log, TEXT("INSPECT  prop %s : %s%s = %s"), *It->GetName(), *It->GetCPPType(), It->HasAnyPropertyFlags(CPF_Net) ? TEXT(" [replicated]") : TEXT(""), *Value.Left(120));
 		}
 	}
 
@@ -695,6 +734,40 @@ namespace GOTANetTest
 	static FVector FightStrafe = FVector::ZeroVector;
 	static TWeakObjectPtr<APawn> FightStuckTarget;
 	static FTSTicker::FDelegateHandle FightHandle;
+	/** Targets the driver could not close on (ledges, no path): skipped until the time stored. */
+	static TMap<TWeakObjectPtr<APawn>, double> FightSkipUntil;
+	static int32 FightTargetSwitches = 0;
+	/** Approach mode: walk into the fight but never attack (natural-defeat tests: only the enemies deal damage). */
+	static bool bFightApproachOnly = false;
+	/** Provoke mode: one melee swing per enemy (Horde enemies only fight back once hurt), then no more attacks. */
+	static bool bFightProvokeOnce = false;
+	static TSet<TWeakObjectPtr<APawn>> FightProvoked;
+
+	/** Nearest living non-player combatant that is not being skipped. */
+	static APawn* FindFightTarget(UWorld* World, const APawn* Me, double Now)
+	{
+		APawn* Best = nullptr;
+		float BestDist = TNumericLimits<float>::Max();
+		for (TActorIterator<APawn> It(World); It; ++It)
+		{
+			APawn* P = *It;
+			if (P == Me || P->IsPlayerControlled() || !UGOTACombatantObserver::FindDamageSystem(P) || UGOTACombatantObserver::IsCombatantDefeated(P))
+			{
+				continue;
+			}
+			if (const double* Until = FightSkipUntil.Find(P); Until && *Until > Now)
+			{
+				continue;
+			}
+			const float D = FVector::DistSquared(P->GetActorLocation(), Me->GetActorLocation());
+			if (D < BestDist)
+			{
+				BestDist = D;
+				Best = P;
+			}
+		}
+		return Best;
+	}
 
 	/** Local pawn only. Walks at the current combat target, uses MeleeAttack and RequestActivate. Not a kill injector. */
 	static bool TickFight(float)
@@ -702,7 +775,7 @@ namespace GOTANetTest
 		UWorld* World = GameWorld();
 		if (!World || World->GetTimeSeconds() > FightUntil)
 		{
-			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d"), FightAttacks, FightAbilities);
+			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d targetSwitches=%d"), FightAttacks, FightAbilities, FightTargetSwitches);
 			FightHandle.Reset();
 			return false;
 		}
@@ -712,14 +785,22 @@ namespace GOTANetTest
 		{
 			return true;
 		}
+		const double Now = World->GetTimeSeconds();
 		APawn* Target = nullptr;
 		if (const UGOTADuelFighterComponent* Fighter = Me->FindComponentByClass<UGOTADuelFighterComponent>())
 		{
 			Target = Fighter->GetOpponent();
 		}
-		if (!IsValid(Target) || UGOTACombatantObserver::IsCombatantDefeated(Target))
+		const double* Skip = Target ? FightSkipUntil.Find(Target) : nullptr;
+		if (!IsValid(Target) || UGOTACombatantObserver::IsCombatantDefeated(Target) || (Skip && *Skip > Now))
 		{
-			Target = GOTACombatLive::FindCombatTarget(Me);
+			// Horde has many enemies: walk to the nearest one this driver can actually reach. A duel has one opponent,
+			// which is never skipped for long (it is also the only candidate).
+			Target = FindFightTarget(World, Me, Now);
+			if (!Target)
+			{
+				Target = GOTACombatLive::FindCombatTarget(Me);
+			}
 		}
 		if (!Target)
 		{
@@ -727,7 +808,6 @@ namespace GOTANetTest
 		}
 		const FVector To = Target->GetActorLocation() - Me->GetActorLocation();
 		const float Dist = To.Size2D();
-		const double Now = World->GetTimeSeconds();
 		if (FightStuckTarget.Get() != Target)
 		{
 			FightStuckTarget = Target;
@@ -740,6 +820,15 @@ namespace GOTANetTest
 			FightBestDist = Dist;
 			FightStuckSince = Now;
 			FightStrafe = FVector::ZeroVector;
+		}
+		// No closer for 6 s (pinned on geometry, target on a ledge): leave it for 12 s and take the next nearest.
+		if (Now - FightStuckSince > 6.0 && Dist > 110.f)
+		{
+			FightSkipUntil.Add(Target, Now + 12.0);
+			++FightTargetSwitches;
+			UE_LOG(LogGOTANet, Log, TEXT("FIGHT skip %s dist=%.0f vert=%.0f for 12s on %s"), *GetNameSafe(Target), Dist, To.Z, *GetNameSafe(Me));
+			FightStuckTarget = nullptr;
+			return true;
 		}
 		FVector Move = To.GetSafeNormal2D();
 		// Straight-line input pins the pawn on arena geometry (rc6fight3 held 135 cm with los=0). Strafe until the gap closes.
@@ -758,13 +847,24 @@ namespace GOTANetTest
 		FRotator Face = To.Rotation();
 		Face.Pitch = 0.f;
 		PC->SetControlRotation(Face);
-		if (Dist < 260.f && Now >= FightNextAttack)
+		const bool bMaySwing = !bFightApproachOnly && (!bFightProvokeOnce || !FightProvoked.Contains(Target));
+		if (bMaySwing && Dist < 260.f && Now >= FightNextAttack)
 		{
+			if (bFightProvokeOnce)
+			{
+				FightProvoked.Add(Target);
+				// The Blueprint swing misses enemies standing on the arena step; the hero's first ability reaches them.
+				if (UGOTAHeroAbilityComponent* Abilities = Me->FindComponentByClass<UGOTAHeroAbilityComponent>(); Abilities && Abilities->GetNumAbilities() > 0)
+				{
+					Abilities->RequestActivate(0);
+				}
+				UE_LOG(LogGOTANet, Log, TEXT("FIGHT provoke %s dist=%.0f on %s"), *GetNameSafe(Target), Dist, *GetNameSafe(Me));
+			}
 			FGOTABlueprintCombat::Call(Me, TEXT("MeleeAttack"));
 			FightNextAttack = Now + 0.85;
 			++FightAttacks;
 		}
-		if (Dist < 500.f && Now >= FightNextAbility)
+		if (!bFightApproachOnly && !bFightProvokeOnce && Dist < 500.f && Now >= FightNextAbility)
 		{
 			if (UGOTAHeroAbilityComponent* Abilities = Me->FindComponentByClass<UGOTAHeroAbilityComponent>())
 			{
@@ -800,11 +900,17 @@ namespace GOTANetTest
 		FightBestDist = 0.f;
 		FightStrafe = FVector::ZeroVector;
 		FightStuckTarget = nullptr;
+		FightSkipUntil.Reset();
+		FightTargetSwitches = 0;
+		bFightApproachOnly = Args.Num() > 1 && Args[1].Equals(TEXT("approach"), ESearchCase::IgnoreCase);
+		bFightProvokeOnce = Args.Num() > 1 && Args[1].Equals(TEXT("provoke"), ESearchCase::IgnoreCase);
+		FightProvoked.Reset();
 		if (!FightHandle.IsValid())
 		{
 			FightHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&TickFight), 0.f);
 		}
-		UE_LOG(LogGOTANet, Log, TEXT("FIGHT armed %.0fs (local MeleeAttack + RequestActivate, no injected kills)"), Seconds);
+		UE_LOG(LogGOTANet, Log, TEXT("FIGHT armed %.0fs %s"), Seconds, bFightApproachOnly ? TEXT("(approach only: walks into the fight, never attacks)")
+			: bFightProvokeOnce ? TEXT("(provoke: one melee swing and one first-slot ability per enemy, then nothing)") : TEXT("(local MeleeAttack + RequestActivate, no injected kills)"));
 	}
 
 	static double WatchLimit = 15.0;
@@ -916,7 +1022,7 @@ namespace GOTANetTest
 		UE_LOG(LogGOTANet, Log, TEXT("HORDE WATCH armed %.0fs (stall if a player stays within 500cm and nothing lands)"), WatchLimit);
 	}
 
-	static FAutoConsoleCommand CmdFight(TEXT("gota.Net.Fight"), TEXT("Local pawn fights the current target with MeleeAttack and real ability slots. Args: seconds."), FConsoleCommandWithArgsDelegate::CreateStatic(&Fight));
+	static FAutoConsoleCommand CmdFight(TEXT("gota.Net.Fight"), TEXT("Local pawn fights the current target with MeleeAttack and real ability slots. Args: seconds [approach = walk in, never attack | provoke = one swing per enemy, no abilities]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Fight));
 	static FAutoConsoleCommand CmdWatch(TEXT("gota.Horde.Watch"), TEXT("Server: log HORDE STALL if players stay within 500cm of a living enemy and neither kills nor ability hits advance. Args: seconds (min 5)."), FConsoleCommandWithArgsDelegate::CreateStatic(&Watch));
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
 	static FAutoConsoleCommand CmdHurt(TEXT("gota.Net.Hurt"), TEXT("Server: damage player <index> <amount> through its own damage system."), FConsoleCommandWithArgsDelegate::CreateStatic(&Hurt));

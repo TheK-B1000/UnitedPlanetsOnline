@@ -1,0 +1,14 @@
+# Rendered check that cloth heroes still look right: Kairos (Gideon) and the Nyx foe (Countess), both cloth meshes.
+r.MotionBlurQuality 0
+wait 6
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 1 80 420 50 40
+wait 1.5
+gota.Test.Shot cloth_mode0_nyx
+gota.Test.RebuildBodies 60 0.1
+wait 62
+gota.Test.Shot cloth_mode0_after_rebuilds
+quit

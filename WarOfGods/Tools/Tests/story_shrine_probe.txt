@@ -1,0 +1,16 @@
+# Story shrine enemy: what its damage system holds, and whether a direct hit, a Blueprint-style hit and a Burning tick
+# land. Single player at the Divine Shrine checkpoint. No flag is changed.
+wait 30
+gota.Net.Players
+gota.Net.InspectDamage Boss
+gota.Net.Status e0 Burning 3 2 p0
+wait 3.5
+gota.Net.Ability 0 0
+wait 2
+gota.Net.InspectDamage Boss
+# A full hit through the same Blueprint TakeDamage path (stagger response, forced interrupt).
+gota.Net.KillEnemy 0
+wait 1
+gota.Net.InspectDamage Boss
+gota.Net.GAS
+quit

@@ -3,6 +3,7 @@
 // relative to the hidden gameplay mesh. Runs on whichever machine executes it (server or client).
 
 #include "CoreMinimal.h"
+#include "Containers/Ticker.h"
 
 #if !UE_BUILD_SHIPPING
 
@@ -243,7 +244,39 @@ namespace GOTABodyTest
 	}
 	static FAutoConsoleCommand CmdLookAt(TEXT("gota.Test.LookAt"), TEXT("Camera on a character: <ClassSubstring> [dist] [yaw] [n]."), FConsoleCommandWithArgsDelegate::CreateStatic(&LookAt));
 
-	static FAutoConsoleCommand CmdBody(TEXT("gota.Test.Body"), TEXT("Log hero bodies, hand gaps and kept weapons on this machine."), FConsoleCommandWithArgsDelegate::CreateStatic(&Body));
+/**
+ * gota.Test.RebuildBodies <seconds> [interval=0.25]: on this machine, destroy and rebuild every hero body repeatedly
+ * (a new skeletal mesh component each time, as on spawn and respawn). Stresses the first frames of cloth meshes.
+ */
+static FTSTicker::FDelegateHandle GRebuildTicker;
+static void RebuildBodies(const TArray<FString>& Args)
+{
+	const double Until = FPlatformTime::Seconds() + (Args.Num() > 0 ? FCString::Atof(*Args[0]) : 30.0);
+	const float Interval = Args.Num() > 1 ? FMath::Max(0.02f, FCString::Atof(*Args[1])) : 0.25f;
+	TSharedRef<int32> Count = MakeShared<int32>(0);
+	FTSTicker::GetCoreTicker().RemoveTicker(GRebuildTicker);
+	GRebuildTicker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([Until, Count](float)
+	{
+		UWorld* World = GOTABodyTest::GameWorld();
+		if (!World || FPlatformTime::Seconds() > Until)
+		{
+			UE_LOG(LogGOTABodyTest, Log, TEXT("BODY rebuild finished: %d rebuilds"), *Count);
+			return false;
+		}
+		for (TActorIterator<ACharacter> It(World); It; ++It)
+		{
+			if (UGOTAHeroBodyComponent* Body = It->FindComponentByClass<UGOTAHeroBodyComponent>())
+			{
+				Body->DebugRebuildBody();
+				++*Count;
+			}
+		}
+		return true;
+	}), Interval);
+	UE_LOG(LogGOTABodyTest, Log, TEXT("BODY rebuild every %.2fs"), Interval);
+}
+FAutoConsoleCommand CmdRebuildBodies(TEXT("gota.Test.RebuildBodies"), TEXT("Rebuild every hero body repeatedly on this machine: <seconds> [interval]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RebuildBodies));
+FAutoConsoleCommand CmdBody(TEXT("gota.Test.Body"), TEXT("Log hero bodies, hand gaps and kept weapons on this machine."), FConsoleCommandWithArgsDelegate::CreateStatic(&Body));
 	static FAutoConsoleCommand CmdSpawns(TEXT("gota.Test.WatchSpawns"), TEXT("Log actors spawned by characters (0 = stop)."), FConsoleCommandWithArgsDelegate::CreateStatic(&WatchSpawns));
 }
 

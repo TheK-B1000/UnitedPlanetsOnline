@@ -1,0 +1,11 @@
+# Cloth first-frame stress: every hero body (Nyx/Countess and Kairos/Gideon have cloth) is rebuilt every 0.1 s for
+# 90 s on this rendered process. Reproduces the GPUSkinVertexFactory.cpp:1348 assertion when it is going to happen.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.5
+gota.Duel.Face 0
+gota.Test.RebuildBodies 90 0.1
+wait 92
+quit

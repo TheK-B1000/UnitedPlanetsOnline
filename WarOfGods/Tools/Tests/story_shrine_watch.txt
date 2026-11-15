@@ -1,0 +1,35 @@
+# Story shrine enemy over time: damage-system flags, its own Blueprint state, height and behavior-tree task, every 5 s
+# from the start of the mission. Nothing is changed; nobody attacks it until the end.
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+wait 5
+gota.Net.InspectDamage Boss
+gota.Net.KillEnemy 0
+wait 1
+gota.Net.InspectDamage Boss
+quit
