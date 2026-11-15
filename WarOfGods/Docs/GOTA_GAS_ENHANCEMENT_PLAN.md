@@ -1,6 +1,6 @@
 # Selective GAS enhancement plan
 
-**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning milestone (`548a433` and the record commit after it) is local only, not pushed. **Engine:** Unreal Engine 5.8 native Gameplay Ability System. RC1–RC7 packages are not modified; Burning was packaged as RC8.
+**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning code commit `548a433` is on `origin` (pushed 2026-11-14, outside the session that wrote it); the record commits after it are local. **Engine:** Unreal Engine 5.8 native Gameplay Ability System. RC1–RC7 packages are not modified; Burning was packaged as RC8.
 
 We use GAS where it improves on what we already have. Health, momentum, cooldowns, basic attacks, block, perfect parry, perfect dodge, Divine Counter, and boss timelines keep their current owners. No talent trees, XP, levels, or persistent progression.
 
