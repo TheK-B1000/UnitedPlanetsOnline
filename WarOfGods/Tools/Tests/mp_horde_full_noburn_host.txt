@@ -1,0 +1,117 @@
+# Control for the post-victory client crash: the same match with element statuses off (nothing ignites).
+gota.GAS.ElementStatus 0
+# Legitimate Horde match to the end: four players fight with melee and real abilities (both Drakons ignite). Nothing is
+# injected: SkipPrep only ends the opening preparation timer; the fight driver only picks which enemy to walk to.
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 30
+gota.Net.Momentum 0 0
+gota.Net.Fight 2200
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+gota.Net.Players
+quit
