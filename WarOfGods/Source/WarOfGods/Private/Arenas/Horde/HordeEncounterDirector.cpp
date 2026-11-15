@@ -391,12 +391,13 @@ void AHordeEncounterDirector::HandleEnemyEndPlay(AActor* Actor, EEndPlayReason::
 		return;
 	}
 
-	for (FHordeTrackedEnemy& Tracked : TrackedEnemies)
+	// By index: NotifyEnemyDefeated can end the wave or the match, which empties TrackedEnemies (CleanupTrackedEnemies).
+	for (int32 Index = 0; Index < TrackedEnemies.Num(); ++Index)
 	{
-		if (Tracked.Pawn.Get() == Actor)
+		if (TrackedEnemies[Index].Pawn.Get() == Actor)
 		{
 			const bool bLegitimate = Reason == EEndPlayReason::Destroyed;
-			NotifyEnemyDefeated(Tracked, bLegitimate);
+			NotifyEnemyDefeated(TrackedEnemies[Index], bLegitimate);
 			break;
 		}
 	}
@@ -438,8 +439,12 @@ void AHordeEncounterDirector::TickAliveScrub()
 	}
 
 	bool bChanged = false;
-	for (FHordeTrackedEnemy& Tracked : TrackedEnemies)
+	// By index, re-reading Num() each pass: the last defeat of a wave broadcasts OnWaveCleared, and the game mode then
+	// starts the next wave or ends the match, both of which empty TrackedEnemies. A ranged-for here iterated a reset
+	// array at every legitimate Victory (ensure "Array has changed during ranged-for iteration").
+	for (int32 Index = 0; Index < TrackedEnemies.Num(); ++Index)
 	{
+		FHordeTrackedEnemy& Tracked = TrackedEnemies[Index];
 		if (Tracked.bCountedDead)
 		{
 			continue;
