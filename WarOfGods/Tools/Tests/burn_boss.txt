@@ -11,6 +11,8 @@ wait 3.5
 gota.Test.Heal 0 200
 gota.Boss.PlaceTarget 250 0
 gota.Duel.Face 0
+wait 0.6
+gota.Duel.Face 0
 wait 0.2
 gota.Ability.Use 0 0
 wait 4.2
@@ -18,6 +20,8 @@ gota.Ability.Dump
 gota.Net.Policy b Slow,Stun,Burn
 gota.Ability.ResetCooldowns 0
 gota.Boss.PlaceTarget 250 0
+gota.Duel.Face 0
+wait 0.6
 gota.Duel.Face 0
 wait 0.2
 gota.Ability.Use 0 0
@@ -28,6 +32,8 @@ gota.Ability.Dump
 gota.Net.Policy b Slow,Stun Burning 0.5 0.5
 gota.Ability.ResetCooldowns 0
 gota.Boss.PlaceTarget 250 0
+gota.Duel.Face 0
+wait 0.6
 gota.Duel.Face 0
 wait 0.2
 gota.Ability.Use 0 0

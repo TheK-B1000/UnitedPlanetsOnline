@@ -1,6 +1,6 @@
 # Selective GAS enhancement plan
 
-**Updated:** 2026-11-08. **Branch:** `feature/gota-cinematic-frontend`, local commits only, nothing pushed. **Engine:** Unreal Engine 5.8 native Gameplay Ability System. RC2–RC6 packages are not modified.
+**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning milestone (`548a433` and the record commit after it) is local only, not pushed. **Engine:** Unreal Engine 5.8 native Gameplay Ability System. RC1–RC7 packages are not modified; Burning was packaged as RC8.
 
 We use GAS where it improves on what we already have. Health, momentum, cooldowns, basic attacks, block, perfect parry, perfect dodge, Divine Counter, and boss timelines keep their current owners. No talent trees, XP, levels, or persistent progression.
 
@@ -15,7 +15,8 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Four-player Story / Horde status runs, `gota.Net.Status`, this document | `d103007` | Done |
 | Boss status policies, resist feedback, lazy enemy ASC, cost measurement | `0a9f852` | Done |
 | Packaged (RC7) regression and this record | `bb69d11` | Done |
-| Burning (damage over time), Molten Strike ignites, element definitions, BURNING indicator | this commit | see test record |
+| Burning (damage over time), Molten Strike ignites, element definitions, BURNING indicator | `548a433` | Done |
+| Packaged (RC8) regression and the Burning record | next commit | see test record |
 
 ## Ownership
 
@@ -178,6 +179,103 @@ Nothing else changed: the same numbers, the same Blueprint flags, the same damag
 
 ## Test record
 
+### Burning milestone (`548a433`), editor and packaged RC8
+
+**Packaged build:** fresh `RunUAT BuildCookRun` Win64 Development from `548a433` (same command line as RC7; `Saved/Cooked` and `Saved/StagedBuilds` removed first), archive `B:\Unreal\GOTA_Builds\RC8_548a433` (inner exe 346,700,800 bytes). Cook log `RC8_548a433_cook.log`: 3,937 packages cooked, **0 incrementally skipped**, 16 skipped by platform, no cook errors. RC1–RC7 not touched. One machine; no Shipping build; no second PC.
+
+Multiplayer clients used `NetEmulation.PktLag 120`, `PktLagVariance 30`, `PktLoss 5` (pings 131–166 ms). Damage is proven from the server log: every tick line carries the victim's health before and after.
+
+#### Regression suite (`Tools/GOTA_AbilityRegression.py`)
+
+The suite has 46 cases: the 40 that existed at `bb69d11` (30 single-player, 10 listen-server + client; the earlier "42" in this document was a miscount) and 6 new Burning cases.
+
+| Run | Result |
+|---|---|
+| Editor, final binary | **46/46**, first pass (run twice on successive binaries, both 46/46) |
+| Packaged RC8 | **45/46** on the first pass; the Burning group re-run alone after a test fix: **6/6** |
+
+The packaged failure was the boss Burning case. Its second Molten Strike missed the boss at 250 cm (`MoltenStrike missed nearest=... horiz=250 los=1`): the script cast 0.2 s after `gota.Duel.Face`, before the facing had applied at packaged frame rates, so the immunity step had no hit to refuse. No Burning code ran in the failing step. The script now faces twice over 0.8 s. The other 40 cases were not re-run after that script change.
+
+Burning cases and what each proves:
+
+| Case | Key evidence |
+|---|---|
+| Molten Strike ignites | Impact 22.0 exactly once. `Burning applied: 2.0 per tick every 1.00s for 3.0s`. Three ticks, `238 -> 236 -> 234 -> 232`, none on application, no fourth; still 232 two seconds later. Momentum stays at 5 (3 hit landed + 2 ability hit from the strike; ticks add none). One flame on, one off. |
+| Refresh, repeated cycles | Burning at t = 0 and again at 1.5 s: one effect, one flame, 4 ticks, 260 -> 252. Then four apply/expire cycles: 12 ticks and 24.0 damage in total, 5 flames on and 5 off, nothing left. |
+| Statuses and damage rules | Burning + Dread + Slowed listed together, walk x0.60. Under Veiled two ticks leave health unchanged and the third lands after the veil. Under Unbreakable `absorbed 1.0 of 2.0` three times. Dread on Drakon: impact 18.1, ticks still 2.0. A burning Drakon casts Molten Strike through a tick: no `cancelled`. 18 ticks, 32.0 damage. |
+| Death by burning | Champion at 3 hp: tick to 1, tick kills. `defeated (by BP_Player...)`, `cleared 1 status effect(s) (death)`, flame removed, 2 ticks in total. |
+| Boss | Quarry Behemoth burns by default (3 ticks). With `GOTA.Immunity.Burn`: 22 still lands, `status Burning resisted (whole burn )`, "THE QUARRY BEHEMOTH RESISTS BURNING". With a 50% resistance: 1.5 s at 1.0 a tick, one tick, "... SHRUGS OFF PART OF BURNING". |
+| Listen server + remote client | Host Drakon ignites the remote player: 3 ticks on the server. The client logs the cue, one flame on and off, and its own `FEEDBACK STATUS BURNING on` / `off`. No tick line on the client. |
+
+#### Four-player Horde (`mp_burn_horde_*`; host Drakon, remote Drakon, Kairos, Nyx; one rendered remote client)
+
+| | Editor (`burn_horde_f`) | Packaged (`pkg_burn_horde`) |
+|---|---|---|
+| Players | 4 | 4 |
+| Ownership: p0 ignites, p1 re-applies 1.2 s later | Tick 1 credited to p0, ticks 2–4 to p1, `100 -> 98 -> 96 -> 94 -> 92` | same |
+| Kill by a remote player's burn | `defeated (by <p1 pawn>)`, `Horde kill credit: ... +100` to that player | same |
+| Molten Strike hits (both Drakons, real casts) | 5 | 6 |
+| Burning applied / refreshed / ticks | 11 / 3 / 33 | 12 / 3 / 35 |
+| Rendered remote client: flames on / off | 11 / 11 | 12 / 12 |
+| Removal cues on each of the three clients | 11 | 12 |
+| Remote players set alight (p1, p2) | each client logs its own BURNING line on and off once; p3 never does | same |
+| Ability systems | 4 at start, one more per enemy first ignited, gone with the enemy | same |
+| `HORDE STALL`, assertion, crash | none | none |
+
+The first editor run (`burn_horde`, before the performance fix) gave the same ownership and cleanup results.
+
+Rendered evidence: `Saved/Screenshots/GOTA/burn_visual_2_burning.png` (flames on the champion and the BURNING line, editor) and `mp_burn_all_2.png` (a burning enemy seen from the rendered remote client, editor). Under `-nullrhi` no flame component is created, so `flames=0` on those processes while `burning` is non-zero.
+
+#### Four-player Story (`mp_burn_story_*`, packaged)
+
+Statuses are applied with `gota.Net.Status`, as in the earlier Story runs (the fight driver cannot reach the shrine enemies).
+
+- **Run 1 (`pkg_burn_story`): incomplete.** The rendered remote client crashed 15 s after joining, 0.1 s after the remote Nyx body (Countess, a cloth mesh) was created on it: `Assertion failed: bPrevious [GPUSkinVertexFactory.cpp:1348]` in the engine's cloth vertex factory, on a render worker thread. That was about 20 s before the first Burning was applied and the client's log has no Burning cue. The server-side checks in that run still matched run 2. The same client rendered the same bodies in both Horde runs without this assertion; it has been seen once.
+- **Run 2 (`pkg_burn_story2`): pass.** 4 players throughout. Ownership hand-off on the shrine enemy; a remote player burning beside Slowed; under Veiled two ticks leave 100/100 and the third lands; under Unbreakable `absorbed 1.0 of 2.0` three times; a remote player killed while burning: `cleared 1 status effect(s) (death)`, respawned as a new pawn with no status. Rendered client: 5 flames on, 5 off. 14 ticks.
+- The shrine enemy (`BP_Enemy_Boss`) took no damage from its burn: every tick logged `landed=0`, `700 -> 700`. Its damage system refused the damage. Whether it refuses direct hits in that state too was not checked.
+
+#### Duel and Drakon versus Rampage (packaged)
+
+- Suite groups on RC8: every Duel ability case and its listen-server case, Dread 5/5, Veiled 3/3, Unbreakable 3/3, Boss 3/3 (policy, `slice_mechanics` with 2 Divine Counters at 90 damage and the 2.6 s stun, boss death).
+- Full fight (`slice_drakon_rampage.txt`, bot in fight mode): boss defeated, Phase II at 49%, 4 perfect parries, 7 perfect dodges, 5 Divine Counters (`90 damage (landed=1)`, each `STUNNED ... for 2.6s`). The bot does not cast abilities, so nothing burned; the five Divine Counters, which play Molten Strike's animation, ignited nothing, as intended.
+
+#### Horde performance with Burning (four players, 20 extra enemies, everyone fighting, host rendering, clients `-nullrhi`, 30 s window)
+
+The Burning run re-ignites every living enemy every 2.5 s while both Drakons ignite with Molten Strike; the baseline is the same script with `gota.GAS.ElementStatus 0` and no burns.
+
+| | Editor baseline | Editor Burning | Packaged baseline | Packaged Burning |
+|---|---|---|---|---|
+| Concurrent Burning effects (peak) | 0 | 24 | 0 | 24 |
+| Ability systems on the host | 6 | 28 | 4 | 28 |
+| Burn ticks (damage events) / damage | 0 | 668 / 1,336 | 0 | 687 / 1,374 |
+| Refreshes | 0 | 248 | 0 | 251 |
+| Host frame, average | 18.2 ms | 24.9 ms | 18.1 ms | 20.5 ms |
+| Host frame, worst | 67.7 ms | 65.6 ms | 49.3 ms | 53.7 ms |
+| Frames over 100 ms | 0 | 0 | 0 | 0 |
+| GPU, average | 5.0 ms | 6.1 ms | 4.8 ms | 6.4 ms |
+| Host upload in the window | 713 KB | 696 KB | 524 KB | 854 KB |
+| Host download in the window | 371 KB | 352 KB | 356 KB | 372 KB |
+| Real ability casts / hits | 33 / 38 | 24 / 25 | 21 / 17 | 23 / 19 |
+| Kill credits | 3 | 3 | 2 | 2 |
+| Flames left at the end | 0 | 0 | 0 | 1 (one enemy still burning when the script quit) |
+
+- The Blueprint damage call itself costs about 0.1 ms per tick (median 0.10 ms over 733 ticks in the editor).
+- Twenty-four enemies burning at once cost 2.4 ms (packaged) to 6.7 ms (editor) of host frame time and about 1.5 ms of GPU. The split between the extra ability systems, the 24 particle emitters and replication was not measured.
+- The packaged upload figures are not a clean comparison: in the packaged baseline all four players had died 12 s before the window closed, so less was being replicated. The editor pair, where the fight lasted the whole window, shows no difference.
+- Normal play ignites one to three enemies per Molten Strike; this test is a deliberate worst case.
+
+**A performance defect found and fixed during this work.** The first load run (`burn_perf`, before the fix) averaged 58.6 ms per host frame with 32 frames over 100 ms, against the 19 ms baseline. Two causes, both in new code: igniting a plain enemy created a `UGOTAHeroAbilityComponent` on it, which searched for a combat target every frame; and the "not a hit" event reached every such component on every tick. Now Burning does not create that component, and the AI momentum check runs only for duel fighters. Same script after the fix: 27.3 ms, 0 frames over 100 ms (`burn_perf3`), then 24.9 ms with the host fighting too.
+
+**A second defect found and fixed.** The first Burning run showed each tick granting the player +3 Divine Momentum as a "hit landed", because the duel fighter component reads landed hits from the opponent's health. `GOTAGAS::OnStatusDamage` now discounts status ticks there and in the cast-interrupt check; the suite asserts momentum is unchanged by ticks.
+
+#### Horde outcomes without forcing (packaged)
+
+| Attempt | Result |
+|---|---|
+| Team wipe by not fighting (`pkg_burn_wipe`) | **Not achieved.** Four idle players stood at spawn for four minutes of wave 1 and took no damage (all 100/100); the wave-1 enemies never attacked them. No conclusion about defeat handling from this run. |
+| Team wipe from combat (`pkg_burn_perf_base`) | **Observed.** With 20 extra test-spawned enemies and ignite switched off, all four fighting players were killed by enemy attacks; each logged `ELIMINATED`; `Horde match complete outcome=Defeat score=200` logged once. No damage was injected. It is not a standard match because of the extra enemies. |
+| Five-wave victory (`pkg_burn_victory`) | **Incomplete: no victory, no defeat.** Four players fought for 20 minutes with melee and real abilities; nothing was injected (`SkipPrep` only ended the opening preparation timer). Waves 1–4 were cleared; the script ended in wave 5 of 5 with 9 of 14 enemies defeated, score 7,750, all four players alive (0 player deaths). The boss phase was not reached. 51 kill credits, 427 ability hits, 86 Molten Strike hits, 63 ignitions, 4 refreshes, 176 burn ticks for 352 damage, one enemy killed by a tick. Wave 5 slowed to about one kill every two minutes, which is the fight driver reaching scattered enemies, not a Burning effect; `HORDE STALL` (30 s without a landed hit) was never logged. No assertion or crash. A longer scripted run is needed to finish the match. |
+
 ### Boss policy milestone (`0a9f852`), editor and packaged RC7
 
 **Packaged build:** fresh `RunUAT BuildCookRun` Win64 Development from `0a9f852`, archive `B:\Unreal\GOTA_Builds\RC7_0a9f852` (inner exe 346,651,648 bytes). Cook log: 3,933 packages cooked, **0 incrementally skipped**, 16 skipped by platform, no cook errors. RC1–RC6 not touched.
@@ -253,6 +351,20 @@ The editor no longer hitches the way the November 1 packaged run did, which expo
 
 ### Not verified
 
+Burning milestone:
+
+- Shipping configuration, a second PC, dedicated server. Everything ran on one machine with emulated lag and loss.
+- A four-player Story run in the editor (Story was run packaged only), and Story burns from a real Molten Strike (applied with `gota.Net.Status`, as before).
+- Burning damage on the Story shrine enemy: its damage system refused every tick; not investigated.
+- A standard-match team wipe. The defeat that was observed had 20 extra test-spawned enemies.
+- The other 40 packaged suite cases after the `burn_boss.txt` script fix (only the Burning group was re-run).
+- Which part of the 24-burn frame cost is ability systems, particle emitters or replication.
+- A player who disconnects while their burn is running on an enemy (the rule is "ticks continue, credit nobody"; only reasoned from the code).
+- Burning applied by an enemy or boss ability. No enemy has one; only test commands set players alight.
+- Sound. Burning has no audio cue.
+
+Earlier milestones:
+
 - Shipping configuration, a second PC, dedicated server.
 - Story statuses from real hero abilities (the fight driver cannot reach shrine enemies; Story statuses were applied with `gota.Net.Status`).
 - A full five-wave Horde to victory with the boss policy, and a team wipe. Waves, kill credit and the stall watch were exercised, not a complete match.
@@ -262,6 +374,12 @@ The editor no longer hitches the way the November 1 packaged run did, which expo
 
 ### Remaining risks
 
+- **Engine cloth assertion on a rendered remote client** (`GPUSkinVertexFactory.cpp:1348`, seen once, packaged Story, when a cloth-mesh hero body was created). It happened before any Burning existed in that session. It needs its own investigation; a real remote player would be disconnected by it.
+- **Many simultaneous burns cost host frame time** (2.4–6.7 ms for 24). Fine for Molten Strike; an area ability that ignites a whole wave would need the cost split measured first.
+- **Burn ticks on the same frame:** enemies ignited by one swing tick together. At 0.1 ms each this is not a hitch today; it would be if the Blueprint damage path became heavier.
+- **Idle players are not attacked in Horde wave 1.** Seen in the unforced-wipe attempt. Not caused by this work, but it means a match can sit forever if nobody moves.
+- **The Duel HUD does not list Burning** in its per-tick status text; the mode-independent BURNING line does. Two status displays exist until the HUD is made event-driven.
+
 - **Overloaded-client test failures** (tracked separately from GAS): on a starved machine a remote client can advance a few frames per second and miss a 4 s effect entirely, and frame-time-sensitive script steps can mistime. Seen once on 2026-11-08; all affected cases passed on rerun and in every run since.
 - **Resistance on a boss with its own speed control:** if a future boss policy *reduces* rather than blocks slows, the hero ability component would scale whatever walk speed the boss component last wrote, including a charge. Use immunity for bosses, or teach the boss component to read the movement attribute first.
 - **Execute cues are unreliable multicasts:** under packet loss a resist message can be dropped. It is cosmetic; the server result is unaffected.
@@ -270,7 +388,7 @@ The editor no longer hitches the way the November 1 packaged run did, which expo
 ## Next reusable GAS features (proposal, in order)
 
 1. ~~Boss status rules~~ done in `0a9f852`.
-2. **Burning (damage over time).** Periodic effect whose execution calls `ApplyDamage` once per tick, so `BPC_DamageSystem` stays the only health writer. First user: Molten Strike's card text "ignites enemies". Element tag Fire.
+2. ~~Burning (damage over time)~~ done in `548a433`, with the element definitions.
 3. **Frozen / stagger.** Tag-only effect plus a short `Stunned` tag the ability component and AI respect. Needs an AI cancellation path in `UGOTABossComponent` and the Horde AI. Reuses the overlay cue.
 4. **Shields.** A `Shield` attribute absorbed before `ApplyDamage` in the C++ ability path, and a Blueprint-side check before Blueprint melee. This is the first change that touches the damage pipeline, so it needs its own design note.
 5. **Buffs and debuffs.** Positive modifiers on the existing two attributes (they already stack positively). First user: Colossus Form's "increased power" card text.
