@@ -1,0 +1,8 @@
+# Does a director-spawned Horde enemy have an AI controller and a running behavior tree?
+wait 6
+gota.Horde.SkipPrep
+wait 12
+gota.Net.InspectDamage Enemy_Melee
+gota.Net.InspectDamage Enemy_Ranged
+wait 1
+quit

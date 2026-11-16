@@ -29,6 +29,7 @@
 #include "TimerManager.h"
 #include "Bosses/GOTABossComponent.h"
 #include "AIController.h"
+#include "Animation/AnimMontage.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "Containers/Ticker.h"
 #include "Engine/Engine.h"
@@ -746,6 +747,47 @@ namespace GOTANetTest
 	static int32 FightTargetSwitches = 0;
 	/** Approach mode: walk into the fight but never attack (natural-defeat tests: only the enemies deal damage). */
 	static bool bFightApproachOnly = false;
+	static double FightLastBlock = -100.0;
+	static int32 FightBlocks = 0;
+
+	/** Like a player watching the enemy next to them: block when an enemy's attack montage is about to reach its damage
+	 * notify. The montage replicates to every client; the Blueprint "Attacking" flag does not, so it is not used. */
+	static bool TryFightBlock(UWorld* World, APawn* Me, double Now)
+	{
+		if (Now - FightLastBlock < 0.6)
+		{
+			return false;
+		}
+		for (TActorIterator<APawn> It(World); It; ++It)
+		{
+			APawn* Enemy = *It;
+			if (Enemy == Me || Enemy->IsPlayerControlled() || UGOTACombatantObserver::IsCombatantDefeated(Enemy)
+				|| FVector::Dist2D(Enemy->GetActorLocation(), Me->GetActorLocation()) > 400.f)
+			{
+				continue;
+			}
+			float Pos = 0.f;
+			const UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Enemy, &Pos);
+			const float Impact = FGOTABlueprintCombat::FindNextImpactTime(M, Pos);
+			const float Lead = (M && Impact >= 0.f) ? Impact - Pos : -1.f;
+			if (Lead < 0.f || Lead > 0.35f || M->GetName().Contains(TEXT("GroundSmash")))
+			{
+				continue;
+			}
+			FRotator Face = (Enemy->GetActorLocation() - Me->GetActorLocation()).Rotation();
+			Face.Pitch = 0.f;
+			if (APlayerController* PC = Cast<APlayerController>(Me->GetController()))
+			{
+				PC->SetControlRotation(Face);
+			}
+			FGOTABlueprintCombat::Call(Me, TEXT("StartBlock"));
+			FightLastBlock = Now;
+			++FightBlocks;
+			UE_LOG(LogGOTANet, Log, TEXT("FIGHT block %s lead=%.2f %s on %s"), *GetNameSafe(Enemy), Lead, *GetNameSafe(M), *GetNameSafe(Me));
+			return true;
+		}
+		return false;
+	}
 	/** Provoke mode: one melee swing per enemy (Horde enemies only fight back once hurt), then no more attacks. */
 	static bool bFightProvokeOnce = false;
 	static TSet<TWeakObjectPtr<APawn>> FightProvoked;
@@ -782,7 +824,7 @@ namespace GOTANetTest
 		UWorld* World = GameWorld();
 		if (!World || World->GetTimeSeconds() > FightUntil)
 		{
-			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d targetSwitches=%d"), FightAttacks, FightAbilities, FightTargetSwitches);
+			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d blocks=%d targetSwitches=%d"), FightAttacks, FightAbilities, FightBlocks, FightTargetSwitches);
 			FightHandle.Reset();
 			return false;
 		}
@@ -812,6 +854,10 @@ namespace GOTANetTest
 		if (!Target)
 		{
 			return true;
+		}
+		if (!bFightApproachOnly && TryFightBlock(World, Me, Now))
+		{
+			return true; // defending this frame: no swing, no move
 		}
 		const FVector To = Target->GetActorLocation() - Me->GetActorLocation();
 		const float Dist = To.Size2D();
@@ -909,6 +955,8 @@ namespace GOTANetTest
 		FightStuckTarget = nullptr;
 		FightSkipUntil.Reset();
 		FightTargetSwitches = 0;
+		FightBlocks = 0;
+		FightLastBlock = -100.0;
 		bFightApproachOnly = Args.Num() > 1 && Args[1].Equals(TEXT("approach"), ESearchCase::IgnoreCase);
 		bFightProvokeOnce = Args.Num() > 1 && Args[1].Equals(TEXT("provoke"), ESearchCase::IgnoreCase);
 		FightProvoked.Reset();

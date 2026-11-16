@@ -1,0 +1,78 @@
+# Same match as mp_horde_accept_host.txt, but every player fights from the moment it loads (enemies now attack, so a
+# player that waits for the script to arm its driver is attacked first). The driver acts only while combat is live.
+# RC10 acceptance: a legitimate four-player Horde match to the end (melee and real abilities, nothing injected; SkipPrep only
+# ends the opening timer). Runs 30 minutes so the post-victory window (crashes came 75-175 s after victory) is covered.
+gota.Net.Fight 1900
+wait 40
+gota.Net.Players
+gota.Horde.SkipPrep
+gota.Horde.Watch 30
+wait 120
+gota.Net.Perf
+gota.Net.Perf 60
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+gota.Net.GAS
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+gota.Net.Players
+quit

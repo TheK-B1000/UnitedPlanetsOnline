@@ -1,4 +1,4 @@
 wait 24
-gota.Net.Fight 600 provoke
+gota.Net.Fight 600 approach
 wait 320
 quit

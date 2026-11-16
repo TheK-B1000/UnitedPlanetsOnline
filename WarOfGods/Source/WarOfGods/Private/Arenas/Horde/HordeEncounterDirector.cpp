@@ -279,6 +279,14 @@ bool AHordeEncounterDirector::TrySpawnOne(const FHordeEnemySpawnEntry& Entry)
 	{
 		return false;
 	}
+	// The enemy Blueprints keep the engine default AutoPossessAI (placed in world only), so a spawned enemy got no AI
+	// controller: no perception, no behavior tree, no attacks. Possess it with its own AIControllerClass, exactly as a
+	// placed enemy would be.
+	if (!Enemy->GetController())
+	{
+		Enemy->SpawnDefaultController();
+	}
+	UE_LOG(LogTemp, Log, TEXT("Horde spawned %s controller=%s"), *GetNameSafe(Enemy), *GetNameSafe(Enemy->GetController()));
 
 	if (Entry.Role == EHordeEnemyRole::Boss && !Enemy->FindComponentByClass<UGOTABossComponent>())
 	{
