@@ -159,8 +159,8 @@ bool FGOTABlueprintCombat::Call(UObject* Obj, FName Function, UObject* Target, c
 		UE_LOG(LogGOTADuelAI, Verbose, TEXT("Call: %s has no %s"), *GetNameSafe(Obj), *Function.ToString());
 		return false;
 	}
-	uint8* Params = static_cast<uint8*>(FMemory_Alloca(FMath::Max<int32>(Fn->ParmsSize, 1)));
-	FMemory::Memzero(Params, Fn->ParmsSize);
+	uint8* Params = static_cast<uint8*>(FMemory_Alloca(FMath::Max<int32>(Fn->GetStructureSize(), 1)));
+	FMemory::Memzero(Params, Fn->GetStructureSize());
 	Fn->InitializeStruct(Params);
 	for (TFieldIterator<FProperty> P(Fn); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
 	{
@@ -216,8 +216,8 @@ bool FGOTABlueprintCombat::ApplyDamage(AActor* Victim, AActor* Causer, float Amo
 	{
 		VictimStats->NoteDamageFrom(Causer);
 	}
-	uint8* Params = static_cast<uint8*>(FMemory_Alloca(Fn->ParmsSize));
-	FMemory::Memzero(Params, Fn->ParmsSize);
+	uint8* Params = static_cast<uint8*>(FMemory_Alloca(FMath::Max<int32>(Fn->GetStructureSize(), 1)));
+	FMemory::Memzero(Params, Fn->GetStructureSize());
 	Fn->InitializeStruct(Params);
 	FBoolProperty* WasDamagedProp = nullptr;
 	for (TFieldIterator<FProperty> P(Fn); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)

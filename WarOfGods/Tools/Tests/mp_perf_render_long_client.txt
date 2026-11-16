@@ -1,0 +1,15 @@
+# RC12 rendered client: fight, 120 s CSV profile in waves 1-2 (frame, game, render, RHI, GPU, memory), montage
+# visibility samples, then stay up through victory and the post-victory window.
+wait 3
+gota.Net.Fight 1900
+wait 60
+gota.Net.Montages
+gota.Net.Perf
+csvprofile start
+gota.Net.Perf 120
+wait 122
+csvprofile stop
+gota.Net.Perf
+gota.Net.Montages
+wait 1500
+quit

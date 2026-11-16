@@ -1,0 +1,11 @@
+# RC12 Story movement corrections: four players walk and jump on the runtime-built Story floor, one dies and respawns.
+# Clients count "could not resolve the new relative movement base" warnings (expected 0).
+gota.Net.Fight 200 approach
+wait 40
+gota.Net.Players
+gota.Net.Hurt 1 500
+wait 30
+gota.Net.Players
+wait 40
+gota.Net.Players
+quit

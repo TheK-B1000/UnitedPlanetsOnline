@@ -1322,8 +1322,8 @@ void ADuelGameMode::AlertChampionToChallenger()
 	{
 		if (UFunction* Engage = AIC->FindFunction(ChampionEngageFunction))
 		{
-			uint8* Params = static_cast<uint8*>(FMemory_Alloca(Engage->ParmsSize));
-			FMemory::Memzero(Params, Engage->ParmsSize);
+			uint8* Params = static_cast<uint8*>(FMemory_Alloca(FMath::Max<int32>(Engage->GetStructureSize(), 1)));
+			FMemory::Memzero(Params, Engage->GetStructureSize());
 			Engage->InitializeStruct(Params);
 			for (TFieldIterator<FProperty> P(Engage); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
 			{

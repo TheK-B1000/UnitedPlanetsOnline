@@ -1,0 +1,33 @@
+# RC12 packaged end-to-end Horde (healing harness: NOT difficulty evidence). Four fighting bots, ready-up, waves 1-5,
+# the Quarry Behemoth with its controller, one Victory, then a long post-victory window on the rendered client.
+gota.Net.Fight 1900
+gota.Net.Sustain 1900 25
+wait 120
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+gota.Net.Players
+quit

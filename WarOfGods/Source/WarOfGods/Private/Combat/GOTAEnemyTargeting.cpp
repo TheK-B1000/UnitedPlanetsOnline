@@ -49,8 +49,8 @@ namespace
 		{
 			return false;
 		}
-		uint8* Params = static_cast<uint8*>(FMemory_Alloca(FMath::Max<int32>(Fn->ParmsSize, 1)));
-		FMemory::Memzero(Params, Fn->ParmsSize);
+		uint8* Params = static_cast<uint8*>(FMemory_Alloca(FMath::Max<int32>(Fn->GetStructureSize(), 1)));
+		FMemory::Memzero(Params, Fn->GetStructureSize());
 		Fn->InitializeStruct(Params);
 		for (TFieldIterator<FProperty> P(Fn); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
 		{

@@ -1,0 +1,10 @@
+wait 5
+gota.Net.Fight 200 approach
+wait 10
+gota.Test.Key SpaceBar
+wait 2
+gota.Test.Key SpaceBar
+wait 2
+gota.Test.Key SpaceBar
+wait 100
+quit

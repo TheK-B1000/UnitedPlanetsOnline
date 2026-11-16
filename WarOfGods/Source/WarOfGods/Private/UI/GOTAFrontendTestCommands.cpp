@@ -685,8 +685,8 @@ namespace GOTATest
 		{
 			return false;
 		}
-		uint8* Params = static_cast<uint8*>(FMemory_Alloca(Fn->ParmsSize));
-		FMemory::Memzero(Params, Fn->ParmsSize);
+		uint8* Params = static_cast<uint8*>(FMemory_Alloca(FMath::Max<int32>(Fn->GetStructureSize(), 1)));
+		FMemory::Memzero(Params, Fn->GetStructureSize());
 		Fn->InitializeStruct(Params);
 		for (TFieldIterator<FProperty> P(Fn); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)
 		{
@@ -1090,8 +1090,8 @@ namespace GOTATest
 			UE_LOG(LogGOTATest, Error, TEXT("Hurt: no TakeDamage on %s"), *GetNameSafe(DS));
 			return;
 		}
-		uint8* Buffer = static_cast<uint8*>(FMemory_Alloca(Fn->ParmsSize));
-		FMemory::Memzero(Buffer, Fn->ParmsSize);
+		uint8* Buffer = static_cast<uint8*>(FMemory_Alloca(FMath::Max<int32>(Fn->GetStructureSize(), 1)));
+		FMemory::Memzero(Buffer, Fn->GetStructureSize());
 		Fn->InitializeStruct(Buffer);
 		bool bSetAmount = false;
 		for (TFieldIterator<FProperty> P(Fn); P && P->HasAnyPropertyFlags(CPF_Parm); ++P)

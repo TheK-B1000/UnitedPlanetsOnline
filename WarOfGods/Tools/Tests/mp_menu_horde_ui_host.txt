@@ -1,0 +1,19 @@
+# RC12: host Horde through the public menu only (no "mode Horde" console command). HOST GAME (the lobby opens in Duel),
+# the lobby's MODE button switches to Wrath of the Gods, START HORDE. Clients use Find + Join.
+wait 3
+gota.Menu.Go Multiplayer
+gota.Menu.Click HOST GAME
+wait 12
+gota.Menu.Session hero Drakon
+gota.Menu.Click
+gota.Menu.Click MODE: TRIAL
+wait 2
+gota.Menu.Session dump
+gota.Menu.Click
+wait 70
+gota.Menu.Click START HORDE
+wait 45
+gota.Net.Players
+gota.Horde.Dump
+wait 20
+quit

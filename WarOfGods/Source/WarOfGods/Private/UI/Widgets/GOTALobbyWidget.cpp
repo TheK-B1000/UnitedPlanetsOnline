@@ -6,6 +6,7 @@
 #include "UI/Widgets/GOTAMenuButtonWidget.h"
 #include "Multiplayer/GotaSessionSubsystem.h"
 #include "Engine/GameInstance.h"
+#include "Components/PanelWidget.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -32,6 +33,18 @@ void UGOTALobbyWidget::NativeOnInitialized()
 	{
 		Btn_Leave->SetLabel(NSLOCTEXT("GOTA", "LeaveLobby", "LEAVE LOBBY"));
 		Btn_Leave->OnActivated.AddDynamic(this, &UGOTALobbyWidget::HandleLeave);
+	}
+	if (!Btn_SelectArena && Btn_StartMatch)
+	{
+		// The authored lobby layout has no slot for this button: add one of the same class next to START.
+		if (UPanelWidget* Panel = Btn_StartMatch->GetParent())
+		{
+			Btn_SelectArena = CreateWidget<UGOTAMenuButtonWidget>(this, Btn_StartMatch->GetClass());
+			if (Btn_SelectArena)
+			{
+				Panel->AddChild(Btn_SelectArena);
+			}
+		}
 	}
 	if (Btn_SelectArena)
 	{
