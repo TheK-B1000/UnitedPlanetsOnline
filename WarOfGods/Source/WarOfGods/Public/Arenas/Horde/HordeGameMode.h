@@ -63,6 +63,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Horde")
 	bool bAutoStartWhenPlayersReady = true;
 
+	/**
+	 * Players wave 1 waits for. The lobby passes its player count as ?Players=N when it travels; a direct launch
+	 * without the option waits for 1. Clamped to 1..SoftMaxPlayers, and never below the number already connected.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Horde|Readiness")
+	int32 ExpectedPlayers = 1;
+
+	/** Seconds from the map opening until the match starts with whoever is ready (players who never finish loading). ?ReadyTimeout=N overrides. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Horde|Readiness")
+	float ReadyTimeoutSeconds = 60.f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Horde")
 	FSoftObjectPath LobbyMap = FSoftObjectPath(TEXT("/Game/MainMenu/L_GOTA_MainMenu.L_GOTA_MainMenu"));
 
@@ -96,6 +107,10 @@ protected:
 	void HandleWaveCleared();
 	void HandleEnemyScore(int32 ScoreValue, APlayerState* Killer);
 	void EvaluateTeamWipe();
+	/** Server, WaitingForPlayers: count ready players, publish it, and start the countdown when all are ready or on timeout. */
+	void EvaluateReadiness();
+	/** Loaded the map, received its pawn (ServerAcknowledgePossession), has a hero and is alive. */
+	bool IsPlayerReady(APlayerController* PC) const;
 	void TickHordeWatch();
 	void LogHordeLife() const;
 	void CompleteVictory();
@@ -131,6 +146,9 @@ protected:
 	bool bHordeSmokeTest = false;
 	bool bHordeInfrastructureReady = false;
 	int32 NextWaveToStart = 0;
+	double WaitingSince = 0.0;
+	int32 LastLoggedReady = -1;
+	int32 LastLoggedTarget = -1;
 
 	FTimerHandle PhaseTimerHandle;
 	FTimerHandle PlayerWatchTimerHandle;

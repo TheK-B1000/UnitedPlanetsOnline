@@ -104,7 +104,14 @@ void UGOTAHordeHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 		if (Text_Countdown)
 		{
 			const float Remain = GS->GetSecondsUntilPhaseDeadline();
-			if (Remain > 0.f && (GS->HordePhase == EHordeMatchPhase::Preparing || GS->HordePhase == EHordeMatchPhase::Intermission))
+			if (GS->HordePhase == EHordeMatchPhase::WaitingForPlayers)
+			{
+				// Server-counted readiness; the deadline is when the match starts without the missing players.
+				Text_Countdown->SetText(FText::Format(NSLOCTEXT("GOTA", "HordeWaitingFmt", "WAITING FOR PLAYERS {0} / {1}  ({2})"),
+					FText::AsNumber(GS->ReadyPlayers), FText::AsNumber(GS->ExpectedPlayers), FText::AsNumber(FMath::CeilToInt(Remain))));
+				Text_Countdown->SetVisibility(ESlateVisibility::HitTestInvisible);
+			}
+			else if (Remain > 0.f && (GS->HordePhase == EHordeMatchPhase::Preparing || GS->HordePhase == EHordeMatchPhase::Intermission))
 			{
 				Text_Countdown->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Remain)));
 				Text_Countdown->SetVisibility(ESlateVisibility::HitTestInvisible);

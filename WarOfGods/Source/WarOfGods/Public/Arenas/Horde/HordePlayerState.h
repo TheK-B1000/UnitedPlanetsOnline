@@ -31,6 +31,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Horde")
 	bool bIsSpectating = false;
 
+	/** Server-decided: loaded, has its pawn and hero. Only meaningful before wave 1. */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Horde")
+	bool bReadyForMatch = false;
+
 	UFUNCTION(BlueprintCallable, Category = "Horde")
 	void ServerAddElimination(bool bElite, int32 ScoreDelta);
 

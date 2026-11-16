@@ -14,6 +14,7 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Combat/GOTACombatTelemetry.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/WidgetComponent.h"
@@ -521,6 +522,11 @@ void UGOTABossComponent::BeginAttack(int32 Index, APawn* Target)
 	}
 	UE_LOG(LogGOTABoss, Log, TEXT("Boss attack %s (phase %d, dist %.0f, chain %d)"), *A.AttackId.ToString(), Phase,
 		Target ? FVector::Dist2D(Target->GetActorLocation(), GetOwner()->GetActorLocation()) : -1.f, ChainRemaining);
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+	{
+		Telemetry->NoteBossAttack(Cast<APawn>(GetOwner()), A.AttackId, Target,
+			Target ? FVector::Dist2D(Target->GetActorLocation(), GetOwner()->GetActorLocation()) : -1.f);
+	}
 }
 
 void UGOTABossComponent::TickAttack(APawn* Target, double Now)
@@ -801,6 +807,10 @@ void UGOTABossComponent::EndAttack(bool bHitSomething)
 		if (!bHitSomething)
 		{
 			Recovery += 0.35f; // a whiff leaves the creature open a little longer
+		}
+		if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+		{
+			Telemetry->NoteBossAttackEnd(Cast<APawn>(GetOwner()), A.AttackId, bHitSomething);
 		}
 	}
 	State = EGOTABossState::Recovering;

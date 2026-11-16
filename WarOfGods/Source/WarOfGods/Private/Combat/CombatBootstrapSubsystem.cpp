@@ -7,6 +7,7 @@
 #include "Characters/StatsComponent.h"
 #include "Combat/CombatComponent.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Combat/GOTACombatTelemetry.h"
 #include "EngineUtils.h"
 #include "Combat/CombatTimingComponent.h"
 #include "Combat/CombatTimingTypes.h"
@@ -178,6 +179,10 @@ UStatsComponent* UCombatBootstrapSubsystem::EnsureReplicatedVitals(APawn* Pawn)
 		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Attached replicated UStatsComponent to %s"), *GetNameSafe(Pawn));
 	}
 	Stats->BeginObservingBlueprintDamage();
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(Pawn))
+	{
+		Telemetry->RegisterCombatant(Pawn); // development builds: player lives, enemy attack records
+	}
 	// Enemies with the floating AOE attack (Story shrine boss) land even if that attack is aborted mid-air.
 	UGOTAFloatAttackGuard::EnsureOn(Pawn);
 	// Every combatant gets its ability system here, after its stats (the ASC clears statuses on Stats->OnDied).

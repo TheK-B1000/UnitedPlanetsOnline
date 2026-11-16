@@ -54,6 +54,13 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Horde")
 	bool bBossEncounterActive = false;
 
+	/** WaitingForPlayers: how many players the match waits for, and how many are ready (server-counted). */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Horde|Readiness")
+	int32 ExpectedPlayers = 1;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Horde|Readiness")
+	int32 ReadyPlayers = 0;
+
 	UPROPERTY(BlueprintAssignable, Category = "Horde")
 	FOnHordeMatchPhaseChanged OnHordePhaseChanged;
 

@@ -143,6 +143,16 @@ protected:
 	/** One death event per life (cleared when health comes back). */
 	bool bDeathBroadcast = false;
 	void BroadcastDeath();
+	/** Resolve a damage causer to its pawn and remember it for kill credit. */
+	APawn* RecordDamager(AActor* DamageCauser);
+
+	/** Development telemetry: the last Blueprint damage response, paired with the health drop that follows it
+	 * (the response may arrive before or after the Blueprint lowers health). */
+	TWeakObjectPtr<APawn> PendingResponseBy;
+	double PendingResponseTime = -1.0;
+	int32 PendingResponse = 0;
+	bool bTelemetryPrimed = false;
+	void ReportTelemetry(float Before, float After);
 
 	UFUNCTION()
 	void OnRep_Health(float OldHealth);

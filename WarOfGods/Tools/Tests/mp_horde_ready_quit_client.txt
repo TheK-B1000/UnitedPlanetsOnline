@@ -1,0 +1,3 @@
+# Leaves cleanly two seconds after joining, before wave 1: the host should stop waiting for this player.
+wait 2
+quit

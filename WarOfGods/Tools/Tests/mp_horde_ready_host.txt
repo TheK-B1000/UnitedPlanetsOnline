@@ -1,0 +1,15 @@
+# RC11 readiness and telemetry: no SkipPrep. Wave 1 must wait until every expected player (?Players=N in the URL) has
+# loaded and received its pawn, then run the normal 5 s countdown. Every player fights with gota.Net.Fight from load
+# (the driver acts only while combat is live). Telemetry (TELEM lines) records the enemies' attacks on the players.
+gota.Net.Fight 600
+wait 45
+gota.Net.Players
+gota.Horde.Dump
+wait 90
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 90
+gota.Horde.Dump
+gota.Telemetry.Dump
+gota.Net.Players
+quit

@@ -4,6 +4,7 @@
 
 #include "Arenas/Duel/GOTADuelCombat.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Combat/GOTACombatTelemetry.h"
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
@@ -88,9 +89,43 @@ void UStatsComponent::SyncFromBlueprint()
 	{
 		bDeathBroadcast = false; // healed / respawned: a new life
 	}
+	const float OldHealth = Health;
 	if (!FMath::IsNearlyEqual(NewHealth, Health) || !FMath::IsNearlyEqual(FMath::Max(V.MaxHealth, 1.f), MaxHealth))
 	{
 		ObserveHealth(NewHealth, V.MaxHealth);
+	}
+	ReportTelemetry(OldHealth, Health);
+}
+
+void UStatsComponent::ReportTelemetry(float Before, float After)
+{
+	UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this);
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (!Telemetry || !bTelemetryPrimed)
+	{
+		bTelemetryPrimed = true; // the first read only replaces the default value
+		PendingResponseTime = -1.0;
+		return;
+	}
+	const bool bResponseFresh = PendingResponseTime >= 0.0 && Now - PendingResponseTime <= 0.5;
+	if (!FMath::IsNearlyEqual(Before, After))
+	{
+		APawn* By = nullptr;
+		int32 Response = -1;
+		if (After < Before)
+		{
+			// The killing blow can arrive through OnDeath without a response: fall back to the last damager.
+			By = bResponseFresh ? PendingResponseBy.Get() : GetRecentDamager(3.f);
+			Response = bResponseFresh ? PendingResponse : -1;
+			PendingResponseTime = -1.0;
+		}
+		Telemetry->NoteHealthChange(GetOwner(), Before, After, By, Response);
+	}
+	else if (PendingResponseTime >= 0.0 && Now - PendingResponseTime > 0.35)
+	{
+		// A damage response with no health change: blocked, invincible or in i-frames.
+		Telemetry->NoteNoDamageResponse(GetOwner(), PendingResponseBy.Get(), PendingResponse);
+		PendingResponseTime = -1.0;
 	}
 }
 
@@ -102,10 +137,11 @@ APawn* UStatsComponent::GetRecentDamager(float Seconds) const
 
 void UStatsComponent::NoteDamageFrom(AActor* DamageCauser)
 {
-	HandleBlueprintDamageResponse(0, DamageCauser);
+	RecordDamager(DamageCauser);
+	SyncFromBlueprint();
 }
 
-void UStatsComponent::HandleBlueprintDamageResponse(uint8 DamageResponse, AActor* DamageCauser)
+APawn* UStatsComponent::RecordDamager(AActor* DamageCauser)
 {
 	// The causer may be the attacker, its weapon or a projectile: walk instigator / owner to the pawn.
 	APawn* By = Cast<APawn>(DamageCauser);
@@ -118,6 +154,15 @@ void UStatsComponent::HandleBlueprintDamageResponse(uint8 DamageResponse, AActor
 		LastDamager = By;
 		LastDamageTime = GetWorld()->GetTimeSeconds();
 	}
+	return By;
+}
+
+void UStatsComponent::HandleBlueprintDamageResponse(uint8 DamageResponse, AActor* DamageCauser)
+{
+	APawn* By = RecordDamager(DamageCauser);
+	PendingResponseBy = By != GetOwner() ? By : nullptr;
+	PendingResponseTime = GetWorld()->GetTimeSeconds();
+	PendingResponse = DamageResponse;
 	SyncFromBlueprint();
 }
 

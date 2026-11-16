@@ -1,0 +1,23 @@
+# RC11 active-enemy validation (NOT a balance run): wave enemies with their own AI against four fighting test bots.
+# gota.Net.Sustain heals the players (test harness only; enemies untouched) so the bots live long enough to show
+# pursuit, attacks in range, server damage, target changes, hero damage and statuses on enemies, enemy deaths and kill
+# credit. Difficulty numbers come only from runs without Sustain (mp_horde_ready_host.txt) and from human playtests.
+gota.Net.Fight 900
+gota.Net.Sustain 900 25
+wait 60
+gota.Net.Players
+gota.Horde.Dump
+gota.Net.GAS
+wait 90
+gota.Horde.Dump
+gota.Telemetry.Dump
+gota.Net.GAS
+wait 90
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 90
+gota.Horde.Dump
+gota.Telemetry.Dump
+gota.Net.GAS
+gota.Net.Players
+quit

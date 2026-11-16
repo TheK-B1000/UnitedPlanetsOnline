@@ -551,7 +551,13 @@ FName UGotaSessionSubsystem::GetLobbyHero(const APlayerController* Player) const
 
 void UGotaSessionSubsystem::TravelToMatch(bool bAsListenHost)
 {
-	const FString Options = BuildTravelOptions(bAsListenHost);
+	FString Options = BuildTravelOptions(bAsListenHost);
+	// Horde waits for everyone in the lobby before wave 1 (AHordeGameMode::EvaluateReadiness).
+	if (SelectedMode == EArenaMode::PvEHorde)
+	{
+		const AGameStateBase* LobbyState = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+		Options += FString::Printf(TEXT("?Players=%d"), LobbyState ? FMath::Max(1, LobbyState->PlayerArray.Num()) : 1);
+	}
 	FString MapPackage;
 	if (SelectedMode == EArenaMode::Story)
 	{

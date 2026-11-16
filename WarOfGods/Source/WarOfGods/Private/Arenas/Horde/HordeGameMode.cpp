@@ -12,7 +12,9 @@
 #include "Arenas/Horde/HordeWaveDefinition.h"
 #include "Blueprint/UserWidget.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Combat/GOTACombatTelemetry.h"
 #include "EngineUtils.h"
+#include "Multiplayer/GOTAPlayerState.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
@@ -57,6 +59,16 @@ void AHordeGameMode::InitGame(const FString& MapName, const FString& Options, FS
 		{
 			ArenaMode = EArenaMode::PvEHorde;
 		}
+	}
+
+	if (UGameplayStatics::HasOption(Options, TEXT("Players")))
+	{
+		ExpectedPlayers = FCString::Atoi(*UGameplayStatics::ParseOption(Options, TEXT("Players")));
+	}
+	ExpectedPlayers = FMath::Clamp(ExpectedPlayers, 1, FMath::Max(1, SoftMaxPlayers));
+	if (UGameplayStatics::HasOption(Options, TEXT("ReadyTimeout")))
+	{
+		ReadyTimeoutSeconds = FMath::Max(1.f, FCString::Atof(*UGameplayStatics::ParseOption(Options, TEXT("ReadyTimeout"))));
 	}
 
 	bHordeSmokeTest = UGameplayStatics::HasOption(Options, TEXT("HordeSmoke"));
@@ -120,14 +132,18 @@ void AHordeGameMode::BeginPlay()
 		}
 		RunHordeSmokeStep();
 	}
-	else if (bAutoStartWhenPlayersReady && !bMatchStarted && GetNumPlayers() >= 1)
+	else if (!bMatchStarted)
 	{
-		GetWorldTimerManager().SetTimer(
-			PhaseTimerHandle,
-			this,
-			&AHordeGameMode::RequestStartMatch,
-			AutoStartDelay,
-			false);
+		// Wave 1 waits until every expected player has loaded and has its pawn (EvaluateReadiness, every second).
+		WaitingSince = GetWorld()->GetTimeSeconds();
+		if (AHordeGameState* GS = GetHordeGS())
+		{
+			GS->ExpectedPlayers = ExpectedPlayers;
+			GS->ReadyPlayers = 0;
+			GS->PhaseDeadlineServerTime = GS->GetServerWorldTimeSeconds() + ReadyTimeoutSeconds;
+		}
+		UE_LOG(LogTemp, Log, TEXT("Horde readiness: waiting for %d player(s), timeout %.0fs"), ExpectedPlayers, ReadyTimeoutSeconds);
+		EvaluateReadiness();
 	}
 }
 
@@ -143,10 +159,11 @@ void AHordeGameMode::PostLogin(APlayerController* NewPlayer)
 			GetNumPlayers(), (int32)GS->HordePhase, bHordeInfrastructureReady ? 1 : 0);
 	}
 
-	// Only start after BeginPlay built director + wave defs (PostLogin can fire first).
-	if (bHordeInfrastructureReady && bAutoStartWhenPlayersReady && !bMatchStarted && GetNumPlayers() >= 1)
+	// Only after BeginPlay built director + wave defs (PostLogin can fire first). The new player is not ready yet
+	// (no acknowledged pawn); this publishes the new count, the 1 s watch starts the match once it is.
+	if (bHordeInfrastructureReady && !bMatchStarted)
 	{
-		RequestStartMatch();
+		EvaluateReadiness();
 	}
 }
 
@@ -154,6 +171,78 @@ void AHordeGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
 	// Disconnects are not combat eliminations — reevaluate wipe next tick.
+	// Before wave 1, a player who leaves is no longer waited for.
+	if (!bMatchStarted && !bMatchEnded && Cast<APlayerController>(Exiting) && ExpectedPlayers > 1)
+	{
+		ExpectedPlayers = FMath::Max(1, ExpectedPlayers - 1);
+		UE_LOG(LogTemp, Log, TEXT("Horde readiness: %s left before the start; now waiting for %d"), *GetNameSafe(Exiting), ExpectedPlayers);
+	}
+}
+
+bool AHordeGameMode::IsPlayerReady(APlayerController* PC) const
+{
+	if (!PC || !PC->HasClientLoadedCurrentWorld())
+	{
+		return false;
+	}
+	APawn* Pawn = PC->GetPawn();
+	// AcknowledgedPawn is set by the client's ServerAcknowledgePossession once its pawn has arrived (local: at once).
+	if (!Pawn || PC->AcknowledgedPawn != Pawn || UGOTACombatantObserver::IsCombatantDefeated(Pawn))
+	{
+		return false;
+	}
+	const AGOTAPlayerState* PS = PC->GetPlayerState<AGOTAPlayerState>();
+	return !PS || !PS->GetHeroId().IsNone();
+}
+
+void AHordeGameMode::EvaluateReadiness()
+{
+	if (!HasAuthority() || bMatchStarted || bMatchEnded || !bHordeInfrastructureReady || bHordeSmokeTest || !bAutoStartWhenPlayersReady)
+	{
+		return;
+	}
+	int32 Connected = 0;
+	int32 Ready = 0;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PC = It->Get();
+		if (!PC || PC->IsPendingKillPending())
+		{
+			continue;
+		}
+		++Connected;
+		const bool bReady = IsPlayerReady(PC);
+		if (AHordePlayerState* PS = PC->GetPlayerState<AHordePlayerState>())
+		{
+			PS->bReadyForMatch = bReady;
+		}
+		Ready += bReady ? 1 : 0;
+	}
+	// Wait for everyone the lobby sent and everyone who has connected, up to the cap.
+	const int32 Target = FMath::Clamp(FMath::Max(ExpectedPlayers, Connected), 1, FMath::Max(1, SoftMaxPlayers));
+	AHordeGameState* GS = GetHordeGS();
+	if (GS)
+	{
+		GS->ExpectedPlayers = Target;
+		GS->ReadyPlayers = Ready;
+	}
+	const double Waited = GetWorld()->GetTimeSeconds() - WaitingSince;
+	if (Ready != LastLoggedReady || Target != LastLoggedTarget)
+	{
+		LastLoggedReady = Ready;
+		LastLoggedTarget = Target;
+		UE_LOG(LogTemp, Log, TEXT("Horde readiness: ready=%d/%d connected=%d after %.1fs"), Ready, Target, Connected, Waited);
+	}
+	if (Ready >= Target)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Horde readiness: all %d ready after %.1fs -> countdown"), Target, Waited);
+		RequestStartMatch();
+	}
+	else if (Ready >= 1 && Waited >= ReadyTimeoutSeconds)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Horde readiness: timeout after %.0fs, starting with %d of %d ready"), Waited, Ready, Target);
+		RequestStartMatch();
+	}
 }
 
 void AHordeGameMode::EnsureHordeInfrastructure()
@@ -385,7 +474,12 @@ void AHordeGameMode::RequestReturnToLobby()
 bool AHordeGameMode::TryTransition(EHordeMatchPhase NewPhase)
 {
 	AHordeGameState* GS = GetHordeGS();
-	if (!GS || (bMatchEnded && NewPhase != EHordeMatchPhase::ReturningToLobby))
+	// Once ended, only the outcome phase itself and the lobby return are allowed. CompleteVictory / CompleteDefeat set
+	// bMatchEnded before entering Victory / Defeat, which used to be refused here: the phase stayed BossActive or
+	// WaveActive for the rest of the session.
+	const bool bOutcomePhase = NewPhase == EHordeMatchPhase::Victory || NewPhase == EHordeMatchPhase::Defeat
+		|| NewPhase == EHordeMatchPhase::ReturningToLobby;
+	if (!GS || (bMatchEnded && !bOutcomePhase))
 	{
 		return false;
 	}
@@ -434,7 +528,12 @@ void AHordeGameMode::BeginNextWave()
 	TryTransition(EHordeMatchPhase::WaveStarting);
 	HordeDirector->ConfigureWave(Wave, GetActivePlayerCount());
 	TryTransition(EHordeMatchPhase::WaveActive);
+	const int32 Planned = HordeDirector->GetRemainingToSpawn();
 	HordeDirector->StartWaveSpawning();
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+	{
+		Telemetry->NoteWaveStart(NextWaveToStart, false, GetActivePlayerCount(), Planned);
+	}
 }
 
 void AHordeGameMode::RunHordeSmokeStep()
@@ -525,7 +624,12 @@ void AHordeGameMode::BeginBossFinale()
 
 	HordeDirector->ConfigureWave(RuntimeMatchDef->BossWave, GetActivePlayerCount());
 	TryTransition(EHordeMatchPhase::BossActive);
+	const int32 Planned = HordeDirector->GetRemainingToSpawn();
 	HordeDirector->StartWaveSpawning();
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+	{
+		Telemetry->NoteWaveStart(RuntimeMatchDef->Waves.Num() + 1, true, GetActivePlayerCount(), Planned);
+	}
 }
 
 void AHordeGameMode::OnDirectorWaveCleared()
@@ -544,6 +648,14 @@ void AHordeGameMode::HandleWaveCleared()
 	if (!GS)
 	{
 		return;
+	}
+
+	if (GS->HordePhase == EHordeMatchPhase::BossActive || GS->HordePhase == EHordeMatchPhase::WaveActive)
+	{
+		if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+		{
+			Telemetry->NoteWaveEnd(TEXT("cleared"));
+		}
 	}
 
 	if (GS->HordePhase == EHordeMatchPhase::BossActive)
@@ -592,6 +704,7 @@ void AHordeGameMode::HandleEnemyScore(int32 ScoreValue, APlayerState* Killer)
 
 void AHordeGameMode::TickHordeWatch()
 {
+	EvaluateReadiness();
 	LogHordeLife();
 	EvaluateTeamWipe();
 }
@@ -703,6 +816,10 @@ void AHordeGameMode::CompleteVictory()
 		GS->OnHordeMatchOutcomeChanged.Broadcast(EHordeMatchOutcome::Victory);
 		UE_LOG(LogTemp, Log, TEXT("Horde match complete outcome=Victory score=%d"), GS->TeamScore);
 	}
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+	{
+		Telemetry->NoteMatchEnd(TEXT("Victory"));
+	}
 	TryTransition(EHordeMatchPhase::Victory);
 	PresentResultsToAll();
 }
@@ -715,6 +832,11 @@ void AHordeGameMode::CompleteDefeat()
 	}
 	bMatchEnded = true;
 	GetWorldTimerManager().ClearTimer(PhaseTimerHandle);
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+	{
+		Telemetry->NoteWaveEnd(TEXT("defeat")); // before the cleanup below removes the survivors
+		Telemetry->NoteMatchEnd(TEXT("Defeat"));
+	}
 	if (HordeDirector)
 	{
 		HordeDirector->StopWaveSpawning();

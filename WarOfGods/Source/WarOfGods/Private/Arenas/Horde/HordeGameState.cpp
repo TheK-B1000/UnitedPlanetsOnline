@@ -24,6 +24,8 @@ void AHordeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AHordeGameState, MatchStartServerTime);
 	DOREPLIFETIME(AHordeGameState, BossHealthFraction);
 	DOREPLIFETIME(AHordeGameState, bBossEncounterActive);
+	DOREPLIFETIME(AHordeGameState, ExpectedPlayers);
+	DOREPLIFETIME(AHordeGameState, ReadyPlayers);
 }
 
 void AHordeGameState::SetHordePhase(EHordeMatchPhase NewPhase)

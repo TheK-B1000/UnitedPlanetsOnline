@@ -17,6 +17,7 @@ void AHordePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AHordePlayerState, PersonalScore);
 	DOREPLIFETIME(AHordePlayerState, bIsEliminated);
 	DOREPLIFETIME(AHordePlayerState, bIsSpectating);
+	DOREPLIFETIME(AHordePlayerState, bReadyForMatch);
 }
 
 void AHordePlayerState::ServerAddElimination(bool bElite, int32 ScoreDelta)

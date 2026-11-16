@@ -11,6 +11,7 @@
 #include "Arenas/Horde/HordeWaveDefinition.h"
 #include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "Combat/GOTACombatTelemetry.h"
 #include "GameFramework/PlayerState.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
@@ -390,6 +391,11 @@ void AHordeEncounterDirector::RegisterEnemy(APawn* Enemy, EHordeEnemyRole EnemyR
 	++AliveCount;
 
 	Enemy->OnEndPlay.AddDynamic(this, &AHordeEncounterDirector::HandleEnemyEndPlay);
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+	{
+		const UEnum* RoleEnum = StaticEnum<EHordeEnemyRole>();
+		Telemetry->NoteEnemySpawned(Enemy, RoleEnum ? *RoleEnum->GetNameStringByValue(static_cast<int64>(EnemyRole)) : TEXT("?"));
+	}
 }
 
 void AHordeEncounterDirector::HandleEnemyEndPlay(AActor* Actor, EEndPlayReason::Type Reason)

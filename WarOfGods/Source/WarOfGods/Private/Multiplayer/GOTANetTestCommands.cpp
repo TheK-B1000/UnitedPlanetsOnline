@@ -1259,6 +1259,58 @@ namespace GOTANetTest
 		}
 		UE_LOG(LogGOTANet, Log, TEXT("NET spawned %d/%d enemies at radius %.0f"), Spawned, Count, Radius);
 	}
+	/** Test harness only (never balance evidence): heal every living player through its own damage system's Heal once a
+	 * second, so test bots survive long enough to exercise enemy pursuit, target changes, deaths and kill credit. Enemies
+	 * are not touched. Args: <seconds> [hp per second = 15]; 0 stops. */
+	static FTSTicker::FDelegateHandle SustainHandle;
+	static double SustainUntil = 0.0;
+	static float SustainRate = 15.f;
+	static int32 SustainHeals = 0;
+	static void Sustain(const TArray<FString>& Args)
+	{
+		const float Seconds = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 120.f;
+		SustainRate = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 15.f;
+		FTSTicker::GetCoreTicker().RemoveTicker(SustainHandle);
+		SustainHandle.Reset();
+		if (Seconds <= 0.f)
+		{
+			UE_LOG(LogGOTANet, Log, TEXT("NET sustain off (%d heals)"), SustainHeals);
+			return;
+		}
+		SustainUntil = FPlatformTime::Seconds() + Seconds;
+		SustainHeals = 0;
+		SustainHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([](float)
+		{
+			UWorld* W = GameWorld();
+			if (!W || FPlatformTime::Seconds() > SustainUntil)
+			{
+				UE_LOG(LogGOTANet, Log, TEXT("NET sustain ended (%d heals)"), SustainHeals);
+				SustainHandle.Reset();
+				return false;
+			}
+			if (W->GetNetMode() == NM_Client)
+			{
+				return true;
+			}
+			for (FConstPlayerControllerIterator It = W->GetPlayerControllerIterator(); It; ++It)
+			{
+				APawn* Pawn = It->Get() ? It->Get()->GetPawn() : nullptr;
+				const FGOTACombatantVitals V = UGOTACombatantObserver::ReadVitals(Pawn);
+				if (!Pawn || !V.bHasDamageSystem || V.bIsDead || V.Health <= 0.f || V.Health >= V.MaxHealth)
+				{
+					continue;
+				}
+				if (UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Pawn))
+				{
+					FGOTABlueprintCombat::Call(DS, TEXT("Heal"), nullptr, FString(), FMath::Min(SustainRate, V.MaxHealth - V.Health));
+					++SustainHeals;
+				}
+			}
+			return true;
+		}), 1.f);
+		UE_LOG(LogGOTANet, Log, TEXT("NET sustain %.0fs at %.0f hp/s on every living player (test harness, enemies unchanged)"), Seconds, SustainRate);
+	}
+	static FAutoConsoleCommand CmdSustain(TEXT("gota.Net.Sustain"), TEXT("Server test harness: heal living players <hp/s> (default 15) for <seconds> through their own Heal; 0 stops. Not balance evidence."), FConsoleCommandWithArgsDelegate::CreateStatic(&Sustain));
 	static FAutoConsoleCommand CmdSpawnEnemies(TEXT("gota.Net.SpawnEnemies"), TEXT("Server stress test: spawn <count> plain melee enemies around player 0 [radius]."), FConsoleCommandWithArgsDelegate::CreateStatic(&SpawnEnemies));
 	static FAutoConsoleCommand CmdPolicy(TEXT("gota.Net.Policy"), TEXT("Server test: replace a status policy on <pN|eN|b>: <Slow,Stun,Burn|none> [Status durScale magScale]."), FConsoleCommandWithArgsDelegate::CreateStatic(&NetPolicy));
 	static FAutoConsoleCommand CmdGas(TEXT("gota.Net.GAS"), TEXT("Log ability-system totals: components, Burning statuses, flame effects, burn ticks and damage."), FConsoleCommandWithArgsDelegate::CreateStatic(&GasReport));
