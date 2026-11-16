@@ -109,15 +109,18 @@ def main():
         last_join = time.time()
         time.sleep(a.stagger)
     killed_client = killed_host = False
+    harness_kills = {}  # name -> why the harness ended that process
     while time.time() - start < a.timeout:
         if a.kill_client_at > 0 and not killed_client and time.time() - last_join >= a.kill_client_at:
             victim = procs[a.kill_client] if 0 < a.kill_client < len(procs) else procs[-1]
             victim[1].kill()
             killed_client = True
+            harness_kills[victim[0]] = "--kill-client-at %.0f" % a.kill_client_at
             print("killed %s at %.0fs" % (victim[0], time.time() - start))
         if a.kill_host_at > 0 and not killed_host and time.time() - start >= a.kill_host_at:
             procs[0][1].kill()
             killed_host = True
+            harness_kills["host"] = "--kill-host-at %.0f" % a.kill_host_at
             print("killed host at %.0fs" % (time.time() - start))
         if all(p.poll() is not None for _, p in procs):
             break
@@ -128,7 +131,19 @@ def main():
     for name, p in procs:
         if p.poll() is None:
             p.kill()
+            harness_kills.setdefault(name, "still running at the end of the session")
             print("timeout: killed", name)
+    # Every process's end: exit code, and whether this harness ended it (a harness kill is not a crash).
+    exits = []
+    for name, p in procs:
+        try:
+            code = p.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            code = None
+        exits.append("%s exit=%s %s" % (name, code, ("killed by harness (%s)" % harness_kills[name]) if name in harness_kills else "exited by itself"))
+    with open(os.path.join(LOGS, a.tag + "_exits.txt"), "w") as f:
+        f.write("\n".join(exits) + "\n")
+    print("exits: " + "; ".join(exits))
     print("logs:", os.path.join(LOGS, a.tag + "_*.log"))
     return 0
 

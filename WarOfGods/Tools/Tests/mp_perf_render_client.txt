@@ -1,0 +1,14 @@
+# RC11 renderer cost of r.SkeletalMesh.UseCachedMDCs=0: the rendered client fights through waves 1-2 (host runs
+# mp_horde_aival_host.txt, so the fight lasts) and records a 120 s CSV profile (frame, game, render, RHI, GPU, memory)
+# plus the frame/GPU/hitch summary. Run twice: as shipped (0), and with -dpcvars=r.SkeletalMesh.UseCachedMDCs=1.
+wait 3
+gota.Net.Fight 900
+wait 60
+gota.Net.Perf
+csvprofile start
+gota.Net.Perf 120
+wait 122
+csvprofile stop
+gota.Net.Perf
+wait 200
+quit

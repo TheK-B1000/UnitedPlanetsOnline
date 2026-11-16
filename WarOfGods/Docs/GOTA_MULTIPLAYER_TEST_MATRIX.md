@@ -180,8 +180,30 @@ Fresh cook at `B:\Unreal\GOTA_Builds\RC10_2454bff_skelmdc` (`2454bff` + `r.Skele
 | R10-4 | Horde wave enemies have an AI controller (editor) | **PASS** | `horde_enemy_brain`: `AIC_Enemy_Base_C_*`, tree running. Before: `brain none (controller None)` |
 | R10-5 | Natural four-player defeat, standard match (editor) | **PASS** | `horde_natwipe_ai1`: four players killed 29–40 s into wave 1 by enemy attacks, each ELIMINATED once, one `outcome=Defeat score=0`, nothing injected |
 | R10-6 | Five-wave victory against attacking enemies (editor, bots) | **FAIL (bots)** | `horde_ai_full1/2/3`: team dies in wave 1, 0 enemy kills. Test-bot limitation; human difficulty not measured |
-| R10-7 | Story shrine boss lands after an aborted AOE Trail (editor, four players) | **PASS** | `story_float_mp`: `float attack ended without StopFloat (sequence aborted, now Wait) after 7.1s; landing (called=1)`. Client 2's log stopped 37 s later without a crash report (open) |
+| R10-7 | Story shrine boss lands after an aborted AOE Trail (editor, four players) | **PASS** | `story_float_mp`: `float attack ended without StopFloat (sequence aborted, now Wait) after 7.1s; landing (called=1)`. Client 2's log stopped 37 s later: the harness's own `--kill-client-at 45` (explained in RC11, R11-13) |
 | R10-8 | Horde boss with an AI controller; shrine target change/disconnect mid-attack; skinned-mesh draw cost | **NOT RUN** | |
+
+## Packaged RC11 (2026-11-16)
+
+Fresh cook at `B:\Unreal\GOTA_Builds\RC11_a8e6e87` (3,937 packages, 0 incrementally skipped) with every fix since RC9: renderer setting, Horde controller, Story shrine guard, Horde ready-up, combat telemetry. Clients 120 ± 30 ms, 5% loss unless noted; host `-nullrhi`; one rendered client where noted. Process ends are in `Saved/MPTests/<tag>_exits.txt` (a "killed by harness" client is the harness stopping it after the host quit, not a crash). Detail: `GOTA_HORDE_COOP_COMBAT.md` "RC11" and `GOTA_GAS_ENHANCEMENT_PLAN.md` "RC11".
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R11-1 | Horde ready-up, four players joining over 26–35 s | **PASS** | `rc11p_ready_wipe2`, `rc11p_aival_A`: `all 4 ready … -> countdown`, wave 1 with 4 living |
+| R11-2 | Ready-up timeout (4 expected, 2 join) and a player leaving before the start | **PASS (editor)** | `rc11_ready_timeout`: started with 2 of 4 after 30 s; `rc11_ready_quit`: waited for 3, started with 3 |
+| R11-3 | Host / Find / Join into Horde through the lobby | **PASS** | `rc11p_menu_horde`: lobby travel carried `?Players=4`, 4/4 ready, wave 1, one Defeat, phase reached `Defeat` |
+| R11-4 | Four-player Horde, active enemies (controller, pursuit, attacks, server damage, target changes, hero damage and Burning on enemies, deaths, kill credit) | **PASS** | `rc11p_aival_A`: 302 hits on players in wave 1, 15 kill credits, 0 team-only, 59 burn ticks on enemies, 0 ensures, 0 client crashes. Test-harness healing (`gota.Net.Sustain`) on players |
+| R11-5 | Natural four-player team wipe in a standard match | **PASS** | `rc11p_ready_wipe2`: four fighting players killed 10–46 s into wave 1, one `outcome=Defeat`, nothing injected |
+| R11-6 | Five-wave victory against attacking enemies; Horde boss with a controller | **NOT RUN** | the bots lose wave 1 without healing |
+| R11-7 | Four-player Story, shrine boss lands, Burning damages it | **PASS** | `rc11p_story_float`: guard landed it after 6.9 s; burn `700 -> 694`; 0 client crashes |
+| R11-8 | Duel PvP results and rematch | **PASS** | `rc11p_duel_rematch`: best of 3 to 2:0, result, `gota.Duel.Rematch`, second match 2:0, both processes exited by themselves |
+| R11-9 | Drakon versus Rampage | **PASS** | `packaged_rc11_slice_drakon_rampage`: 4 parries, 13 perfect-dodge lines, 5 Divine Counters, Phase II, boss defeated (RC9: 4 / 12 / 5 / 1 / 1) |
+| R11-10 | GAS statuses, Burning, boss immunity (regression suite) | **PASS 46/46** | `python Tools/GOTA_AbilityRegression.py --packaged`, first pass |
+| R11-11 | Client leaves; host leaves | **PASS** | `rc11p_leave`: client `NET leave` to the main menu; `rc11p_hostleave`: client back on the main menu, not in a session; all processes exited by themselves |
+| R11-12 | Renderer cost of `r.SkeletalMesh.UseCachedMDCs=0` | **MEASURED** | +1.4 ms render thread (15.37 vs 13.98 ms), +0.4 ms GPU; one run each |
+| R11-13 | Story client "log stopped" (RC10) | **EXPLAINED** | the harness's own `--kill-client 2 --kill-client-at 45`; no crash |
+| R11-14 | Human playtest | **NOT RUN** | kit ready: `GOTA_HORDE_PLAYTEST.md` |
+| R11-15 | Story movement-base corrections dropped on clients | **OPEN** | hundreds of `could not resolve the new relative movement base` per Story client; runtime graybox floor components are not net-addressable |
 
 ## How to re-run
 

@@ -1,3 +1,79 @@
+# Horde cooperative combat
+
+## RC11: real combat validation (2026-11-16)
+
+**Build:** packaged `B:\Unreal\GOTA_Builds\RC11_a8e6e87` (Win64 Development, fresh cook, 3,937 packages, 0 incrementally skipped) with every fix since RC9: the post-victory renderer setting, the Horde controller fix (wave enemies fight), the Story shrine guard, the ready-up phase and development telemetry. Four players on one machine, clients at 120 ± 30 ms and 5% loss. Telemetry report: `python Tools/GOTA_HordeTelemetry.py <tag>`.
+
+### Ready-up before wave 1
+
+Before RC11 the first player to log in (the listen host) started the 5 s prepare timer, so the host fought wave 1 alone while teammates were still joining.
+
+- **Rule (server):** a player is ready once it has loaded the map, its client has acknowledged its pawn (`ServerAcknowledgePossession`), it has a hero and is alive. `AHordeGameMode::EvaluateReadiness` runs at each login and every second.
+- **Who is expected:** the lobby passes its player count (`?Players=N`); a direct launch waits for 1; never fewer than are connected; at most four.
+- **Start:** when all expected players are ready, the existing 5 s countdown runs. **Timeout:** 60 s (`?ReadyTimeout=`), then the match starts with whoever is ready. **Leaving:** a player who leaves before the start is no longer waited for.
+- **Clients see it:** `AHordeGameState::ExpectedPlayers` / `ReadyPlayers`, `AHordePlayerState::bReadyForMatch`; the HUD shows `WAITING FOR PLAYERS r / n (seconds left)`.
+- Not a new lobby framework: the existing session travel, phases and four-player cap are unchanged.
+
+| Case | Build | Result |
+|---|---|---|
+| Four players join over 26–35 s | editor, packaged (`rc11_ready_all`, `rc11p_ready_wipe2`, `rc11p_aival_A`) | waited until 4/4 ready, then countdown; wave 1 started with 4 living every time |
+| Four expected, two join | editor `rc11_ready_timeout` | timeout after 30 s, started with 2 of 4 |
+| Four expected, one quits before the start | editor `rc11_ready_quit` | `left before the start; now waiting for 3`, started with 3 |
+
+Also fixed: `HordePhase` never reached Victory or Defeat (it stayed `BossActive` / `WaveActive`), because `CompleteVictory` / `CompleteDefeat` set the match ended before the phase change and `TryTransition` then refused it.
+
+### Enemies that fight back (packaged)
+
+| Behaviour | Result | Evidence |
+|---|---|---|
+| Wave enemies get an AI controller | **pass** | `Horde spawned … controller=AIC_Enemy_Base_C_…` for every spawn |
+| Detect and pursue players | **pass, with stalls** | enemies close to melee range and attack; but 7–9 enemies per match stood still 15–35 m from every player with no focus target (`TELEM stall`), see below |
+| Attack in range | **pass** | melee attempts at 70–400 cm; hit rates per attack in the table below |
+| Server-authoritative damage | **pass** | every hit goes through the victim's `BPC_DamageSystem` on the server; telemetry reads health before and after on the server |
+| Change targets | **pass** | 3 of 15 enemies switched target in `rc11_aival_e1`; boss target switching not reached |
+| Take hero damage and statuses | **pass** | 147 ability hits (editor), 59 Burning ticks on enemies (packaged `rc11p_aival_A`) |
+| Die and award kill credit | **pass** | 15 kill credits, 0 team-only kills (`rc11p_aival_A`) |
+| Natural team-wipe defeat | **pass** | `rc11p_ready_wipe2`: four fighting players killed 10–46 s into wave 1, exactly one `outcome=Defeat`, nothing injected |
+| Horde boss with a controller | **not reached** | no run got past wave 2 against fighting enemies |
+
+The enemy-behaviour runs used `gota.Net.Sustain` (test harness: players are healed, enemies untouched) so bots lived long enough to exercise deaths and kill credit. Those runs are not difficulty evidence.
+
+### Measured difficulty (test bots, no healing)
+
+| Run | Wave 1 | Player deaths, seconds into wave 1 |
+|---|---|---|
+| editor `rc11_ready_all` | defeat after 18 s, 0 kills, 40 hits on players | 8.5, 12.3, 12.3, about 17.6 |
+| packaged `rc11p_ready_wipe2` | defeat after 46 s, 0 kills, 37 hits | median 10.2, mean 18.4 |
+
+Per attack (packaged `rc11p_aival_A`, 302 hits on players in wave 1):
+
+| Enemy attack | Attempts | Landed | Damage per landed attack |
+|---|---|---|---|
+| `Montage_Sword_SpinningAttack` | 25 | 24 | median 105, mean 127 (one target: 9 hits of 10 in 3.8 s) |
+| `Montage_Melee_GroundSmash` | 30 | 29 | median 50 |
+| `Montage_Sword_Slash` | 45 | 37 | 10 |
+| `Montage_Sword_Jump_Attack` | 26 | 18 | 10 |
+| `Montage_Rifle_Fire` (ranged) | 87 | 79 | 10 |
+
+Heroes have 100 health. Enemies attack about 10 times a minute each. Enemy time-to-kill against the bots (first hit to death): melee median 45 s, ranged 68 s.
+
+**Gameplay problems (not test-driver problems):**
+
+1. **The spinning sword attack.** One wave-1 grunt's spin takes 90 of a hero's 100 health from a target that stays in it (9 damage ticks of 10 over 3.8 s), and it lands 24–26 times out of 25–26. Whether people can read and escape it is the first playtest question. Not changed.
+2. **Enemies lose interest at range.** Enemies more than about 12–15 m from every player stand still with no focus target. In packaged `rc11p_ready_wipe` (host script not loaded, so the host stood still at spawn), the last living player was never approached and the match sat at 1 of 4 alive with 7 enemies for six minutes. A player who hangs back can stall a wave indefinitely. Perception or aggro range in the enemy AI; not changed.
+3. **Ranged enemies fail to move.** `BP_Enemy_Ranged` logged 41 `Invalid` and 342 (editor) movement failures: their move requests fail outright, often 20 m from the players. Navigation for the ranged role needs a look.
+4. Enemy damage does not scale with player count (only enemy count and concurrency do).
+
+**Test-driver limits (not gameplay):** the bots stand in the spin, rarely block on remote clients, and swing at moving enemies. They lose wave 1 without healing; that says nothing about people.
+
+### Not verified in RC11
+
+- Human players (see `GOTA_HORDE_PLAYTEST.md`).
+- A five-wave victory against fighting enemies, and the Horde boss with a controller.
+- A real lobby with ready-up on separate PCs.
+
+---
+
 # Horde cooperative combat (RC6)
 
 **Date:** 2026-11-07. **Branch:** `feature/gota-cinematic-frontend`. **Package:** fresh Win64 Development cook at `B:\Unreal\GOTA_Builds\RC6`. RC2–RC5 were not modified. Nothing was pushed.

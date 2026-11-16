@@ -1,0 +1,16 @@
+# RC11: Find + Join the host's Horde lobby, pick a hero, then fight once the match is live.
+wait 4
+gota.Menu.Go Multiplayer
+wait 10
+gota.Menu.Session find
+wait 8
+gota.Menu.Session dump
+gota.Menu.Session join
+wait 5
+gota.Menu.Session hero Nyx
+gota.Menu.Session dump
+wait 60
+gota.Net.Fight 300
+wait 120
+gota.Net.Players
+quit

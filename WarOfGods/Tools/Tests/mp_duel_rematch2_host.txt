@@ -1,0 +1,32 @@
+# RC11 Duel PvP results and rematch: the two players fight a best-of-3 with the duel bots, the match reaches its
+# result, the host requests a rematch, and a second match is fought on the same connection.
+r.Shadow.Virtual.AllowScreenOverflowMessages 0
+wait 8
+gota.Duel.Bot fight
+wait 30
+gota.Duel.Dump
+wait 30
+gota.Duel.Dump
+wait 30
+gota.Duel.Dump
+wait 30
+gota.Duel.Dump
+wait 30
+gota.Duel.Dump
+gota.Net.Players
+gota.Duel.Rematch
+wait 10
+gota.Duel.Dump
+gota.Net.Players
+wait 30
+gota.Duel.Dump
+wait 30
+gota.Duel.Dump
+wait 30
+gota.Duel.Dump
+wait 30
+gota.Duel.Dump
+gota.Net.Players
+gota.Duel.Bot off
+wait 5
+quit

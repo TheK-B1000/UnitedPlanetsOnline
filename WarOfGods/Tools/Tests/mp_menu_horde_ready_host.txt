@@ -1,0 +1,21 @@
+# RC11: the real lobby path into Horde. Host with the frontend session calls (Host button), wait for three clients to
+# Find + Join, then Start. The lobby passes ?Players=N; wave 1 must wait until all four are ready in the arena.
+wait 3
+gota.Menu.Go Multiplayer
+gota.Menu.Session mode Horde
+gota.Menu.Session host
+wait 12
+gota.Menu.Session hero Drakon
+gota.Menu.Session dump
+wait 75
+gota.Menu.Session mode Horde
+gota.Menu.Session dump
+gota.Menu.Session start
+wait 45
+gota.Net.Players
+gota.Horde.Dump
+wait 30
+gota.Horde.Dump
+gota.Telemetry.Dump
+gota.Net.Players
+quit

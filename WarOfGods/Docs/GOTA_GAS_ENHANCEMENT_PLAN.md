@@ -1,6 +1,6 @@
 # Selective GAS enhancement plan
 
-**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning code commit `548a433` is on `origin`: it was pushed from GitHub Desktop's Push button (its log: `[ui] Executing push ... feature/gota-cinematic-frontend` at 2026-11-14 18:07:31 local), not by an agent. Everything after it is local only. RC1–RC9 packages are not modified; Burning was packaged as RC8, the stabilization pass as RC9, and the renderer fix as RC10. **Engine:** Unreal Engine 5.8 native Gameplay Ability System.
+**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning code commit `548a433` is on `origin`: it was pushed from GitHub Desktop's Push button (its log: `[ui] Executing push ... feature/gota-cinematic-frontend` at 2026-11-14 18:07:31 local), not by an agent. Everything after it is local only. RC1–RC10 packages are not modified; Burning was packaged as RC8, the stabilization pass as RC9, the renderer fix as RC10, and all fixes plus ready-up and telemetry as RC11. **Engine:** Unreal Engine 5.8 native Gameplay Ability System.
 
 We use GAS where it improves on what we already have. Health, momentum, cooldowns, basic attacks, block, perfect parry, perfect dodge, Divine Counter, and boss timelines keep their current owners. No talent trees, XP, levels, or persistent progression.
 
@@ -19,9 +19,10 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Packaged (RC8) regression and the Burning record | `66e96c8` | Done |
 | RC8 stabilization: cloth crash mitigation, Story shrine and Horde findings, packaged RC9 regression | `839f397` | Done |
 | Horde director fix (victory-time array bug) | `04d35a4` | Done (packaged in RC10) |
-| Story shrine boss always lands after its floating attack (`UGOTAFloatAttackGuard`) | `74c480d` | Done (editor; not yet in a package) |
-| Horde wave enemies get their AI controller and attack | `f423fad` | Done (editor; not yet in a package) |
-| Post-victory renderer crash: `r.SkeletalMesh.UseCachedMDCs=0` | `b619ee5` | Provisionally validated (packaged RC10, 3 of 3 clean) |
+| Story shrine boss always lands after its floating attack (`UGOTAFloatAttackGuard`) | `74c480d` | Done (packaged in RC11) |
+| Horde wave enemies get their AI controller and attack | `f423fad` | Done (packaged in RC11) |
+| Post-victory renderer crash: `r.SkeletalMesh.UseCachedMDCs=0` | `b619ee5` | Provisionally validated (packaged RC10, 3 of 3 clean); cost measured in RC11 (+1.4 ms render thread) |
+| Horde ready-up, end-phase fix, combat telemetry, RC11 package | `a8e6e87` | Done (packaged RC11); human playtest not yet run |
 
 ## Ownership
 
@@ -183,6 +184,63 @@ Engine limitation, and how it is handled: for persistent effects, Unreal evaluat
 Nothing else changed: the same numbers, the same Blueprint flags, the same damage path.
 
 ## Test record
+
+### RC11 real combat validation (`a8e6e87`), editor and packaged RC11
+
+No GAS feature was added, no enemy number or behaviour was changed, and the fight driver was not made stronger. Horde detail: `GOTA_HORDE_COOP_COMBAT.md` "RC11". Human playtest kit: `GOTA_HORDE_PLAYTEST.md`.
+
+**Package:** fresh `RunUAT BuildCookRun` Win64 Development from `a8e6e87` (`Saved/Cooked` and `Saved/StagedBuilds` removed first), archive `B:\Unreal\GOTA_Builds\RC11_a8e6e87`. Cook: 3,937 packages, **0 incrementally skipped**, `BUILD SUCCESSFUL`. The game binary was linked from the committed source (its unity object was compiled before any later edit). RC1–RC10 not touched. Test scripts copied into the archive's `WarOfGods\Tools\Tests` (as for RC9/RC10; without them the packaged host runs no script).
+
+**What RC11 contains, and how it was checked in the package** (all fixes are C++ or ini; no Blueprint or behavior-tree asset changed, so each is proved by its runtime log line):
+
+| Fix | Packaged evidence |
+|---|---|
+| `r.SkeletalMesh.UseCachedMDCs=0` | `Set CVar [[r.SkeletalMesh.UseCachedMDCs:0]]` on host and clients |
+| Horde wave-enemy controller (`f423fad`) | `Horde spawned … controller=AIC_Enemy_Base_C_…` |
+| Story shrine guard (`74c480d`) | `float attack guard attached`; `float attack ended without StopFloat (sequence aborted, now Wait) after 6.9s; landing (called=1)`; Burning then damages the boss `700 -> 698 -> 696 -> 694` |
+| Ready-up (`a8e6e87`) | `Horde readiness: all 4 ready after 34.0s -> countdown` |
+| Telemetry (`a8e6e87`) | `TELEM` lines; reports below |
+
+**New in `a8e6e87`:**
+
+- **Horde ready-up.** Wave 1 waits until every expected player has loaded, received its pawn and has a hero (server-decided), then the usual 5 s countdown; 60 s timeout; leavers are dropped from the count. Replicated to clients and shown on the HUD.
+- **Horde end phase.** `HordePhase` now reaches Victory / Defeat (it used to stay `BossActive` / `WaveActive`).
+- **Combat telemetry** (`UGOTACombatTelemetry`, `gota.Telemetry`, development builds only, compiled out of Shipping): one line per enemy attack, hit on a player, death, heal, spawn, enemy death, boss attack, movement failure, stall, wave and match end. Event-driven plus a 1 Hz sample; nothing per frame. `UStatsComponent` pairs each Blueprint damage response with the health drop it caused, so attacker and damage per hit are exact.
+- Test harness only: `gota.Net.Sustain` (heals players so bots survive long enough to exercise enemy behaviour; never balance evidence), `GOTA_MPSession.py` records every process's exit code and whether the harness killed it (`<tag>_exits.txt`), `Tools/GOTA_HordeTelemetry.py`, `Tools/GOTA_PerfCsv.py`.
+
+#### Packaged regression (RC11)
+
+| Check | Result |
+|---|---|
+| Regression suite (statuses, Burning, boss immunity and resistance, multiplayer cases) | **46/46**, first pass |
+| Four-player Story, shrine boss, Burning on it | **pass** (`rc11p_story_float`) |
+| Four-player Horde with active enemies, kill credit, Burning on enemies | **pass** (`rc11p_aival_A`, healing harness) |
+| Natural team wipe | **pass** (`rc11p_ready_wipe2`, one Defeat) |
+| Duel PvP result and rematch | **pass** (`rc11p_duel_rematch`) |
+| Drakon versus Rampage | **pass** (matches RC9) |
+| Host / Find / Join into Horde, client leave, host leave | **pass** (`rc11p_menu_horde`, `rc11p_leave`, `rc11p_hostleave`) |
+| Five-wave Horde victory with fighting enemies, Horde boss with a controller | **not run** (bots lose wave 1) |
+| Human playtest | **not run** |
+
+#### Renderer cost of `r.SkeletalMesh.UseCachedMDCs=0` (packaged, rendered client, 120 s CSV profile in waves 1–2)
+
+| | Caching off (as shipped, `rc11p_aival_A`) | Caching on (`-dpcvars=…=1`, `rc11p_aival_B`) | Difference |
+|---|---|---|---|
+| Frame | 15.40 ms (p95 18.1) | 14.00 ms (p95 16.2) | +1.4 ms |
+| Render thread | 15.37 ms (p95 18.0) | 13.98 ms (p95 15.9) | **+1.4 ms (~10%)** |
+| Game thread | 8.38 ms | 7.27 ms | +1.1 ms (waits on the render thread) |
+| RHI thread | 5.46 ms | 5.30 ms | +0.2 ms |
+| GPU | 5.14 ms | 4.75 ms | +0.4 ms |
+| Physical memory used | 1,496 MB (peak 1,742) | 1,682 MB (peak 1,868) | not attributable (run-to-run) |
+| Frames over 100 ms | 1 (734 ms) | 1 (814 ms) | same one-off hitch in both |
+
+The client is render-thread bound in both. One run each, and the fights were not identical (wave 1 lasted 118 s and 245 s), so the cost is an estimate: **about 1.4 ms of render thread with four heroes and a wave 1–2 fight on screen**. It grows with the number of visible skinned meshes. Acceptable for RC11; before release, either keep it and budget for it, or find the stale uniform buffer in the skinned-mesh proxy and turn caching back on.
+
+#### Story client "log stopped" (RC10 open item): explained
+
+`story_float_mp` was launched with `--kill-client 2 --kill-client-at 45` (a disconnect-during-attack test). The harness hard-killed client 2 45 s after the last client launched: client 3 started at 01:45:20–22, client 2's log ends at 01:46:05.7, the host logged a normal connection close at 01:46:05.8, and there is no crash report. **It was the test harness, not a crash, a timeout, the shrine or the renderer.** The RC10 record called it unexplained; that was wrong. The harness now writes each process's exit code and whether it killed it.
+
+Separate finding from the same logs: every Story client (not only client 2) logs `ClientAdjustPosition_Implementation could not resolve the new relative movement base actor, ignoring server correction!` hundreds of times (1,409 and 1,789 on the other two clients; 0 in every Horde log). Cause: `AArenaGrayboxBuilder` builds the Story floors as runtime `UStaticMeshComponent`s with generated names on both server and client, so the server's movement-base reference cannot be resolved on the client and those position corrections are dropped. Risk: client position drift / rubber-banding in Story. Proposed fix (not made in RC11): give built components stable, deterministic names and make them net-addressable, or build the Story floor as level geometry.
 
 ### RC10 stabilization (`74c480d`, `f423fad`, `b619ee5`), editor and packaged RC10
 
@@ -502,14 +560,18 @@ The editor no longer hitches the way the November 1 packaged run did, which expo
 
 ### Not verified
 
+RC11:
+
+- Human players. The playtest kit is ready (`GOTA_HORDE_PLAYTEST.md`); no person has played against attacking enemies.
+- A five-wave victory against wave enemies that fight, a post-victory window with fighting enemies, and the Horde boss with an AI controller.
+- Ready-up on separate PCs; the timeout and leave cases packaged (editor only).
+- Shrine boss when its target changes or disconnects mid-attack.
+
 RC10 stabilization:
 
-- A five-wave victory against wave enemies that fight (RC10's two victories had passive wave enemies), and the Horde boss with an AI controller.
-- The shrine guard and the Horde controller fix in a package (editor only).
-- The frame cost of `r.SkeletalMesh.UseCachedMDCs=0` (no comparable measurement with caching on).
+- ~~The shrine guard and the Horde controller fix in a package~~ done in RC11.
+- ~~The frame cost of `r.SkeletalMesh.UseCachedMDCs=0`~~ measured in RC11 (+1.4 ms render thread).
 - Victory runs 4 and 5 of the original packaged target.
-- Shrine boss when its target changes or disconnects mid-attack.
-- Human difficulty. Only bots have played against attacking enemies.
 
 Burning milestone:
 
@@ -536,10 +598,12 @@ Earlier milestones:
 ### Remaining risks
 
 - **Cloth assertion** (`GPUSkinVertexFactory.cpp:1348`): mitigated in RC9 by `r.GPUSkin.BoneTransformAllocationMode=0`, which removes the crashing call path. Not reproduced on demand, so the fix is reasoned from the engine source rather than demonstrated. Watch rendered-client joins.
-- **Post-victory renderer crash:** fixed by `r.SkeletalMesh.UseCachedMDCs=0` (RC10; 11/11 crashed before, 3/3 clean after). Provisionally validated on three runs. Its CPU cost is not measured: profile it. Engine-level root cause (which skinned proxy keeps the single-frame buffer) not found, so a future engine or content change could bring it back if caching is turned on again.
+- **Release blockers after RC11 (in order):** (1) no human has played Horde against fighting enemies; (2) the spinning sword attack takes 90 of 100 health from one target and almost always lands; (3) enemies more than about 12–15 m from every player stop and never re-engage, so a player who hangs back can stall a wave forever; (4) ranged enemies' move requests fail (`Invalid`); (5) no five-wave victory against fighting enemies, so the post-victory crash fix has not been re-checked in that situation; (6) Story clients drop movement-base corrections (graybox floor components). None of these were changed in RC11.
+- **Menus cannot host multiplayer Horde.** The Multiplayer screen always selects Duel, and `bHordeLaunchEnabled` is off; human playtests use the Development console (`GOTA_HORDE_PLAYTEST.md`).
+- **Post-victory renderer crash:** fixed by `r.SkeletalMesh.UseCachedMDCs=0` (RC10; 11/11 crashed before, 3/3 clean after). Provisionally validated on three runs. Cost measured in RC11: about +1.4 ms render thread. Engine-level root cause (which skinned proxy keeps the single-frame buffer) not found, so a future engine or content change could bring it back if caching is turned on again.
 - **Horde balance against attacking enemies (next gameplay blocker):** the bots lose wave 1 every time; human difficulty is unknown; enemy damage does not scale with player count. Needs a human playtest and hit/time-to-kill logging before any tuning.
 - **Horde boss with an AI controller** has not been seen in a match.
-- **Story remote client log stopped** 37 s after the shrine landing (`story_float_mp` client 2, no crash report, many movement-base warnings). Unexplained.
+- ~~Story remote client log stopped~~ explained in RC11: the harness's own `--kill-client-at 45`.
 - ~~Story shrine boss stuck invincible~~ fixed in `74c480d` (editor).
 - ~~Horde wave enemies never attack~~ fixed in `f423fad` (editor).
 - **Many simultaneous burns cost host frame time** (2.4–6.7 ms for 24). Fine for Molten Strike; an area ability that ignites a whole wave would need the cost split measured first.
