@@ -168,6 +168,21 @@ Fresh cook at `B:\Unreal\GOTA_Builds\RC6`. Logs: `Saved/MPTests/rc6*.log`. Clien
 | R6-13 | Duel PvP 1v1, HUD respawn lifecycle, Insights, Shipping, second PC | **NOT RUN** | |
 | R6-14 | Horde stall watch (editor, not a recook) | **PASS** | `rc6stall`. 32 ability hits, 3 kills, 0 `HORDE STALL`. The one miss was horiz 496, `los=1`. Client logged `FIGHT strafe` |
 
+## Packaged RC10 and editor stabilization (2026-11-15)
+
+Fresh cook at `B:\Unreal\GOTA_Builds\RC10_2454bff_skelmdc` (`2454bff` + `r.SkeletalMesh.UseCachedMDCs=0`, 3,937 packages, 0 skipped). RC10 does **not** contain the shrine guard (`74c480d`) or the Horde controller fix (`f423fad`); those rows are editor. Clients 120 ± 30 ms, 5% loss; one rendered client (Drakon), host and other clients as in RC9. Full record: `Docs/GOTA_GAS_ENHANCEMENT_PLAN.md`, "RC10 stabilization". Summaries: `python Tools/GOTA_AcceptSummary.py <tag>`.
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R10-1 | Rendered client survives a real Horde victory | **PASS (2 of 2, provisional)** | `rc10_accept1` clients up 900–910 s after Victory, `rc10_accept2` 823–832 s; 0 crashes, 0 `LogRHI: Error`, 0 ensures, 62 kill credits each. Before the change: 4 of 4 full victories and 7 of 7 quick boss kills crashed within 175 s |
+| R10-2 | Quick boss-kill crash test with the fix (editor) | **PASS** | `diag_bossfight_skelmdc0`, held 195 s |
+| R10-3 | Third to fifth packaged victory | **NOT RUN** | `rc10_accept3` cancelled before the victory (counts as neither); runs 4–5 not started; target reduced to two |
+| R10-4 | Horde wave enemies have an AI controller (editor) | **PASS** | `horde_enemy_brain`: `AIC_Enemy_Base_C_*`, tree running. Before: `brain none (controller None)` |
+| R10-5 | Natural four-player defeat, standard match (editor) | **PASS** | `horde_natwipe_ai1`: four players killed 29–40 s into wave 1 by enemy attacks, each ELIMINATED once, one `outcome=Defeat score=0`, nothing injected |
+| R10-6 | Five-wave victory against attacking enemies (editor, bots) | **FAIL (bots)** | `horde_ai_full1/2/3`: team dies in wave 1, 0 enemy kills. Test-bot limitation; human difficulty not measured |
+| R10-7 | Story shrine boss lands after an aborted AOE Trail (editor, four players) | **PASS** | `story_float_mp`: `float attack ended without StopFloat (sequence aborted, now Wait) after 7.1s; landing (called=1)`. Client 2's log stopped 37 s later without a crash report (open) |
+| R10-8 | Horde boss with an AI controller; shrine target change/disconnect mid-attack; skinned-mesh draw cost | **NOT RUN** | |
+
 ## How to re-run
 
 ```text
@@ -197,4 +212,5 @@ python Tools/GOTA_MPSession.py --tag horde4 --url "/Game/Arenas/Maps/L_Arena_Tit
 1. Make the Behemoth Charge sidestep actually miss, then re-run `rc4charge`. The rush is already visible to the client.
 2. A second machine. Do not open four rendered windows on one GPU.
 3. A Shipping cook.
-4. Shared combat, using the plan in the architecture doc. Regression before that port: RC2 Horde win and wipe, RC2 Story HUD, `rc3parry3`, `rc4combat` counter, `rc4story4`, and the forged-parry rejection.
+4. Horde with attacking enemies (RC10 on): a human playtest of waves 1–2 with 2–4 people, enemy-hit and time-to-kill logging, then more full packaged victories with fighting wave enemies and a profile of `r.SkeletalMesh.UseCachedMDCs=0`.
+5. Shared combat, using the plan in the architecture doc. Regression before that port: RC2 Horde win and wipe, RC2 Story HUD, `rc3parry3`, `rc4combat` counter, `rc4story4`, and the forged-parry rejection.

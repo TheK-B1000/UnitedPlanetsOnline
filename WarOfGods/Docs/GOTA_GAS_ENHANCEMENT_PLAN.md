@@ -1,6 +1,6 @@
 # Selective GAS enhancement plan
 
-**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning code commit `548a433` is on `origin`: it was pushed from GitHub Desktop's Push button (its log: `[ui] Executing push ... feature/gota-cinematic-frontend` at 2026-11-14 18:07:31 local), not by an agent. Everything after it is local only. RC1–RC8 packages are not modified; the stabilization pass was packaged as RC9. **Engine:** Unreal Engine 5.8 native Gameplay Ability System. RC1–RC7 packages are not modified; Burning was packaged as RC8.
+**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning code commit `548a433` is on `origin`: it was pushed from GitHub Desktop's Push button (its log: `[ui] Executing push ... feature/gota-cinematic-frontend` at 2026-11-14 18:07:31 local), not by an agent. Everything after it is local only. RC1–RC9 packages are not modified; Burning was packaged as RC8, the stabilization pass as RC9, and the renderer fix as RC10. **Engine:** Unreal Engine 5.8 native Gameplay Ability System.
 
 We use GAS where it improves on what we already have. Health, momentum, cooldowns, basic attacks, block, perfect parry, perfect dodge, Divine Counter, and boss timelines keep their current owners. No talent trees, XP, levels, or persistent progression.
 
@@ -18,7 +18,10 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Burning (damage over time), Molten Strike ignites, element definitions, BURNING indicator | `548a433` | Done |
 | Packaged (RC8) regression and the Burning record | `66e96c8` | Done |
 | RC8 stabilization: cloth crash mitigation, Story shrine and Horde findings, packaged RC9 regression | `839f397` | Done |
-| Horde director fix (victory-time array bug) | `04d35a4` | Done (editor; not yet in a package) |
+| Horde director fix (victory-time array bug) | `04d35a4` | Done (packaged in RC10) |
+| Story shrine boss always lands after its floating attack (`UGOTAFloatAttackGuard`) | `74c480d` | Done (editor; not yet in a package) |
+| Horde wave enemies get their AI controller and attack | `f423fad` | Done (editor; not yet in a package) |
+| Post-victory renderer crash: `r.SkeletalMesh.UseCachedMDCs=0` | `b619ee5` | Provisionally validated (packaged RC10, 3 of 3 clean) |
 
 ## Ownership
 
@@ -181,6 +184,97 @@ Nothing else changed: the same numbers, the same Blueprint flags, the same damag
 
 ## Test record
 
+### RC10 stabilization (`74c480d`, `f423fad`, `b619ee5`), editor and packaged RC10
+
+No GAS feature was added in this pass, and no enemy difficulty value or fight-driver aggression was changed to produce a result.
+
+**Packaged build:** fresh `RunUAT BuildCookRun` Win64 Development, archive `B:\Unreal\GOTA_Builds\RC10_2454bff_skelmdc`: `2454bff` plus the `r.SkeletalMesh.UseCachedMDCs=0` setting (later committed as `b619ee5`). Cook: 3,937 packages, **0 incrementally skipped**. RC1–RC9 not touched. **RC10 does not contain the shrine guard (`74c480d`) or the Horde controller fix (`f423fad`)**: in both RC10 victories wave enemies were still passive and only the boss fought (0 `Horde spawned ... controller=` lines, 0 float-guard lines in the host logs). Those two fixes are verified in the editor only. Multiplayer clients: 120 ± 30 ms, 5% loss. One machine.
+
+#### P0: rendered client crash after a Horde victory (fixed, provisionally validated)
+
+**Symptom.** One to three minutes after a legitimate victory the rendered client crashed on a parallel render worker in the base pass: packaged `EXCEPTION_ACCESS_VIOLATION reading 0xffffffffffffffff` in `FD3D12DescriptorCache::SetSamplerTable` <- `RHISetShaderParameters`; editor `Assertion failed: Resource [D3D12CommandContext.h:439]`, or access violations at `0x48`.
+
+**Root cause.** With RHI validation (`-rhivalidation`) and GPU breadcrumbs (`-gpucrashdebugging`) on the rendered client, the first error before the crash was `Non MultiFrame Uniform buffer has been allocated in a previous frame` while drawing the base pass in parallel, followed by layout and size mismatches on view uniform buffers (`FVirtualShadowMapUniformParameters`, `FBlueNoise`, `FHairStrandsViewUniformParameters`, `LayoutConstantBufferSize`). A **cached mesh draw command for a skinned mesh** kept a single-frame uniform buffer that had already been released; when its memory was reused the draw bound garbage. A real boss fight triggers it; a forced clear does not.
+
+**Controlled runs** (editor, four players, rendered client Drakon; "quick" = fight the boss wave only, then hold the results screen):
+
+| Configuration on the rendered client | Runs | Result |
+|---|---|---|
+| Quick, boss removed with `gota.Net.KillEnemy` (no fight) | 3 | no crash |
+| Quick, boss fought and killed (default renderer) | 7 | **crash 7/7**, 75–175 s after the kill |
+| … with the client camera idle (nothing to do on the client) | incl. above | still crashed |
+| … with `r.GPUSkin.BoneTransformAllocationMode=1` (the RC9 cloth setting reverted) | incl. above | still crashed: the RC9 setting is not involved |
+| … with four Drakon players (no cloth heroes at all) | incl. above | still crashed: cloth is not involved |
+| … with Burning off | earlier (`horde_full_noburn`) | still crashed: Burning is not involved |
+| All cached mesh draw commands off (`r.MeshDrawCommands.UseCachedCommands=0`) | 1 | no crash |
+| Skeletal meshes hidden (`ShowFlag.SkeletalMeshes 0`) | 1 | no crash |
+| Only skeletal-mesh draw caching off (`r.SkeletalMesh.UseCachedMDCs=0`) | 1 | **no crash, 195 s held** |
+
+`gota.Test.SceneWatch` on the rendered client showed Rampage's mesh gone from the client within 3 s of the victory, so the crash is not a dangling boss body; it is the stale cached command.
+
+**Fix (`b619ee5`).** `r.SkeletalMesh.UseCachedMDCs=0` in `Config/DefaultEngine.ini` `[SystemSettings]`. Skinned meshes build their draw commands each frame; static meshes still use cached commands. Confirmed active on every RC10 peer (`Set CVar [[r.SkeletalMesh.UseCachedMDCs:0]]`). No gameplay, effect or results-screen timing was changed; character rendering is unchanged.
+
+**Before and after:**
+
+| | Fought boss kills | Rendered client crashed |
+|---|---|---|
+| Before (quick diagnostics, editor) | 7 | **7** |
+| Before (full five-wave victories: `horde_full_e1`, `e2`, `noburn` editor; `rc9_horde_full` packaged) | 4 | **4** |
+| After, quick test (editor, `diag_bossfight_skelmdc0`) | 1 | 0, held 195 s after the kill |
+| After, packaged RC10 `rc10_accept1` | 1 | 0: Victory `score=13575`, 62 kill credits, 0 ensures; clients up **900, 902, 910 s** after victory, 0 `LogRHI: Error` |
+| After, packaged RC10 `rc10_accept2` | 1 | 0: Victory, 62 kill credits, 0 ensures; clients up **823, 824, 832 s** after victory, 0 `LogRHI: Error` |
+| `rc10_accept3` | – | **cancelled by the user** before the victory (6 kills); counts as neither pass nor fail |
+| Runs 4 and 5 | – | **not run** |
+
+**Acceptance decision.** The target was five legitimate packaged victories. It was reduced to two full packaged victories plus one quick test, on the evidence: before the change 11 of 11 fought boss kills crashed within 175 s; after it 3 of 3 held at least 195 s, and both full matches held more than 13 minutes, over four times the latest crash ever seen. Accepted as **provisionally validated**. The next release run should still include more full packaged victories, now with fighting wave enemies (RC10 had passive ones).
+
+**Cost (to be profiled).** Building skinned-mesh draw commands every frame costs render-thread CPU per visible skinned mesh. RC10 rendered client in `rc10_accept1`: average frame 20.15 ms, GPU 5.63 ms, peak memory 1,899 MB; host 9.64 ms. There is no same-match measurement with caching on (every such match crashed), so the cost is **not measured**. Profile with `stat SceneRendering` / Unreal Insights in a 30-enemy wave before release; if it matters, the alternative is to find and fix the stale uniform buffer in the skinned mesh proxy and turn caching back on.
+
+#### P1: Horde wave enemies attack (fixed, editor)
+
+- **Cause.** Enemy Blueprints keep the engine default `AutoPossessAI = PlacedInWorld`, and `AHordeEncounterDirector::TrySpawnOne` spawned them with a bare `SpawnActor`. Wave enemies had no controller: no perception, no behavior tree, no attacks (runtime: `brain none (controller None)`). This is why "Horde enemies do not engage" (RC8 stabilization below).
+- **Fix (`f423fad`).** If the spawned pawn has no controller, the director calls `SpawnDefaultController()`, which uses the enemy's own `AIControllerClass` (`AIC_Enemy_Base`) as a placed enemy would. Behavior trees, attack tokens, damage and numbers are unchanged. It also applies to the Horde boss role, so the Quarry Behemoth now has a controller too; Horde boss behaviour with a controller is **not yet verified** (no match has reached wave 5 since).
+- **Verified:** wave enemies spawn with `AIC_Enemy_Base_C_*` and a running tree (`horde_enemy_brain.txt`).
+- **Natural defeat, standard match (`horde_natwipe_ai1`, editor, four players, nothing spawned or injected):** four players walk into wave 1 without attacking and are killed by the enemies' own attacks between 29 and 40 s after the wave starts. Each player is `ELIMINATED` once and the host logs exactly one `Horde match complete outcome=Defeat score=0`.
+- **Full matches against fighting enemies** (`horde_ai_full1/2/3`, editor, fight driver unchanged except the block reaction below): the bots **lose wave 1 every time**, with 0 enemy kills. Player deaths after the wave starts: `full2` +16, +36, +45, +60 s; `full3` +24, +33, +33, +42 s. In `full3`, 23 of 24 bot ability hits landed, about 50–75 damage per 100-health enemy before the team died.
+- Fight-driver change in this commit: `gota.Net.Fight` blocks when the nearest enemy within 400 cm is in an attack montage less than 0.35 s from its damage notify (as a player reacts to a wind-up). It does not make the bots stronger in any other way. Host blocks per match: 19; remote clients: 0 (the montage is not visible to the driver on clients; driver limitation).
+
+#### P2: Story shrine boss always lands (fixed, editor)
+
+- **Cause** (RC8 stabilization below): `BT_Enemy_Boss` runs `BTT_Boss_StartFloat` (raise and `IsInvincible`), AOE Trail, then `BTT_Boss_StopFloat`. If the sequence aborts between them (the attack kills its target), StopFloat never runs.
+- **Fix (`74c480d`).** `UGOTAFloatAttackGuard`, a server-only component added at combat bootstrap to any pawn whose Blueprint has `StartFloat` and `StopFloat`. Every 0.1 s it notes the composite the active `BTT_Boss_StartFloat` runs in. If the active node leaves that composite, the brain stops, the boss dies, or it is destroyed before a `BTT_Boss_StopFloat` node runs, it calls the Blueprint's own `StopFloat`. The attack and its temporary invulnerability are unchanged; no behavior-tree asset was edited.
+- **Verified (editor):**
+
+| Case | Result |
+|---|---|
+| Target survives the attack | boss lands by itself; guard silent |
+| Target dies mid-attack, solo | guard lands it; Burning ticks then damage it (`700 -> 694`) |
+| Target dies mid-attack, four players (`story_float_mp`) | `float attack ended without StopFloat (sequence aborted, now Wait) after 7.1s; landing (called=1)` |
+| Target changes or disconnects mid-attack | **not exercised** (the boss stayed passive after landing) |
+
+- In `story_float_mp` remote client 2's log stops 37 s after the landing with no crash report, after 267 `ClientAdjustPosition ... could not resolve the new relative movement base actor` warnings (standing on the floating platform). Cause not established; the host saw an ordinary connection close. Watch in the next Story run.
+- Observed in the editor: after a 3 s editor hitch the period timer caught up and three burn ticks fell within 0.17 s. The total is still three ticks.
+
+#### Corrections to the RC8 stabilization record
+
+- "after the client had nearly stopped rendering" was **wrong**. The frame number in a log line is `GFrameCounter % 1000`, and an idle client writes few lines, so "180 frames in 170 s" was misread. The client rendered normally until the crash.
+- The cloth setting (`r.GPUSkin.BoneTransformAllocationMode=0`) is unrelated to the victory crash: reverting it did not change the crash, and four non-cloth heroes still crashed. It stays for the separate cloth assertion.
+- "Horde enemies do not engage" was not tuning: they had no controller (P1).
+
+#### Difficulty: human players versus the test bots
+
+These are two separate questions, and the data answers only the second.
+
+- **The bots cannot win wave 1.** They do not block on remote clients, swing melee at moving or blocking enemies (`BlockChance` 0.25) and stand in the pack. That is a test-tool limit, not evidence that the game is too hard.
+- **Whether humans can win is unknown.** No human has played a Horde match with attacking enemies. The only real numbers: a team that does nothing dies 29–40 s into wave 1; a bot team that fights dies 16–60 s in. Every earlier victory (RC1–RC10) was against passive wave enemies and says nothing about balance.
+- **Structural concerns worth checking in a playtest:**
+  - Player-count scaling raises enemy count and concurrency (`ScaledCount`, `MaxConcurrentPerExtraPlayer=2`) but not enemy damage. Four players face more enemies at once, each hitting as hard as for one.
+  - In the bot runs, wave 1 started with only the host connected (preparation is about 6 s; clients joined 8–26 s later). The first player faces the opening alone. A real lobby starts everyone together, but a late joiner meets this.
+  - There is no log of damage per enemy hit, so time-to-kill cannot be measured from logs.
+- **Recommended before any tuning:** (1) a human playtest of waves 1–2 with 2–4 people; (2) a development log of each enemy hit on a player (attacker class, damage, health after) and per-wave player deaths, to measure time-to-kill; (3) decide on wave-start rules for late joiners. Change numbers only after that.
+
+**Next gameplay blocker:** Horde balance and readability now that wave enemies attack. A standard match can now be lost, but no one has shown it can be won against fighting enemies, and the Horde boss with a controller has not been seen.
+
 ### RC8 stabilization (`839f397`), editor and packaged RC9
 
 **Packaged build:** fresh `RunUAT BuildCookRun` Win64 Development from `839f397` (`Saved/Cooked` and `Saved/StagedBuilds` removed first), archive `B:\Unreal\GOTA_Builds\RC9_839f397` (inner exe 346,712,576 bytes). Cook: 3,937 packages, **0 incrementally skipped**, no cook errors. RC1–RC8 not touched. Multiplayer clients: 120 ± 30 ms, 5% loss. One machine.
@@ -211,7 +305,7 @@ No GAS feature was added in this pass. Code changes: one engine setting (`r.GPUS
 Both legitimate victories (editor `horde_full_e1`, packaged `rc9_horde_full`) ended the same way:
 
 - **Host: a real bug in project code, fixed.** `Ensure condition failed: Array has changed during ranged-for iteration!` in `AHordeEncounterDirector::TickAliveScrub`. The scrub loops over `TrackedEnemies` and calls `NotifyEnemyDefeated`. On the last enemy that broadcasts `OnWaveCleared`; the game mode then calls `CompleteVictory` (or `ConfigureWave` for the next wave), and both call `CleanupTrackedEnemies`, which runs `TrackedEnemies.Reset()` inside the loop. The loop then walked a reset array. Present since before the GAS work; it shows only at a real victory because only that path ends the match from inside the scrub. Reporting the ensure also froze the host for 6 s, which is why every client logged "Hit limit of 96 saved moves" at victory. Fix: both loops that can trigger it (`TickAliveScrub`, `HandleEnemyEndPlay`) now go by index and re-read `Num()` each pass.
-- **Rendered client: renderer crash, cause not established.** Packaged: `EXCEPTION_ACCESS_VIOLATION reading 0xffffffffffffffff` in `FD3D12DescriptorCache::SetSamplerTable` <- `FD3D12CommandContext::RHISetShaderParameters`, on a parallel render task in the base pass (symbolized from the minidump with the build's PDB). Editor: `Assertion failed: Resource [D3D12CommandContext.h:439]`, also on a parallel render worker. In both, a draw referenced a GPU resource that no longer existed, one to three minutes after the victory, after the client had nearly stopped rendering.
+- **Rendered client: renderer crash** (root cause and fix in RC10 above; the "nearly stopped rendering" remark below is corrected there). Packaged: `EXCEPTION_ACCESS_VIOLATION reading 0xffffffffffffffff` in `FD3D12DescriptorCache::SetSamplerTable` <- `FD3D12CommandContext::RHISetShaderParameters`, on a parallel render task in the base pass (symbolized from the minidump with the build's PDB). Editor: `Assertion failed: Resource [D3D12CommandContext.h:439]`, also on a parallel render worker. In both, a draw referenced a GPU resource that no longer existed, one to three minutes after the victory, after the client had nearly stopped rendering.
 - A forced victory (`diag_postvictory2`, ForceClear, diagnostic only) held for four minutes did **not** crash. A real victory differs in that the boss dies in combat and `CompleteVictory` destroys every remaining enemy in the same tick, inside the host's broken loop.
 - **It does not come from the host bug, and not from Burning.** Two more full unforced matches with the director fix (editor):
   - `horde_full_e2`: Victory `score=13875`, **no ensure**; the rendered client still crashed about two minutes later (access violation reading `0xffffffffffffffff`).
@@ -223,14 +317,14 @@ Both legitimate victories (editor `horde_full_e1`, packaged `rc9_horde_full`) en
 
 - It refuses **all** damage, not only Burning: a 99,999-point hit through the same Blueprint path returned `landed=0`, as did every burn tick and Molten Strike.
 - Cause, sampled every 5 s (`story_shrine_watch.txt`, `gota.Net.InspectDamage` now prints values, the actor's own state and its behavior-tree task): at 0 s it is vulnerable on the ground (Z 1690). At 5 s `BT_Enemy_Boss` runs **AOE Trail**, whose `BTT_Boss_StartFloat` raises it on `BP_FloatingPlatform` (Z 2050) and sets `IsInvincible` (the Blueprint's `StartFloat` event). At 8 s that attack kills the player, the tree switches to the passive Wait subtree, and `BTT_Boss_StopFloat` never runs. It stays in the air and invincible for the rest of the session (65 s observed).
-- Invincibility while floating is intended. Staying afloat after the branch aborts is a content bug in the boss behavior tree: no `StopFloat` on abort. **Not changed** here; it is Story content and needs a design decision.
+- Invincibility while floating is intended. Staying afloat after the branch aborts is a content bug in the boss behavior tree: no `StopFloat` on abort. **Not changed** here; fixed in RC10 by `UGOTAFloatAttackGuard` (`74c480d`).
 - The same class was defeated in an early Horde run (`rc2hordewin`), so it is not invulnerable by design.
 
 #### Horde enemies do not engage
 
 - Players who stand 70 cm from a wave-1 enemy, with line of sight, for 20 s or more are never attacked (`horde_wipe_e1`/`e2`). Provoking with one melee swing per enemy (it misses: the enemies stand 53 cm higher on the spawn step) or one ability hit per enemy (6 hits landed, `horde_wipe_e4`) did not change that.
 - Across every Horde host log on disk (back to 2026-11-01), every enemy-caused player death came from enemies added with `gota.Net.SpawnEnemies`; wave-director enemies have killed no one. In the full victory, 0 players died.
-- This predates the GAS work. A natural four-player defeat in a standard match therefore cannot currently be produced; the one defeat observed (`pkg_burn_perf_base`, one `outcome=Defeat`) had 20 extra spawned enemies. Not fixed here (enemy AI, outside this pass).
+- This predates the GAS work. A natural four-player defeat in a standard match therefore cannot currently be produced; the one defeat observed (`pkg_burn_perf_base`, one `outcome=Defeat`) had 20 extra spawned enemies. Not fixed here; RC10 found the cause (no AI controller) and fixed it in `f423fad`.
 
 #### Test-driver change
 
@@ -408,12 +502,21 @@ The editor no longer hitches the way the November 1 packaged run did, which expo
 
 ### Not verified
 
+RC10 stabilization:
+
+- A five-wave victory against wave enemies that fight (RC10's two victories had passive wave enemies), and the Horde boss with an AI controller.
+- The shrine guard and the Horde controller fix in a package (editor only).
+- The frame cost of `r.SkeletalMesh.UseCachedMDCs=0` (no comparable measurement with caching on).
+- Victory runs 4 and 5 of the original packaged target.
+- Shrine boss when its target changes or disconnects mid-attack.
+- Human difficulty. Only bots have played against attacking enemies.
+
 Burning milestone:
 
 - Shipping configuration, a second PC, dedicated server. Everything ran on one machine with emulated lag and loss.
 - A four-player Story run in the editor (Story was run packaged only), and Story burns from a real Molten Strike (applied with `gota.Net.Status`, as before).
 - ~~Burning damage on the Story shrine enemy~~ explained in RC8 stabilization: the enemy is stuck invincible (behavior-tree content), and refuses all damage.
-- A standard-match team wipe: not achievable while Horde wave enemies do not attack (RC8 stabilization).
+- ~~A standard-match team wipe~~ done in RC10 (editor): `horde_natwipe_ai1`, one natural `outcome=Defeat`.
 - ~~The other 40 packaged suite cases after the `burn_boss.txt` fix~~ done on RC9: 46/46.
 - Which part of the 24-burn frame cost is ability systems, particle emitters or replication. Totals only: on RC9, +3.6 ms host frame, +1.4 ms GPU, about +40 MB peak memory.
 - A packaged run reproducing the cloth crash before the setting change (it could not be reproduced on demand).
@@ -433,12 +536,14 @@ Earlier milestones:
 ### Remaining risks
 
 - **Cloth assertion** (`GPUSkinVertexFactory.cpp:1348`): mitigated in RC9 by `r.GPUSkin.BoneTransformAllocationMode=0`, which removes the crashing call path. Not reproduced on demand, so the fix is reasoned from the engine source rather than demonstrated. Watch rendered-client joins.
-- **Rendered client crashes one to three minutes after every legitimate Horde victory** (4/4, editor and packaged, with or without Burning; the D3D12 assertion and the access violations above). Not caused by GAS or Burning. Open, and the most serious item for four-player reliability: a real player would be dropped at the moment of winning.
-- **Story shrine boss stuck invincible** after killing a player during AOE Trail (behavior-tree content). The Story mission cannot be completed once it happens.
-- **Horde wave enemies never attack**, even when hit. Matches can only be won; there is no natural loss condition today.
+- **Post-victory renderer crash:** fixed by `r.SkeletalMesh.UseCachedMDCs=0` (RC10; 11/11 crashed before, 3/3 clean after). Provisionally validated on three runs. Its CPU cost is not measured: profile it. Engine-level root cause (which skinned proxy keeps the single-frame buffer) not found, so a future engine or content change could bring it back if caching is turned on again.
+- **Horde balance against attacking enemies (next gameplay blocker):** the bots lose wave 1 every time; human difficulty is unknown; enemy damage does not scale with player count. Needs a human playtest and hit/time-to-kill logging before any tuning.
+- **Horde boss with an AI controller** has not been seen in a match.
+- **Story remote client log stopped** 37 s after the shrine landing (`story_float_mp` client 2, no crash report, many movement-base warnings). Unexplained.
+- ~~Story shrine boss stuck invincible~~ fixed in `74c480d` (editor).
+- ~~Horde wave enemies never attack~~ fixed in `f423fad` (editor).
 - **Many simultaneous burns cost host frame time** (2.4–6.7 ms for 24). Fine for Molten Strike; an area ability that ignites a whole wave would need the cost split measured first.
 - **Burn ticks on the same frame:** enemies ignited by one swing tick together. At 0.1 ms each this is not a hitch today; it would be if the Blueprint damage path became heavier.
-- **Idle players are not attacked in Horde wave 1.** Seen in the unforced-wipe attempt. Not caused by this work, but it means a match can sit forever if nobody moves.
 - **The Duel HUD does not list Burning** in its per-tick status text; the mode-independent BURNING line does. Two status displays exist until the HUD is made event-driven.
 
 - **Overloaded-client test failures** (tracked separately from GAS): on a starved machine a remote client can advance a few frames per second and miss a 4 s effect entirely, and frame-time-sensitive script steps can mistime. Seen once on 2026-11-08; all affected cases passed on rerun and in every run since.
