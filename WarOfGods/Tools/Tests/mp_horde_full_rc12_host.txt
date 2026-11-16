@@ -1,0 +1,48 @@
+# RC12 legitimate full match: four fighting bots (gota.Net.Fight, real melee + abilities + reactive block), no healing,
+# no invulnerability, no injected kills or outcome, no SkipPrep. Ready-up starts wave 1. Runs up to 30 minutes so a
+# victory is followed by a long post-victory window on the rendered client.
+gota.Net.Fight 1900
+wait 60
+gota.Net.Players
+gota.Horde.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+wait 120
+gota.Horde.Dump
+gota.Telemetry.Dump
+gota.Net.Players
+quit

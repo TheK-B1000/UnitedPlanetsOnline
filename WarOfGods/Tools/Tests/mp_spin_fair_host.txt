@@ -1,0 +1,29 @@
+# RC12 spin fairness (host = player 0). Two players, Horde wave 1. Healing harness so nobody dies (hit counting only).
+# The nearest enemy is made to spin on a chosen player (gota.Net.EnemyAttack); TELEM attack / hit lines give hits and
+# damage per spin per target. Client script: stationary until 70 s, holds block 70-115 s, walks away 120-170 s.
+gota.Net.Sustain 600 20
+wait 50
+gota.Net.Players
+# A: both players stationary and together (multiple nearby players)
+gota.Net.EnemyAttack SpinningAttack 0
+wait 7
+gota.Net.EnemyAttack SpinningAttack 1
+wait 7
+gota.Net.EnemyAttack SpinningAttack 0
+wait 12
+# B: client holding block
+gota.Net.EnemyAttack SpinningAttack 1
+wait 7
+gota.Net.EnemyAttack SpinningAttack 1
+wait 7
+gota.Net.EnemyAttack SpinningAttack 1
+wait 25
+# C: client walking away from its attacker
+gota.Net.EnemyAttack SpinningAttack 1
+wait 7
+gota.Net.EnemyAttack SpinningAttack 1
+wait 7
+gota.Net.EnemyAttack SpinningAttack 1
+wait 10
+gota.Telemetry.Dump
+quit

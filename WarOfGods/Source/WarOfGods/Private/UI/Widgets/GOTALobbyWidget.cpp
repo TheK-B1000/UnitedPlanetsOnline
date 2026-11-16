@@ -35,10 +35,12 @@ void UGOTALobbyWidget::NativeOnInitialized()
 	}
 	if (Btn_SelectArena)
 	{
-		// Only Titan's Quarry is validated for Trial of Champions; no arena picker in lobby yet.
+		// The arena stays Titan's Quarry (the only one validated); this slot is the host's mode switch between
+		// Trial of Champions (Duel) and Wrath of the Gods (Horde). Shown by HandleLobbyUpdated for the host only.
 		Btn_SelectArena->SetVisibility(ESlateVisibility::Collapsed);
+		Btn_SelectArena->OnActivated.AddDynamic(this, &UGOTALobbyWidget::HandleToggleMode);
 	}
-	for (UGOTAMenuButtonWidget* Btn : { Btn_Ready.Get(), Btn_StartMatch.Get(), Btn_Leave.Get(), Btn_Back.Get() })
+	for (UGOTAMenuButtonWidget* Btn : { Btn_Ready.Get(), Btn_StartMatch.Get(), Btn_SelectArena.Get(), Btn_Leave.Get(), Btn_Back.Get() })
 	{
 		TrackFocus(Btn);
 	}
@@ -111,6 +113,22 @@ void UGOTALobbyWidget::HandleLobbyUpdated()
 				: Mode == EArenaMode::PvEHorde ? NSLOCTEXT("GOTA", "StartHorde", "START HORDE")
 				: NSLOCTEXT("GOTA", "StartMatch", "START DUEL");
 			Btn_StartMatch->SetLabel(StartLabel);
+		}
+	}
+
+	if (Btn_SelectArena)
+	{
+		const EArenaMode Mode = Sessions ? Sessions->GetSelectedMode() : EArenaMode::PvPDuel;
+		const bool bShow = Sessions && Sessions->IsHosting() && Sessions->IsInSession() && Mode != EArenaMode::Story;
+		Btn_SelectArena->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		if (bShow)
+		{
+			Btn_SelectArena->SetLabel(Mode == EArenaMode::PvEHorde
+				? NSLOCTEXT("GOTA", "LobbyModeHorde", "MODE: WRATH OF THE GODS")
+				: NSLOCTEXT("GOTA", "LobbyModeDuel", "MODE: TRIAL OF CHAMPIONS"));
+			Btn_SelectArena->SetSubtitle(Mode == EArenaMode::PvEHorde
+				? NSLOCTEXT("GOTA", "LobbyModeHordeSub", "CO-OP HORDE  •  UP TO 4  •  PRESS TO SWITCH TO DUEL")
+				: NSLOCTEXT("GOTA", "LobbyModeDuelSub", "PVP DUEL  •  PRESS TO SWITCH TO HORDE"));
 		}
 	}
 
@@ -252,6 +270,22 @@ void UGOTALobbyWidget::HandleSelectArena()
 	{
 		Subsystem->NavigateTo(EGOTAMenuScreen::ArenaSelection, false);
 	}
+}
+
+void UGOTALobbyWidget::HandleToggleMode()
+{
+	UGotaSessionSubsystem* Sessions = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGotaSessionSubsystem>() : nullptr;
+	if (!Sessions || !Sessions->IsHosting() || Sessions->GetSelectedMode() == EArenaMode::Story)
+	{
+		return;
+	}
+	Sessions->SetSelectedMode(Sessions->GetSelectedMode() == EArenaMode::PvEHorde ? EArenaMode::PvPDuel : EArenaMode::PvEHorde);
+	Sessions->SetSelectedArena(EArenaId::TitansQuarry);
+	if (UGOTAMenuSubsystem* Subsystem = GetMenuSubsystem())
+	{
+		Subsystem->PlayUISound(EGOTAMenuSound::Confirm);
+	}
+	HandleLobbyUpdated();
 }
 
 void UGOTALobbyWidget::HandleBack()

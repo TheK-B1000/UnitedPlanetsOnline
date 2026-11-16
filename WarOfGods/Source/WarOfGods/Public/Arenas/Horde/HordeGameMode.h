@@ -111,11 +111,15 @@ protected:
 	void EvaluateReadiness();
 	/** Loaded the map, received its pawn (ServerAcknowledgePossession), has a hero and is alive. */
 	bool IsPlayerReady(APlayerController* PC) const;
+	/** Server: put an unarmed hero into melee stance (weapon drawn, blocking possible) through its own Blueprint event. */
+	void ArmForCombat(APawn* Pawn) const;
 	void TickHordeWatch();
 	void LogHordeLife() const;
 	void CompleteVictory();
 	void CompleteDefeat();
 	void RespawnEliminatedPlayers();
+	/** Intermission: living players back to full health (bRestoreSurvivorsDuringIntermission). */
+	void RestoreSurvivors();
 	void PresentHudToPlayer(APlayerController* PC);
 	void PresentResultsToAll();
 	UClass* ResolveHudWidgetClass() const;

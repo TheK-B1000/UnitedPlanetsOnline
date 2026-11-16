@@ -6,7 +6,10 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/BTNode.h"
 #include "Bosses/GOTABossComponent.h"
+#include "NavigationSystem.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
@@ -274,8 +277,23 @@ void UGOTAEnemyTelemetryProbe::HandleMoveCompleted(FAIRequestID RequestID, EPath
 	{
 		float Dist = -1.f;
 		NearestLivingPlayer(*Telemetry, Pawn->GetActorLocation(), &Dist);
-		UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM move_fail enemy=%s class=%s result=%s count=%d nearestPlayer=%.0f wave=%d"),
-			*GetNameSafe(Pawn), *ClassLabel(Pawn), MoveResultName(Result), MoveFailures, Dist, Telemetry->CurrentWave());
+		// Where the brain was and whether the enemy itself stands on the navmesh: separates a bad goal from an
+		// enemy that is off the mesh.
+		const AAIController* AIC = BoundController.Get();
+		const UBehaviorTreeComponent* BT = AIC ? Cast<UBehaviorTreeComponent>(AIC->GetBrainComponent()) : nullptr;
+		const UBTNode* Node = BT ? BT->GetActiveNode() : nullptr;
+		bool bOnNav = false;
+		if (const UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+		{
+			FNavLocation Out;
+			bOnNav = Nav->ProjectPointToNavigation(Pawn->GetActorLocation(), Out, FVector(60.f, 60.f, 250.f));
+		}
+		const UPathFollowingComponent* PF = AIC ? AIC->GetPathFollowingComponent() : nullptr;
+		UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM move_fail enemy=%s class=%s result=%s count=%d nearestPlayer=%.0f node=%s onNav=%d goal=%s at=%s wave=%d"),
+			*GetNameSafe(Pawn), *ClassLabel(Pawn), MoveResultName(Result), MoveFailures, Dist,
+			Node ? *Node->GetNodeName().Replace(TEXT(" "), TEXT("_")) : TEXT("none"), bOnNav ? 1 : 0,
+			PF ? *PF->GetPathDestination().ToCompactString().Replace(TEXT(" "), TEXT("")) : TEXT("-"),
+			*Pawn->GetActorLocation().ToCompactString().Replace(TEXT(" "), TEXT("")), Telemetry->CurrentWave());
 	}
 }
 
@@ -583,6 +601,31 @@ void UGOTACombatTelemetry::NoteNoDamageResponse(AActor* Victim, APawn* Attacker,
 	}
 	UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM nodamage player=%s by=%s class=%s resp=%d wave=%d"),
 		*PlayerLabel(VictimPawn), *Attacker->GetName(), *ClassLabel(Attacker), Response, Wave);
+}
+
+void UGOTACombatTelemetry::NoteBlocked(AActor* Victim, AActor* Causer, bool bPerfectParry)
+{
+	APawn* VictimPawn = Cast<APawn>(Victim);
+	APawn* By = Cast<APawn>(Causer);
+	for (AActor* A = Causer; A && !By; A = A->GetOwner())
+	{
+		By = A->GetInstigator() ? A->GetInstigator() : Cast<APawn>(A->GetOwner());
+	}
+	if (!VictimPawn || !IsPlayerPawn(VictimPawn))
+	{
+		return;
+	}
+	++PlayerStats(VictimPawn).NoDamageHits;
+	if (By && !IsPlayerPawn(By))
+	{
+		++ClassStats(By).Blocked;
+		if (UGOTAEnemyTelemetryProbe* Probe = By->FindComponentByClass<UGOTAEnemyTelemetryProbe>())
+		{
+			Probe->NoteHitOnPlayer(VictimPawn, 0.f);
+		}
+	}
+	UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM blocked player=%s by=%s class=%s parry=%d wave=%d"),
+		*PlayerLabel(VictimPawn), *GetNameSafe(By), By ? *ClassLabel(By) : TEXT("unknown"), bPerfectParry ? 1 : 0, Wave);
 }
 
 void UGOTACombatTelemetry::NoteBossAttack(APawn* Boss, FName AttackId, APawn* Target, float Distance)

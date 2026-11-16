@@ -143,6 +143,8 @@ protected:
 	/** One death event per life (cleared when health comes back). */
 	bool bDeathBroadcast = false;
 	void BroadcastDeath();
+	/** Server: a defeated AI combatant stops thinking, moving and attacking. */
+	void StopDefeatedAI();
 	/** Resolve a damage causer to its pawn and remember it for kill credit. */
 	APawn* RecordDamager(AActor* DamageCauser);
 

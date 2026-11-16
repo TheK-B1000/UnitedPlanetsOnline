@@ -1,0 +1,7 @@
+# RC12 spin fairness (client = player 1): stationary, then hold block, then walk away from the nearest enemy.
+wait 56
+gota.Net.Hold block 45
+wait 50
+gota.Net.Hold away 50
+wait 70
+quit

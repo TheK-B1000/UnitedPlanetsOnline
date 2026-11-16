@@ -35,6 +35,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Horde")
 	int32 ActivePlayerCount = 1;
 
+	/** Wave enemies acquire reachable players within this distance of themselves (UGOTAEnemyTargeting). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Horde|AI")
+	float HordeEngageRadius = 6000.f;
+
+	/** ...and within this distance of their spawn point: the arena leash. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Horde|AI")
+	float HordeLeashRadius = 6000.f;
+
 	UFUNCTION(BlueprintCallable, Category = "Horde")
 	void ConfigureWave(UHordeWaveDefinition* WaveDef, int32 PlayerCount);
 

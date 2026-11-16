@@ -1,0 +1,8 @@
+# RC12 block check: one player (listen host, authoritative), wave 1, healing harness so the fight lasts. The fight driver
+# blocks when an enemy's attack montage is within 0.35 s of its damage notify. Compare FIGHT block lines with
+# "Momentum ... (block)" (a block the damage system accepted) and TELEM nodamage.
+gota.Net.Sustain 300 25
+gota.Net.Fight 300
+wait 150
+gota.Telemetry.Dump
+quit

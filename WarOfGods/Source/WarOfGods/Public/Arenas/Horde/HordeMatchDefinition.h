@@ -41,6 +41,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Horde|Match")
 	bool bRespawnPlayersDuringIntermission = true;
 
+	/**
+	 * RC12 rule (design decision, pending playtest sign-off): survivors are restored to full health at the intermission,
+	 * like the fallen who respawn at full health. Without it a player who survived a wave entered the next one damaged
+	 * while a player who died came back fresh, and a team that never wiped carried its damage into the boss.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Horde|Match")
+	bool bRestoreSurvivorsDuringIntermission = true;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Horde|Match")
 	int32 VictoryBonusScore = 2000;
 

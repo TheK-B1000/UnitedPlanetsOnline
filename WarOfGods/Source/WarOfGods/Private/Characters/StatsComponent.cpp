@@ -5,7 +5,12 @@
 #include "Arenas/Duel/GOTADuelCombat.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Combat/GOTACombatTelemetry.h"
+#include "AIController.h"
+#include "Animation/AnimInstance.h"
+#include "BrainComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
@@ -184,6 +189,34 @@ void UStatsComponent::BroadcastDeath()
 	Event.Instigator = GetRecentDamager();
 	UE_LOG(LogGOTAStats, Log, TEXT("Combatant %s defeated (by %s)"), *GetNameSafe(GetOwner()), *GetNameSafe(Event.Instigator.Get()));
 	OnDied.Broadcast(Event);
+	StopDefeatedAI();
+}
+
+void UStatsComponent::StopDefeatedAI()
+{
+	// A defeated AI combatant must not act. The enemy template leaves the body in the world and its behavior tree kept
+	// running: corpses walked, attacked and dealt damage for up to 20 s after death (RC11/RC12 logs: hundreds of hits by
+	// already-dead enemies, including the blows that killed survivors during a Horde intermission).
+	APawn* Pawn = Cast<APawn>(GetOwner());
+	AAIController* AIC = Pawn && Pawn->HasAuthority() ? Cast<AAIController>(Pawn->GetController()) : nullptr;
+	if (!AIC)
+	{
+		return;
+	}
+	if (UBrainComponent* Brain = AIC->GetBrainComponent())
+	{
+		Brain->StopLogic(TEXT("Defeated"));
+	}
+	AIC->StopMovement();
+	AIC->ClearFocus(EAIFocusPriority::Gameplay);
+	if (const ACharacter* Character = Cast<ACharacter>(Pawn))
+	{
+		if (UAnimInstance* Anim = Character->GetMesh() ? Character->GetMesh()->GetAnimInstance() : nullptr)
+		{
+			Anim->StopAllMontages(0.2f); // an attack already in flight cannot land its damage notify
+		}
+	}
+	UE_LOG(LogGOTAStats, Log, TEXT("%s: defeated AI stopped (brain, movement, attacks)"), *GetNameSafe(Pawn));
 }
 
 void UStatsComponent::BeginPlay()

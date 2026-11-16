@@ -3,6 +3,7 @@
 #include "Arenas/Horde/HordeGameMode.h"
 
 #include "Arenas/ArenaGrayboxBuilder.h"
+#include "Arenas/Duel/GOTADuelCombat.h"
 #include "Arenas/Horde/HordeEncounterDirector.h"
 #include "Arenas/Horde/HordeGameState.h"
 #include "Arenas/Horde/HordeHUD.h"
@@ -179,6 +180,38 @@ void AHordeGameMode::Logout(AController* Exiting)
 	}
 }
 
+namespace
+{
+	/** The hero Blueprint's Stance (0 = unarmed); -1 when the pawn has no such variable. */
+	int32 ReadStance(const APawn* Pawn)
+	{
+		const FProperty* P = Pawn ? Pawn->GetClass()->FindPropertyByName(TEXT("Stance")) : nullptr;
+		if (const FByteProperty* B = CastField<FByteProperty>(P))
+		{
+			return B->GetPropertyValue_InContainer(Pawn);
+		}
+		if (const FEnumProperty* E = CastField<FEnumProperty>(P))
+		{
+			return static_cast<int32>(E->GetUnderlyingProperty()->GetSignedIntPropertyValue(E->ContainerPtrToValuePtr<void>(Pawn)));
+		}
+		return -1;
+	}
+}
+
+void AHordeGameMode::ArmForCombat(APawn* Pawn) const
+{
+	// Heroes spawn unarmed (Stance 0): no sword swing, and the damage system never accepts a block. Duel heroes arrive in
+	// melee stance; Horde left it to the player's "1" key, which nothing tells a new player about. Draw the weapon through
+	// the hero's own SR_MeleeStance (the same event the key sends; it multicasts the stance to every client).
+	if (!IsValid(Pawn) || ReadStance(Pawn) != 0 || UGOTACombatantObserver::IsCombatantDefeated(Pawn))
+	{
+		return;
+	}
+	const FName Event = Pawn->FindFunction(TEXT("SR_MeleeStance")) ? FName(TEXT("SR_MeleeStance")) : FName(TEXT("MeleeStance"));
+	const bool bCalled = FGOTABlueprintCombat::Call(Pawn, Event);
+	UE_LOG(LogTemp, Log, TEXT("Horde: %s drew weapon (%s called=%d, stance now %d)"), *GetNameSafe(Pawn), *Event.ToString(), bCalled ? 1 : 0, ReadStance(Pawn));
+}
+
 bool AHordeGameMode::IsPlayerReady(APlayerController* PC) const
 {
 	if (!PC || !PC->HasClientLoadedCurrentWorld())
@@ -212,6 +245,10 @@ void AHordeGameMode::EvaluateReadiness()
 		}
 		++Connected;
 		const bool bReady = IsPlayerReady(PC);
+		if (bReady)
+		{
+			ArmForCombat(PC->GetPawn());
+		}
 		if (AHordePlayerState* PS = PC->GetPlayerState<AHordePlayerState>())
 		{
 			PS->bReadyForMatch = bReady;
@@ -526,6 +563,10 @@ void AHordeGameMode::BeginNextWave()
 	}
 
 	TryTransition(EHordeMatchPhase::WaveStarting);
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ArmForCombat(It->Get() ? It->Get()->GetPawn() : nullptr); // late joiners and anyone who sheathed
+	}
 	HordeDirector->ConfigureWave(Wave, GetActivePlayerCount());
 	TryTransition(EHordeMatchPhase::WaveActive);
 	const int32 Planned = HordeDirector->GetRemainingToSpawn();
@@ -595,6 +636,10 @@ void AHordeGameMode::BeginIntermission()
 	if (RuntimeMatchDef && RuntimeMatchDef->bRespawnPlayersDuringIntermission)
 	{
 		RespawnEliminatedPlayers();
+	}
+	if (RuntimeMatchDef && RuntimeMatchDef->bRestoreSurvivorsDuringIntermission)
+	{
+		RestoreSurvivors();
 	}
 
 	TryTransition(EHordeMatchPhase::Intermission);
@@ -876,11 +921,32 @@ void AHordeGameMode::RespawnEliminatedPlayers()
 			Old->Destroy();
 		}
 		RestartPlayer(PC);
+		ArmForCombat(PC->GetPawn());
 		if (PS)
 		{
 			PS->SetEliminated(false);
 		}
 		UE_LOG(LogTemp, Log, TEXT("Horde: respawned %s as %s"), PS ? *PS->GetPlayerName() : TEXT("?"), *GetNameSafe(PC->GetPawn()));
+	}
+}
+
+void AHordeGameMode::RestoreSurvivors()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APawn* Pawn = It->Get() ? It->Get()->GetPawn() : nullptr;
+		const FGOTACombatantVitals V = UGOTACombatantObserver::ReadVitals(Pawn);
+		if (!Pawn || !V.bHasDamageSystem || V.bIsDead || V.Health <= 0.f || V.Health >= V.MaxHealth)
+		{
+			continue;
+		}
+		// Through the hero's own damage system (health stays Blueprint-owned).
+		if (UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Pawn))
+		{
+			FGOTABlueprintCombat::Call(DS, TEXT("Heal"), nullptr, FString(), V.MaxHealth - V.Health);
+			UE_LOG(LogTemp, Log, TEXT("Horde: restored %s %.0f -> %.0f for the next wave"), *GetNameSafe(Pawn), V.Health,
+				UGOTACombatantObserver::ReadVitals(Pawn).Health);
+		}
 	}
 }
 

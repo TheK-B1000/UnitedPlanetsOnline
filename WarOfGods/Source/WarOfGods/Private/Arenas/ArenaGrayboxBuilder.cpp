@@ -81,9 +81,15 @@ void AArenaGrayboxBuilder::ClearBuiltActors()
 {
 	for (UStaticMeshComponent* Comp : BuiltMeshes)
 	{
-		if (IsValid(Comp)) { Comp->DestroyComponent(); }
+		if (IsValid(Comp))
+		{
+			// Free the deterministic name before destroying, so a rebuild can reuse it.
+			Comp->Rename(nullptr, nullptr, REN_DontCreateRedirectors | REN_DoNotDirty | REN_NonTransactional);
+			Comp->DestroyComponent();
+		}
 	}
 	BuiltMeshes.Reset();
+	BuiltNameCounts.Reset();
 	for (AActor* Actor : BuiltActors)
 	{
 		if (IsValid(Actor)) { Actor->Destroy(); }
@@ -92,12 +98,22 @@ void AArenaGrayboxBuilder::ClearBuiltActors()
 	bBuilt = false;
 }
 
+UStaticMeshComponent* AArenaGrayboxBuilder::NewBuiltMesh(const UStaticMesh* MeshAsset)
+{
+	const FString Base = MeshAsset ? MeshAsset->GetName() : FString(TEXT("None"));
+	int32& Count = BuiltNameCounts.FindOrAdd(Base);
+	const FName Name(*FString::Printf(TEXT("GB_%s_%d"), *Base, Count++));
+	UStaticMeshComponent* Mesh = NewObject<UStaticMeshComponent>(this, Name);
+	Mesh->SetNetAddressable();
+	return Mesh;
+}
+
 void AArenaGrayboxBuilder::AddBox(const FVector& Center, const FVector& Extent, const FLinearColor& Color, bool bPlaceholderBoundary)
 {
 	EnsureMeshes();
 	if (!CubeMesh) { return; }
 
-	UStaticMeshComponent* Mesh = NewObject<UStaticMeshComponent>(this);
+	UStaticMeshComponent* Mesh = NewBuiltMesh(CubeMesh);
 	Mesh->SetStaticMesh(CubeMesh);
 	if (bPlaceholderBoundary)
 	{
@@ -133,7 +149,7 @@ void AArenaGrayboxBuilder::AddPillar(const FVector& Center, float HeightUU)
 	UStaticMesh* MeshAsset = CylinderMesh ? CylinderMesh.Get() : CubeMesh.Get();
 	if (!MeshAsset) { return; }
 
-	UStaticMeshComponent* Mesh = NewObject<UStaticMeshComponent>(this);
+	UStaticMeshComponent* Mesh = NewBuiltMesh(MeshAsset);
 	Mesh->SetStaticMesh(MeshAsset);
 	Mesh->SetupAttachment(GetRootComponent());
 	Mesh->RegisterComponent();
@@ -156,7 +172,7 @@ UStaticMesh* AArenaGrayboxBuilder::TryLoadMesh(const TCHAR* Path) const
 void AArenaGrayboxBuilder::AddMeshAt(UStaticMesh* MeshAsset, const FVector& Location, const FRotator& Rotation, const FVector& Scale, bool bVisualOnly)
 {
 	if (!MeshAsset) { return; }
-	UStaticMeshComponent* Mesh = NewObject<UStaticMeshComponent>(this);
+	UStaticMeshComponent* Mesh = NewBuiltMesh(MeshAsset);
 	Mesh->SetStaticMesh(MeshAsset);
 	Mesh->SetupAttachment(GetRootComponent());
 	Mesh->RegisterComponent();

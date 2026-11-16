@@ -98,6 +98,8 @@ public:
 	void NoteHealthChange(AActor* Victim, float Before, float After, APawn* Attacker, int32 Response);
 	/** A damage response that changed no health (blocked, invincible, i-frames). */
 	void NoteNoDamageResponse(AActor* Victim, APawn* Attacker, int32 Response);
+	/** The victim's damage system accepted a block (or a perfect parry) against Causer. */
+	void NoteBlocked(AActor* Victim, AActor* Causer, bool bPerfectParry);
 	void NoteBossAttack(APawn* Boss, FName AttackId, APawn* Target, float Distance);
 	void NoteBossAttackEnd(APawn* Boss, FName AttackId, bool bHit);
 	void NoteWaveStart(int32 Wave, bool bBoss, int32 Players, int32 Planned);

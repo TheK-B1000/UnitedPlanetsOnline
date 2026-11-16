@@ -49,6 +49,9 @@ protected:
 	void HandleLeave();
 	UFUNCTION()
 	void HandleSelectArena();
+	/** Host, Duel or Horde lobby: switch the session between Trial of Champions (Duel) and Wrath of the Gods (Horde). */
+	UFUNCTION()
+	void HandleToggleMode();
 	UFUNCTION()
 	void HandleBack();
 

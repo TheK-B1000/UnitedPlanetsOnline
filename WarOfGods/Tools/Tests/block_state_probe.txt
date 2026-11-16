@@ -1,0 +1,8 @@
+# RC12: player block state before and right after StartBlock (single player, listen-free).
+wait 20
+gota.Net.InspectDamage BP_Player
+gota.Net.Hold block 2
+wait 0.1
+gota.Net.InspectDamage BP_Player
+wait 3
+quit

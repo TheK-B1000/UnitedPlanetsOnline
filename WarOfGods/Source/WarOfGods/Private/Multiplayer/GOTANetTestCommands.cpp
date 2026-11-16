@@ -43,6 +43,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "HAL/IConsoleManager.h"
+#include "Characters/StatsComponent.h"
 #include "UObject/UObjectIterator.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTANet, Log, All);
@@ -307,11 +308,13 @@ namespace GOTANetTest
 				{
 					continue;
 				}
-				if (It->IsA<FBoolProperty>() || It->IsA<FNumericProperty>() || It->IsA<FObjectPropertyBase>() || It->IsA<FEnumProperty>())
+				const FStructProperty* StructProp = CastField<FStructProperty>(*It);
+				const bool bDamageStruct = StructProp && StructProp->Struct && StructProp->Struct->GetName().Contains(TEXT("Damage"));
+				if (It->IsA<FBoolProperty>() || It->IsA<FNumericProperty>() || It->IsA<FObjectPropertyBase>() || It->IsA<FEnumProperty>() || bDamageStruct)
 				{
 					FString Value;
 					It->ExportTextItem_InContainer(Value, Target, nullptr, nullptr, PPF_None);
-					UE_LOG(LogGOTANet, Log, TEXT("INSPECT  actor.%s = %s"), *It->GetName(), *Value.Left(100));
+					UE_LOG(LogGOTANet, Log, TEXT("INSPECT  actor.%s = %s"), *It->GetName(), *Value.Left(bDamageStruct ? 600 : 100));
 				}
 			}
 			if (const APawn* TargetPawn = Cast<APawn>(Target))
@@ -788,6 +791,104 @@ namespace GOTANetTest
 		}
 		return false;
 	}
+	static int32 FightEvades = 0;
+	static double FightEvadeUntil = 0.0;
+	static FVector FightEvadeDir = FVector::ZeroVector;
+
+	/** Living non-player combatant within 900 cm with the lowest health fraction (replicated vitals), or null. */
+	static APawn* FindFocusTarget(UWorld* World, const APawn* Me, double Now)
+	{
+		APawn* Best = nullptr;
+		float BestScore = TNumericLimits<float>::Max();
+		for (TActorIterator<APawn> It(World); It; ++It)
+		{
+			APawn* P = *It;
+			if (P == Me || P->IsPlayerControlled() || !UGOTACombatantObserver::FindDamageSystem(P) || UGOTACombatantObserver::IsCombatantDefeated(P))
+			{
+				continue;
+			}
+			if (const double* Until = FightSkipUntil.Find(P); Until && *Until > Now)
+			{
+				continue;
+			}
+			const float Dist = FVector::Dist2D(P->GetActorLocation(), Me->GetActorLocation());
+			if (Dist > 900.f)
+			{
+				continue;
+			}
+			float Fraction = 1.f;
+			if (const UStatsComponent* Stats = P->FindComponentByClass<UStatsComponent>())
+			{
+				Fraction = Stats->GetMaxHealth() > 0.f ? Stats->GetHealth() / Stats->GetMaxHealth() : 1.f;
+			}
+			const float Score = Fraction * 1000.f + Dist * 0.2f; // damaged first, then near
+			if (Score < BestScore)
+			{
+				BestScore = Score;
+				Best = P;
+			}
+		}
+		return Best;
+	}
+
+	/** Move straight away from an enemy within 450 cm whose spin or ground smash is winding up or running. */
+	static bool TryFightEvade(UWorld* World, APawn* Me, APlayerController* PC, double Now)
+	{
+		if (Now < FightEvadeUntil)
+		{
+			Me->AddMovementInput(FightEvadeDir, 1.f);
+			return true;
+		}
+		for (TActorIterator<APawn> It(World); It; ++It)
+		{
+			APawn* Enemy = *It;
+			if (Enemy == Me || Enemy->IsPlayerControlled() || UGOTACombatantObserver::IsCombatantDefeated(Enemy)
+				|| FVector::Dist2D(Enemy->GetActorLocation(), Me->GetActorLocation()) > 450.f)
+			{
+				continue;
+			}
+			const UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Enemy);
+			if (M && (M->GetName().Contains(TEXT("Spinning")) || M->GetName().Contains(TEXT("GroundSmash"))))
+			{
+				FightEvadeDir = (Me->GetActorLocation() - Enemy->GetActorLocation()).GetSafeNormal2D();
+				FightEvadeUntil = Now + 1.6;
+				++FightEvades;
+				Me->AddMovementInput(FightEvadeDir, 1.f);
+				UE_LOG(LogGOTANet, Log, TEXT("FIGHT evade %s from %s on %s"), *GetNameSafe(M), *GetNameSafe(Enemy), *GetNameSafe(Me));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Every living non-player pawn within 2500 cm and the montage this process sees it playing (client visibility). */
+	static void Montages(const TArray<FString>&)
+	{
+		UWorld* W = GameWorld();
+		const APlayerController* PC = W ? W->GetFirstPlayerController() : nullptr;
+		const APawn* Me = PC ? PC->GetPawn() : nullptr;
+		if (!Me)
+		{
+			return;
+		}
+		int32 Seen = 0, Playing = 0;
+		FString List;
+		for (TActorIterator<APawn> It(W); It; ++It)
+		{
+			if (*It == Me || It->IsPlayerControlled() || UGOTACombatantObserver::IsCombatantDefeated(*It)
+				|| FVector::Dist(It->GetActorLocation(), Me->GetActorLocation()) > 2500.f)
+			{
+				continue;
+			}
+			++Seen;
+			const UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(*It);
+			Playing += M ? 1 : 0;
+			List += FString::Printf(TEXT("%s:%s "), *It->GetName(), M ? *M->GetName() : TEXT("-"));
+		}
+		UE_LOG(LogGOTANet, Log, TEXT("MONTAGES role=%s enemies=%d playing=%d %s"), W->GetNetMode() == NM_Client ? TEXT("client") : TEXT("server"), Seen, Playing, *List.Left(600));
+	}
+	static FAutoConsoleCommand CmdMontages(TEXT("gota.Net.Montages"), TEXT("Log the montage this process sees on each nearby enemy (client attack readability)."), FConsoleCommandWithArgsDelegate::CreateStatic(&Montages));
+
 	/** Provoke mode: one melee swing per enemy (Horde enemies only fight back once hurt), then no more attacks. */
 	static bool bFightProvokeOnce = false;
 	static TSet<TWeakObjectPtr<APawn>> FightProvoked;
@@ -824,7 +925,7 @@ namespace GOTANetTest
 		UWorld* World = GameWorld();
 		if (!World || World->GetTimeSeconds() > FightUntil)
 		{
-			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d blocks=%d targetSwitches=%d"), FightAttacks, FightAbilities, FightBlocks, FightTargetSwitches);
+			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d blocks=%d evades=%d targetSwitches=%d"), FightAttacks, FightAbilities, FightBlocks, FightEvades, FightTargetSwitches);
 			FightHandle.Reset();
 			return false;
 		}
@@ -839,6 +940,17 @@ namespace GOTANetTest
 		if (const UGOTADuelFighterComponent* Fighter = Me->FindComponentByClass<UGOTADuelFighterComponent>())
 		{
 			Target = Fighter->GetOpponent();
+		}
+		// Horde: the fighter's "opponent" is whichever enemy spawned last, often 12 m away while others hit us. Like a
+		// player, fight what is close: focus the most damaged enemy within 9 m (teammates converge on the same one).
+		if (APawn* Focus = FindFocusTarget(World, Me, Now))
+		{
+			Target = Focus;
+		}
+		// Like a player reading a wind-up: step out of a spin or ground smash that is about to land.
+		if (!bFightApproachOnly && TryFightEvade(World, Me, PC, Now))
+		{
+			return true;
 		}
 		const double* Skip = Target ? FightSkipUntil.Find(Target) : nullptr;
 		if (!IsValid(Target) || UGOTACombatantObserver::IsCombatantDefeated(Target) || (Skip && *Skip > Now))
@@ -956,6 +1068,8 @@ namespace GOTANetTest
 		FightSkipUntil.Reset();
 		FightTargetSwitches = 0;
 		FightBlocks = 0;
+		FightEvades = 0;
+		FightEvadeUntil = 0.0;
 		FightLastBlock = -100.0;
 		bFightApproachOnly = Args.Num() > 1 && Args[1].Equals(TEXT("approach"), ESearchCase::IgnoreCase);
 		bFightProvokeOnce = Args.Num() > 1 && Args[1].Equals(TEXT("provoke"), ESearchCase::IgnoreCase);
@@ -1310,6 +1424,108 @@ namespace GOTANetTest
 		}), 1.f);
 		UE_LOG(LogGOTANet, Log, TEXT("NET sustain %.0fs at %.0f hp/s on every living player (test harness, enemies unchanged)"), Seconds, SustainRate);
 	}
+	/** Server test: the living AI enemy nearest player <index> performs its Blueprint attack <Function> on that player
+	 * (e.g. SpinningAttack, ShortRangeAttack, GroundSmashAttack). The enemy's own attack code, montage and damage run. */
+	static void EnemyAttack(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		if (!W || W->GetNetMode() == NM_Client || Args.Num() < 1)
+		{
+			UE_LOG(LogGOTANet, Warning, TEXT("NET enemy attack: server only, args <Function> [playerIndex]"));
+			return;
+		}
+		APawn* Player = PlayerPawn(Args.Num() > 1 ? FCString::Atoi(*Args[1]) : 0);
+		APawn* Best = nullptr;
+		float BestDist = TNumericLimits<float>::Max();
+		for (TActorIterator<APawn> It(W); Player && It; ++It)
+		{
+			if (It->IsPlayerControlled() || !UGOTACombatantObserver::FindDamageSystem(*It) || UGOTACombatantObserver::IsCombatantDefeated(*It)
+				|| !It->FindFunction(FName(*Args[0])))
+			{
+				continue;
+			}
+			const float D = FVector::Dist(It->GetActorLocation(), Player->GetActorLocation());
+			if (D < BestDist)
+			{
+				BestDist = D;
+				Best = *It;
+			}
+		}
+		const bool bCalled = Best && FGOTABlueprintCombat::Call(Best, FName(*Args[0]), Player);
+		UE_LOG(LogGOTANet, Log, TEXT("NET enemy attack %s by %s on %s dist=%.0f called=%d"), *Args[0], *GetNameSafe(Best), *GetNameSafe(Player),
+			Best ? BestDist : -1.f, bCalled ? 1 : 0);
+	}
+	static FAutoConsoleCommand CmdEnemyAttack(TEXT("gota.Net.EnemyAttack"), TEXT("Server test: the enemy nearest player [index] performs Blueprint attack <Function> on that player."), FConsoleCommandWithArgsDelegate::CreateStatic(&EnemyAttack));
+
+	/** Local test: the local pawn holds block (StartBlock every 0.3 s), walks away from the nearest enemy, or stops. */
+	static FTSTicker::FDelegateHandle HoldHandle;
+	static FString HoldMode;
+	static double HoldUntil = 0.0;
+	static double HoldNextBlock = 0.0;
+	static void Hold(const TArray<FString>& Args)
+	{
+		HoldMode = Args.Num() > 0 ? Args[0].ToLower() : TEXT("stop");
+		HoldUntil = FPlatformTime::Seconds() + (Args.Num() > 1 ? FCString::Atof(*Args[1]) : 10.0);
+		FTSTicker::GetCoreTicker().RemoveTicker(HoldHandle);
+		HoldHandle.Reset();
+		UE_LOG(LogGOTANet, Log, TEXT("NET hold %s"), *HoldMode);
+		if (HoldMode == TEXT("stop"))
+		{
+			return;
+		}
+		HoldHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([](float)
+		{
+			UWorld* W = GameWorld();
+			APlayerController* PC = W ? W->GetFirstPlayerController() : nullptr;
+			APawn* Me = PC ? PC->GetPawn() : nullptr;
+			if (!Me || FPlatformTime::Seconds() > HoldUntil)
+			{
+				if (Me && HoldMode == TEXT("block"))
+				{
+					FGOTABlueprintCombat::Call(Me, TEXT("StopBlock"));
+				}
+				UE_LOG(LogGOTANet, Log, TEXT("NET hold %s ended"), *HoldMode);
+				HoldHandle.Reset();
+				return false;
+			}
+			APawn* Enemy = nullptr;
+			float BestDist = TNumericLimits<float>::Max();
+			for (TActorIterator<APawn> It(W); It; ++It)
+			{
+				if (*It != Me && !It->IsPlayerControlled() && UGOTACombatantObserver::FindDamageSystem(*It) && !UGOTACombatantObserver::IsCombatantDefeated(*It))
+				{
+					const float D = FVector::Dist(It->GetActorLocation(), Me->GetActorLocation());
+					if (D < BestDist)
+					{
+						BestDist = D;
+						Enemy = *It;
+					}
+				}
+			}
+			if (HoldMode == TEXT("block"))
+			{
+				if (Enemy)
+				{
+					FRotator Face = (Enemy->GetActorLocation() - Me->GetActorLocation()).Rotation();
+					Face.Pitch = 0.f;
+					PC->SetControlRotation(Face);
+				}
+				if (FPlatformTime::Seconds() >= HoldNextBlock)
+				{
+					FGOTABlueprintCombat::Call(Me, TEXT("StartBlock"));
+					HoldNextBlock = FPlatformTime::Seconds() + 0.3;
+				}
+			}
+			else if (HoldMode == TEXT("away") && Enemy)
+			{
+				FVector Away = Me->GetActorLocation() - Enemy->GetActorLocation();
+				Away.Z = 0.f;
+				Me->AddMovementInput(Away.GetSafeNormal(), 1.f);
+			}
+			return true;
+		}), 0.f);
+	}
+	static FAutoConsoleCommand CmdHold(TEXT("gota.Net.Hold"), TEXT("Local test: <block|away|stop> [seconds]: hold block facing the nearest enemy, or walk away from it."), FConsoleCommandWithArgsDelegate::CreateStatic(&Hold));
 	static FAutoConsoleCommand CmdSustain(TEXT("gota.Net.Sustain"), TEXT("Server test harness: heal living players <hp/s> (default 15) for <seconds> through their own Heal; 0 stops. Not balance evidence."), FConsoleCommandWithArgsDelegate::CreateStatic(&Sustain));
 	static FAutoConsoleCommand CmdSpawnEnemies(TEXT("gota.Net.SpawnEnemies"), TEXT("Server stress test: spawn <count> plain melee enemies around player 0 [radius]."), FConsoleCommandWithArgsDelegate::CreateStatic(&SpawnEnemies));
 	static FAutoConsoleCommand CmdPolicy(TEXT("gota.Net.Policy"), TEXT("Server test: replace a status policy on <pN|eN|b>: <Slow,Stun,Burn|none> [Status durScale magScale]."), FConsoleCommandWithArgsDelegate::CreateStatic(&NetPolicy));

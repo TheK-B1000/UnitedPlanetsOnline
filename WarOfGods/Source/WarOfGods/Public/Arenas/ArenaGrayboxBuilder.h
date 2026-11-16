@@ -73,6 +73,13 @@ protected:
 	void AddRingPillars(float Radius, int32 Count, float Height, const FVector& Center = FVector::ZeroVector);
 	void PlaceTreeRing(const FVector& Center, float Radius, int32 Count);
 	void PlaceDressPoolRing(const TArray<TSoftObjectPtr<UStaticMesh>>& Pool, float Radius, int32 Count, float Z, float UniformScale);
+	/**
+	 * A built mesh component with a deterministic, net-addressable name (GB_<MeshAsset>_<n>). Server and clients build
+	 * the same layout in the same order, so a movement base the server sends (the floor a character stands on) resolves
+	 * to the same component on every client. Auto-generated names never matched, and clients dropped those corrections.
+	 */
+	UStaticMeshComponent* NewBuiltMesh(const UStaticMesh* MeshAsset);
+	TMap<FString, int32> BuiltNameCounts;
 
 	void BuildTitansQuarry();
 	void BuildAshfallCrucible();

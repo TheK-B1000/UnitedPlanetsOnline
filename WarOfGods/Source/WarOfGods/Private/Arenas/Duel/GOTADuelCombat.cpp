@@ -33,6 +33,7 @@
 #include "Sound/SoundBase.h"
 #include "TimerManager.h"
 #include "UI/GOTAPlayerCameraManager.h"
+#include "Combat/GOTACombatTelemetry.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTADuelAI, Log, All);
 
@@ -704,6 +705,10 @@ void UGOTADuelFighterComponent::HandleBlocked(bool bCanBeParried, AActor* Damage
 	// The Blueprint parries automatically when a parryable hit lands inside the block montage's
 	// ParryWindow notify (BP_Player::MC_OnBlocked → ParryAttack). That is the Perfect Parry.
 	const bool bPerfect = bCanBeParried && FGOTABlueprintCombat::GetBool(GetOwner(), TEXT("IsWithinParryWindow"));
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+	{
+		Telemetry->NoteBlocked(GetOwner(), DamageCauser, bPerfect);
+	}
 	if (bPerfect)
 	{
 		GrantMomentum(PerfectParryMomentum, TEXT("perfect parry"));

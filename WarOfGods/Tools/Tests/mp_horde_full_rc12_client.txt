@@ -1,0 +1,14 @@
+wait 3
+gota.Net.Fight 1900
+wait 50
+gota.Net.Montages
+wait 3
+gota.Net.Montages
+wait 3
+gota.Net.Montages
+wait 3
+gota.Net.Montages
+wait 3
+gota.Net.Montages
+wait 1815
+quit

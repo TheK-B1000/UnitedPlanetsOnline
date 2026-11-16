@@ -8,6 +8,7 @@
 #include "Combat/CombatComponent.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Combat/GOTACombatTelemetry.h"
+#include "Combat/GOTAMontageReplicator.h"
 #include "EngineUtils.h"
 #include "Combat/CombatTimingComponent.h"
 #include "Combat/CombatTimingTypes.h"
@@ -182,6 +183,11 @@ UStatsComponent* UCombatBootstrapSubsystem::EnsureReplicatedVitals(APawn* Pawn)
 	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(Pawn))
 	{
 		Telemetry->RegisterCombatant(Pawn); // development builds: player lives, enemy attack records
+	}
+	// AI attack animations play on the server only in the enemy template: mirror them to remote players.
+	if (!Pawn->IsPlayerControlled())
+	{
+		UGOTAMontageReplicator::EnsureOn(Pawn);
 	}
 	// Enemies with the floating AOE attack (Story shrine boss) land even if that attack is aborted mid-air.
 	UGOTAFloatAttackGuard::EnsureOn(Pawn);

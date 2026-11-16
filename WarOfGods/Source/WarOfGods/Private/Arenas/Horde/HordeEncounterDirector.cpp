@@ -12,6 +12,7 @@
 #include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Combat/GOTACombatTelemetry.h"
+#include "Combat/GOTAEnemyTargeting.h"
 #include "GameFramework/PlayerState.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
@@ -391,6 +392,12 @@ void AHordeEncounterDirector::RegisterEnemy(APawn* Enemy, EHordeEnemyRole EnemyR
 	++AliveCount;
 
 	Enemy->OnEndPlay.AddDynamic(this, &AHordeEncounterDirector::HandleEnemyEndPlay);
+	// Horde enemies always know the fight is on: keep them engaged with a reachable player inside the arena leash
+	// (the boss keeps its own target choice in UGOTABossComponent).
+	if (EnemyRole != EHordeEnemyRole::Boss)
+	{
+		UGOTAEnemyTargeting::EnsureOn(Enemy, HordeEngageRadius, HordeLeashRadius);
+	}
 	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
 	{
 		const UEnum* RoleEnum = StaticEnum<EHordeEnemyRole>();
