@@ -1,0 +1,4 @@
+wait 100
+gota.Net.Fight 900
+wait 880
+quit

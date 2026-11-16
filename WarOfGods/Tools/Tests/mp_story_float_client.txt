@@ -1,0 +1,5 @@
+# Walk toward the boss so it has several targets to switch between.
+wait 20
+gota.Net.Fight 120 approach
+wait 125
+quit

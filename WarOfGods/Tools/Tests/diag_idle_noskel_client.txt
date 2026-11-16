@@ -1,0 +1,5 @@
+# Rendered client that never fights; skeletal meshes hidden from the boss wave on (crash isolation only).
+wait 95
+ShowFlag.SkeletalMeshes 0
+wait 885
+quit

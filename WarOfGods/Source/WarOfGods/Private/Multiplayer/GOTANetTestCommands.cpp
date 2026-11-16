@@ -153,11 +153,18 @@ namespace GOTANetTest
 			return;
 		}
 		APawn* Killer = GS->PlayerArray[Index]->GetPawn();
+		// Optional filter: "boss" = only a boss, "adds" = anything but a boss (diagnostics of the real boss-death path).
+		const FString Filter = Args.Num() > 1 ? Args[1].ToLower() : FString();
 		APawn* Best = nullptr;
 		float BestDist = TNumericLimits<float>::Max();
 		for (TActorIterator<APawn> It(W); It; ++It)
 		{
 			if (It->IsPlayerControlled() || !UGOTACombatantObserver::FindDamageSystem(*It) || UGOTACombatantObserver::IsCombatantDefeated(*It))
+			{
+				continue;
+			}
+			const bool bIsBoss = It->FindComponentByClass<UGOTABossComponent>() != nullptr;
+			if ((Filter == TEXT("boss") && !bIsBoss) || (Filter == TEXT("adds") && bIsBoss))
 			{
 				continue;
 			}
@@ -1026,7 +1033,7 @@ namespace GOTANetTest
 	static FAutoConsoleCommand CmdWatch(TEXT("gota.Horde.Watch"), TEXT("Server: log HORDE STALL if players stay within 500cm of a living enemy and neither kills nor ability hits advance. Args: seconds (min 5)."), FConsoleCommandWithArgsDelegate::CreateStatic(&Watch));
 	static FAutoConsoleCommand CmdPlayers(TEXT("gota.Net.Players"), TEXT("Log every player's role, pawn, health and mode state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Players));
 	static FAutoConsoleCommand CmdHurt(TEXT("gota.Net.Hurt"), TEXT("Server: damage player <index> <amount> through its own damage system."), FConsoleCommandWithArgsDelegate::CreateStatic(&Hurt));
-	static FAutoConsoleCommand CmdKillEnemy(TEXT("gota.Net.KillEnemy"), TEXT("Server: player <index> defeats the nearest living enemy (kill-credit test)."), FConsoleCommandWithArgsDelegate::CreateStatic(&KillEnemy));
+	static FAutoConsoleCommand CmdKillEnemy(TEXT("gota.Net.KillEnemy"), TEXT("Server: player <index> defeats the nearest living enemy through its damage system (kill-credit test). Optional: boss | adds."), FConsoleCommandWithArgsDelegate::CreateStatic(&KillEnemy));
 	static FAutoConsoleCommand CmdForge(TEXT("gota.Net.ForgeParry"), TEXT("Exploit test (client): forged SR_ParryAttack at the farthest pawn; the server must reject it."), FConsoleCommandWithArgsDelegate::CreateStatic(&ForgeParry));
 	static FAutoConsoleCommand CmdRemote(TEXT("gota.Net.RemoteParry"), TEXT("Client: time StartBlock on the local pawn against the nearest boss. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteParry));
 	static FAutoConsoleCommand CmdDefend(TEXT("gota.Net.RemoteDefend"), TEXT("Client: parry, dodge, or both against the nearest boss. Args: parry|dodge|both [seconds] [lead]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RemoteDefend));

@@ -1,0 +1,57 @@
+# DIAGNOSTIC ONLY, not a victory test: waves 1-5 are force-cleared, then the boss wave is won the real way: every add and
+# finally the boss die through their own damage systems (death animation, death cue, Victory from the director scrub).
+# The rendered client then stays on the results state for 5 minutes (the real-victory crash came 1-3 minutes after).
+wait 70
+gota.Net.Players
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 14
+gota.Horde.Dump
+# Variant: statuses on the boss and adds when they die, as in real matches (overlays, cues, flames).
+gota.Net.Status b Dread 60 0.35 p3
+gota.Net.Status ea Slowed 60 0.4 p2
+gota.Net.Status ea Burning 60 2 p0
+wait 2
+gota.Net.KillEnemy 0 adds
+wait 0.6
+gota.Net.KillEnemy 0 adds
+wait 0.6
+gota.Net.KillEnemy 0 adds
+wait 0.6
+gota.Net.KillEnemy 0 adds
+wait 0.6
+gota.Net.KillEnemy 0 adds
+wait 0.6
+gota.Net.KillEnemy 0 adds
+wait 0.6
+gota.Net.KillEnemy 0 adds
+wait 0.6
+gota.Net.KillEnemy 0 adds
+wait 0.6
+wait 2
+gota.Horde.Dump
+gota.Net.KillEnemy 1 boss
+wait 3
+gota.Horde.Dump
+wait 300
+gota.Net.Players
+quit

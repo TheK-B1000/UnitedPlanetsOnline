@@ -34,7 +34,7 @@ def packaged_exe(path):
 PORT = os.environ.get("GOTA_PORT", "")
 
 
-def launch(packaged, url, script, log, extra_exec="", res=(960, 540), pos=(0, 0), nullrhi=False):
+def launch(packaged, url, script, log, extra_exec="", res=(960, 540), pos=(0, 0), nullrhi=False, extra_args=()):
     exe = [packaged_exe(PACKAGED)] if packaged else [EDITOR, PROJECT, "-game"]
     if nullrhi:
         exe = exe + ["-nullrhi"]  # no rendering: several game windows on one GPU otherwise risk a device-removed crash
@@ -51,6 +51,7 @@ def launch(packaged, url, script, log, extra_exec="", res=(960, 540), pos=(0, 0)
                   "-ExecCmds=" + cmds]
     if PORT and "listen" in url:
         args.append("-port=" + PORT)
+    args += list(extra_args)
     return subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
@@ -76,6 +77,8 @@ def main():
     ap.add_argument("--menu", action="store_true", help="both processes start on the frontend map; scripts drive Host/Find/Join")
     ap.add_argument("--host-exec", default="", help="extra console commands for the host (e.g. NetEmulation.PktLag 120)")
     ap.add_argument("--kill-client", type=int, default=0, help="which client --kill-client-at kills (1-based; 0 = last)")
+    ap.add_argument("--render-client-script", default="", help="script for rendered clients instead of --client-script")
+    ap.add_argument("--render-client-args", default="", help="extra command-line switches for rendered clients only (e.g. \"-rhivalidation -gpucrashdebugging\")")
     a = ap.parse_args()
     os.makedirs(LOGS, exist_ok=True)
     heroes = [h for h in a.client_heroes.split(",") if h]
@@ -99,7 +102,10 @@ def main():
         else:
             addr = ("127.0.0.1:%s" % PORT) if PORT else "127.0.0.1"
             client_url = "%s?Hero=%s" % (addr, hero)
-        procs.append(("client%d" % (i + 1), launch(a.packaged, client_url, a.client_script, log, a.client_exec, pos=pos, nullrhi=i >= a.render_clients)))
+        rendered = i < a.render_clients
+        script = a.render_client_script if (rendered and a.render_client_script) else a.client_script
+        procs.append(("client%d" % (i + 1), launch(a.packaged, client_url, script, log, a.client_exec, pos=pos, nullrhi=not rendered,
+                                                   extra_args=a.render_client_args.split() if rendered else ())))
         last_join = time.time()
         time.sleep(a.stagger)
     killed_client = killed_host = False

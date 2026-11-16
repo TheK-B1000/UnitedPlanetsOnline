@@ -1,6 +1,7 @@
 // White Tiger Studios 2024
 
 #include "Combat/CombatBootstrapSubsystem.h"
+#include "Combat/GOTAFloatAttackGuard.h"
 
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
 #include "Characters/StatsComponent.h"
@@ -177,6 +178,8 @@ UStatsComponent* UCombatBootstrapSubsystem::EnsureReplicatedVitals(APawn* Pawn)
 		UE_LOG(LogGOTACombatBootstrap, Log, TEXT("Attached replicated UStatsComponent to %s"), *GetNameSafe(Pawn));
 	}
 	Stats->BeginObservingBlueprintDamage();
+	// Enemies with the floating AOE attack (Story shrine boss) land even if that attack is aborted mid-air.
+	UGOTAFloatAttackGuard::EnsureOn(Pawn);
 	// Every combatant gets its ability system here, after its stats (the ASC clears statuses on Stats->OnDied).
 	// With gota.GAS.EnemyASC 0, plain AI waits until GOTAGAS::ApplyStatus needs one; bosses get theirs from ApplyToPawn.
 	if (CVarGOTAEnemyASC.GetValueOnGameThread() != 0 || Pawn->IsPlayerControlled())

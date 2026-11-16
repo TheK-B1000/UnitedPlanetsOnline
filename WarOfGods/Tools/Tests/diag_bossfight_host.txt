@@ -1,0 +1,58 @@
+# DIAGNOSTIC ONLY: waves 1-5 force-cleared; the boss wave is then fought for real by all four players (melee and abilities,
+# nothing injected) until the boss dies. The rendered client then stays on the results state.
+wait 70
+gota.Net.Players
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 10
+gota.Horde.Watch 30
+gota.Net.Fight 900
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+wait 60
+gota.Horde.Dump
+gota.Net.Players
+quit

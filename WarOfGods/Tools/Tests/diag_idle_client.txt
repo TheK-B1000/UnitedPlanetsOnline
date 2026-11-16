@@ -1,0 +1,3 @@
+# Rendered client that never fights (crash isolation).
+wait 980
+quit

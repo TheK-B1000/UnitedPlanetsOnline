@@ -1,0 +1,5 @@
+# Rendered client that never fights; logs every visible skeletal mesh from the boss wave on (crash isolation).
+wait 90
+gota.Test.SceneWatch 900 5
+wait 890
+quit

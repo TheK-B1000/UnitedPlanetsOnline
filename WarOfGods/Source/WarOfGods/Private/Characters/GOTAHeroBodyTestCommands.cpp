@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Containers/Ticker.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
+#include "Engine/SkeletalMesh.h"
 
 #if !UE_BUILD_SHIPPING
 
@@ -275,6 +278,53 @@ static void RebuildBodies(const TArray<FString>& Args)
 	}), Interval);
 	UE_LOG(LogGOTABodyTest, Log, TEXT("BODY rebuild every %.2fs"), Interval);
 }
+/**
+ * gota.Test.SceneWatch <seconds> [interval=5]: on this machine, log every skeletal mesh component on every character:
+ * owner, being destroyed, registered, visible, cloth (suspended or not), active montage, time since last render.
+ * Renderer crash isolation (which meshes outlive a Horde victory on a client).
+ */
+static FTSTicker::FDelegateHandle GSceneWatchTicker;
+static void SceneWatch(const TArray<FString>& Args)
+{
+	const double Until = FPlatformTime::Seconds() + (Args.Num() > 0 ? FCString::Atof(*Args[0]) : 300.0);
+	const float Interval = Args.Num() > 1 ? FMath::Max(0.5f, FCString::Atof(*Args[1])) : 5.f;
+	FTSTicker::GetCoreTicker().RemoveTicker(GSceneWatchTicker);
+	GSceneWatchTicker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([Until](float)
+	{
+		UWorld* World = GOTABodyTest::GameWorld();
+		if (!World || FPlatformTime::Seconds() > Until)
+		{
+			UE_LOG(LogGOTABodyTest, Log, TEXT("SCENE watch finished"));
+			return false;
+		}
+		int32 Count = 0;
+		for (TActorIterator<ACharacter> It(World); It; ++It)
+		{
+			TInlineComponentArray<USkeletalMeshComponent*> Meshes(*It);
+			for (USkeletalMeshComponent* M : Meshes)
+			{
+				if (!M || !M->IsRegistered() || !M->IsVisible() || M->bHiddenInGame)
+				{
+					continue;
+				}
+				++Count;
+				const UAnimInstance* Anim = M->GetAnimInstance();
+				const UAnimMontage* Montage = Anim ? Anim->GetCurrentActiveMontage() : nullptr;
+				const bool bCloth = M->GetSkeletalMeshAsset() && M->GetSkeletalMeshAsset()->HasActiveClothingAssets();
+				if (bCloth || It->IsActorBeingDestroyed() || !IsValid(*It) || It->GetLocalRole() == ROLE_SimulatedProxy && It->GetName().Contains(TEXT("Boss")))
+				{
+					UE_LOG(LogGOTABodyTest, Log, TEXT("SCENE %s.%s mesh=%s cloth=%d clothSuspended=%d destroying=%d tornOff=%d montage=%s sinceRender=%.1fs"),
+						*It->GetName(), *M->GetName(), *GetNameSafe(M->GetSkeletalMeshAsset()), bCloth ? 1 : 0, M->IsClothingSimulationSuspended() ? 1 : 0,
+						It->IsActorBeingDestroyed() ? 1 : 0, It->GetTearOff() ? 1 : 0, *GetNameSafe(Montage), World->GetTimeSeconds() - M->GetLastRenderTime());
+				}
+			}
+		}
+		UE_LOG(LogGOTABodyTest, Log, TEXT("SCENE visible skeletal meshes=%d"), Count);
+		return true;
+	}), Interval);
+	UE_LOG(LogGOTABodyTest, Log, TEXT("SCENE watch every %.1fs"), Interval);
+}
+FAutoConsoleCommand CmdSceneWatch(TEXT("gota.Test.SceneWatch"), TEXT("Log visible skeletal meshes per character (cloth, destroyed, montage): <seconds> [interval]."), FConsoleCommandWithArgsDelegate::CreateStatic(&SceneWatch));
 FAutoConsoleCommand CmdRebuildBodies(TEXT("gota.Test.RebuildBodies"), TEXT("Rebuild every hero body repeatedly on this machine: <seconds> [interval]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RebuildBodies));
 FAutoConsoleCommand CmdBody(TEXT("gota.Test.Body"), TEXT("Log hero bodies, hand gaps and kept weapons on this machine."), FConsoleCommandWithArgsDelegate::CreateStatic(&Body));
 	static FAutoConsoleCommand CmdSpawns(TEXT("gota.Test.WatchSpawns"), TEXT("Log actors spawned by characters (0 = stop)."), FConsoleCommandWithArgsDelegate::CreateStatic(&WatchSpawns));
