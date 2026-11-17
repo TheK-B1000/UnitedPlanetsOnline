@@ -28,7 +28,7 @@ The RC12 first pass (44/46: GaleRush and GravityWell multiplayer) and the RC13 f
 
 ### Battery (packaged RC13, bots)
 
-Full match with the healing harness: one Victory, clients up 1,067–1,068 s after it, 0 crashes. Legitimate match: wave 1 cleared, wave 2 lost at 8/11. Public-menu Horde with `?Players=4`, Story (0 unresolved movement bases), Duel rematch, Drakon versus Rampage (3 parries, 19 dodges, 5 Divine Counters, defeated), client and host leave: all pass. **A legitimate five-wave victory was not achieved.**
+Full match with the healing harness: one Victory, clients up 1,067–1,068 s after it, 0 crashes. Legitimate match: wave 1 cleared, wave 2 lost at 8/11. Public-menu Horde with `?Players=4`, Story (0 unresolved movement bases), Duel rematch, Drakon versus Rampage (3 parries, 19 dodges, 5 Divine Counters, defeated), client and host leave: all pass. **A legitimate five-wave victory was not achieved.** Best legitimate run so far, editor `rc13_legit_e1` (RC13 code, fight driver also dodges the unblockable ground smash; no healing, nothing injected): wave 1 cleared in 47.5 s (7/7, 1 death), wave 2 cleared in 45.0 s (11/11, 1 death), wave 3 lost at 9/12 after 50.5 s, one `outcome=Defeat score=3375`. RC12c reached 9/11 in wave 2.
 
 ### RC13 profile (packaged, rendered client, waves 1–2, one 60 s window)
 
