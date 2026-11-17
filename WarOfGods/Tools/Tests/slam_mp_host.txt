@@ -1,3 +1,5 @@
+# RC13: act on the joined client, not a fixed clock (a slow client start used to miss the cast).
+waitplayers 2 120
 r.MotionBlurQuality 0
 wait 25
 gota.Ability.Place 200

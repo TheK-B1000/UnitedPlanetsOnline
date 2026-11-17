@@ -1,3 +1,5 @@
+# RC13: act on the joined client, not a fixed clock (a slow client start used to miss the cast).
+waitplayers 2 120
 # Remote player set alight by the host's Molten Strike: the server ticks, the client sees flames and its own BURNING line.
 r.MotionBlurQuality 0
 wait 25

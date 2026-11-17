@@ -100,6 +100,10 @@ public:
 	void NoteNoDamageResponse(AActor* Victim, APawn* Attacker, int32 Response);
 	/** The victim's damage system accepted a block (or a perfect parry) against Causer. */
 	void NoteBlocked(AActor* Victim, AActor* Causer, bool bPerfectParry);
+	/** A player dodged (server saw the dodge): Armed = an attack was about to land on it (a perfect-dodge candidate). */
+	void NoteDodge(APawn* Player, APawn* Against, bool bArmed, float Lead, const TCHAR* Via);
+	/** The fighter granted a perfect dodge (the armed dodge resolved without damage). */
+	void NotePerfectDodge(APawn* Player, APawn* Against);
 	void NoteBossAttack(APawn* Boss, FName AttackId, APawn* Target, float Distance);
 	void NoteBossAttackEnd(APawn* Boss, FName AttackId, bool bHit);
 	void NoteWaveStart(int32 Wave, bool bBoss, int32 Players, int32 Planned);
@@ -129,8 +133,16 @@ public:
 		double LifeStart = -1.0, SumLife = 0.0;
 		TMap<TWeakObjectPtr<APawn>, double> RecentAttackers;
 	};
+	/** One player's numbers for the current wave (logged as TELEM wave_player at wave end). */
+	struct FWavePlayer
+	{
+		int32 Hits = 0, Blocks = 0, Parries = 0, DodgeAttempts = 0, DodgesArmed = 0, PerfectDodges = 0, Deaths = 0, Kills = 0;
+		float DamageTaken = 0.f, DamageDealt = 0.f;
+		double FirstDeathAt = -1.0;
+	};
 	FClassStats& ClassStats(const APawn* Enemy);
 	FPlayerStats& PlayerStats(const APawn* Player);
+	FWavePlayer& WavePlayer(const APawn* Player) { return WavePlayers.FindOrAdd(PlayerLabel(Player)); }
 	int32 CountRecentAttackers(FPlayerStats& Stats, double At) const;
 
 private:
@@ -138,6 +150,7 @@ private:
 
 	TMap<FString, FClassStats> Classes;
 	TMap<FString, FPlayerStats> Players;
+	TMap<FString, FWavePlayer> WavePlayers;
 	TArray<TWeakObjectPtr<UGOTAEnemyTelemetryProbe>> Probes;
 	TMap<TWeakObjectPtr<APawn>, TWeakObjectPtr<APawn>> BossTargets;
 	FTimerHandle SampleTimer;

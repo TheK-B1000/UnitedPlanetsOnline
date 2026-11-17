@@ -1,0 +1,13 @@
+# RC13 defensive timing against regular wave enemies (healing harness so the fight lasts; NOT difficulty evidence).
+# Every player fights in dodge mode: it dodges (DodgeInDirection) when an enemy's hit is within 0.3 s. TELEM dodge /
+# perfect_dodge / hit lines compare the listen host (local i-frames) with remote clients (120 ms, 5% loss).
+gota.Net.Fight 400 dodge
+gota.Net.Sustain 400 25
+wait 60
+gota.Horde.Dump
+wait 90
+gota.Telemetry.Dump
+wait 90
+gota.Telemetry.Dump
+gota.Horde.Dump
+quit

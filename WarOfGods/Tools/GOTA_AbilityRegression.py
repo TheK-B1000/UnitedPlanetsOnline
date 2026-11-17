@@ -286,12 +286,44 @@ def check(text, expectations):
     return out
 
 
+STAMP_RX = re.compile(r"^\[(\d{4}\.\d\d\.\d\d-\d\d\.\d\d\.\d\d:\d{3})\]", re.M)
+
+
+def first_time(text, rx):
+    """Timestamp of the first log line matching rx, or '-'."""
+    for line in text.splitlines():
+        if re.search(rx, line):
+            m = STAMP_RX.match(line)
+            return m.group(1)[11:] if m else "?"
+    return "-"
+
+
+def keep_failure(run_dir, *logs):
+    """Copy a failing case's logs to Saved/AbilityRegression/failures/<run>/ so a rerun cannot overwrite them."""
+    os.makedirs(run_dir, exist_ok=True)
+    for log in logs:
+        if os.path.exists(log):
+            shutil.copy2(log, run_dir)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--packaged", action="store_true")
     ap.add_argument("--only")
     ap.add_argument("--check-only", action="store_true")
+    ap.add_argument("--mp-only", action="store_true", help="only the multiplayer (listen server + client) cases")
+    ap.add_argument("--repeat", type=int, default=1, help="run the selected cases N times in a row")
     a = ap.parse_args()
+    total_fails = 0
+    for rep in range(max(1, a.repeat)):
+        if a.repeat > 1:
+            print("\n=== pass %d of %d ===" % (rep + 1, a.repeat))
+        total_fails += run_suite(a)
+    return 1 if total_fails else 0
+
+
+def run_suite(a):
+    run_dir = os.path.join(LOGS, "failures", time.strftime("%Y%m%d_%H%M%S"))
     os.makedirs(LOGS, exist_ok=True)
     if a.packaged and not a.check_only:  # the packaged game reads test scripts from its own project folder
         dst = os.path.join(PACKAGE_DIR, "WarOfGods", "Tools", "Tests")
@@ -303,7 +335,7 @@ def main():
     for ability, cases in CASES.items():
         if a.only and a.only != ability:
             continue
-        for name, opts, script, exp in cases:
+        for name, opts, script, exp in ([] if a.mp_only else cases):
             log = os.path.join(LOGS, "%s_%s_%s.log" % (mode, ability, re.sub(r"\W+", "_", name)))
             if not a.check_only:
                 launch(a.packaged, QUARRY + opts, script, log)
@@ -311,6 +343,8 @@ def main():
             results = check(text, exp) + [("no crash", True, "Fatal error" not in text)]
             ok = all(r[2] for r in results)
             fails += 0 if ok else 1
+            if not ok:
+                keep_failure(run_dir, log)
             print("%-5s %-12s %-42s %s" % ("PASS" if ok else "FAIL", ability, name, "" if ok else
                   "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
             sys.stdout.flush()
@@ -326,7 +360,13 @@ def main():
         client_log = os.path.join(LOGS, "%s_%s_mp_client.log" % (mode, ability))
         if not a.check_only:
             host = launch(a.packaged, QUARRY + "?Hero=%s?DevHeroes=1?listen" % hero, host_script, host_log, wait=False)
-            time.sleep(15)
+            # Start the client once the host is listening (a cold host start took 49 s; a fixed 15 s launched the
+            # client too early and it never joined). The host script itself waits for the client (waitplayers).
+            deadline = time.time() + 150
+            time.sleep(5)
+            while time.time() < deadline and not re.search(r"(GameNetDriver.*listening|Listening on port|IpNetDriver listening)", read(host_log)):
+                time.sleep(1)
+            time.sleep(2)
             launch(a.packaged, "127.0.0.1?Hero=UPAWarden", "gale_mp_client.txt", client_log, extra=["-LogCmds=LogGOTAAbility Verbose"], timeout=300)
             try:
                 host.wait(timeout=120)
@@ -336,11 +376,20 @@ def main():
         results = check(h, host_checks) + check(c, client_checks) + [("no crash", True, "Fatal error" not in h + c)]
         ok = all(r[2] for r in results)
         fails += 0 if ok else 1
+        # Connection timeline: when the host listened, when the client logged in and finished loading, when the client
+        # script ran. A missing client line with an early or absent join points at timing, not the ability.
+        timing = "host listen %s, client join %s, client map %s, client script %s, client body %s" % (
+            first_time(h, r"(GameNetDriver.*listening|Listening on port|IpNetDriver listening)"),
+            first_time(h, r"Join succeeded"), first_time(c, r"LoadMap: .*L_Arena_TitansQuarry"),
+            first_time(c, r"Running .*gale_mp_client"), first_time(c, r"BODY \[client\]"))
+        if not ok:
+            keep_failure(run_dir, host_log, client_log)
         print("%-5s %-12s %-42s %s" % ("PASS" if ok else "FAIL", ability, "multiplayer (listen server + client)", "" if ok else
               "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
+        print("      %-12s timing: %s" % ("", timing))
         sys.stdout.flush()
     print("\n%s: %s" % (mode, "ALL PASS" if fails == 0 else "%d FAILED" % fails))
-    return 1 if fails else 0
+    return fails
 
 
 if __name__ == "__main__":

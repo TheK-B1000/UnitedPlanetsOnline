@@ -1,3 +1,5 @@
+# RC13: act on the joined client, not a fixed clock (a slow client start used to miss the cast).
+waitplayers 2 120
 # Remote player Unbreakable + Slowed: the server refunds half of the host's Molten Strike; the client keeps both.
 r.MotionBlurQuality 0
 wait 25

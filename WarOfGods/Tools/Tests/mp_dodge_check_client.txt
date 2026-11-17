@@ -1,0 +1,4 @@
+wait 3
+gota.Net.Fight 400 dodge
+wait 300
+quit

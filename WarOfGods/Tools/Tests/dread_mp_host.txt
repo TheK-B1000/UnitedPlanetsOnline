@@ -1,3 +1,5 @@
+# RC13: act on the joined client, not a fixed clock (a slow client start used to miss the cast).
+waitplayers 2 120
 # Remote player: Nyx (host) Soul Drain on the remote client, then Time Lash's slow on top, then both expire.
 r.MotionBlurQuality 0
 wait 25

@@ -9,6 +9,8 @@
 #if !UE_BUILD_SHIPPING
 
 #include "Arenas/Duel/DuelGameMode.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
 #include "Arenas/Duel/DuelGameState.h"
 #include "Arenas/Duel/DuelPlayerState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
@@ -111,18 +113,56 @@ namespace GOTATest
 		 *  cannot skip a wait, because one step is capped. */
 		double ScriptTime = 0.0;
 		double ResumeAt = 0.0;
+		/** `waitplayers <N> <timeout>`: hold until N players each have a pawn (multiplayer tests act on the joined
+		 *  client, not on a fixed clock that a slow client start can miss). 0 = not waiting. */
+		int32 WaitPlayers = 0;
+		double WaitPlayersUntil = 0.0;
+		double WaitPlayersSince = 0.0;
 		FTSTicker::FDelegateHandle Handle;
+
+		static int32 PlayersWithPawns()
+		{
+			const UWorld* World = GetGameWorld();
+			const AGameStateBase* GS = World ? World->GetGameState() : nullptr;
+			int32 Count = 0;
+			for (const APlayerState* PS : GS ? GS->PlayerArray : TArray<TObjectPtr<APlayerState>>())
+			{
+				Count += (PS && PS->GetPawn()) ? 1 : 0;
+			}
+			return Count;
+		}
 
 		bool Tick(float DeltaTime)
 		{
 			ScriptTime += FMath::Min(static_cast<double>(DeltaTime), 0.5);
 			const double Now = ScriptTime;
+			if (WaitPlayers > 0)
+			{
+				const int32 Have = PlayersWithPawns();
+				if (Have < WaitPlayers && Now < WaitPlayersUntil)
+				{
+					return true;
+				}
+				UE_LOG(LogGOTATest, Log, TEXT("[script] waitplayers %d: %s with %d after %.1fs"), WaitPlayers,
+					Have >= WaitPlayers ? TEXT("reached") : TEXT("TIMED OUT"), Have, Now - WaitPlayersSince);
+				WaitPlayers = 0;
+			}
 			while (Index < Lines.Num() && Now >= ResumeAt)
 			{
 				FString Line = Lines[Index++].TrimStartAndEnd();
 				if (Line.IsEmpty() || Line.StartsWith(TEXT("#")))
 				{
 					continue;
+				}
+				if (Line.StartsWith(TEXT("waitplayers ")))
+				{
+					TArray<FString> Parts;
+					Line.ParseIntoArrayWS(Parts);
+					WaitPlayers = Parts.Num() > 1 ? FMath::Max(1, FCString::Atoi(*Parts[1])) : 2;
+					WaitPlayersUntil = Now + (Parts.Num() > 2 ? FCString::Atof(*Parts[2]) : 120.0);
+					WaitPlayersSince = Now;
+					UE_LOG(LogGOTATest, Log, TEXT("[script] %s"), *Line);
+					return true;
 				}
 				if (Line.StartsWith(TEXT("wait ")))
 				{

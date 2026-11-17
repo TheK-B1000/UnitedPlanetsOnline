@@ -9,6 +9,8 @@
 #include "Arenas/Duel/DuelGameMode.h"
 #include "Arenas/Duel/DuelGameState.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
+#include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAGameplayTags.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Abilities/GOTAAbilityTypes.h"
 #include "Bosses/GOTABossComponent.h"
@@ -418,6 +420,10 @@ void UGOTADuelFighterComponent::BeginPlay()
 
 void UGOTADuelFighterComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+	if (bServerDodgeInvincible)
+	{
+		SetServerDodgeInvincible(false);
+	}
 	GOTAGAS::OnStatusDamage.RemoveAll(this);
 	if (bDelegatesBound)
 	{
@@ -577,11 +583,47 @@ bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reas
 	{
 		bDodgeArmed = true;
 		HealthAtDodge = UGOTACombatantObserver::ReadVitals(GetOwner()).Health;
-		DodgeResolveTime = Now + FMath::Max(Lead, 0.f) / FMath::Max(M->RateScale, 0.1f) + 0.2;
-		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge arm (%s): montage lead=%.2f dist=%.0f"), Reason, Lead, Dist);
+		const float ToImpact = FMath::Max(Lead, 0.f) / FMath::Max(M->RateScale, 0.1f);
+		DodgeResolveTime = Now + ToImpact + 0.2;
+		const APawn* Self = Cast<APawn>(GetOwner());
+		const bool bRemote = Self && GetOwner()->HasAuthority() && !Self->IsLocallyControlled();
+		if (bRemote)
+		{
+			// The client's own i-frames never reach the server: protect this dodge here, against this impact only.
+			DodgeProtectedUntil = FMath::Max(DodgeProtectedUntil, Now + ToImpact + 0.15);
+			SetServerDodgeInvincible(true);
+		}
+		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge arm (%s): montage lead=%.2f dist=%.0f%s"), Reason, Lead, Dist,
+			bRemote ? *FString::Printf(TEXT(", server i-frames until %.2f"), DodgeProtectedUntil) : TEXT(""));
 		return true;
 	}
 	return false;
+}
+
+void UGOTADuelFighterComponent::SetServerDodgeInvincible(bool bOn)
+{
+	UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(GetOwner());
+	if (!DS || !GetOwner()->HasAuthority() || bServerDodgeInvincible == bOn)
+	{
+		return;
+	}
+	if (bOn)
+	{
+		if (FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible")))
+		{
+			return; // already invincible for another reason (Veiled, a status): nothing to add, nothing to clear later
+		}
+		FGOTABlueprintCombat::SetBool(DS, TEXT("IsInvincible"), true);
+		bServerDodgeInvincible = true;
+		return;
+	}
+	bServerDodgeInvincible = false;
+	const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner());
+	if (ASC && ASC->HasMatchingGameplayTag(GOTATags::Status_Veiled))
+	{
+		return; // Veiled took it over meanwhile and owns clearing it
+	}
+	FGOTABlueprintCombat::SetBool(DS, TEXT("IsInvincible"), false);
 }
 
 void UGOTADuelFighterComponent::RequestDodgeNotify()
@@ -611,7 +653,11 @@ void UGOTADuelFighterComponent::Server_NotifyDodgeAttempt_Implementation()
 			Opponent = Opp;
 		}
 	}
-	TryArmPerfectDodge(Opp, TEXT("client-notify"));
+	const bool bArmed = TryArmPerfectDodge(Opp, TEXT("client-notify"));
+	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+	{
+		Telemetry->NoteDodge(Cast<APawn>(GetOwner()), Opp, bArmed, -1.f, TEXT("client-notify"));
+	}
 }
 
 void UGOTADuelFighterComponent::TryBindLocalInput()
@@ -629,6 +675,12 @@ void UGOTADuelFighterComponent::TryBindLocalInput()
 
 void UGOTADuelFighterComponent::TickChallengerServer()
 {
+	// A remote dodge's server-side i-frames end with the impact they were granted for (checked before any early
+	// return, so a round or target ending mid-window cannot leave the player invincible).
+	if (bServerDodgeInvincible && GetWorld()->GetTimeSeconds() >= DodgeProtectedUntil)
+	{
+		SetServerDodgeInvincible(false);
+	}
 	UStatsComponent* Stats = FindOrAddStats();
 	if (Stats)
 	{
@@ -662,11 +714,15 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 		GrantMomentum(HitLandedMomentum, TEXT("hit landed"));
 	}
 
-	// Listen-server / AI: BP dodge raises IsInvincible on the authority pawn.
-	const bool bInvincible = FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible"));
+	// Listen-server / AI: BP dodge raises IsInvincible on the authority pawn (not our own server-side dodge window).
+	const bool bInvincible = FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible")) && !bServerDodgeInvincible;
 	if (bInvincible && !bWasInvincible && Now > CounterInvulnEndTime)
 	{
-		TryArmPerfectDodge(Opp, TEXT("server-edge"));
+		const bool bArmed = TryArmPerfectDodge(Opp, TEXT("server-edge"));
+		if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+		{
+			Telemetry->NoteDodge(Cast<APawn>(GetOwner()), Opp, bArmed, -1.f, TEXT("server-edge"));
+		}
 	}
 	else if (bInvincible && Now > CounterInvulnEndTime)
 	{
@@ -685,6 +741,10 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 		bDodgeArmed = false;
 		GrantMomentum(PerfectDodgeMomentum, TEXT("perfect dodge"));
 		EmitCue(EGOTADuelCue::PerfectDodge, Opp);
+		if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
+		{
+			Telemetry->NotePerfectDodge(Cast<APawn>(GetOwner()), Opp);
+		}
 	}
 
 	LastOwnHealth = OwnHealth;

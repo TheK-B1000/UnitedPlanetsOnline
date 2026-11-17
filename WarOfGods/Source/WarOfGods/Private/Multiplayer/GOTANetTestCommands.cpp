@@ -752,6 +752,9 @@ namespace GOTANetTest
 	static bool bFightApproachOnly = false;
 	static double FightLastBlock = -100.0;
 	static int32 FightBlocks = 0;
+	/** Dodge mode: answer incoming attacks with the hero's dodge (DodgeInDirection) instead of a block. */
+	static bool bFightDodgeMode = false;
+	static int32 FightDodges = 0;
 
 	/** Like a player watching the enemy next to them: block when an enemy's attack montage is about to reach its damage
 	 * notify. The montage replicates to every client; the Blueprint "Attacking" flag does not, so it is not used. */
@@ -773,6 +776,26 @@ namespace GOTANetTest
 			const UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Enemy, &Pos);
 			const float Impact = FGOTABlueprintCombat::FindNextImpactTime(M, Pos);
 			const float Lead = (M && Impact >= 0.f) ? Impact - Pos : -1.f;
+			if (bFightDodgeMode)
+			{
+				// Dodge mode: roll away from any attack (ground smash included) just before its damage notify.
+				if (Lead < 0.f || Lead > 0.3f || Now - FightLastBlock < 0.9)
+				{
+					continue;
+				}
+				FRotator Away = (Me->GetActorLocation() - Enemy->GetActorLocation()).Rotation();
+				Away.Pitch = 0.f;
+				if (APlayerController* PC = Cast<APlayerController>(Me->GetController()))
+				{
+					PC->SetControlRotation(Away);
+				}
+				Me->SetActorRotation(Away);
+				FGOTABlueprintCombat::Call(Me, TEXT("DodgeInDirection"), nullptr, FString(), 300.0);
+				FightLastBlock = Now;
+				++FightDodges;
+				UE_LOG(LogGOTANet, Log, TEXT("FIGHT dodge %s lead=%.2f %s on %s"), *GetNameSafe(Enemy), Lead, *GetNameSafe(M), *GetNameSafe(Me));
+				return true;
+			}
 			if (Lead < 0.f || Lead > 0.35f || M->GetName().Contains(TEXT("GroundSmash")))
 			{
 				continue;
@@ -925,7 +948,7 @@ namespace GOTANetTest
 		UWorld* World = GameWorld();
 		if (!World || World->GetTimeSeconds() > FightUntil)
 		{
-			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d blocks=%d evades=%d targetSwitches=%d"), FightAttacks, FightAbilities, FightBlocks, FightEvades, FightTargetSwitches);
+			UE_LOG(LogGOTANet, Log, TEXT("FIGHT finished attacks=%d abilities=%d blocks=%d dodges=%d evades=%d targetSwitches=%d"), FightAttacks, FightAbilities, FightBlocks, FightDodges, FightEvades, FightTargetSwitches);
 			FightHandle.Reset();
 			return false;
 		}
@@ -948,7 +971,7 @@ namespace GOTANetTest
 			Target = Focus;
 		}
 		// Like a player reading a wind-up: step out of a spin or ground smash that is about to land.
-		if (!bFightApproachOnly && TryFightEvade(World, Me, PC, Now))
+		if (!bFightApproachOnly && !bFightDodgeMode && TryFightEvade(World, Me, PC, Now))
 		{
 			return true;
 		}
@@ -1073,6 +1096,8 @@ namespace GOTANetTest
 		FightLastBlock = -100.0;
 		bFightApproachOnly = Args.Num() > 1 && Args[1].Equals(TEXT("approach"), ESearchCase::IgnoreCase);
 		bFightProvokeOnce = Args.Num() > 1 && Args[1].Equals(TEXT("provoke"), ESearchCase::IgnoreCase);
+		bFightDodgeMode = Args.Num() > 1 && Args[1].Equals(TEXT("dodge"), ESearchCase::IgnoreCase);
+		FightDodges = 0;
 		FightProvoked.Reset();
 		if (!FightHandle.IsValid())
 		{

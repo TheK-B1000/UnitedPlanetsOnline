@@ -224,6 +224,15 @@ protected:
 	double CounterInvulnEndTime = 0.0;
 	bool bCounterPending = false;
 	double DodgeProtectedUntil = 0.0;
+	/**
+	 * Server: a remote player's dodge against a regular enemy. The Blueprint dodge i-frames exist only on that client,
+	 * and regular enemies' damage is decided on the server by the damage system's IsInvincible, so remote dodges were
+	 * hit 4x as often as the listen host's (RC13: 35 of 75 armed remote dodges vs 2 of 16). When the server accepts
+	 * the dodge against an attack that is genuinely about to land, it sets IsInvincible until that impact (+0.15 s)
+	 * and clears it afterwards (never while Veiled owns it).
+	 */
+	bool bServerDodgeInvincible = false;
+	void SetServerDodgeInvincible(bool bOn);
 
 	/** Server: the Divine Counter's blow, DivineCounterImpactDelay after it starts. */
 	void LandDivineCounter(float Damage);

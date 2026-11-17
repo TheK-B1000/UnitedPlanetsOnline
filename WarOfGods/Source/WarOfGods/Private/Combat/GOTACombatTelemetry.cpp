@@ -529,6 +529,17 @@ void UGOTACombatTelemetry::NoteHealthChange(AActor* Victim, float Before, float 
 		const bool bByEnemy = Attacker && !IsPlayerPawn(Attacker);
 		Stats.DamageTaken += Damage;
 		++Stats.HitsTaken;
+		FWavePlayer& WP = WavePlayer(VictimPawn);
+		WP.DamageTaken += Damage;
+		++WP.Hits;
+		if (After <= 0.f && Before > 0.f)
+		{
+			++WP.Deaths;
+			if (WP.FirstDeathAt < 0.0 && bWaveOpen)
+			{
+				WP.FirstDeathAt = T - WaveStart;
+			}
+		}
 		++WaveHits;
 		WaveDamageToPlayers += Damage;
 		if (bByEnemy)
@@ -571,6 +582,12 @@ void UGOTACombatTelemetry::NoteHealthChange(AActor* Victim, float Before, float 
 		return;
 	}
 	Probe->NoteDamaged(Damage, T);
+	if (Attacker && IsPlayerPawn(Attacker))
+	{
+		FWavePlayer& WP = WavePlayer(Attacker);
+		WP.DamageDealt += Damage;
+		WP.Kills += (After <= 0.f && Before > 0.f && !Probe->bDead) ? 1 : 0;
+	}
 	if (After <= 0.f && Before > 0.f && !Probe->bDead)
 	{
 		Probe->bDead = true;
@@ -616,6 +633,8 @@ void UGOTACombatTelemetry::NoteBlocked(AActor* Victim, AActor* Causer, bool bPer
 		return;
 	}
 	++PlayerStats(VictimPawn).NoDamageHits;
+	FWavePlayer& WP = WavePlayer(VictimPawn);
+	(bPerfectParry ? WP.Parries : WP.Blocks) += 1;
 	if (By && !IsPlayerPawn(By))
 	{
 		++ClassStats(By).Blocked;
@@ -626,6 +645,31 @@ void UGOTACombatTelemetry::NoteBlocked(AActor* Victim, AActor* Causer, bool bPer
 	}
 	UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM blocked player=%s by=%s class=%s parry=%d wave=%d"),
 		*PlayerLabel(VictimPawn), *GetNameSafe(By), By ? *ClassLabel(By) : TEXT("unknown"), bPerfectParry ? 1 : 0, Wave);
+}
+
+void UGOTACombatTelemetry::NoteDodge(APawn* Player, APawn* Against, bool bArmed, float Lead, const TCHAR* Via)
+{
+	if (!Player || !IsPlayerPawn(Player))
+	{
+		return;
+	}
+	FWavePlayer& WP = WavePlayer(Player);
+	++WP.DodgeAttempts;
+	WP.DodgesArmed += bArmed ? 1 : 0;
+	UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM dodge player=%s vs=%s class=%s armed=%d lead=%.2f via=%s remote=%d wave=%d"),
+		*PlayerLabel(Player), *GetNameSafe(Against), Against ? *ClassLabel(Against) : TEXT("none"), bArmed ? 1 : 0, Lead, Via,
+		Player->IsLocallyControlled() ? 0 : 1, Wave);
+}
+
+void UGOTACombatTelemetry::NotePerfectDodge(APawn* Player, APawn* Against)
+{
+	if (!Player || !IsPlayerPawn(Player))
+	{
+		return;
+	}
+	++WavePlayer(Player).PerfectDodges;
+	UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM perfect_dodge player=%s vs=%s class=%s remote=%d wave=%d"),
+		*PlayerLabel(Player), *GetNameSafe(Against), Against ? *ClassLabel(Against) : TEXT("none"), Player->IsLocallyControlled() ? 0 : 1, Wave);
 }
 
 void UGOTACombatTelemetry::NoteBossAttack(APawn* Boss, FName AttackId, APawn* Target, float Distance)
@@ -661,6 +705,7 @@ void UGOTACombatTelemetry::NoteWaveStart(int32 InWave, bool bBoss, int32 InPlaye
 	WavePlanned = Planned;
 	WaveKills = WaveDeaths = WaveHits = WaveMaxEngaged = 0;
 	WaveDamageToPlayers = 0.f;
+	WavePlayers.Reset();
 	TArray<APawn*> Living;
 	GetPlayers(Living);
 	UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM wave_start wave=%d boss=%d players=%d living=%d planned=%d"),
@@ -676,6 +721,15 @@ void UGOTACombatTelemetry::NoteWaveEnd(const TCHAR* Outcome)
 	bWaveOpen = false;
 	UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM wave_end wave=%d boss=%d outcome=%s dur=%.1f planned=%d kills=%d playerDeaths=%d hitsOnPlayers=%d dmgToPlayers=%.0f maxEngaged=%d"),
 		Wave, bWaveBoss ? 1 : 0, Outcome, Now() - WaveStart, WavePlanned, WaveKills, WaveDeaths, WaveHits, WaveDamageToPlayers, WaveMaxEngaged);
+	// Per player: what came at them and how they answered it (hits taken vs blocks, parries, perfect dodges).
+	for (const TPair<FString, FWavePlayer>& Pair : WavePlayers)
+	{
+		const FWavePlayer& P = Pair.Value;
+		const int32 Answered = P.Blocks + P.Parries + P.PerfectDodges;
+		UE_LOG(LogGOTATelemetry, Log, TEXT("TELEM wave_player wave=%d player=%s dmgTaken=%.0f hits=%d blocks=%d parries=%d dodges=%d dodgesArmed=%d perfectDodges=%d avoided=%.2f deaths=%d firstDeath=%.1f dmgDealt=%.0f kills=%d"),
+			Wave, *Pair.Key, P.DamageTaken, P.Hits, P.Blocks, P.Parries, P.DodgeAttempts, P.DodgesArmed, P.PerfectDodges,
+			(P.Hits + Answered) > 0 ? static_cast<float>(Answered) / (P.Hits + Answered) : 0.f, P.Deaths, P.FirstDeathAt, P.DamageDealt, P.Kills);
+	}
 }
 
 void UGOTACombatTelemetry::NoteMatchEnd(const TCHAR* Outcome)
