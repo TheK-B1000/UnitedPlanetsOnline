@@ -227,6 +227,26 @@ Fresh cook at `B:\Unreal\GOTA_Builds\RC12c_05704ae` (3,937 packages, 0 increment
 | R12-14 | GAS statuses, Burning, boss policies (suite) | **PASS 46/46 after one rerun** | first pass 44/46: `GaleRush` and `GravityWell` multiplayer cases missed a client-side body line; both groups 8/8 when rerun alone. Same pattern as earlier overloaded-client flakes; cause not established |
 | R12-15 | Human playtest | **NOT RUN** | `GOTA_HORDE_PLAYTEST.md` |
 
+## Packaged RC13 (2026-11-17)
+
+Fresh cook at `B:\Unreal\GOTA_Builds\RC13_a941f8c` (Win64 Development, 0 incrementally skipped). The harness changes in `04b69f8` (test tools only, no game code) were run from the source tree against this package. **Every row below is bot evidence, not human evidence.** Clients 120 ± 30 ms, 5% loss; host `-nullrhi` unless noted. Detail: `GOTA_HORDE_COOP_COMBAT.md` "RC13".
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R13-1 | Perfect dodge against regular enemies, remote players | **PASS (fixed)** | before (`rc13_dodge_e1`): remote armed dodges 75, hit anyway 35; after `a941f8c`: editor `rc13_dodge_e2` 80/80 perfect, packaged `rc13p_dodge` 67/68 |
+| R13-2 | Perfect dodge, listen-server host | **OBSERVATION** | host armed 27, perfect 20, hit anyway 6 (`rc13p_dodge`); not changed in RC13, needs a human check |
+| R13-3 | Full match to Victory (healing harness), post-victory renderer | **PASS (flow, not difficulty)** | `rc13p_e2e`: one Victory; clients up 1,067–1,068 s after it, 0 crashes, 0 `LogRHI: Error`, host exit 0 |
+| R13-4 | Legitimate four-player Horde (no healing, nothing injected) | **FAIL to win (bots)** | `rc13p_legit`: wave 1 cleared, wave 2 lost at 8/11 (RC12c 9/11) |
+| R13-5 | Host Horde through the public menu, `?Players=4` | **PASS** | `rc13p_menu_ui` |
+| R13-6 | Four-player Story, movement bases | **PASS** | `rc13p_story_float`, `rc13p_story_net`: 0 unresolved movement-base warnings |
+| R13-7 | Duel result and rematch; Drakon versus Rampage | **PASS** | `rc13p_duel_rematch`; Rampage: 3 parries, 19 dodges, 5 Divine Counters, Phase II, defeated |
+| R13-8 | Client leaves, host leaves | **PASS** | `rc13p_leave`, `rc13p_hostleave` |
+| R13-9 | Regression suite | **45/46, 1 INCONCLUSIVE** | TitanCharge multiplayer case: client starved (its 18 s wait took over 36 s). Not counted as a pass |
+| R13-10 | GaleRush / GravityWell flakiness (RC12 44/46) | **ROOT CAUSE FOUND (test environment)** | every failing multiplayer case had a starved client (18 s script wait took 57–227 s while other software loaded the machine). With the client getting frames: 33/33 over three back-to-back multiplayer passes. Harness: clients launch when the host listens, hosts wait for players, 75 s host tail, starved cases are INCONCLUSIVE (`04b69f8`). The RC12 first pass stays 44/46 |
+| R13-11 | Focused profile, rendered client, waves 1–2 | **MEASURED** | `rc13p_focus`: see "RC13 profile" in `GOTA_HORDE_COOP_COMBAT.md`; render-thread bound, 17.2 ms frame |
+| R13-12 | Unreal Insights warnings in the analysis log | **TRACE ARTIFACT, NOT A GAME FAULT** | readable trace; MemAlloc tag errors appear even with memory tracing off; GPU timestamp warnings: 9 events, max 0.28 ms; game logs and exit codes show no crash |
+| R13-13 | Human playtest | **NOT RUN** | kit rewritten for RC13: `GOTA_HORDE_PLAYTEST.md` |
+
 ## How to re-run
 
 ```text

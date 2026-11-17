@@ -188,6 +188,23 @@ Nothing else changed: the same numbers, the same Blueprint flags, the same damag
 
 ## Test record
 
+### RC13 human combat validation (`a941f8c`, `04b69f8`), editor and packaged RC13
+
+No GAS feature was added (Frozen / Stun stay on hold); no enemy damage or difficulty was changed. Package `B:\Unreal\GOTA_Builds\RC13_a941f8c` (fresh cook). Horde detail: `GOTA_HORDE_COOP_COMBAT.md` "RC13"; matrix rows R13-1 to R13-13. **All results are bot evidence; no human has played RC13.**
+
+| Area | Change | Commit |
+|---|---|---|
+| Remote perfect dodges against regular enemies were hit anyway (35 of 75) | server sets `IsInvincible` from an accepted armed dodge until impact + 0.15 s, never while Veiled; after: 80/80 editor, 67/68 packaged | `a941f8c` |
+| Telemetry | `TELEM dodge`, `perfect_dodge`, per-wave per-player line (damage taken / dealt, blocks, parries, dodges, deaths, kills, first death, avoided) | `a941f8c` |
+| Test harness | `waitplayers`, listen-based client launch, 75 s host tail, INCONCLUSIVE for starved clients, `--mp-only`, `--repeat`, failure archive | `a941f8c`, `04b69f8` |
+| Intermission healing | recorded as the approved rule (2026-11-17), revisit after human balance testing | `04b69f8` |
+
+**Suite:** packaged 45/46 with one INCONCLUSIVE (TitanCharge, starved client). The RC12 GaleRush / GravityWell failures are explained by starved clients (33/33 over three multiplayer passes with a client getting frames); the RC12 first pass is still recorded as 44/46, not 46/46.
+
+**Profile (rendered client, waves 1–2, 60 s):** frame 17.2 ms, render thread 17.0 (bottleneck), game thread 10.5, RHI 5.6, GPU 5.2, 1.66 GB, 9.5 / 4.0 KB/s down / up. Insights warnings in the analysis log are trace-analysis artifacts, not game faults; memory tracing is not needed.
+
+**Release blockers after RC13:** (1) human playtest (kit ready for RC13); (2) a legitimate five-wave victory (bots lose wave 2); (3) separate PCs; (4) render-thread cost (17 ms with four heroes and a wave on screen, measured on a loaded machine).
+
 ### RC12 enemy combat intelligence and Horde playability (`336b6cb`, `10f4bb2`, `05704ae`), editor and packaged RC12c
 
 No GAS feature was added (Frozen / Stun stay on hold). No enemy damage, health or count was changed. Horde detail: `GOTA_HORDE_COOP_COMBAT.md` "RC12".
@@ -203,7 +220,7 @@ No GAS feature was added (Frozen / Stun stay on hold). No enemy damage, health o
 | Dead enemies kept attacking | defeated AI stops brain, movement, montages; cannot start an attack | `336b6cb` |
 | Horde heroes unarmed, blocks impossible | server draws the weapon via the hero's `SR_MeleeStance` | `336b6cb` |
 | Enemies idle out of sight range, ranged move failures | `UGOTAEnemyTargeting` (acquire / reacquire / leash / pursuit failure / path-failure recovery / return home) | `336b6cb` |
-| Survivors carried damage into later waves | `bRestoreSurvivorsDuringIntermission` — **rule change pending sign-off** | `336b6cb` |
+| Survivors carried damage into later waves | `bRestoreSurvivorsDuringIntermission` — **approved 2026-11-17** (current Horde rule; revisit after human balance testing) | `336b6cb` |
 | Story clients dropped movement corrections | deterministic, net-addressable graybox component names | `336b6cb` |
 | Horde not reachable from the public menu | lobby mode button (created at runtime; the layout had no slot) | `336b6cb`, `10f4bb2` |
 | **Packaged host crash** (`FGOTABlueprintCombat::Call` from targeting) | every reflection parameter buffer is the function's full structure size; `InitializeStruct` wrote Blueprint locals past a `ParmsSize` stack buffer (latent since the helpers were written; also affected `ApplyDamage`) | `10f4bb2` |
@@ -213,7 +230,7 @@ No GAS feature was added (Frozen / Stun stay on hold). No enemy damage, health o
 
 **Not verified in RC12:** a legitimate five-wave victory (bots lose wave 2), human players, perfect dodges against regular enemies, a clean-machine performance profile, separate PCs.
 
-**Release blockers after RC12:** (1) human playtest (kit ready, RC12c); (2) sign-off on the intermission restore rule; (3) a legitimate full victory, by humans or a stronger test controller; (4) clean-machine profile (RC12c client 17.5 ms frame on a loaded machine, render-thread bound).
+**Release blockers after RC12:** (1) human playtest (kit ready, RC12c); (2) ~~sign-off on the intermission restore rule~~ approved 2026-11-17; (3) a legitimate full victory, by humans or a stronger test controller; (4) clean-machine profile (RC12c client 17.5 ms frame on a loaded machine, render-thread bound).
 
 ### RC11 real combat validation (`a8e6e87`), editor and packaged RC11
 

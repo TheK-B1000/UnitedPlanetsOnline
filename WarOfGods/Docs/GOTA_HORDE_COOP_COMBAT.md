@@ -1,5 +1,57 @@
 # Horde cooperative combat
 
+## RC13: human combat validation (2026-11-17)
+
+Code `a941f8c` (game) and `04b69f8` (test harness only). Package `B:\Unreal\GOTA_Builds\RC13_a941f8c`. No enemy damage, health, count or difficulty was changed; no GAS feature was added (Frozen / Stun stay on hold). Matrix rows R13-1 to R13-13.
+
+**Evidence type.** Everything in this section comes from test bots on one machine with emulated latency. **No human has played RC13 yet.** Human results go only in session sheets marked `Evidence type: HUMAN` (`GOTA_HORDE_PLAYTEST.md`); bot numbers are never quoted as human results.
+
+### Remote perfect dodges against regular enemies (fixed)
+
+Remote players' armed perfect dodges were still hit about half the time: the dodge invulnerability was set only on the client, and the server applied the hit. Now, when the server accepts an armed dodge from a remote player against a regular enemy, it sets `IsInvincible` until the attack's impact plus 0.15 s, then clears it (never while Veiled, which owns the same flag). Telemetry: `TELEM dodge` and `TELEM perfect_dodge`; report `python Tools/GOTA_DodgeReport.py <tag>`.
+
+| Run | Remote armed dodges | Perfect | Hit anyway | Host armed / perfect / hit anyway |
+|---|---|---|---|---|
+| `rc13_dodge_e1` (editor, before) | 75 | 40 | **35** | 16 / 12 / 2 |
+| `rc13_dodge_e2` (editor, after) | 80 | 80 | **0** | 11 / 8 / 3 |
+| `rc13p_dodge` (packaged RC13) | 68 | 67 | **1** | 27 / 20 / 6 |
+
+The host's own dodges are local and were not changed; 6 of its 27 armed dodges were still hit in the package. Whether a human host feels that is a playtest question (sheet item: "dodged but still hit").
+
+### Per-wave player telemetry
+
+At the end of each wave the server logs one `TELEM wave_player` line per player: hits taken, damage taken and dealt, blocks, parries, dodge attempts, armed and perfect dodges, deaths, kills, time of first death and `avoided` (blocks + parries + perfect dodges against hits). `python Tools/GOTA_HordeTelemetry.py <tag>` prints the table. These are the numbers to fill in after a human session.
+
+### Regression flakiness: cause found in the test environment
+
+The RC12 first pass (44/46: GaleRush and GravityWell multiplayer) and the RC13 failures had one thing in common: a starved client. Its script clock counts frame time, so an 18 s wait took 57–227 s of real time while other software loaded the machine (about 26 GB of 48 in use, high CPU), and the client checked after the host had already quit. With a client getting frames, three back-to-back multiplayer passes were 33/33. Harness (`04b69f8`): clients launch once the host is listening, host scripts start with `waitplayers 2 120` and stay up 75 s after the action, the suite waits up to 180 s, and a failing case whose client wait took over 36 s is **INCONCLUSIVE (client starved)**: it fails the run and is never reported as a pass. The RC12 record stays 44/46 first pass. Packaged RC13 suite: 45/46, the one failure INCONCLUSIVE (TitanCharge, starved client).
+
+### Battery (packaged RC13, bots)
+
+Full match with the healing harness: one Victory, clients up 1,067–1,068 s after it, 0 crashes. Legitimate match: wave 1 cleared, wave 2 lost at 8/11. Public-menu Horde with `?Players=4`, Story (0 unresolved movement bases), Duel rematch, Drakon versus Rampage (3 parries, 19 dodges, 5 Divine Counters, defeated), client and host leave: all pass. **A legitimate five-wave victory was not achieved.**
+
+### RC13 profile (packaged, rendered client, waves 1–2, one 60 s window)
+
+Capture `rc13p_focus` (`Tools/Tests/mp_perf_focus_client.txt`): Unreal Insights with channels `cpu,gpu,frame,bookmark` only, a CSV profile and `gota.Net.Perf` over the same bookmarked window. Four players, 120 ± 30 ms, 5% loss; the machine had other software running (26–30.6 of 48 GB in use), so absolute numbers are an upper bound.
+
+| Measure | Value |
+|---|---|
+| Frame | 17.20 ms average, median 16.87, p95 21.75; 2 frames over 50 ms, 1 over 100 ms |
+| Game thread | 10.50 ms (of which about 6.7 ms is `Sync_RenderingThread`: waiting for the render thread) |
+| Render thread | 17.02 ms: **the bottleneck** |
+| RHI thread | 5.62 ms |
+| GPU | 5.19 ms (`gota.Net.Perf`: 4.5–5.1 ms) |
+| Memory | 1.66 GB physical used by the game (peak 1.83 GB) |
+| Network | down 572 KB / 60 s = **9.5 KB/s**, up 237 KB = **4.0 KB/s**; lost in 0, lost out 1 |
+
+Game thread per frame (Insights, inclusive, about 3,550 frames): `FEngineLoop::Tick` 17.2 ms, `Sync_RenderingThread` 6.7, character skeletal mesh tick (`CharacterMesh0`) 2.4, skeletal animation completion 1.55, character movement 1.4.
+
+Render-side timers (Insights inclusive totals; these add up across the render thread and its parallel workers, so they rank costs but are not per-frame render-thread time): `SceneRender` 109 s, `RenderGraphExecute` 76, visibility commands 22.4, volumetric cloud shadow 7.2, post-processing 5.8, Nanite geometry 5.1, TSR 5.0, diffuse indirect and AO 4.6, shadow depths 4.2, Lumen screen probes 4.1, Lumen scene update 4.0, FX pre-render 3.9, virtual shadow maps 3.0.
+
+Reading: the client is render-thread CPU bound, not GPU bound (GPU 5.2 ms against 17 ms). The largest named cost is visibility and mesh draw command setup, where skinned meshes build their commands every frame (`r.SkeletalMesh.UseCachedMDCs=0`, about +1.4 ms measured in RC11). The volumetric cloud shadow is the largest single lighting cost and is a candidate for a cheaper setting. Enemy montage replication is not a measurable cost: the montage multicast adds about 4 KB/s of downstream in total (RC12 comparison), and animation on the game thread is about 1.5 ms. Compared with RC12c (17.5 ms frame, 12.2 KB/s down over a 120 s window) nothing got worse.
+
+**Trace trustworthiness.** The trace opens and analyses in Unreal Insights, and the CPU timers agree with the CSV profile (`FEngineLoop::Tick` 17.2 ms against a 17.2 ms CSV frame). The GPU timestamp warnings cover 9 interleaved events with a largest error of 0.28 ms, which is negligible. The `MemAlloc` "invalid tag" errors in the analysis log appear even with memory tracing switched off, so they come from Insights' analysis, not from the game. **Memory tracing is not needed** for this task: the game uses about 1.7 GB of 48 GB and frame cost is the question. The earlier full-channel trace made Insights itself use 11.7 GB and hang; it was stopped, and that was an analysis-tool problem. **None of the Insights warnings is a GOTA crash:** checked separately, the game logs have no crash, assertion or `LogRHI: Error`, and `rc13p_focus_exits.txt` shows the host and the profiled client exited 0 by themselves; the two `-nullrhi` clients were ended by the harness at the end of the session (exit 1, recorded as "killed by harness").
+
 ## RC12: enemy combat intelligence and playability (2026-11-16)
 
 Code `336b6cb`. No enemy damage, health or count was changed. Packaged results are in `GOTA_MULTIPLAYER_TEST_MATRIX.md` "RC12".
@@ -13,7 +65,7 @@ Code `336b6cb`. No enemy damage, health or count was changed. Packaged results a
 | 3 | **Dead enemies kept fighting**: hundreds of hits by already-dead enemies in RC11 and RC12 logs, up to 20 s after death; two survivors were killed one second into an intermission | The template leaves the body and its behavior tree running; it can also queue one more swing after the killing blow | On death (server, once per life) an AI stops its brain, movement and montages (`UStatsComponent::StopDefeatedAI`); a defeated enemy cannot start an attack montage. After: 0 hits from dead enemies |
 | 4 | **Horde heroes fought unarmed and could not block**: 59 block attempts, 0 accepted | Heroes spawn in `Stance 0` (unarmed); Duel heroes are in melee stance, Horde relied on the `1` key, which nothing tells a player | The server draws the weapon through the hero's own `SR_MeleeStance` when a player is ready, at each wave and after a respawn. After: 39 attempts → 8 blocks + 9 perfect parries; the hero alone killed 9 enemies in 150 s |
 | 5 | **Enemies idled out of sight range**: 7–9 stalls per match; one match stuck 6 minutes | The template attacks only what its sight sense has seen; wave enemies spawn 12–16 m away and a dead target leaves them Passive | `UGOTAEnemyTargeting` drives the template's own `SetStateAsAttacking` / `SetStateAsSeeking`: acquire a reachable living player inside the leash (6,000 cm of the enemy and of its spawn point), reacquire when the target dies, drop a target it cannot close on for 8 s, recover after 4 path failures in 10 s, go home when nothing is reachable. After: 0–1 stalls per match, 0 move failures in the last run |
-| 6 | **Surviving a wave was worse than dying**: survivors entered wave 2 at 30–80 health, the fallen respawned at 100 | Intermission respawned the dead at full health and left survivors damaged | **Rule change, pending your sign-off:** `bRestoreSurvivorsDuringIntermission` (on) restores survivors at the intermission |
+| 6 | **Surviving a wave was worse than dying**: survivors entered wave 2 at 30–80 health, the fallen respawned at 100 | Intermission respawned the dead at full health and left survivors damaged | **Approved rule (2026-11-17):** `bRestoreSurvivorsDuringIntermission` (on) restores survivors at the intermission; revisit only after human balance testing (partial healing, recovery resources or difficulty-specific rules are possible later) |
 
 Ranged movement: the 342 / 229 `Invalid` failures came from one or two ranged enemies retrying `Move_To` toward a player they could not reach (enemy on the navmesh, no path). Recovery (5 above) moves them to the end of a partial path or home; the last healing-harness run had 0 movement failures and 0 stalls over 64 enemies.
 

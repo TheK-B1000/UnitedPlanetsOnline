@@ -1,0 +1,20 @@
+# RC13 focused profile (rendered client): a 60 s window of waves 1-2 combat. Trace channels cpu,gpu,frame,bookmark only
+# (no memalloc: memory tracing is not needed for frame cost and caused Insights MemAlloc tag errors), plus a CSV profile
+# and gota.Net.Perf (frame / GPU / hitches / net totals) over the same window.
+wait 3
+gota.Net.Fight 900
+wait 60
+gota.Net.Montages
+gota.Net.Perf
+csvprofile start
+Trace.File ../../../WarOfGods/Saved/Profiling/rc13_focus_client.utrace cpu,gpu,frame,bookmark
+Trace.Bookmark combat_window_start
+gota.Net.Perf 60
+wait 61
+Trace.Bookmark combat_window_end
+Trace.Stop
+csvprofile stop
+gota.Net.Perf
+gota.Net.Montages
+wait 30
+quit
