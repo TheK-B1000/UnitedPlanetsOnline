@@ -1,0 +1,45 @@
+# RC12b diagnostic (not evidence): reach the Horde boss quickly with ForceClear, then fight it with the healing harness
+# and dump the boss state every 5 s to see where it stops after Phase II.
+gota.Net.Fight 600
+gota.Net.Sustain 600 25
+wait 45
+gota.Horde.ForceClear
+wait 10
+gota.Horde.ForceClear
+wait 10
+gota.Horde.ForceClear
+wait 10
+gota.Horde.ForceClear
+wait 10
+gota.Horde.ForceClear
+wait 12
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Net.InspectDamage BP_Boss
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 5
+gota.Boss.Dump
+wait 10
+gota.Boss.Dump
+wait 10
+gota.Boss.Dump
+gota.Horde.Dump
+quit

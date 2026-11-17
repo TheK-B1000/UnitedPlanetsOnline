@@ -140,6 +140,15 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Definition)
 	TSoftObjectPtr<UGOTABossDefinition> Definition;
 
+	/**
+	 * Server: a hard reference to the same definition for the component's lifetime. Definition is soft (clients may
+	 * unload the asset once the body is built), and nothing else held the asset on the server: in a packaged build
+	 * garbage collection could unload it mid-fight, Definition.Get() became null, the boss stopped ticking and stayed
+	 * invincible from its Phase II roar for the rest of the match (RC12 packaged Horde).
+	 */
+	UPROPERTY(Transient)
+	TObjectPtr<UGOTABossDefinition> ServerDefinitionRef;
+
 	UPROPERTY(Replicated)
 	uint8 Phase = 1;
 

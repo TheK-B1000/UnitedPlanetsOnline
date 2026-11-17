@@ -1,0 +1,59 @@
+# RC12b diagnostic (not evidence): as diag_horde_boss_phase2_host.txt, with a forced garbage collection before every boss dump.
+# and dump the boss state every 5 s to see where it stops after Phase II.
+gota.Net.Fight 600
+gota.Net.Sustain 600 25
+wait 45
+gota.Horde.ForceClear
+wait 10
+gota.Horde.ForceClear
+wait 10
+gota.Horde.ForceClear
+wait 10
+gota.Horde.ForceClear
+wait 10
+gota.Horde.ForceClear
+wait 12
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+gota.Net.InspectDamage BP_Boss
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 5
+obj gc
+gota.Boss.Dump
+wait 10
+obj gc
+gota.Boss.Dump
+wait 10
+obj gc
+gota.Boss.Dump
+gota.Horde.Dump
+quit

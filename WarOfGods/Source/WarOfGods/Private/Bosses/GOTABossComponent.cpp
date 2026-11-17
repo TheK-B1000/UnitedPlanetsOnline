@@ -69,6 +69,7 @@ UGOTABossComponent* UGOTABossComponent::ApplyToPawn(APawn* Pawn, UGOTABossDefini
 		Pawn->AddInstanceComponent(Comp);
 	}
 	Comp->Definition = InDefinition;
+	Comp->ServerDefinitionRef = InDefinition; // keeps the soft-referenced asset loaded on the server
 	Comp->ApplyBody();
 	Comp->CooldownUntil.Init(0.0, InDefinition->Attacks.Num());
 	UE_LOG(LogGOTABoss, Log, TEXT("Boss %s configured on %s (%d attacks)"), *InDefinition->BossId.ToString(), *GetNameSafe(Pawn), InDefinition->Attacks.Num());
