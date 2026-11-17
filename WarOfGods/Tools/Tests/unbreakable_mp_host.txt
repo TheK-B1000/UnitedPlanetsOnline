@@ -12,5 +12,5 @@ wait 0.2
 gota.Ability.Use 0 0
 wait 2
 gota.Ability.Dump
-wait 5
+wait 75
 quit

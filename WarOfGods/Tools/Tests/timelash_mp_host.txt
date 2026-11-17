@@ -8,5 +8,5 @@ gota.Duel.Face 0
 gota.Ability.Use 0 0
 wait 6
 gota.Ability.Status 1 Slowed 6 0.4
-wait 14
+wait 75
 quit

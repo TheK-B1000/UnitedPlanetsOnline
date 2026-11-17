@@ -776,7 +776,9 @@ namespace GOTANetTest
 			const UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Enemy, &Pos);
 			const float Impact = FGOTABlueprintCombat::FindNextImpactTime(M, Pos);
 			const float Lead = (M && Impact >= 0.f) ? Impact - Pos : -1.f;
-			if (bFightDodgeMode)
+			// The ground smash cannot be blocked or parried: like a player, dodge it in normal mode too.
+			const bool bUnblockable = M && M->GetName().Contains(TEXT("GroundSmash"));
+			if (bFightDodgeMode || bUnblockable)
 			{
 				// Dodge mode: roll away from any attack (ground smash included) just before its damage notify.
 				if (Lead < 0.f || Lead > 0.3f || Now - FightLastBlock < 0.9)

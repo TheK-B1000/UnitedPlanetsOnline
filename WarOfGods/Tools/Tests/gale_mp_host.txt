@@ -9,5 +9,5 @@ gota.Duel.Dump
 gota.Ability.Use 0 0
 wait 1.5
 gota.Duel.Dump
-wait 12
+wait 75
 quit

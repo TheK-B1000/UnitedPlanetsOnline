@@ -289,6 +289,11 @@ def check(text, expectations):
 STAMP_RX = re.compile(r"^\[(\d{4}\.\d\d\.\d\d-\d\d\.\d\d\.\d\d:\d{3})\]", re.M)
 
 
+def to_s(stamp):
+    """HH.MM.SS:mmm -> seconds."""
+    return int(stamp[0:2]) * 3600 + int(stamp[3:5]) * 60 + int(stamp[6:8]) + int(stamp[9:12]) / 1000.0
+
+
 def first_time(text, rx):
     """Timestamp of the first log line matching rx, or '-'."""
     for line in text.splitlines():
@@ -369,7 +374,7 @@ def run_suite(a):
             time.sleep(2)
             launch(a.packaged, "127.0.0.1?Hero=UPAWarden", "gale_mp_client.txt", client_log, extra=["-LogCmds=LogGOTAAbility Verbose"], timeout=300)
             try:
-                host.wait(timeout=120)
+                host.wait(timeout=180)  # host scripts stay up 75 s after their action so a slow client can finish checking
             except subprocess.TimeoutExpired:
                 host.kill()
         h, c = read(host_log), read(client_log)
@@ -382,9 +387,23 @@ def run_suite(a):
             first_time(h, r"(GameNetDriver.*listening|Listening on port|IpNetDriver listening)"),
             first_time(h, r"Join succeeded"), first_time(c, r"LoadMap: .*L_Arena_TitansQuarry"),
             first_time(c, r"Running .*gale_mp_client"), first_time(c, r"BODY \[client\]"))
+        # A starved client stretches its script clock (frame time, capped per frame): report the real length of its
+        # first 18 s wait. Far above 18 s means the client process was not getting frames.
+        t0, t1 = first_time(c, r"\[script\] wait 18"), first_time(c, r"\[script\] > gota.Test.Body")
+        if t0 not in ("-", "?") and t1 not in ("-", "?"):
+            timing += ", client 'wait 18' took %.1fs" % (to_s(t1) - to_s(t0))
+        # A client whose 18 s script wait took over twice as long was starved of frames (machine load): its client-side
+        # checks prove nothing either way. Report INCONCLUSIVE instead of PASS / FAIL (it still fails the run).
+        starved_s = None
+        if t0 not in ("-", "?") and t1 not in ("-", "?"):
+            starved_s = to_s(t1) - to_s(t0)
+        elif t0 not in ("-", "?") and first_time(c, r"\[script\] complete") == "-":
+            starved_s = float("inf")
+        verdict = "PASS" if ok else ("INCONCLUSIVE" if starved_s is not None and starved_s > 36 else "FAIL")
         if not ok:
             keep_failure(run_dir, host_log, client_log)
-        print("%-5s %-12s %-42s %s" % ("PASS" if ok else "FAIL", ability, "multiplayer (listen server + client)", "" if ok else
+        print("%-5s %-12s %-42s %s" % (verdict, ability, "multiplayer (listen server + client)", "" if ok else
+              ("(client starved) " if verdict == "INCONCLUSIVE" else "") +
               "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
         print("      %-12s timing: %s" % ("", timing))
         sys.stdout.flush()

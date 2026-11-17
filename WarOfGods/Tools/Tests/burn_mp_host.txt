@@ -10,5 +10,5 @@ gota.Ability.Use 0 0
 wait 5
 gota.Ability.Dump
 gota.Net.GAS
-wait 3
+wait 75
 quit

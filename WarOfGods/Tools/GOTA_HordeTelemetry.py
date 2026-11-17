@@ -67,6 +67,23 @@ def report(path):
     for _, _, d in (e for e in events if e[1] == "match_end"):
         print("  match: %s in wave %s" % (d.get("outcome"), d.get("wave")))
 
+    wave_players = [d for _, k, d in events if k == "wave_player"]
+    if wave_players:
+        print("\nEach player, each wave (avoided = blocks + parries + perfect dodges over everything that reached them):")
+        print("  %-5s %-24s %6s %5s %6s %7s %6s %7s %7s %6s %10s %7s %5s" % (
+            "wave", "player", "dmgIn", "hits", "blocks", "parries", "dodges", "perfect", "avoided", "deaths", "firstDeath", "dmgOut", "kills"))
+        for d in wave_players:
+            print("  %-5s %-24s %6s %5s %6s %7s %6s %7s %7s %6s %10s %7s %5s" % (
+                d.get("wave"), d.get("player"), d.get("dmgTaken"), d.get("hits"), d.get("blocks"), d.get("parries"),
+                d.get("dodges"), d.get("perfectDodges"), d.get("avoided"), d.get("deaths"),
+                d.get("firstDeath") if d.get("firstDeath") != "-1.0" else "-", d.get("dmgDealt"), d.get("kills")))
+    dodge_events = [d for _, k, d in events if k == "dodge"]
+    if dodge_events:
+        armed = collections.Counter("remote" if d.get("remote") == "1" else "host" for d in dodge_events if d.get("armed") == "1")
+        perf = collections.Counter("remote" if d.get("remote") == "1" else "host" for _, k, d in events if k == "perfect_dodge")
+        print("\nDodges: %d seen by the server; armed (attack about to land): host %d, remote %d; perfect: host %d, remote %d"
+              % (len(dodge_events), armed["host"], armed["remote"], perf["host"], perf["remote"]))
+
     hits = [e for e in events if e[1] == "hit"]
     deaths = [e for e in events if e[1] == "death"]
     print("\nPlayers:")
