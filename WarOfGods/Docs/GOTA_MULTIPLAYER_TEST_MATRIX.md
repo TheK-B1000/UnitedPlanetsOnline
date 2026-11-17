@@ -247,6 +247,13 @@ Fresh cook at `B:\Unreal\GOTA_Builds\RC13_a941f8c` (Win64 Development, 0 increme
 | R13-12 | Unreal Insights warnings in the analysis log | **TRACE ARTIFACT, NOT A GAME FAULT** | readable trace; MemAlloc tag errors appear even with memory tracing off; GPU timestamp warnings: 9 events, max 0.28 ms; game logs and exit codes show no crash |
 | R13-13 | Human playtest | **NOT RUN** | kit rewritten for RC13: `GOTA_HORDE_PLAYTEST.md` |
 
+## RC14 work in progress (2026-11-17)
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R14-1 | Host dodges hit anyway (R13-2: 6 of 27) | **CAUSE FOUND, not changed (design decision pending)** | see "RC14: host dodges" in `GOTA_HORDE_COOP_COMBAT.md`; `rc14_dodge_e1` (editor): host 22 armed, 19 perfect, 2 hit anyway; remote 51/51 |
+| R14-2 | TitanCharge rerun with CPU available (R13-9 INCONCLUSIVE) | **PASS 12/12** | packaged RC13, `--only TitanCharge --repeat 3`, machine at 42% CPU; the RC13 record stays 45/46 with one INCONCLUSIVE |
+
 ## How to re-run
 
 ```text

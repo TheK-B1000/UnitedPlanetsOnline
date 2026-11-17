@@ -46,11 +46,23 @@ for tag in sys.argv[1:]:
         if d.get("armed") != "1":
             continue
         stats[key]["armed"] += 1
-        hit = any(h[1].get("player") == p and h[1].get("by") == d.get("vs") and 0 <= (h[0] - t).total_seconds() <= 0.8 for h in hits)
+        # The dodged attack's own impact is at lead (logged since RC14; older logs say -1, then use 0.8 s). A hit by the
+        # same enemy by then is "hit anyway" even if a perfect line follows (a healing harness can mask the drop).
+        lead = float(d.get("lead", "-1"))
+        limit = lead + 0.15 if lead >= 0 else 0.8
+        hit = any(h[1].get("player") == p and h[1].get("by") == d.get("vs") and 0 <= (h[0] - t).total_seconds() <= limit for h in hits)
         ok = any(q[1].get("player") == p and 0 <= (q[0] - t).total_seconds() <= 1.2 for q in perfect)
-        stats[key]["perfect" if ok else ("hit anyway" if hit else "neither")] += 1
+        if lead >= 0:
+            stats[key]["hit anyway" if hit else ("perfect" if ok else "neither")] += 1
+        else:
+            stats[key]["perfect" if ok else ("hit anyway" if hit else "neither")] += 1
     print(path)
     for (who, p), c in sorted(stats.items()):
         print("  %-6s %-22s dodges %3d  armed %3d  perfect %3d  hit anyway %3d  neither %3d" % (
             who, p, c["dodges"], c["armed"], c["perfect"], c["hit anyway"], c["neither"]))
     print("  perfect_dodge lines: %d" % len(perfect))
+    iframes = sorted(float(m.group(1)) for m in re.finditer(r"Dodge i-frames \(server-edge\) lasted ([\d.]+)s",
+                                                           open(path, encoding="utf-8", errors="ignore").read()))
+    if iframes:
+        print("  Blueprint dodge i-frames on the server (host/AI): n=%d min %.2f median %.2f max %.2f s" % (
+            len(iframes), iframes[0], iframes[len(iframes) // 2], iframes[-1]))

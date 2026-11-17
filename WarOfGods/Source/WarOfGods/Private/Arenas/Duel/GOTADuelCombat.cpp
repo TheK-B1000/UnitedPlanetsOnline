@@ -538,6 +538,7 @@ bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reas
 		return false;
 	}
 	const double Now = GetWorld()->GetTimeSeconds();
+	LastArmLead = -1.f;
 	if (Now <= CounterInvulnEndTime)
 	{
 		return false;
@@ -557,6 +558,7 @@ bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reas
 		{
 			const double PrevProtect = DodgeProtectedUntil;
 			bDodgeArmed = true;
+			LastArmLead = Lead;
 			HealthAtDodge = UGOTACombatantObserver::ReadVitals(GetOwner()).Health;
 			// While charging, keep at least 0.55s of protection left so a shrinking lead cannot expire mid-rush.
 			const float Hold = bCharge ? FMath::Max(Lead + Grace, 0.55f) : (Lead + Grace);
@@ -584,6 +586,7 @@ bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reas
 		bDodgeArmed = true;
 		HealthAtDodge = UGOTACombatantObserver::ReadVitals(GetOwner()).Health;
 		const float ToImpact = FMath::Max(Lead, 0.f) / FMath::Max(M->RateScale, 0.1f);
+		LastArmLead = ToImpact;
 		DodgeResolveTime = Now + ToImpact + 0.2;
 		const APawn* Self = Cast<APawn>(GetOwner());
 		const bool bRemote = Self && GetOwner()->HasAuthority() && !Self->IsLocallyControlled();
@@ -656,7 +659,7 @@ void UGOTADuelFighterComponent::Server_NotifyDodgeAttempt_Implementation()
 	const bool bArmed = TryArmPerfectDodge(Opp, TEXT("client-notify"));
 	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
 	{
-		Telemetry->NoteDodge(Cast<APawn>(GetOwner()), Opp, bArmed, -1.f, TEXT("client-notify"));
+		Telemetry->NoteDodge(Cast<APawn>(GetOwner()), Opp, bArmed, LastArmLead, TEXT("client-notify"));
 	}
 }
 
@@ -721,8 +724,9 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 		const bool bArmed = TryArmPerfectDodge(Opp, TEXT("server-edge"));
 		if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
 		{
-			Telemetry->NoteDodge(Cast<APawn>(GetOwner()), Opp, bArmed, -1.f, TEXT("server-edge"));
+			Telemetry->NoteDodge(Cast<APawn>(GetOwner()), Opp, bArmed, LastArmLead, TEXT("server-edge"));
 		}
+		BlueprintIFramesSince = Now;
 	}
 	else if (bInvincible && Now > CounterInvulnEndTime)
 	{
@@ -730,6 +734,12 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 		{
 			TryArmPerfectDodge(Opp, TEXT("server-charge"));
 		}
+	}
+	if (!bInvincible && bWasInvincible && BlueprintIFramesSince >= 0.0)
+	{
+		// Development: how long the Blueprint's own dodge i-frames lasted on the server (listen host / AI).
+		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge i-frames (server-edge) lasted %.2fs, armed=%d"), Now - BlueprintIFramesSince, bDodgeArmed ? 1 : 0);
+		BlueprintIFramesSince = -1.0;
 	}
 	bWasInvincible = bInvincible;
 	if (bDodgeArmed && OwnHealth < HealthAtDodge - 0.5f)

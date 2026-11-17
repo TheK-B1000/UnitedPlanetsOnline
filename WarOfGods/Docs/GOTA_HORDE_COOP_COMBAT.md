@@ -1,5 +1,27 @@
 # Horde cooperative combat
 
+## RC14: host dodges (2026-11-17, bot evidence)
+
+**Question (R13-2):** the listen host had 6 of 27 armed dodges hit anyway in `rc13p_dodge`; remote players 1 of 68. Mistiming or inconsistency?
+
+**Telemetry added (development only):** `TELEM dodge` now logs the armed dodge's time to impact (`lead=`, was -1), and the server logs how long the Blueprint's own dodge i-frames lasted (`Dodge i-frames (server-edge) lasted …`). `GOTA_DodgeReport.py` counts a hit by the dodged enemy up to the impact (+0.15 s) as "hit anyway" even if a perfect line follows, and prints the i-frame lengths.
+
+**Findings:**
+
+- 3 of the 6 RC13 cases were miscounted: they were perfect dodges at a 0.03–0.06 s lead, and the "hit" was the enemy's **next** swing 0.72–0.75 s later. The old report matched any hit within 0.8 s.
+- The healing harness can mask a hit: health is restored before the dodge resolves, so a hit dodge can also log `perfect_dodge`. The report now checks hits first.
+- Blueprint dodge i-frames last **0.20 s** (0.16–0.24 s, 47 dodges; `rc14_dodge_e1`). The longer 1.3 s spans were not dodges (armed=0).
+- A dodge is **armed** (counts as a perfect-dodge attempt) when the impact is up to `PerfectDodgeLeadSeconds` = **0.35 s** away.
+- The host's real hits all had a lead of 0.22–0.29 s and landed exactly at the impact, after its 0.20 s i-frames had ended. With leads up to 0.20 s the host was never hit. Some host dodges with longer leads still avoided the hit by moving out of range.
+- Remote players (RC13 fix) are protected by the server until the impact + 0.15 s, so their effective window is the full 0.35 s.
+
+**Conclusion:** an inconsistency, not only mistiming. Same input, same enemy: a remote player is safe dodging 0.2–0.35 s early, the host is not. Not changed, because it is a design decision on the dodge window. Options:
+1. Give the host the same server protection as remote players (window 0.35 s for everyone; most forgiving).
+2. Protect remote players only for the Blueprint i-frame length (about 0.20 s), so everyone gets the Blueprint's window. Remote players then lose what latency costs them.
+3. Arm a perfect dodge only within the i-frame length (about 0.20 s), and keep the protection as it is.
+
+Recommendation: decide after the human playtest asks whether dodging feels too strict or too lenient; meanwhile option 1 is the smallest code change and makes host and remote equal.
+
 ## RC13: human combat validation (2026-11-17)
 
 Code `a941f8c` (game) and `04b69f8` (test harness only). Package `B:\Unreal\GOTA_Builds\RC13_a941f8c`. No enemy damage, health, count or difficulty was changed; no GAS feature was added (Frozen / Stun stay on hold). Matrix rows R13-1 to R13-13.

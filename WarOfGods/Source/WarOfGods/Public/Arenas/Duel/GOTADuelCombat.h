@@ -233,6 +233,9 @@ protected:
 	 */
 	bool bServerDodgeInvincible = false;
 	void SetServerDodgeInvincible(bool bOn);
+	/** Development: time to impact of the last armed dodge (-1 if none), and when the Blueprint i-frames rose (server edge). */
+	float LastArmLead = -1.f;
+	double BlueprintIFramesSince = -1.0;
 
 	/** Server: the Divine Counter's blow, DivineCounterImpactDelay after it starts. */
 	void LandDivineCounter(float Damage);
