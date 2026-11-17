@@ -1,6 +1,6 @@
 # Selective GAS enhancement plan
 
-**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning code commit `548a433` is on `origin`: it was pushed from GitHub Desktop's Push button (its log: `[ui] Executing push ... feature/gota-cinematic-frontend` at 2026-11-14 18:07:31 local), not by an agent. Everything after it is local only. RC1–RC10 packages are not modified; Burning was packaged as RC8, the stabilization pass as RC9, the renderer fix as RC10, and all fixes plus ready-up and telemetry as RC11. **Engine:** Unreal Engine 5.8 native Gameplay Ability System.
+**Updated:** 2026-11-15. **Branch:** `feature/gota-cinematic-frontend`. The Burning code commit `548a433` is on `origin`: it was pushed from GitHub Desktop's Push button (its log: `[ui] Executing push ... feature/gota-cinematic-frontend` at 2026-11-14 18:07:31 local), not by an agent. Everything after it is local only. RC1–RC11 packages are not modified; Burning was packaged as RC8, the stabilization pass as RC9, the renderer fix as RC10, all fixes plus ready-up and telemetry as RC11, and the enemy combat work as RC12 / RC12b / RC12c (RC12c is the candidate). **Engine:** Unreal Engine 5.8 native Gameplay Ability System.
 
 We use GAS where it improves on what we already have. Health, momentum, cooldowns, basic attacks, block, perfect parry, perfect dodge, Divine Counter, and boss timelines keep their current owners. No talent trees, XP, levels, or persistent progression.
 
@@ -23,6 +23,9 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Horde wave enemies get their AI controller and attack | `f423fad` | Done (packaged in RC11) |
 | Post-victory renderer crash: `r.SkeletalMesh.UseCachedMDCs=0` | `b619ee5` | Provisionally validated (packaged RC10, 3 of 3 clean); cost measured in RC11 (+1.4 ms render thread) |
 | Horde ready-up, end-phase fix, combat telemetry, RC11 package | `a8e6e87` | Done (packaged RC11); human playtest not yet run |
+| RC12 enemy combat fixes (spin, replication, dead AI, armed heroes, targeting, Story bases, lobby) | `336b6cb` | Done (packaged RC12c) |
+| Reflection-buffer crash fix, lobby button | `10f4bb2` | Done (packaged RC12c) |
+| Boss definition kept loaded on the server | `05704ae` | Done (packaged RC12c) |
 
 ## Ownership
 
@@ -184,6 +187,33 @@ Engine limitation, and how it is handled: for persistent effects, Unreal evaluat
 Nothing else changed: the same numbers, the same Blueprint flags, the same damage path.
 
 ## Test record
+
+### RC12 enemy combat intelligence and Horde playability (`336b6cb`, `10f4bb2`, `05704ae`), editor and packaged RC12c
+
+No GAS feature was added (Frozen / Stun stay on hold). No enemy damage, health or count was changed. Horde detail: `GOTA_HORDE_COOP_COMBAT.md` "RC12".
+
+**Packages:** three fresh cooks (each 3,937 packages, 0 incrementally skipped). **RC12c (`B:\Unreal\GOTA_Builds\RC12c_05704ae`) is the release candidate.** RC12 (`336b6cb`) and RC12b (`10f4bb2`) are kept and must not be used: RC12's host crashed on the first wave-1 target, RC12b's Horde boss froze invincible. RC1–RC11 not touched.
+
+**Fixes (all C++ except the spin damage track):**
+
+| Area | Fix | Commit |
+|---|---|---|
+| Spin attack | 9 damage notifies → 4 (Slash 1.224 s, AOE 2.0 / 3.25 / 4.5 s); ≤ 40 per target; cooked montage verified in the package | `336b6cb` |
+| Enemy attack animations on remote clients | `UGOTAMontageReplicator` multicasts AI montages (template played them on the server only) | `336b6cb` |
+| Dead enemies kept attacking | defeated AI stops brain, movement, montages; cannot start an attack | `336b6cb` |
+| Horde heroes unarmed, blocks impossible | server draws the weapon via the hero's `SR_MeleeStance` | `336b6cb` |
+| Enemies idle out of sight range, ranged move failures | `UGOTAEnemyTargeting` (acquire / reacquire / leash / pursuit failure / path-failure recovery / return home) | `336b6cb` |
+| Survivors carried damage into later waves | `bRestoreSurvivorsDuringIntermission` — **rule change pending sign-off** | `336b6cb` |
+| Story clients dropped movement corrections | deterministic, net-addressable graybox component names | `336b6cb` |
+| Horde not reachable from the public menu | lobby mode button (created at runtime; the layout had no slot) | `336b6cb`, `10f4bb2` |
+| **Packaged host crash** (`FGOTABlueprintCombat::Call` from targeting) | every reflection parameter buffer is the function's full structure size; `InitializeStruct` wrote Blueprint locals past a `ParmsSize` stack buffer (latent since the helpers were written; also affected `ApplyDamage`) | `10f4bb2` |
+| **Horde boss froze, invincible** (packaged only) | server keeps a hard reference to the soft `UGOTABossDefinition`; garbage collection unloaded it mid-fight. Reproduced on demand with `obj gc` in RC12b; gone in RC12c | `05704ae` |
+
+**Packaged RC12c regression** (matrix rows R12-1 to R12-15): suite 46/46 after one rerun (first pass 44/46, two client-side multiplayer checks, both pass alone); four-player Story with shrine guard and 0 dropped movement corrections; Horde through the public lobby; full match to Victory with the healing harness and 1,063 s of clean post-victory rendering; legitimate match lost in wave 2 at 9/11 kills; Duel rematch; Drakon versus Rampage; client and host leave.
+
+**Not verified in RC12:** a legitimate five-wave victory (bots lose wave 2), human players, perfect dodges against regular enemies, a clean-machine performance profile, separate PCs.
+
+**Release blockers after RC12:** (1) human playtest (kit ready, RC12c); (2) sign-off on the intermission restore rule; (3) a legitimate full victory, by humans or a stronger test controller; (4) clean-machine profile (RC12c client 17.5 ms frame on a loaded machine, render-thread bound).
 
 ### RC11 real combat validation (`a8e6e87`), editor and packaged RC11
 

@@ -205,6 +205,28 @@ Fresh cook at `B:\Unreal\GOTA_Builds\RC11_a8e6e87` (3,937 packages, 0 incrementa
 | R11-14 | Human playtest | **NOT RUN** | kit ready: `GOTA_HORDE_PLAYTEST.md` |
 | R11-15 | Story movement-base corrections dropped on clients | **OPEN** | hundreds of `could not resolve the new relative movement base` per Story client; runtime graybox floor components are not net-addressable |
 
+## Packaged RC12c (2026-11-17)
+
+Fresh cook at `B:\Unreal\GOTA_Builds\RC12c_05704ae` (3,937 packages, 0 incrementally skipped). RC12 (`336b6cb`, host crash on the first wave-1 target) and RC12b (`10f4bb2`, Horde boss froze invincible) are kept but superseded. Clients 120 ± 30 ms, 5% loss unless noted; host `-nullrhi`. Detail: `GOTA_HORDE_COOP_COMBAT.md` "RC12".
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R12-1 | Spin damage windows in the cooked content | **PASS** | `gota.Duel.Notifies`: 4 damage notifies at 1.224 / 2.0 / 3.25 / 4.5 s |
+| R12-2 | Host Horde through the public menu (no console) | **PASS** | `rc12c_menu_ui`: HOST GAME → `MODE: TRIAL OF CHAMPIONS` → Wrath of the Gods → START HORDE → `?Players=4` → 4/4 ready → wave 1 |
+| R12-3 | Legitimate four-player Horde (no healing, nothing injected) | **FAIL to win (bots)** | `rc12c_legit`: wave 1 cleared (46 s), wave 2 Defeat at 9/11 kills; exactly one Defeat; 0 client crashes. RC11: wave 1 lost with 0 kills |
+| R12-4 | Full match to Victory (healing harness), Horde boss with controller, post-victory renderer | **PASS (flow, not difficulty)** | `rc12c_e2e`: waves 1–5, Quarry Behemoth with `AIController`, 7 attacks, 4 target switches, one `outcome=Victory score=13875`; clients up 1,063–1,064 s after victory, 0 crashes, 0 `LogRHI: Error` |
+| R12-5 | Enemy attack animations visible on remote clients | **PASS** | client samples 1–4 of 6 enemies mid-attack (RC11: 0); remote bots blocked and evaded |
+| R12-6 | No damage from dead enemies | **PASS** | `rc12c_e2e`: 0 hits by already-dead enemies (RC11: hundreds) |
+| R12-7 | Blocking in Horde | **PASS** | 23 (legit) and 55 (e2e) accepted blocks / parries; RC11: 0 |
+| R12-8 | Enemy stalls and movement failures | **PASS** | `rc12c_e2e`: 0 stalls, 0 move failures over 64 enemies (RC11: 7–9 stalls, 41–342 failures) |
+| R12-9 | Horde boss survives garbage collection | **PASS** | `rc12c_diag_boss_gc` (`obj gc` every 5 s): definition kept, Phase II, attacks continue; RC12b froze |
+| R12-10 | Four-player Story: shrine guard, respawn, movement corrections | **PASS** | `rc12c_story_float`, `rc12c_story_net`: 0 unresolved-base warnings on every client (RC11: 1,409 / 1,789), respawns, guard landed the boss, Burning on it |
+| R12-11 | Duel PvP results and rematch | **PASS** | `rc12c_duel_rematch`: 2:0, rematch, 2:0, both exited by themselves |
+| R12-12 | Drakon versus Rampage | **PASS** | 3 parries, 18 dodge lines, 5 Divine Counters, Phase II, defeated, 0 errors |
+| R12-13 | Client leaves, host leaves | **PASS** | `rc12c_leave`, `rc12c_hostleave` |
+| R12-14 | GAS statuses, Burning, boss policies (suite) | **PASS 46/46 after one rerun** | first pass 44/46: `GaleRush` and `GravityWell` multiplayer cases missed a client-side body line; both groups 8/8 when rerun alone. Same pattern as earlier overloaded-client flakes; cause not established |
+| R12-15 | Human playtest | **NOT RUN** | `GOTA_HORDE_PLAYTEST.md` |
+
 ## How to re-run
 
 ```text

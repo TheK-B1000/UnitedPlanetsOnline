@@ -1,5 +1,58 @@
 # Horde cooperative combat
 
+## RC12: enemy combat intelligence and playability (2026-11-16)
+
+Code `336b6cb`. No enemy damage, health or count was changed. Packaged results are in `GOTA_MULTIPLAYER_TEST_MATRIX.md` "RC12".
+
+### Six combat defects found and fixed
+
+| # | Defect (evidence) | Cause | Fix |
+|---|---|---|---|
+| 1 | **Spinning sword: 90 of 100 health from one attack**, landing 24/25 | Authored, not a hit-registration bug: `Montage_Sword_SpinningAttack` had 1 `Slash` + 8 `AOESlash` damage notifies (radius 300) every 0.5 s; each notify hits each target once | Damage track rewritten: `Slash` 1.224 s, `AOESlash` 2.0 / 3.25 / 4.5 s. At most 4 contacts (40) per target, 1.25 s apart. Wind-up, animation, radius and 10 per contact unchanged (`Tools/GOTA_FixEnemySpinWindows.py`) |
+| 2 | **Remote players could not see enemy attacks**: every client sample showed 0 of 6 attacking enemies animating; client bots never blocked or evaded | The enemy template (`BP_Enemy_Base`, `BPC_Attacks`) plays all 105 attack montages on the server; no multicast (the player Blueprint has `SR_/MC_` events, enemies do not) | `UGOTAMontageReplicator` multicasts each non-root-motion AI montage start and interruption; clients play it locally (cosmetic; damage stays on the server). Clients now see 1–4 of 6 nearby enemies mid-attack per sample |
+| 3 | **Dead enemies kept fighting**: hundreds of hits by already-dead enemies in RC11 and RC12 logs, up to 20 s after death; two survivors were killed one second into an intermission | The template leaves the body and its behavior tree running; it can also queue one more swing after the killing blow | On death (server, once per life) an AI stops its brain, movement and montages (`UStatsComponent::StopDefeatedAI`); a defeated enemy cannot start an attack montage. After: 0 hits from dead enemies |
+| 4 | **Horde heroes fought unarmed and could not block**: 59 block attempts, 0 accepted | Heroes spawn in `Stance 0` (unarmed); Duel heroes are in melee stance, Horde relied on the `1` key, which nothing tells a player | The server draws the weapon through the hero's own `SR_MeleeStance` when a player is ready, at each wave and after a respawn. After: 39 attempts → 8 blocks + 9 perfect parries; the hero alone killed 9 enemies in 150 s |
+| 5 | **Enemies idled out of sight range**: 7–9 stalls per match; one match stuck 6 minutes | The template attacks only what its sight sense has seen; wave enemies spawn 12–16 m away and a dead target leaves them Passive | `UGOTAEnemyTargeting` drives the template's own `SetStateAsAttacking` / `SetStateAsSeeking`: acquire a reachable living player inside the leash (6,000 cm of the enemy and of its spawn point), reacquire when the target dies, drop a target it cannot close on for 8 s, recover after 4 path failures in 10 s, go home when nothing is reachable. After: 0–1 stalls per match, 0 move failures in the last run |
+| 6 | **Surviving a wave was worse than dying**: survivors entered wave 2 at 30–80 health, the fallen respawned at 100 | Intermission respawned the dead at full health and left survivors damaged | **Rule change, pending your sign-off:** `bRestoreSurvivorsDuringIntermission` (on) restores survivors at the intermission |
+
+Ranged movement: the 342 / 229 `Invalid` failures came from one or two ranged enemies retrying `Move_To` toward a player they could not reach (enemy on the navmesh, no path). Recovery (5 above) moves them to the end of a partial path or home; the last healing-harness run had 0 movement failures and 0 stalls over 64 enemies.
+
+### Spin fairness (editor, two players, healing harness, forced spins)
+
+| Situation | Result |
+|---|---|
+| Stationary, two players together | at most 40 per spin across both (≤ 4 contacts per target); was 90 per target |
+| Walking away when the spin starts | 3 hits (30) over three forced spins, against 22 hits standing |
+| Blocking | spin contacts are blockable (`CanBeBlocked`), not parryable; the scripted hold-block tool cannot hold a timed block, so this was measured only through the fight driver's reactive blocks (19 accepted blocks / 7 parries in one full match) |
+| Perfect dodge, remote defenders under latency | not separately measured for regular enemies; client bots evaded 7–14 spins/smashes per match once montages replicated |
+
+Attack data (from the enemy Blueprint): sword slash 10 (blockable, parryable), jump attack 10 (blockable, parryable), spin 10 per contact (blockable, not parryable), ground smash 25 area (cannot be blocked or parried).
+
+### Full match against fighting enemies (editor, four bots, no healing, nothing injected)
+
+| Run | Change since previous | Result |
+|---|---|---|
+| `rc12_full_e1` | spin fix, targeting | wave 1 lost in 24 s, 0 kills |
+| `rc12_full_e2` | driver: focus nearby damaged enemy, evade | wave 1 lost in 48 s, 1 kill |
+| `rc12_full_e3` | enemy montages replicated | wave 1 lost in 67 s, 1 kill |
+| `rc12_full_e4` | heroes armed (blocks work) | **wave 1 cleared** (35.5 s); wave 2 lost (two survivors killed by dead enemies in the intermission) |
+| `rc12_full_e5` | dead enemies stopped | wave 1 cleared, 0 deaths; wave 2 lost: survivors entered at 30–80 health |
+| `rc12_full_e6` | survivors restored at intermission | wave 1 cleared; **wave 2: 10 of 11 killed**, then wiped (score 2,050) |
+
+Packaged RC12c, same rules: `rc12c_legit` cleared wave 1 and lost wave 2 at 9 of 11 kills (one Defeat, 0 client crashes).
+
+Two more defects only the package showed, both fixed in RC12c: a stack overrun in every reflection call helper (`InitializeStruct` on a `ParmsSize` buffer wrote Blueprint locals past it; RC12's host crashed on the first wave-1 target), and the Horde boss freezing invincible after its Phase II roar because garbage collection unloaded its soft-referenced definition (reproduced with `obj gc`; RC12c keeps a hard reference on the server).
+
+**A legitimate five-wave victory against fighting enemies was not achieved.** The bots are now the limit (they still stand in some attacks and do not retreat when low). With the healing harness the whole match runs: waves 1–5 cleared, the Quarry Behemoth spawned with `AIController_0`, attacked three different players (target switches), died, exactly one `outcome=Victory score=13875` (`rc12_ai_e2`). That proves progression, boss engagement and the victory path, not difficulty. Packaged RC12c repeated it (`rc12c_e2e`): one Victory, boss with 7 attacks and 4 target switches, and the rendered client stayed up 1,063 s after a real boss kill (0 crashes, 0 RHI errors): the RC10 renderer fix holds with fighting enemies.
+
+### Renderer and network cost (packaged RC12c rendered client, waves 1–2, 120 s CSV)
+
+Frame 17.5 ms (p95 22.2), render thread 17.3 ms, game thread 10.9 ms, RHI 5.3 ms, GPU 5.3 ms, 1.6 GB used; 18 frames over 50 ms and 4 over 100 ms (one 1.6 s). RC11 same scenario: frame 15.4, render 15.4, game 8.4. The rise is one run each on a loaded machine (13 GB free against 20 GB in RC11) with more enemies alive at once (enemies now fight in place instead of idling) and enemy montages now animating on clients; it is not attributed. The RC11 A/B (+1.4 ms render thread for `r.SkeletalMesh.UseCachedMDCs=0`) stands. Profile on a clean machine with Unreal Insights before release.
+
+Replication (rendered client, same 120 s window, 120 ms / 5% loss): down 12.2 KB/s, up 4.0 KB/s (RC11: 8.2 / 3.0). The increase fits the new montage multicasts (unreliable, one per enemy attack start or interruption) and more enemies fighting at once. Packet loss recovery normal (lostOut 1–3).
+
+---
+
 ## RC11: real combat validation (2026-11-16)
 
 **Build:** packaged `B:\Unreal\GOTA_Builds\RC11_a8e6e87` (Win64 Development, fresh cook, 3,937 packages, 0 incrementally skipped) with every fix since RC9: the post-victory renderer setting, the Horde controller fix (wave enemies fight), the Story shrine guard, the ready-up phase and development telemetry. Four players on one machine, clients at 120 ± 30 ms and 5% loss. Telemetry report: `python Tools/GOTA_HordeTelemetry.py <tag>`.

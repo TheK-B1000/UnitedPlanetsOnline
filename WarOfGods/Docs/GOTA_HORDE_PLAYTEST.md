@@ -1,6 +1,6 @@
 # Horde human playtest: waves 1 and 2
 
-**Build:** packaged RC11 (`B:\Unreal\GOTA_Builds\RC11_a8e6e87`, Win64 Development). **Players:** 2 to 4 people. **Time:** about 45 minutes for three sessions plus the questionnaire.
+**Build:** packaged RC12c (`B:\Unreal\GOTA_Builds\RC12c_05704ae`, Win64 Development). **Players:** 2 to 4 people. **Time:** about 45 minutes for three sessions plus the questionnaire.
 
 The purpose is to learn whether wave 1 and wave 2 are readable, fair and fun against enemies that now fight back. A playtest is not a pass/fail test, and no balance number changes until its data and answers have been reviewed (see "After the playtest").
 
@@ -16,13 +16,13 @@ No result in this document is a human result until real people have played. The 
 
 ## Starting a match
 
-The menus cannot host a multiplayer Horde lobby yet: the Multiplayer screen always selects Duel, Story co-op selects Story, and the solo Horde launch is switched off (`bHordeLaunchEnabled = false`). Use the Development console (`~`) on the main menu:
+Use **RC12c** (`B:\Unreal\GOTA_Builds\RC12c_05704ae`), not RC11: RC12c has the fixes the bot runs exposed (visible enemy attacks for remote players, armed heroes who can block, no damage from dead enemies, the boss fix).
 
-1. Host: `gota.Menu.Go Multiplayer`, `gota.Menu.Session mode Horde`, `gota.Menu.Session hero <Hero>`, `gota.Menu.Session host`.
-2. Everyone else: `gota.Menu.Go Multiplayer`, then **FIND GAMES** and **JOIN GAME** (or `gota.Menu.Session find` and `gota.Menu.Session join`), then `gota.Menu.Session hero <Hero>`.
-3. When everyone is in the lobby, the host runs `gota.Menu.Session mode Horde` again and presses **START HORDE** (or `gota.Menu.Session start`). The lobby passes the player count to the match (`?Players=N`).
+1. Host: **MULTIPLAYER > HOST GAME**. In the lobby, press **MODE: TRIAL OF CHAMPIONS** once: it switches to **MODE: WRATH OF THE GODS**.
+2. Everyone else: **MULTIPLAYER > FIND GAMES**, select the host, **JOIN GAME**.
+3. Pick heroes, then the host presses **START HORDE**. The lobby passes the player count to the match (`?Players=N`).
 
-Hero ids: the ids the hero select screen shows (for example `Drakon`, `Kairos`, `Nyx`, `Varoth`).
+Fallback (Development console `~`): `gota.Menu.Session mode Horde` then `host` / `find` / `join` / `start`, and `gota.Menu.Session hero <Hero>`.
 4. In the arena the HUD shows **WAITING FOR PLAYERS r / n** until everyone has loaded and has a hero. Then a 5 s countdown starts wave 1. If someone never finishes loading, the match starts after 60 s with whoever is ready. Note if that happens.
 5. Do not use `gota.Horde.SkipPrep`, `gota.Net.Sustain` or any other test command during a playtest.
 
@@ -64,6 +64,15 @@ Scale 1–5 unless noted.
 7. Did working with your team matter? (1 no difference, 5 could not win alone.)
 8. Did you want to play wave 3? (yes / no / why)
 9. Free text: the one change you would make first.
+
+## Changed in RC12 (tell the observer, not the players)
+
+- **Spinning sword attack:** the wind-up (1.2 s before the first hit), animation, radius (3 m) and damage per contact (10) are unchanged, but the spin now has 4 contacts (one slash at 1.2 s, then area pulses at 2.0, 3.25 and 4.5 s) instead of 9 every 0.5 s. One spin can take at most 40 health from a target that stays in it (was 90). It can be blocked (not parried), dodged, or walked out of. Watch whether players read the wind-up and step out.
+- **Enemies keep fighting:** wave enemies now always pick a reachable player inside the arena instead of standing still out of sight range. A player who hangs back will be hunted.
+- **Ground smash:** unchanged; 25 damage in a 3 m area, cannot be blocked or parried. Watch whether players read it.
+- **Heroes start with their weapon drawn** (they used to start unarmed in Horde and could not block). Blocks and perfect parries now work.
+- **Remote players now see enemy attack animations** (before, only the host did). Ask remote players whether attacks are readable.
+- **Survivors are healed to full at the intermission** (the fallen already came back at full health). Ask whether this feels right; it is a rule change awaiting sign-off.
 
 ## What we already know from the bot runs (to check with people)
 
