@@ -755,6 +755,8 @@ namespace GOTANetTest
 	/** Dodge mode: answer incoming attacks with the hero's dodge (DodgeInDirection) instead of a block. */
 	static bool bFightDodgeMode = false;
 	static int32 FightDodges = 0;
+	/** Dodge mode: dodge once the attack's impact is this close (s); `gota.Net.Fight <s> dodge <lead>`, default 0.3. */
+	static float FightDodgeLead = 0.3f;
 
 	/** Like a player watching the enemy next to them: block when an enemy's attack montage is about to reach its damage
 	 * notify. The montage replicates to every client; the Blueprint "Attacking" flag does not, so it is not used. */
@@ -781,7 +783,7 @@ namespace GOTANetTest
 			if (bFightDodgeMode || bUnblockable)
 			{
 				// Dodge mode: roll away from any attack (ground smash included) just before its damage notify.
-				if (Lead < 0.f || Lead > 0.3f || Now - FightLastBlock < 0.9)
+				if (Lead < 0.f || Lead > (bFightDodgeMode ? FightDodgeLead : 0.3f) || Now - FightLastBlock < 0.9)
 				{
 					continue;
 				}
@@ -1099,6 +1101,7 @@ namespace GOTANetTest
 		bFightApproachOnly = Args.Num() > 1 && Args[1].Equals(TEXT("approach"), ESearchCase::IgnoreCase);
 		bFightProvokeOnce = Args.Num() > 1 && Args[1].Equals(TEXT("provoke"), ESearchCase::IgnoreCase);
 		bFightDodgeMode = Args.Num() > 1 && Args[1].Equals(TEXT("dodge"), ESearchCase::IgnoreCase);
+		FightDodgeLead = (bFightDodgeMode && Args.Num() > 2) ? FMath::Clamp(FCString::Atof(*Args[2]), 0.02f, 1.5f) : 0.3f;
 		FightDodges = 0;
 		FightProvoked.Reset();
 		if (!FightHandle.IsValid())

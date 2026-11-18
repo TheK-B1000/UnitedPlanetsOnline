@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Animation/AnimInstance.h"
 #include "GOTAMontageReplicator.generated.h"
 
 class UAnimInstance;
@@ -42,6 +43,14 @@ public:
 
 	UFUNCTION()
 	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	/**
+	 * Server: a damage notify (PlayMontageNotify) is firing. Bound when the enemy spawns, so it runs before the enemy
+	 * Blueprint's own Play Montage listener (bound per montage) applies the damage: a player whose perfect dodge was
+	 * timed against exactly this impact refuses it (UGOTADuelFighterComponent::TryGuardDodgedImpact).
+	 */
+	UFUNCTION()
+	void HandleNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
 
 	int32 GetSentCount() const { return Sent; }
 

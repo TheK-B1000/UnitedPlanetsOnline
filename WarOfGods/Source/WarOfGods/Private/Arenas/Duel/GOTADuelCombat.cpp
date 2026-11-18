@@ -23,6 +23,7 @@
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
+#include "EngineUtils.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -420,6 +421,11 @@ void UGOTADuelFighterComponent::BeginPlay()
 
 void UGOTADuelFighterComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+	if (GuardClearHandle.IsValid())
+	{
+		FWorldDelegates::OnWorldPostActorTick.Remove(GuardClearHandle);
+		GuardClearHandle.Reset();
+	}
 	if (bServerDodgeInvincible)
 	{
 		SetServerDodgeInvincible(false);
@@ -539,6 +545,7 @@ bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reas
 	}
 	const double Now = GetWorld()->GetTimeSeconds();
 	LastArmLead = -1.f;
+	LastArmAttacker.Reset();
 	if (Now <= CounterInvulnEndTime)
 	{
 		return false;
@@ -576,28 +583,76 @@ bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reas
 			Reason, bIncoming ? 1 : 0, Lead, LeadLimit, Boss->IsCharging() ? 1 : 0, Dist);
 		return false;
 	}
-	float Pos = 0.f;
-	UAnimMontage* M = FGOTABlueprintCombat::GetActiveMontage(Opp, &Pos);
-	const bool bOppAttacking = FGOTABlueprintCombat::GetBool(Opp, TEXT("Attacking"));
-	const float Impact = FGOTABlueprintCombat::FindNextImpactTime(M, Pos);
-	const float Lead = Impact - Pos;
-	if (bOppAttacking && M && Impact >= 0.f && Lead <= PerfectDodgeLeadSeconds && Dist < 650.f)
+	// The qualifying attack is the one about to land on this player: the designated opponent's, or (Horde: several
+	// enemies) any other enemy within reach whose damage notify is inside the perfect window; the soonest impact wins.
+	struct FCandidate { APawn* Pawn = nullptr; UAnimMontage* M = nullptr; float Impact = -1.f; float Lead = -1.f; float Dist = 0.f; };
+	auto Evaluate = [this](APawn* P, FCandidate& Out) -> bool
 	{
+		float Pos = 0.f;
+		UAnimMontage* PM = FGOTABlueprintCombat::GetActiveMontage(P, &Pos);
+		const float PImpact = FGOTABlueprintCombat::FindNextImpactTime(PM, Pos);
+		// An attack is a playing montage with a damage notify ahead (same definition as UGOTAMontageReplicator). The
+		// Blueprint's "Attacking" flag is set some way into the swing, so requiring it shortened the window for a host
+		// who dodged early (RC14: dodges at 0.34-0.35 s found no attack) while remote dodges, judged later, qualified.
+		if (!PM || PImpact < 0.f)
+		{
+			return false;
+		}
+		Out = { P, PM, PImpact, PImpact - Pos, static_cast<float>(FVector::Dist(P->GetActorLocation(), GetOwner()->GetActorLocation())) };
+		return true;
+	};
+	FCandidate Best, Pending;
+	auto Consider = [&](APawn* P)
+	{
+		FCandidate C;
+		if (!Evaluate(P, C) || C.Dist >= 650.f)
+		{
+			return;
+		}
+		if (C.Lead <= PerfectDodgeLeadSeconds && (!Best.Pawn || C.Lead < Best.Lead))
+		{
+			Best = C;
+		}
+		else if (C.Lead > PerfectDodgeLeadSeconds && (!Pending.Pawn || C.Lead < Pending.Lead))
+		{
+			Pending = C; // too early: logged, not armed
+		}
+	};
+	Consider(Opp);
+	for (TActorIterator<APawn> It(GetWorld()); It; ++It)
+	{
+		APawn* P = *It;
+		if (P != Opp && P != GetOwner() && !P->IsPlayerControlled() && !P->FindComponentByClass<UGOTABossComponent>()
+			&& !UGOTACombatantObserver::IsCombatantDefeated(P))
+		{
+			Consider(P);
+		}
+	}
+	const FCandidate& Use = Best.Pawn ? Best : Pending;
+	if (Use.Pawn)
+	{
+		LastArmLead = FMath::Max(Use.Lead, 0.f) / FMath::Max(Use.M->RateScale, 0.1f); // logged for too-early dodges as well
+		LastArmAttacker = Use.Pawn;
+	}
+	UAnimMontage* M = Best.M;
+	const float Impact = Best.Impact;
+	const float Lead = Best.Lead;
+	if (Best.Pawn)
+	{
+		Opp = Best.Pawn;
 		bDodgeArmed = true;
 		HealthAtDodge = UGOTACombatantObserver::ReadVitals(GetOwner()).Health;
 		const float ToImpact = FMath::Max(Lead, 0.f) / FMath::Max(M->RateScale, 0.1f);
 		LastArmLead = ToImpact;
 		DodgeResolveTime = Now + ToImpact + 0.2;
-		const APawn* Self = Cast<APawn>(GetOwner());
-		const bool bRemote = Self && GetOwner()->HasAuthority() && !Self->IsLocallyControlled();
-		if (bRemote)
-		{
-			// The client's own i-frames never reach the server: protect this dodge here, against this impact only.
-			DodgeProtectedUntil = FMath::Max(DodgeProtectedUntil, Now + ToImpact + 0.15);
-			SetServerDodgeInvincible(true);
-		}
-		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge arm (%s): montage lead=%.2f dist=%.0f%s"), Reason, Lead, Dist,
-			bRemote ? *FString::Printf(TEXT(", server i-frames until %.2f"), DodgeProtectedUntil) : TEXT(""));
+		// Same rule for the listen host and remote players: the server refuses this one impact (attacker, montage,
+		// notify) if it lands by impact + 0.15 s. Nothing else is protected (TryGuardDodgedImpact).
+		GuardAttacker = Opp;
+		GuardMontage = M;
+		GuardNotifyTime = Impact;
+		GuardUntil = Now + ToImpact + 0.15;
+		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge arm (%s): montage lead=%.2f dist=%.0f, guarding %s %s@%.2f until %.2f"), Reason, Lead, Best.Dist,
+			*GetNameSafe(Opp), *GetNameSafe(M), Impact, GuardUntil);
 		return true;
 	}
 	return false;
@@ -627,6 +682,52 @@ void UGOTADuelFighterComponent::SetServerDodgeInvincible(bool bOn)
 		return; // Veiled took it over meanwhile and owns clearing it
 	}
 	FGOTABlueprintCombat::SetBool(DS, TEXT("IsInvincible"), false);
+}
+
+bool UGOTADuelFighterComponent::TryGuardDodgedImpact(APawn* Attacker, const UAnimMontage* Montage, float NotifyTime)
+{
+	UWorld* World = GetWorld();
+	if (!World || !GetOwner() || !GetOwner()->HasAuthority() || !Attacker || GuardAttacker.Get() != Attacker
+		|| GuardMontage.Get() != Montage || FMath::Abs(NotifyTime - GuardNotifyTime) > 0.01f)
+	{
+		return false;
+	}
+	const double Now = World->GetTimeSeconds();
+	const bool bInTime = Now <= GuardUntil;
+	// One impact per dodge: the attacker's next swing (or the next notify of this one) needs its own dodge.
+	GuardAttacker.Reset();
+	GuardMontage.Reset();
+	GuardNotifyTime = -1.f;
+	if (!bInTime)
+	{
+		UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge guard expired: player=%s %s %s@%.2f arrived %.2fs after the guard ended"),
+			*UGOTACombatTelemetry::PlayerLabel(Cast<APawn>(GetOwner())), *GetNameSafe(Attacker), *GetNameSafe(Montage), NotifyTime, Now - GuardUntil);
+		return false;
+	}
+	SetServerDodgeInvincible(true);
+	UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge guard: player=%s refuses %s %s@%.2f (invincible=%d)"),
+		*UGOTACombatTelemetry::PlayerLabel(Cast<APawn>(GetOwner())), *GetNameSafe(Attacker), *GetNameSafe(Montage), NotifyTime,
+		bServerDodgeInvincible ? 1 : 0);
+	if (bServerDodgeInvincible && !GuardClearHandle.IsValid())
+	{
+		// The enemy Blueprint applies this notify's damage synchronously right after us; clear at the end of the frame.
+		TWeakObjectPtr<UGOTADuelFighterComponent> WeakThis(this);
+		GuardClearHandle = FWorldDelegates::OnWorldPostActorTick.AddLambda(
+			[WeakThis, World](UWorld* InWorld, ELevelTick, float)
+			{
+				if (InWorld != World)
+				{
+					return;
+				}
+				if (UGOTADuelFighterComponent* Self = WeakThis.Get())
+				{
+					FWorldDelegates::OnWorldPostActorTick.Remove(Self->GuardClearHandle);
+					Self->GuardClearHandle.Reset();
+					Self->SetServerDodgeInvincible(false);
+				}
+			});
+	}
+	return true;
 }
 
 void UGOTADuelFighterComponent::RequestDodgeNotify()
@@ -659,7 +760,7 @@ void UGOTADuelFighterComponent::Server_NotifyDodgeAttempt_Implementation()
 	const bool bArmed = TryArmPerfectDodge(Opp, TEXT("client-notify"));
 	if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
 	{
-		Telemetry->NoteDodge(Cast<APawn>(GetOwner()), Opp, bArmed, LastArmLead, TEXT("client-notify"));
+		Telemetry->NoteDodge(Cast<APawn>(GetOwner()), LastArmAttacker.IsValid() ? LastArmAttacker.Get() : Opp, bArmed, LastArmLead, TEXT("client-notify"));
 	}
 }
 
@@ -678,9 +779,9 @@ void UGOTADuelFighterComponent::TryBindLocalInput()
 
 void UGOTADuelFighterComponent::TickChallengerServer()
 {
-	// A remote dodge's server-side i-frames end with the impact they were granted for (checked before any early
-	// return, so a round or target ending mid-window cannot leave the player invincible).
-	if (bServerDodgeInvincible && GetWorld()->GetTimeSeconds() >= DodgeProtectedUntil)
+	// Safety net for the dodge guard (normally cleared at the end of the frame it was set in); checked before any early
+	// return, so nothing can leave the player invincible.
+	if (bServerDodgeInvincible && !GuardClearHandle.IsValid())
 	{
 		SetServerDodgeInvincible(false);
 	}
@@ -724,7 +825,7 @@ void UGOTADuelFighterComponent::TickChallengerServer()
 		const bool bArmed = TryArmPerfectDodge(Opp, TEXT("server-edge"));
 		if (UGOTACombatTelemetry* Telemetry = UGOTACombatTelemetry::Get(this))
 		{
-			Telemetry->NoteDodge(Cast<APawn>(GetOwner()), Opp, bArmed, LastArmLead, TEXT("server-edge"));
+			Telemetry->NoteDodge(Cast<APawn>(GetOwner()), LastArmAttacker.IsValid() ? LastArmAttacker.Get() : Opp, bArmed, LastArmLead, TEXT("server-edge"));
 		}
 		BlueprintIFramesSince = Now;
 	}

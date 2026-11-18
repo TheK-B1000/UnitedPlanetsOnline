@@ -1,0 +1,21 @@
+# RC14 dodge rule check (healing harness so the fight lasts; NOT difficulty evidence). Every player fights in dodge mode
+# and dodges when the attack's impact is <lead> s away; the lead steps through the perfect window and past it (0.50 s:
+# too early, must not be protected). The early-dodge phases come first, while waves are still running.
+# GOTA_DodgeReport.py bins dodges by the server-measured lead.
+waitplayers 4 120
+gota.Net.Sustain 420 25
+gota.Net.Fight 50 dodge 0.35
+wait 50
+gota.Net.Fight 50 dodge 0.50
+wait 50
+gota.Net.Fight 50 dodge 0.30
+wait 50
+gota.Net.Fight 50 dodge 0.25
+wait 50
+gota.Net.Fight 50 dodge 0.20
+wait 50
+gota.Net.Fight 50 dodge 0.10
+wait 50
+gota.Telemetry.Dump
+wait 20
+quit

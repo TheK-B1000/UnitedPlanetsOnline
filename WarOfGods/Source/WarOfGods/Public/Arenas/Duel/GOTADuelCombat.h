@@ -129,6 +129,14 @@ public:
 	 */
 	bool IsDodgeProtected() const;
 
+	/**
+	 * Server, called by UGOTAMontageReplicator when a regular enemy's damage notify fires (before the enemy Blueprint
+	 * applies that notify's damage). If this player's armed perfect dodge was timed against exactly this attacker,
+	 * montage and notify, sets IsInvincible for the rest of this frame so that one impact is refused. Returns true if
+	 * it protected. Other enemies and the attacker's later swings are not covered.
+	 */
+	bool TryGuardDodgedImpact(APawn* Attacker, const UAnimMontage* Montage, float NotifyTime);
+
 	UFUNCTION(BlueprintPure, Category = "Duel|Combat")
 	APawn* GetOpponent() const { return Opponent.Get(); }
 
@@ -225,16 +233,25 @@ protected:
 	bool bCounterPending = false;
 	double DodgeProtectedUntil = 0.0;
 	/**
-	 * Server: a remote player's dodge against a regular enemy. The Blueprint dodge i-frames exist only on that client,
-	 * and regular enemies' damage is decided on the server by the damage system's IsInvincible, so remote dodges were
-	 * hit 4x as often as the listen host's (RC13: 35 of 75 armed remote dodges vs 2 of 16). When the server accepts
-	 * the dodge against an attack that is genuinely about to land, it sets IsInvincible until that impact (+0.15 s)
-	 * and clears it afterwards (never while Veiled owns it).
+	 * Server: a perfect dodge against a regular enemy (RC14, same rule for the listen host and remote players).
+	 * Regular enemies' damage is decided on the server by the damage system's IsInvincible. The Blueprint dodge's own
+	 * i-frames exist only on the dodging machine and last ~0.20 s, shorter than the 0.35 s perfect window, so before
+	 * RC13 remote dodges were hit 35 of 75 times and in RC13 the host's early dodges still were (RC14 finding).
+	 * When the server accepts a dodge, it remembers the qualifying impact (attacker, montage, damage notify, until
+	 * impact + 0.15 s). TryGuardDodgedImpact sets IsInvincible only when that notify fires, and it is cleared at the
+	 * end of the frame (never while Veiled owns it): one impact, not a blanket window.
 	 */
+	TWeakObjectPtr<APawn> GuardAttacker;
+	TWeakObjectPtr<const UAnimMontage> GuardMontage;
+	float GuardNotifyTime = -1.f;
+	double GuardUntil = 0.0;
 	bool bServerDodgeInvincible = false;
+	FDelegateHandle GuardClearHandle;
 	void SetServerDodgeInvincible(bool bOn);
-	/** Development: time to impact of the last armed dodge (-1 if none), and when the Blueprint i-frames rose (server edge). */
+	/** Development: time to impact of the last dodge, armed or not (-1 if no attack pending), and when the Blueprint i-frames rose (server edge). */
 	float LastArmLead = -1.f;
+	/** The enemy whose attack LastArmLead refers to (may differ from Opponent in Horde). */
+	TWeakObjectPtr<APawn> LastArmAttacker;
 	double BlueprintIFramesSince = -1.0;
 
 	/** Server: the Divine Counter's blow, DivineCounterImpactDelay after it starts. */

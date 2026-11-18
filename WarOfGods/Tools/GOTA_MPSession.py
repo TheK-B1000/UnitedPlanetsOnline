@@ -10,6 +10,7 @@ The editor binary runs each process with -game; --packaged uses the packaged Dev
 """
 import argparse
 import os
+import re
 import subprocess
 import sys
 import time
@@ -87,9 +88,30 @@ def main():
     else:
         host_url = a.url + ("?Hero=%s" % a.host_hero if a.host_hero else "") + "?DevHeroes=1?listen"
     host_log = os.path.join(LOGS, "%s_host.log" % a.tag)
+    # Old logs of the same tag would satisfy the listen check below before the new host has written anything.
+    for name in os.listdir(LOGS):
+        if name.startswith(a.tag + "_") and name.endswith(".log"):
+            try:
+                os.remove(os.path.join(LOGS, name))
+            except OSError:
+                pass
     procs = [("host", launch(a.packaged, host_url, a.host_script, host_log, a.host_exec, pos=(0, 0), nullrhi=a.host_nullrhi))]
     start = time.time()
-    time.sleep(a.join_delay)
+    if not a.menu:
+        # Clients join once the host is listening (a cold host start took 58 s; a fixed delay timed the clients out).
+        deadline = time.time() + 180
+        while time.time() < deadline and procs[0][1].poll() is None:
+            try:
+                with open(host_log, encoding="utf-8", errors="ignore") as f:
+                    if re.search(r"(GameNetDriver.*listening|Listening on port|IpNetDriver listening)", f.read()):
+                        break
+            except OSError:
+                pass
+            time.sleep(1)
+        print("host listening after %.0fs" % (time.time() - start))
+        time.sleep(max(2.0, a.join_delay - (time.time() - start)))  # never earlier than --join-delay after the host
+    else:
+        time.sleep(a.join_delay)
     last_join = start
     for i in range(a.clients):
         if i == a.clients - 1 and a.late_join > 0:

@@ -1,0 +1,18 @@
+# RC14 dodge rule check, remote side: the montage reaches a client about one trip late and the dodge notice takes
+# another, so the server-measured lead is lower than the client's; these targets cover the 0.10-0.35 s bins and a
+# too-early band on the server.
+wait 3
+gota.Net.Fight 50 dodge 0.20
+wait 50
+gota.Net.Fight 50 dodge 0.30
+wait 50
+gota.Net.Fight 50 dodge 0.40
+wait 50
+gota.Net.Fight 50 dodge 0.45
+wait 50
+gota.Net.Fight 50 dodge 0.55
+wait 50
+gota.Net.Fight 50 dodge 0.70
+wait 50
+wait 20
+quit

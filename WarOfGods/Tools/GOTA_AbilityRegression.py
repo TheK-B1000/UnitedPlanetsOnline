@@ -399,11 +399,22 @@ def run_suite(a):
             starved_s = to_s(t1) - to_s(t0)
         elif t0 not in ("-", "?") and first_time(c, r"\[script\] complete") == "-":
             starved_s = float("inf")
-        verdict = "PASS" if ok else ("INCONCLUSIVE" if starved_s is not None and starved_s > 36 else "FAIL")
+        # A host that stalled (one frame of 15 s or more, e.g. compiling shaders for a hero body on first use) runs its
+        # timed steps after the client's script has already finished: also INCONCLUSIVE, never PASS.
+        stalls = [float(x) for x in re.findall(r"Very long time between ticks\. DeltaTime: ([\d.]+)", h)]
+        host_stall = max(stalls) if stalls else 0.0
+        if host_stall:
+            timing += ", host's longest frame %.1fs" % host_stall
+        why = ""
+        if not ok and starved_s is not None and starved_s > 36:
+            why = "(client starved) "
+        elif not ok and host_stall >= 15:
+            why = "(host stalled %.0fs) " % host_stall
+        verdict = "PASS" if ok else ("INCONCLUSIVE" if why else "FAIL")
         if not ok:
             keep_failure(run_dir, host_log, client_log)
         print("%-5s %-12s %-42s %s" % (verdict, ability, "multiplayer (listen server + client)", "" if ok else
-              ("(client starved) " if verdict == "INCONCLUSIVE" else "") +
+              why +
               "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
         print("      %-12s timing: %s" % ("", timing))
         sys.stdout.flush()

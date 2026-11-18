@@ -8,6 +8,7 @@
 #include "Bosses/GOTABossComponent.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "EngineUtils.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Pawn.h"
 
@@ -25,7 +26,8 @@ UGOTAMontageReplicator::UGOTAMontageReplicator()
 
 UGOTAMontageReplicator* UGOTAMontageReplicator::EnsureOn(APawn* Pawn)
 {
-	if (!Pawn || !Pawn->HasAuthority() || Pawn->IsPlayerControlled() || !Cast<ACharacter>(Pawn))
+	// Players too: their montages are not multicast here (ShouldReplicate), but their damage notifies feed the dodge guard.
+	if (!Pawn || !Pawn->HasAuthority() || !Cast<ACharacter>(Pawn))
 	{
 		return nullptr;
 	}
@@ -61,12 +63,16 @@ void UGOTAMontageReplicator::Rebind()
 	{
 		Old->OnMontageStarted.RemoveDynamic(this, &UGOTAMontageReplicator::HandleMontageStarted);
 		Old->OnMontageEnded.RemoveDynamic(this, &UGOTAMontageReplicator::HandleMontageEnded);
+		Old->OnPlayMontageNotifyBegin.RemoveDynamic(this, &UGOTAMontageReplicator::HandleNotifyBegin);
 	}
 	Bound = Anim;
 	if (Anim)
 	{
 		Anim->OnMontageStarted.AddUniqueDynamic(this, &UGOTAMontageReplicator::HandleMontageStarted);
 		Anim->OnMontageEnded.AddUniqueDynamic(this, &UGOTAMontageReplicator::HandleMontageEnded);
+		// Must precede the Blueprint's Play Montage listener, which is added when each montage starts (delegates run in
+		// the order they were added).
+		Anim->OnPlayMontageNotifyBegin.AddUniqueDynamic(this, &UGOTAMontageReplicator::HandleNotifyBegin);
 	}
 }
 
@@ -82,6 +88,7 @@ void UGOTAMontageReplicator::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		Anim->OnMontageStarted.RemoveDynamic(this, &UGOTAMontageReplicator::HandleMontageStarted);
 		Anim->OnMontageEnded.RemoveDynamic(this, &UGOTAMontageReplicator::HandleMontageEnded);
+		Anim->OnPlayMontageNotifyBegin.RemoveDynamic(this, &UGOTAMontageReplicator::HandleNotifyBegin);
 	}
 	Super::EndPlay(EndPlayReason);
 }
@@ -104,7 +111,9 @@ void UGOTAMontageReplicator::HandleMontageStarted(UAnimMontage* Montage)
 	// A defeated enemy cannot start an attack: the template can queue one more swing right after death (RC12: a spin
 	// started 0.1 s after the killing blow and hit three players). Attack = a montage with a damage notify; death and
 	// hit-reaction animations have none and play normally.
-	if (UGOTACombatantObserver::IsCombatantDefeated(GetOwner()) && FGOTABlueprintCombat::FindNextImpactTime(Montage, 0.f) >= 0.f)
+	const APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (OwnerPawn && !OwnerPawn->IsPlayerControlled() && UGOTACombatantObserver::IsCombatantDefeated(GetOwner())
+		&& FGOTABlueprintCombat::FindNextImpactTime(Montage, 0.f) >= 0.f)
 	{
 		Anim->Montage_Stop(0.f, Montage);
 		UE_LOG(LogGOTAMontageRep, Log, TEXT("%s: defeated, attack %s cancelled"), *GetNameSafe(GetOwner()), *GetNameSafe(Montage));
@@ -123,6 +132,27 @@ void UGOTAMontageReplicator::HandleMontageEnded(UAnimMontage* Montage, bool bInt
 	if (bInterrupted && ShouldReplicate(Montage))
 	{
 		Multicast_StopMontage(Montage, 0.2f);
+	}
+}
+
+void UGOTAMontageReplicator::HandleNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& Payload)
+{
+	APawn* Attacker = Cast<APawn>(GetOwner());
+	const UAnimMontage* Montage = Cast<UAnimMontage>(Payload.SequenceAsset);
+	if (!Attacker || !Attacker->HasAuthority() || !Montage || !Payload.NotifyEvent || !GetWorld())
+	{
+		return;
+	}
+	const float NotifyTime = Payload.NotifyEvent->GetTriggerTime();
+	for (TActorIterator<APawn> It(GetWorld()); It; ++It)
+	{
+		if (*It != Attacker && It->IsPlayerControlled())
+		{
+			if (UGOTADuelFighterComponent* Fighter = It->FindComponentByClass<UGOTADuelFighterComponent>())
+			{
+				Fighter->TryGuardDodgedImpact(Attacker, Montage, NotifyTime);
+			}
+		}
 	}
 }
 

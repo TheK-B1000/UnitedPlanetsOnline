@@ -184,11 +184,9 @@ UStatsComponent* UCombatBootstrapSubsystem::EnsureReplicatedVitals(APawn* Pawn)
 	{
 		Telemetry->RegisterCombatant(Pawn); // development builds: player lives, enemy attack records
 	}
-	// AI attack animations play on the server only in the enemy template: mirror them to remote players.
-	if (!Pawn->IsPlayerControlled())
-	{
-		UGOTAMontageReplicator::EnsureOn(Pawn);
-	}
+	// AI attack animations play on the server only in the enemy template: mirror them to remote players. On every
+	// combatant (players too, for Duel PvP) it also lets a perfect dodge refuse exactly the impact it was timed against.
+	UGOTAMontageReplicator::EnsureOn(Pawn);
 	// Enemies with the floating AOE attack (Story shrine boss) land even if that attack is aborted mid-air.
 	UGOTAFloatAttackGuard::EnsureOn(Pawn);
 	// Every combatant gets its ability system here, after its stats (the ASC clears statuses on Stats->OnDied).
