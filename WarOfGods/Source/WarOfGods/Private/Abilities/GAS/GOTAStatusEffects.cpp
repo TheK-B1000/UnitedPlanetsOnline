@@ -12,7 +12,12 @@
 #include "Characters/GOTAHeroBodyComponent.h"
 #include "Combat/GOTACombatLive.h"
 #include "Combat/GOTACombatantObserver.h"
+#include "AIController.h"
+#include "Animation/AnimInstance.h"
+#include "BrainComponent.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "GameplayCueManager.h"
 #include "GameplayCueSet.h"
 #include "GameplayEffectComponents/TargetTagRequirementsGameplayEffectComponent.h"
@@ -22,6 +27,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "TimerManager.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GOTAStatusEffects)
 
@@ -41,8 +47,11 @@ namespace
 	/** Marks the one looping status effect component a burning actor carries. */
 	const FName BurnFXTag(TEXT("GOTA_BurnFX"));
 
-	// Overlay priority order: the first active entry wins the body's single overlay slot.
+	// Overlay priority order: the first active entry wins the body's single overlay slot. Hard crowd control is the most
+	// important thing to read on a body, so it outranks every other status.
 	const FStatusInfo Statuses[] = {
+		{ EGOTAStatus::Frozen, GOTATags::Status_Frozen, GOTATags::Cue_Status_Frozen, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Frozen.M_GOTA_Overlay_Frozen") },
+		{ EGOTAStatus::Stunned, GOTATags::Status_Stunned, GOTATags::Cue_Status_Stunned, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Stunned.M_GOTA_Overlay_Stunned") },
 		{ EGOTAStatus::Veiled, GOTATags::Status_Veiled, GOTATags::Cue_Status_Veiled, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Veiled.M_GOTA_Overlay_Veiled") },
 		{ EGOTAStatus::Unbreakable, GOTATags::Status_Unbreakable, GOTATags::Cue_Status_Unbreakable, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Unbreakable.M_GOTA_Overlay_Unbreakable") },
 		{ EGOTAStatus::Dread, GOTATags::Status_Dread, GOTATags::Cue_Status_Dread, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Dread.M_GOTA_Overlay_Dread") },
@@ -85,6 +94,8 @@ namespace
 		case EGOTAStatus::Veiled: return UGOTAGameplayEffect_Veiled::StaticClass();
 		case EGOTAStatus::Unbreakable: return UGOTAGameplayEffect_Unbreakable::StaticClass();
 		case EGOTAStatus::Burning: return UGOTAGameplayEffect_Burning::StaticClass();
+		case EGOTAStatus::Stunned: return UGOTAGameplayEffect_Stunned::StaticClass();
+		case EGOTAStatus::Frozen: return UGOTAGameplayEffect_Frozen::StaticClass();
 		default: return nullptr;
 		}
 	}
@@ -168,12 +179,52 @@ namespace
 
 	int32 StatusDamageTicks = 0;
 	float StatusDamageTotal = 0.f;
+
+	TAutoConsoleVariable<float> CVarControlRecovery(TEXT("gota.GAS.ControlRecovery"), 2.f,
+		TEXT("Seconds of hard crowd-control immunity (GOTA.Immunity.Stun) after a Stunned or Frozen ends. 0 = none."));
+
+	/** Every skeletal mesh on the actor (the template mesh and the visible hero body). */
+	void ForEachMesh(AActor* Actor, TFunctionRef<void(USkeletalMeshComponent*)> Fn)
+	{
+		TInlineComponentArray<USkeletalMeshComponent*> Meshes(Actor);
+		for (USkeletalMeshComponent* Mesh : Meshes)
+		{
+			if (Mesh)
+			{
+				Fn(Mesh);
+			}
+		}
+	}
+
+	/** Cut the current action's animation short (attack, block, cast). Returns how many montages were stopped. */
+	int32 StopActionMontages(AActor* Actor)
+	{
+		int32 Stopped = 0;
+		ForEachMesh(Actor, [&Stopped](USkeletalMeshComponent* Mesh)
+		{
+			if (UAnimInstance* Anim = Mesh->GetAnimInstance(); Anim && Anim->IsAnyMontagePlaying())
+			{
+				Anim->Montage_Stop(0.15f);
+				++Stopped;
+			}
+		});
+		return Stopped;
+	}
+
+	/** Frozen: hold (or release) the body's animation. Cosmetic; movement is stopped by the lock. */
+	void SetAnimationHeld(AActor* Actor, bool bHeld)
+	{
+		ForEachMesh(Actor, [bHeld](USkeletalMeshComponent* Mesh)
+		{
+			Mesh->bPauseAnims = bHeld;
+		});
+	}
 }
 
 // ============================================================================ effects
 
 void UGOTAStatusGameplayEffect::ConfigureStatus(const FGameplayTag& StatusTag, const FGameplayTag& CueTag, const FGameplayTag& ImmunityTag,
-	const FGameplayTag& ElementTag)
+	const FGameplayTag& ElementTag, const FGameplayTag& ExtraGrantedTag)
 {
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
 	FSetByCallerFloat DurationCaller;
@@ -194,6 +245,10 @@ void UGOTAStatusGameplayEffect::ConfigureStatus(const FGameplayTag& StatusTag, c
 
 	FInheritedTagContainer Granted;
 	Granted.Added.AddTag(StatusTag);
+	if (ExtraGrantedTag.IsValid())
+	{
+		Granted.Added.AddTag(ExtraGrantedTag); // a derived state several statuses share (GOTA.State.Incapacitated)
+	}
 	UTargetTagsGameplayEffectComponent* TargetTags = CreateDefaultSubobject<UTargetTagsGameplayEffectComponent>(TEXT("TargetTags"));
 	GEComponents.Add(TargetTags);
 	TargetTags->SetAndApplyTargetTagChanges(Granted);
@@ -272,6 +327,37 @@ UGOTAGameplayEffect_Burning::UGOTAGameplayEffect_Burning()
 	Executions.Add(Tick);
 }
 
+UGOTAGameplayEffect_Stunned::UGOTAGameplayEffect_Stunned()
+{
+	ConfigureStatus(GOTATags::Status_Stunned, GOTATags::Cue_Status_Stunned, GOTATags::Immunity_Stun, FGameplayTag(), GOTATags::State_Incapacitated);
+	// Re-application never extends a running lock (GOTAGAS::ApplyStatus refuses it first; this is the engine-side rule).
+	StackDurationRefreshPolicy = EGameplayEffectStackingDurationPolicy::NeverRefresh;
+}
+
+UGOTAGameplayEffect_Frozen::UGOTAGameplayEffect_Frozen()
+{
+	ConfigureStatus(GOTATags::Status_Frozen, GOTATags::Cue_Status_Frozen, GOTATags::Immunity_Stun, GOTATags::Element_Frost, GOTATags::State_Incapacitated);
+	StackDurationRefreshPolicy = EGameplayEffectStackingDurationPolicy::NeverRefresh;
+}
+
+UGOTAGameplayEffect_ControlRecovery::UGOTAGameplayEffect_ControlRecovery()
+{
+	DurationPolicy = EGameplayEffectDurationType::HasDuration;
+	FSetByCallerFloat DurationCaller;
+	DurationCaller.DataTag = GOTATags::Data_Duration;
+	DurationMagnitude = FGameplayEffectModifierMagnitude(DurationCaller);
+	PRAGMA_DISABLE_DEPRECATION_WARNINGS
+	StackingType = EGameplayEffectStackingType::AggregateByTarget;
+	PRAGMA_ENABLE_DEPRECATION_WARNINGS
+	StackLimitCount = 1;
+	StackDurationRefreshPolicy = EGameplayEffectStackingDurationPolicy::RefreshOnSuccessfulApplication;
+	FInheritedTagContainer Granted;
+	Granted.Added.AddTag(GOTATags::Immunity_Stun);
+	UTargetTagsGameplayEffectComponent* TargetTags = CreateDefaultSubobject<UTargetTagsGameplayEffectComponent>(TEXT("TargetTags"));
+	GEComponents.Add(TargetTags);
+	TargetTags->SetAndApplyTargetTagChanges(Granted);
+}
+
 void UGOTABurnTickExecution::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
 	FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
 {
@@ -334,6 +420,42 @@ bool UGOTAGameplayCue_Burning::OnRemove_Implementation(AActor* MyTarget, const F
 	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }
 
+// ============================================================================ hard control cue
+
+bool UGOTAGameplayCue_HardControl::OnActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
+{
+	const EGOTAStatus Status = StatusForCue(Parameters);
+	const int32 Stopped = StopActionMontages(MyTarget);
+	if (Status == EGOTAStatus::Frozen)
+	{
+		SetAnimationHeld(MyTarget, true);
+	}
+	UE_LOG(LogGOTAStatus, Log, TEXT("control cue %s on %s: %d montage(s) cut, animation %s"), *Parameters.MatchedTagName.ToString(),
+		*GetNameSafe(MyTarget), Stopped, Status == EGOTAStatus::Frozen ? TEXT("held") : TEXT("running"));
+	return Super::OnActive_Implementation(MyTarget, Parameters);
+}
+
+bool UGOTAGameplayCue_HardControl::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
+{
+	// A client that only receives WhileActive (joined or replicated late) must show the same thing.
+	if (StatusForCue(Parameters) == EGOTAStatus::Frozen)
+	{
+		StopActionMontages(MyTarget);
+		SetAnimationHeld(MyTarget, true);
+	}
+	return Super::WhileActive_Implementation(MyTarget, Parameters);
+}
+
+bool UGOTAGameplayCue_HardControl::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
+{
+	if (StatusForCue(Parameters) == EGOTAStatus::Frozen && MyTarget)
+	{
+		SetAnimationHeld(MyTarget, false);
+		UE_LOG(LogGOTAStatus, Log, TEXT("control cue %s removed from %s: animation released"), *Parameters.MatchedTagName.ToString(), *GetNameSafe(MyTarget));
+	}
+	return Super::OnRemove_Implementation(MyTarget, Parameters);
+}
+
 // ============================================================================ resisted cue
 
 bool UGOTAGameplayCue_Resisted::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
@@ -362,8 +484,20 @@ namespace GOTAGAS
 		case EGOTAStatus::Slowed: return Aspect_Movement;
 		case EGOTAStatus::Dread: return Aspect_Movement | Aspect_Weaken;
 		case EGOTAStatus::Burning: return Aspect_Burn;
+		case EGOTAStatus::Stunned:
+		case EGOTAStatus::Frozen: return Aspect_Control;
 		default: return 0;
 		}
+	}
+
+	bool IsIncapacitated(const AActor* Actor)
+	{
+		return HasTag(Actor, GOTATags::State_Incapacitated);
+	}
+
+	float GetControlRecoverySeconds()
+	{
+		return FMath::Max(0.f, CVarControlRecovery.GetValueOnGameThread());
 	}
 
 	bool HasTag(const AActor* Actor, const FGameplayTag& Tag)
@@ -377,7 +511,7 @@ namespace GOTAGAS
 		// Migration order (one status per verified step): Slowed, Dread, Veiled, Unbreakable.
 		// Burning has only ever been a gameplay effect.
 		return Status == EGOTAStatus::Slowed || Status == EGOTAStatus::Dread || Status == EGOTAStatus::Veiled || Status == EGOTAStatus::Unbreakable
-			|| Status == EGOTAStatus::Burning;
+			|| Status == EGOTAStatus::Burning || IsHardControl(Status);
 	}
 
 	bool ApplyStatus(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)
@@ -395,6 +529,26 @@ namespace GOTAGAS
 		}
 		const FString Name = StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Status));
 
+		// Hard crowd control rules (before the policy, which would show "resists" for these cases):
+		if (IsHardControl(Status))
+		{
+			// An invincible target (Veiled, a dodge's i-frames, a boss's floating phase) is untouchable by control too.
+			if (const UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Victim);
+				DS && FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible")))
+			{
+				UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s refused (invincible) from %s"), *GetNameSafe(Victim), *Name, *GetNameSafe(Source));
+				return false;
+			}
+			// One hard CC at a time, never extended: two casters cannot keep a target locked.
+			if (IsIncapacitated(Victim))
+			{
+				UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s refused (already incapacitated, %s %.1fs left; not extended) from %s"), *GetNameSafe(Victim),
+					*Name, HasStatus(Victim, EGOTAStatus::Frozen) ? TEXT("Frozen") : TEXT("Stunned"),
+					FMath::Max(GetStatusRemaining(Victim, EGOTAStatus::Frozen), GetStatusRemaining(Victim, EGOTAStatus::Stunned)), *GetNameSafe(Source));
+				return false;
+			}
+		}
+
 		// Status policy (bosses): aspect immunities, then per-status resistance. Damage was already dealt by the ability.
 		const int32 Aspects = AspectsOf(Status);
 		int32 Blocked = 0;
@@ -409,6 +563,10 @@ namespace GOTAGAS
 		if ((Aspects & Aspect_Burn) && ASC->HasMatchingGameplayTag(GOTATags::Immunity_Burn))
 		{
 			Blocked |= Aspect_Burn;
+		}
+		if ((Aspects & Aspect_Control) && ASC->HasMatchingGameplayTag(GOTATags::Immunity_Stun))
+		{
+			Blocked |= Aspect_Control; // a boss policy, or the recovery right after a stun
 		}
 		bool bWhole = Aspects != 0 && Blocked == Aspects;
 		if (const FGOTAStatusResistance* Rule = ASC->FindStatusResistance(Status))
@@ -427,10 +585,10 @@ namespace GOTAGAS
 		if (bWhole || Blocked != 0)
 		{
 			const int32 Report = Blocked | (bWhole ? Aspect_Whole : 0);
-			UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s resisted (%s%s%s%s%s) from %s"), *GetNameSafe(Victim), *Name,
+			UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s resisted (%s%s%s%s%s%s) from %s"), *GetNameSafe(Victim), *Name,
 				bWhole ? TEXT("whole ") : TEXT(""), (Report & Aspect_Movement) ? TEXT("movement ") : TEXT(""),
 				(Report & Aspect_Weaken) ? TEXT("weaken ") : TEXT(""), (Report & Aspect_Burn) ? TEXT("burn ") : TEXT(""),
-				(Report & Aspect_Reduced) ? TEXT("reduced") : TEXT(""), *GetNameSafe(Source));
+				(Report & Aspect_Control) ? TEXT("control ") : TEXT(""), (Report & Aspect_Reduced) ? TEXT("reduced") : TEXT(""), *GetNameSafe(Source));
 			FGameplayCueParameters Feedback;
 			Feedback.RawMagnitude = static_cast<float>(Status);
 			Feedback.NormalizedMagnitude = static_cast<float>(Report);
@@ -572,6 +730,106 @@ namespace GOTAGAS
 		}
 	}
 
+	void SetControlLock(APawn* Pawn, bool bLocked)
+	{
+		if (!Pawn)
+		{
+			return;
+		}
+		const bool bDefeated = UGOTACombatantObserver::IsCombatantDefeated(Pawn);
+		if (Pawn->HasAuthority())
+		{
+			ACharacter* Char = Cast<ACharacter>(Pawn);
+			AAIController* AIC = Cast<AAIController>(Pawn->GetController());
+			if (bLocked)
+			{
+				// Cut the current action short: hero-ability cast, block, attack animation. Damage already dealt stands.
+				if (UGOTAHeroAbilityComponent* Abilities = Pawn->FindComponentByClass<UGOTAHeroAbilityComponent>())
+				{
+					Abilities->InterruptCast(TEXT("incapacitated"));
+				}
+				const UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Pawn);
+				const bool bWasBlocking = DS && FGOTABlueprintCombat::GetBool(DS, TEXT("IsBlocking"));
+				if (bWasBlocking)
+				{
+					FGOTABlueprintCombat::Call(Pawn, TEXT("EndBlock"));
+				}
+				const int32 Stopped = StopActionMontages(Pawn);
+				if (Char)
+				{
+					Char->GetCharacterMovement()->StopMovementImmediately();
+				}
+				if (AIC)
+				{
+					AIC->StopMovement();
+					AIC->ClearFocus(EAIFocusPriority::Gameplay);
+					if (UBrainComponent* Brain = AIC->GetBrainComponent())
+					{
+						Brain->PauseLogic(TEXT("GOTA control"));
+					}
+				}
+				UE_LOG(LogGOTAStatus, Log, TEXT("%s: CONTROL lock on (block ended=%d, montages cut=%d, ai paused=%d)"), *GetNameSafe(Pawn),
+					bWasBlocking ? 1 : 0, Stopped, AIC ? 1 : 0);
+			}
+			else
+			{
+				// Never revive a defeated AI's brain (UStatsComponent::StopDefeatedAI stopped it on purpose).
+				if (AIC && !bDefeated)
+				{
+					if (UBrainComponent* Brain = AIC->GetBrainComponent())
+					{
+						// Resume, then restart from the root: the move the lock stopped is gone, and a resumed move task would
+						// wait for it forever (RC14 Horde: released enemies far from players never walked again). The
+						// blackboard (state, attack target) is kept, so the tree picks up the same fight.
+						Brain->ResumeLogic(TEXT("GOTA control"));
+						Brain->RestartLogic();
+					}
+				}
+				const float Recovery = GetControlRecoverySeconds();
+				if (!bDefeated && Recovery > 0.f && Pawn->GetWorld())
+				{
+					// Next tick: this runs inside the ASC's own effect removal, which must finish before a new effect is added.
+					TWeakObjectPtr<APawn> WeakPawn(Pawn);
+					Pawn->GetWorld()->GetTimerManager().SetTimerForNextTick([WeakPawn, Recovery]()
+					{
+						APawn* P = WeakPawn.Get();
+						UGOTAAbilitySystemComponent* ASC = P ? UGOTAAbilitySystemComponent::Find(P) : nullptr;
+						if (!ASC || UGOTACombatantObserver::IsCombatantDefeated(P))
+						{
+							return;
+						}
+						const FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(UGOTAGameplayEffect_ControlRecovery::StaticClass(), 1.f, ASC->MakeEffectContext());
+						if (Spec.IsValid())
+						{
+							Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Duration, Recovery);
+							ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+							UE_LOG(LogGOTAStatus, Log, TEXT("%s: control recovery: immune to Stun/Freeze for %.1fs"), *GetNameSafe(P), Recovery);
+						}
+					});
+				}
+				UE_LOG(LogGOTAStatus, Log, TEXT("%s: CONTROL lock off (ai resumed=%d, recovery immunity %.1fs%s)"), *GetNameSafe(Pawn),
+					AIC && !bDefeated ? 1 : 0, bDefeated ? 0.f : Recovery, bDefeated ? TEXT(", defeated") : TEXT(""));
+			}
+		}
+		// The player at the keyboard: no move, attack, block or dodge input while locked (the server enforces the
+		// rest). On a listen server the host's own pawn takes both branches.
+		if (Pawn->IsLocallyControlled())
+		{
+			if (APlayerController* PC = Cast<APlayerController>(Pawn->GetController()))
+			{
+				if (bLocked)
+				{
+					Pawn->DisableInput(PC);
+				}
+				else
+				{
+					Pawn->EnableInput(PC);
+				}
+				UE_LOG(LogGOTAStatus, Log, TEXT("%s: CONTROL input %s (local)"), *GetNameSafe(Pawn), bLocked ? TEXT("disabled") : TEXT("enabled"));
+			}
+		}
+	}
+
 	void RegisterNativeCues()
 	{
 		UGameplayCueManager* Manager = UAbilitySystemGlobals::Get().GetGameplayCueManager();
@@ -583,8 +841,8 @@ namespace GOTAGAS
 		TArray<TPair<FGameplayTag, UClass*>> Wanted;
 		for (const FStatusInfo& Entry : Statuses)
 		{
-			Wanted.Emplace(Entry.CueTag.GetTag(), Entry.Status == EGOTAStatus::Burning
-				? UGOTAGameplayCue_Burning::StaticClass() : UGOTAGameplayCue_StatusOverlay::StaticClass());
+			Wanted.Emplace(Entry.CueTag.GetTag(), Entry.Status == EGOTAStatus::Burning ? UGOTAGameplayCue_Burning::StaticClass()
+				: IsHardControl(Entry.Status) ? UGOTAGameplayCue_HardControl::StaticClass() : UGOTAGameplayCue_StatusOverlay::StaticClass());
 		}
 		Wanted.Emplace(GOTATags::Cue_Resisted.GetTag(), UGOTAGameplayCue_Resisted::StaticClass());
 		TArray<FGameplayCueReferencePair> Missing;

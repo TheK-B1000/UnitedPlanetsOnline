@@ -962,6 +962,18 @@ namespace GOTANetTest
 		{
 			return true;
 		}
+		// A stunned or frozen player has no input; the driver calls Blueprint actions directly, so it holds itself.
+		static bool bLoggedHold = false;
+		if (GOTAGAS::IsIncapacitated(Me))
+		{
+			if (!bLoggedHold)
+			{
+				bLoggedHold = true;
+				UE_LOG(LogGOTANet, Log, TEXT("FIGHT holds: %s is incapacitated"), *GetNameSafe(Me));
+			}
+			return true;
+		}
+		bLoggedHold = false;
 		const double Now = World->GetTimeSeconds();
 		APawn* Target = nullptr;
 		if (const UGOTADuelFighterComponent* Fighter = Me->FindComponentByClass<UGOTADuelFighterComponent>())

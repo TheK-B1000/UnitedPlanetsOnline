@@ -10,8 +10,9 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Veiled, "GOTA.Status.Veiled", "Untargetable by abilities and immune to Blueprint hits (Nyx Void Shield).");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Unbreakable, "GOTA.Status.Unbreakable", "Hyper armour and partial damage refund (Varoth Colossus Form).");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Burning, "GOTA.Status.Burning", "Fire damage over time (Drakon Molten Strike).");
-	UE_DEFINE_GAMEPLAY_TAG(Status_Frozen, "GOTA.Status.Frozen");
-	UE_DEFINE_GAMEPLAY_TAG(Status_Stunned, "GOTA.Status.Stunned");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Frozen, "GOTA.Status.Frozen", "Hard crowd control (Frost): held in place, ends on the first real hit.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Stunned, "GOTA.Status.Stunned", "Hard crowd control: no movement or actions.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Incapacitated, "GOTA.State.Incapacitated", "Cannot move or act (granted by Stunned and Frozen).");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity, "GOTA.Immunity", "Parent of the effect-aspect immunities a status policy grants.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity_Slow, "GOTA.Immunity.Slow", "Immune to movement impairment from effects.");
@@ -39,5 +40,7 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Veiled, "GameplayCue.GOTA.Status.Veiled");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Unbreakable, "GameplayCue.GOTA.Status.Unbreakable");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Burning, "GameplayCue.GOTA.Status.Burning");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Stunned, "GameplayCue.GOTA.Status.Stunned");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Frozen, "GameplayCue.GOTA.Status.Frozen");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Resisted, "GameplayCue.GOTA.Resisted");
 }

@@ -2,6 +2,7 @@
 
 #include "Characters/GOTAPlayerCharacter.h"
 
+#include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
@@ -110,6 +111,11 @@ bool AGOTAPlayerCharacter::ValidateServerRPC(const UFunction* Function, void* Pa
 	{
 		return false; // the dead cannot attack, block or parry
 	}
+	if (bCombatAction && GOTAGAS::IsIncapacitated(this))
+	{
+		UE_LOG(LogGOTANetGuard, Log, TEXT("%s: %s refused (incapacitated)"), *GetName(), *Name.ToString());
+		return false; // Stunned / Frozen: no attack, spell, block or parry
+	}
 	const bool bDefending = IsDefendingNow() || Now - LastDefendingTime <= ParryGraceSeconds;
 	if (Name == GOTANetGuard::ParryAttack || Name == GOTANetGuard::OnBlocked)
 	{
@@ -140,6 +146,22 @@ void AGOTAPlayerCharacter::ProcessEvent(UFunction* Function, void* Parms)
 		++RejectedRPCs;
 		UE_LOG(LogGOTANetGuard, Warning, TEXT("%s: rejected %s (failed server validation, %d rejected so far)"), *GetName(), *Function->GetName(), RejectedRPCs);
 		return;
+	}
+	// On the authority (listen host, standalone, an AI-driven hero) MeleeAttack & co. call the MC_ multicast directly and
+	// never pass through SR_. A Blueprint's own internal calls do not reach ProcessEvent (the player's input is locked by
+	// DisableInput instead); calls into these events from C++ (AI code, test drivers) do, and are refused here.
+	if (Function && HasAuthority() && GetWorld() && GetWorld()->IsGameWorld() && GOTAGAS::IsIncapacitated(this))
+	{
+		static const FName LockedActions[] = { TEXT("MeleeAttack"), TEXT("ShootMagicSpell"), TEXT("StartBlock"), TEXT("ParryAttack"),
+			TEXT("MC_MeleeAttack"), TEXT("MC_ShootMagicSpell"), TEXT("MC_StartBlock"), TEXT("MC_ParryAttack") };
+		for (const FName& A : LockedActions)
+		{
+			if (Function->GetFName() == A)
+			{
+				UE_LOG(LogGOTANetGuard, Log, TEXT("%s: %s refused (incapacitated)"), *GetName(), *A.ToString());
+				return;
+			}
+		}
 	}
 	Super::ProcessEvent(Function, Parms);
 }

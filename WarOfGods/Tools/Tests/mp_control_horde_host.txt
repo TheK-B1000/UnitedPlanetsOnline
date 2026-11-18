@@ -1,0 +1,21 @@
+# GAS milestone A in Horde (healing harness: NOT difficulty evidence). Four players fight; every wave enemy alive is
+# stunned, later frozen, several times. Each enemy must stop (brain paused, no attacks), then resume and fight again;
+# enemies that die while locked must stay dead. GOTA_HordeTelemetry / log counts compare locks on and off.
+waitplayers 4 120
+gota.Net.Sustain 300 25
+gota.Net.Fight 280
+wait 20
+gota.Net.Status ea Stunned 2 0 p0
+wait 8
+gota.Net.Status ea Frozen 3 0 p0
+wait 9
+gota.Net.Status ea Stunned 2 0 p0
+wait 8
+gota.Net.Status ea Frozen 3 0 p0
+wait 9
+gota.Net.Status ea Stunned 2 0 p0
+wait 30
+gota.Telemetry.Dump
+gota.Horde.Dump
+wait 20
+quit

@@ -72,6 +72,8 @@ private:
 	FName StateKey;
 	FName TargetKey;
 	bool bKeysResolved = false;
+	/** Last tick saw the enemy Stunned / Frozen (re-engage on release). */
+	bool bWasIncapacitated = false;
 	TWeakObjectPtr<APawn> LastTarget;
 	float BestDistance = 0.f;
 	double LastProgressTime = 0.0;

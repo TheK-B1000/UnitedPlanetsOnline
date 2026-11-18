@@ -23,7 +23,9 @@ enum class EGOTAAbilityDenied : uint8
 	OutOfRange,
 	NoLineOfSight,
 	NoSafeDestination,
-	Invalid
+	Invalid,
+	/** Stunned or Frozen. */
+	Incapacitated
 };
 
 /**
@@ -108,6 +110,8 @@ public:
 	static void ApplyStatusTo(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source);
 	/** Server: end casts, statuses and timers (round reset / death). */
 	void ResetAbilities(bool bClearCooldowns);
+	/** Server: cut the current cast short (hard crowd control). The cooldown stays spent, as for a hit interrupt. */
+	void InterruptCast(const TCHAR* Why) { CancelCastServer(Why); }
 
 	/** Test hook: force the AI to use a slot now (ignores the AI gap, not the rules). */
 	void DebugAIUse(int32 Slot);
@@ -218,6 +222,10 @@ protected:
 
 	/** Health last tick while Unbreakable is up (server). */
 	float StatusTrackedHealth = -1.f;
+	/** Health last tick while Frozen (server); a drop that is not a status tick shatters the ice. */
+	float FrozenTrackedHealth = -1.f;
+	/** Server, set by ResolveServer: this strike applies the ability's status to every enemy it lands on. */
+	bool bStatusOnLand = false;
 	float AITrackedOpponentHealth = -1.f;
 	bool bStatusVisualExpired = false;
 

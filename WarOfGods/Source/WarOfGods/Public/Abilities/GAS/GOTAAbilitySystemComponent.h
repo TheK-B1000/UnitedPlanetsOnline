@@ -66,6 +66,10 @@ public:
 
 protected:
 	void BindServerEvents();
+	/** Every peer: GOTA.State.Incapacitated gained or lost -> GOTAGAS::SetControlLock (server lock, local input). */
+	void BindControlEvents();
+	void HandleIncapacitatedChanged(const FGameplayTag Tag, int32 NewCount);
+	bool bControlEventsBound = false;
 	void HandleVeiledChanged(const FGameplayTag Tag, int32 NewCount);
 	void HandleUnbreakableChanged(const FGameplayTag Tag, int32 NewCount);
 

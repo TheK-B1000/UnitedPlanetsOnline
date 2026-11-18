@@ -1,0 +1,26 @@
+# GAS milestone A, Frozen on a plain template enemy (no hero kit): held still with its animation paused; Burning ticks do
+# not shatter the ice, the first real hit does; expiry releases it; recovery immunity; death while frozen releases it and
+# never wakes the dead AI.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 250
+wait 0.3
+gota.Ability.Status 1 Frozen 4 0 0
+wait 0.2
+gota.Ability.Dump
+gota.Ability.Status 1 Burning 3 2 0
+wait 2.3
+gota.Ability.Dump
+gota.Duel.Hurt 1 10
+wait 0.3
+gota.Ability.Dump
+wait 2.5
+gota.Ability.Status 1 Frozen 1.0 0 0
+wait 1.4
+gota.Ability.Dump
+wait 2.3
+gota.Ability.Status 1 Frozen 4 0 0
+wait 0.3
+gota.Duel.Hurt 1 9999
+wait 1.5
+quit

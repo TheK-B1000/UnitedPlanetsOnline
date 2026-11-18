@@ -40,6 +40,7 @@ UGOTAAbilitySystemComponent* UGOTAAbilitySystemComponent::EnsureOnPawn(APawn* Pa
 		ASC->AddSet<UGOTACombatAttributeSet>();
 	}
 	ASC->BindServerEvents(); // idempotent; picks up a stats component created after the ASC
+	ASC->BindControlEvents();
 	return ASC;
 }
 
@@ -54,6 +55,23 @@ void UGOTAAbilitySystemComponent::BeginPlay()
 	// Cues are routed on every peer, so each process registers the native cue classes before the first one fires.
 	GOTAGAS::RegisterNativeCues();
 	BindServerEvents();
+	BindControlEvents();
+}
+
+void UGOTAAbilitySystemComponent::BindControlEvents()
+{
+	if (bControlEventsBound || !GetOwner())
+	{
+		return;
+	}
+	bControlEventsBound = true;
+	RegisterGameplayTagEvent(GOTATags::State_Incapacitated, EGameplayTagEventType::NewOrRemoved)
+		.AddUObject(this, &UGOTAAbilitySystemComponent::HandleIncapacitatedChanged);
+}
+
+void UGOTAAbilitySystemComponent::HandleIncapacitatedChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	GOTAGAS::SetControlLock(Cast<APawn>(GetOwner()), NewCount > 0);
 }
 
 void UGOTAAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

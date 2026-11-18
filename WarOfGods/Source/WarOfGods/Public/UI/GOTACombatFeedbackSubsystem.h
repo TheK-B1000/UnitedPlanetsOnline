@@ -57,16 +57,20 @@ public:
 protected:
 	void HandleStatusResisted(AActor* Target, EGOTAStatus Status, int32 Aspects, AActor* Instigator);
 	void HandleStatusCue(AActor* Target, EGOTAStatus Status, bool bActive);
-	/** A pawn destroyed while burning (respawn) never gets the cue's removal; this clears the indicator. */
+	/** A pawn destroyed while a status is up (respawn) never gets the cue's removal; this clears the indicators. */
 	UFUNCTION()
 	void HandleStatusPawnDestroyed(AActor* Destroyed);
-	void SetBurningIndicator(AActor* Pawn);
+	/** The local pawn gained or lost an indicated status (FROZEN, STUNNED, BURNING). */
+	void SetLocalStatus(AActor* Pawn, EGOTAStatus Status, bool bOn);
+	/** Show every indicated status the local pawn has, most important first ("FROZEN  |  BURNING"). */
+	void RefreshStatusLine();
 	UGOTACombatFeedbackWidget* EnsureWidget();
 
 	UPROPERTY(Transient)
 	TObjectPtr<UGOTACombatFeedbackWidget> Widget;
 	FDelegateHandle ResistedHandle;
 	FDelegateHandle StatusCueHandle;
-	/** The local pawn the BURNING indicator is showing for. */
-	TWeakObjectPtr<AActor> BurningPawn;
+	/** The local pawn the indicators are showing for, and which statuses it has. */
+	TWeakObjectPtr<AActor> StatusPawn;
+	TArray<EGOTAStatus> LocalStatuses;
 };

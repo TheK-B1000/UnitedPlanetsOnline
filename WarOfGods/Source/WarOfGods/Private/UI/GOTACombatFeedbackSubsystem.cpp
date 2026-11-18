@@ -153,58 +153,113 @@ void UGOTACombatFeedbackSubsystem::ShowMessage(const FText& Text, const FLinearC
 	}
 }
 
-void UGOTACombatFeedbackSubsystem::SetBurningIndicator(AActor* Pawn)
+namespace
 {
-	if (AActor* Old = BurningPawn.Get(); Old && Old != Pawn)
+	/** Statuses with a local indicator, most important first, and their words and colours. */
+	struct FIndicated { EGOTAStatus Status; const TCHAR* Log; FText Text; FLinearColor Color; };
+	const TArray<FIndicated>& Indicated()
 	{
-		Old->OnDestroyed.RemoveDynamic(this, &UGOTACombatFeedbackSubsystem::HandleStatusPawnDestroyed);
+		static const TArray<FIndicated> List = {
+			{ EGOTAStatus::Frozen, TEXT("FROZEN"), NSLOCTEXT("GOTA", "StatusFrozen", "FROZEN"), FLinearColor(0.55f, 0.85f, 1.f, 1.f) },
+			{ EGOTAStatus::Stunned, TEXT("STUNNED"), NSLOCTEXT("GOTA", "StatusStunned", "STUNNED"), FLinearColor(1.f, 0.9f, 0.3f, 1.f) },
+			{ EGOTAStatus::Burning, TEXT("BURNING"), NSLOCTEXT("GOTA", "StatusBurning", "BURNING"), FLinearColor(1.f, 0.45f, 0.12f, 1.f) },
+		};
+		return List;
 	}
-	const bool bWasOn = BurningPawn.IsValid();
-	BurningPawn = Pawn;
-	if (Pawn)
+}
+
+void UGOTACombatFeedbackSubsystem::SetLocalStatus(AActor* Pawn, EGOTAStatus Status, bool bOn)
+{
+	const FIndicated* Entry = Indicated().FindByPredicate([Status](const FIndicated& I) { return I.Status == Status; });
+	if (!Entry)
 	{
+		return;
+	}
+	if (bOn && Pawn != StatusPawn.Get())
+	{
+		// A new local pawn (respawn): start clean.
+		if (AActor* Old = StatusPawn.Get())
+		{
+			Old->OnDestroyed.RemoveDynamic(this, &UGOTACombatFeedbackSubsystem::HandleStatusPawnDestroyed);
+		}
+		LocalStatuses.Reset();
+		StatusPawn = Pawn;
 		Pawn->OnDestroyed.AddUniqueDynamic(this, &UGOTACombatFeedbackSubsystem::HandleStatusPawnDestroyed);
 	}
-	UGOTACombatFeedbackWidget* Live = (Pawn || bWasOn) ? EnsureWidget() : nullptr;
-	if (Live)
+	const bool bHad = LocalStatuses.Contains(Status);
+	if (bOn == bHad)
 	{
-		Live->SetStatus(Pawn ? NSLOCTEXT("GOTA", "StatusBurning", "BURNING") : FText::GetEmpty(), FLinearColor(1.f, 0.45f, 0.12f, 1.f));
+		return;
 	}
-	if ((Pawn != nullptr) != bWasOn)
+	if (bOn)
 	{
-		UE_LOG(LogGOTAFeedback, Log, TEXT("FEEDBACK STATUS BURNING %s"), Pawn ? TEXT("on") : TEXT("off"));
+		LocalStatuses.Add(Status);
+	}
+	else
+	{
+		LocalStatuses.Remove(Status);
+	}
+	UE_LOG(LogGOTAFeedback, Log, TEXT("FEEDBACK STATUS %s %s"), Entry->Log, bOn ? TEXT("on") : TEXT("off"));
+	RefreshStatusLine();
+}
+
+void UGOTACombatFeedbackSubsystem::RefreshStatusLine()
+{
+	FString Line;
+	FLinearColor Color = FLinearColor::White;
+	for (const FIndicated& I : Indicated())
+	{
+		if (LocalStatuses.Contains(I.Status))
+		{
+			if (Line.IsEmpty())
+			{
+				Color = I.Color; // the most important status sets the colour
+			}
+			Line += (Line.IsEmpty() ? TEXT("") : TEXT("  |  ")) + I.Text.ToString();
+		}
+	}
+	if (UGOTACombatFeedbackWidget* Live = (!Line.IsEmpty() || Widget) ? EnsureWidget() : nullptr)
+	{
+		Live->SetStatus(FText::FromString(Line), Color);
 	}
 }
 
 void UGOTACombatFeedbackSubsystem::HandleStatusCue(AActor* Target, EGOTAStatus Status, bool bActive)
 {
-	if (Status != EGOTAStatus::Burning || !Target)
+	if (!Target)
 	{
 		return;
 	}
 	if (!bActive)
 	{
-		if (Target == BurningPawn.Get())
+		if (Target == StatusPawn.Get())
 		{
-			SetBurningIndicator(nullptr);
+			SetLocalStatus(Target, Status, false);
 		}
 		return;
 	}
-	// Only the player whose own pawn burns sees the indicator; everyone sees the flames.
+	// Only the player whose own pawn has the status sees the line; everyone sees the body (overlay, flames, ice).
 	ULocalPlayer* LP = GetLocalPlayer();
 	UWorld* World = LP ? LP->GetWorld() : nullptr;
 	const APlayerController* PC = LP ? LP->GetPlayerController(World) : nullptr;
-	if (PC && PC->GetPawn() == Target && Target != BurningPawn.Get())
+	if (PC && PC->GetPawn() == Target)
 	{
-		SetBurningIndicator(Target);
+		SetLocalStatus(Target, Status, true);
 	}
 }
 
 void UGOTACombatFeedbackSubsystem::HandleStatusPawnDestroyed(AActor* Destroyed)
 {
-	if (Destroyed == BurningPawn.Get() || !BurningPawn.IsValid())
+	if (Destroyed == StatusPawn.Get() || !StatusPawn.IsValid())
 	{
-		SetBurningIndicator(nullptr);
+		for (const EGOTAStatus S : TArray<EGOTAStatus>(LocalStatuses))
+		{
+			const FIndicated* Entry = Indicated().FindByPredicate([S](const FIndicated& I) { return I.Status == S; });
+			UE_LOG(LogGOTAFeedback, Log, TEXT("FEEDBACK STATUS %s off"), Entry ? Entry->Log : TEXT("?"));
+		}
+		LocalStatuses.Reset();
+		StatusPawn.Reset();
+		RefreshStatusLine();
 	}
 }
 
@@ -225,6 +280,8 @@ FText UGOTACombatFeedbackSubsystem::DescribeResist(const AActor* Target, EGOTASt
 	case EGOTAStatus::Veiled: What = NSLOCTEXT("GOTA", "ResistVeiled", "VEIL"); break;
 	case EGOTAStatus::Unbreakable: What = NSLOCTEXT("GOTA", "ResistUnbreakable", "UNBREAKABLE"); break;
 	case EGOTAStatus::Burning: What = NSLOCTEXT("GOTA", "ResistBurning", "BURNING"); break;
+	case EGOTAStatus::Stunned: What = NSLOCTEXT("GOTA", "ResistStunned", "STUN"); break;
+	case EGOTAStatus::Frozen: What = NSLOCTEXT("GOTA", "ResistFrozen", "FREEZE"); break;
 	default: What = NSLOCTEXT("GOTA", "ResistEffect", "EFFECT"); break;
 	}
 	if (Aspects & GOTAGAS::Aspect_Whole)

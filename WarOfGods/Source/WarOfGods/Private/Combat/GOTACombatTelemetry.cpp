@@ -1,6 +1,7 @@
 // White Tiger Studios 2024
 
 #include "Combat/GOTACombatTelemetry.h"
+#include "Abilities/GAS/GOTAStatusEffects.h"
 
 #include "AIController.h"
 #include "Animation/AnimInstance.h"
@@ -312,7 +313,8 @@ void UGOTAEnemyTelemetryProbe::Sample(double Now)
 		StillSince = -1.0;
 		return;
 	}
-	const bool bStill = Dist > StallDistance && Pawn->GetVelocity().Size2D() < 10.f && !CurrentAttack.IsValid();
+	// A Stunned / Frozen enemy is held still on purpose: not a stall.
+	const bool bStill = Dist > StallDistance && Pawn->GetVelocity().Size2D() < 10.f && !CurrentAttack.IsValid() && !GOTAGAS::IsIncapacitated(Pawn);
 	if (!bStill)
 	{
 		StillSince = -1.0;

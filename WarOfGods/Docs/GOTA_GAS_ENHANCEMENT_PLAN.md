@@ -27,6 +27,33 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Reflection-buffer crash fix, lobby button | `10f4bb2` | Done (packaged RC12c) |
 | Boss definition kept loaded on the server | `05704ae` | Done (packaged RC12c) |
 
+## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
+
+Audit of the RC14 baseline (`cdd2214`):
+
+| Area | State | Where |
+|---|---|---|
+| ASC on the pawn, Mixed replication, combat AttributeSet (walk speed, outgoing damage; strongest penalty wins) | done | `GOTAAbilitySystemComponent`, `GOTACombatAttributeSet` |
+| Statuses Slowed, Dread, Veiled, Unbreakable, Burning (DoT, attribution) | done | `GOTAStatusEffects` |
+| Boss status policies (aspect immunity, partial resistance), resisted cue and feedback | done | `GOTAStatusPolicy`, `UGOTABossDefinition` |
+| Element table (Fire filled; Frost, Lightning, Shadow named with no status), element tag on abilities | partial | `GOTAElements` |
+| Frozen / Stunned | **missing** (tags reserved, `GOTA.Immunity.Stun` has no reader) | |
+| Shields, incoming damage reduction / amplification, buffs | **missing** (Unbreakable refunds after the fact through `Heal`) | |
+| Per-element resistances and interactions | **missing** | |
+| Card effects not implemented: Mind Spike stun (Nyx), Void Shield "negates control", World Burn burning area, Colossus Form power, Soul Drain energy steal | **missing** | `Tools/GOTA_BuildHeroAbilities.py` |
+| Projectiles, persistent zones, enemy supernatural abilities | **missing** (abilities are instant arcs / bursts / charges) | |
+| Status presentation: overlays for 4 statuses (Slowed, Dread faint), flames for Burning, local BURNING line, resist line; no icons or durations except the Duel HUD text | partial | cues, `UGOTACombatFeedbackSubsystem` |
+
+Ordered checklist (each step verified before the next; focused tests during work, full editor + packaged regressions at each milestone):
+
+- **A. Frozen and Stun** (hard crowd control). A1 effects, tags, cues, `Control` aspect (`GOTA.Immunity.Stun`); rules: one hard CC at a time, not extended while active, refused on an invincible target (Veiled, a dodge's i-frames, a boss's floating phase), 2 s recovery immunity after it ends. A2 the lock: server cancels the cast, denies abilities, Divine Counter and dodge arming, rejects the player's combat RPCs, ends a block, stops montages, pauses AI and stops movement; the owning client disables input; everything resumes on expiry (never on the dead). A3 Frozen: animation paused on every peer, ends early on the first real hit (shatter; status ticks do not). A4 overlays, local STUNNED / FROZEN line, resist feedback (bosses immune by default). A5 first user: Mind Spike's last strike stuns (Nyx card). A6 tests.
+- **B. Shields, buffs, debuffs.** Incoming damage hook before the Blueprint damage system (all damage, including Blueprint melee); `Shield` pool attribute with absorb, break and expiry; incoming damage multiplier (reduction / amplification); outgoing damage and walk speed buffs; data-driven effect rows with explicit stacking and refresh; interactions with Dread, Veiled, Unbreakable, Slowed.
+- **C. Elements.** Frost, Lightning, Shadow rows with statuses; per-element resistance in status policies, applied at the two elemental damage points; a small fixed interaction table (for example Fire thaws Frozen, Frost puts out Burning).
+- **D. Hero abilities.** Card effects above; reuse A–C; no second cooldown system.
+- **E. Projectiles, AOE zones, enemy powers.** Replicated server-hit projectile, persistent zone with periodic effects, an enemy ability path that uses the same effects and policies.
+- **F. Presentation.** Status icons with time left for the local player and the target, shield bar, element VFX per status, sounds, consistency in Duel, Story, Horde.
+- **G. Final integration.** Multiplayer, bosses, respawn, performance, packaged regressions; this document updated.
+
 ## Ownership
 
 | Value or decision | Single owner | GAS role |
@@ -34,7 +61,8 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Health, damage outcome, block, death | `BPC_DamageSystem` via `FGOTABlueprintCombat::ApplyDamage` | none |
 | Momentum | `UStatsComponent` / `UGOTADuelFighterComponent` | none |
 | Ability cooldowns, costs, cast timeline, range, LOS, hit detection | `UGOTAHeroAbilityComponent` | none |
-| Statuses Slowed, Dread, Veiled, Unbreakable, Burning | **`UGOTAAbilitySystemComponent` (gameplay effects)** | owner |
+| Statuses Slowed, Dread, Veiled, Unbreakable, Burning, Stunned, Frozen | **`UGOTAAbilitySystemComponent` (gameplay effects)** | owner |
+| Hard crowd-control lock and release (`GOTA.State.Incapacitated`) | **`GOTAGAS::SetControlLock`**, enforced by the ability component, fighter, player RPC guard and AI brain | owner |
 | When a Burning tick happens, who owns it, how much it asks for | **`UGOTAGameplayEffect_Burning`** (period, instigator, `Data.TickDamage`) | owner |
 | What a Burning tick does to health | `BPC_DamageSystem`, called by `GOTAGAS::DealStatusDamage` | caller only |
 | Element tuning (which status, duration, strength, tick interval, effect) | `UGOTAElementSettings` (Project Settings > GOTA Elements) | data |
@@ -155,7 +183,7 @@ Statuses are split into independent **aspects**, each with its own immunity tag:
 |---|---|---|
 | Movement impairment | `GOTA.Immunity.Slow` | Slowed (all of it), Dread (its walk modifier) |
 | Attack-power reduction | `GOTA.Immunity.Weaken` | Dread (its damage modifier) |
-| Hard crowd control | `GOTA.Immunity.Stun` | reserved for future Frozen / Stunned effects |
+| Hard crowd control | `GOTA.Immunity.Stun` | Stunned, Frozen (also granted for 2 s after either ends) |
 | Cast interruption | `GOTA.Immunity.Interrupt` | the hero-ability interrupt check (as Unbreakable) |
 | Fire damage over time | `GOTA.Immunity.Burn` | Burning (all of it). No boss has it by default: the Quarry Behemoth burns. |
 
@@ -172,6 +200,27 @@ Why the default boss policy blocks slows: the boss component writes its own walk
 
 Engine limitation, and how it is handled: for persistent effects, Unreal evaluates attributes without target tags, so a per-modifier immunity filter is never checked. The adapter therefore neutralises a blocked aspect when the effect is applied. The modifier filters are kept because instant and periodic effects (future Burning) do honour them. An immunity granted after a status has already landed does not cancel that status; policies are granted at spawn, so this does not happen today.
 
+## Hard crowd control: Stunned and Frozen (milestone A)
+
+Both are status effects (`UGOTAGameplayEffect_Stunned`, `UGOTAGameplayEffect_Frozen`) that grant their own `GOTA.Status` tag and the shared **`GOTA.State.Incapacitated`**. Every lock and release hangs off that one tag (`UGOTAAbilitySystemComponent` → `GOTAGAS::SetControlLock`, on every peer).
+
+| Rule | Behavior |
+|---|---|
+| What it stops | Movement (walk speed 0 on the server and the owning client), melee, spells, block, parry, dodge, Divine Counter, hero abilities. The current action is cut short: hero-ability cast cancelled (cooldown stays spent), block ended, attack montage stopped. Damage already dealt stands. |
+| Server enforcement | Abilities: `EGOTAAbilityDenied::Incapacitated`. Player combat RPCs `SR_MeleeAttack / SR_ShootMagicSpell / SR_StartBlock / SR_ParryAttack` refused, and so are those events (and their `MC_` multicasts) when C++ calls them on the authority. Divine Counter and perfect-dodge arming refused. AI: brain paused, movement stopped, focus cleared. |
+| Local input | The locally controlled pawn's input is disabled and re-enabled (listen host and remote clients alike). A Blueprint's own internal calls cannot be intercepted from C++, so on the authority the input lock is what stops a human; the server rules above stop everything that reaches it. |
+| Release | Expiry, Frozen's shatter, death, round reset. The AI's brain is resumed **and restarted from the root** (blackboard kept): a resumed move task waited forever for the move the lock had stopped, and released enemies far from the players never walked again (found in the Horde run). Enemy targeting pauses while locked and orders the attack again on release; the stall watch ignores locked enemies. A defeated AI is never woken. |
+| Duration and refresh | From the source (ability definition or element row). **Not extended while active** and **one hard CC at a time**: a second Stunned or a Frozen on an incapacitated target is refused ("already incapacitated … not extended"). |
+| Recovery | When it ends (not by death), `UGOTAGameplayEffect_ControlRecovery` grants `GOTA.Immunity.Stun` for `gota.GAS.ControlRecovery` seconds (default 2). New Stunned / Frozen in that window is resisted with the usual feedback ("TARGET RESISTS STUN"). No combination of casters can chain-lock a target. |
+| Invincible targets | Refused while the target's damage system is invincible: Veiled, a dodge's i-frames, a boss's floating phase. |
+| Bosses | Immune by default (`GOTA.Immunity.Stun` in the boss status policy): "THE QUARRY BEHEMOTH RESISTS STUN / FREEZE". The boss's own staggers, parry recoil and the Divine Counter stun are not effects and are unchanged. |
+| Frozen | Element Frost. Animation held (`bPauseAnims`) on every peer by the cue. The first **real hit** removes it early ("Frozen shattered by a hit"); status ticks (Burning) do not count. |
+| Coexistence | Coexists with every other status. Burning keeps ticking on a stunned or frozen target. |
+| Presentation | Overlays `M_GOTA_Overlay_Frozen` (pale ice) and `M_GOTA_Overlay_Stunned` (gold), above every other status in priority. Local line "FROZEN" / "STUNNED" (with "BURNING" if both: "FROZEN  \|  BURNING"). |
+| First user | Nyx **Mind Spike**: the last of its three strikes stuns for 0.8 s if it lands (card: "Stuns and disrupts"). A striking ability's status is applied only to enemies its damage reached. |
+
+Ownership: the lock is `GOTAGAS::SetControlLock`; walk speed stays with `UGOTAHeroAbilityComponent` (the only `MaxWalkSpeed` writer; created on an enemy when a hard CC lands, as for slows); the shatter rule lives in its server tick next to the Unbreakable refund.
+
 ## Behavior changes
 
 1. Statuses coexist (the point of this milestone). Before, a second status silently replaced the first.
@@ -183,6 +232,8 @@ Engine limitation, and how it is handled: for persistent effects, Unreal evaluat
 
 7. Molten Strike ignites: 6 more damage over 3 s on each enemy it lands on. Its impact, cooldown, animation, hit detection and momentum are unchanged.
 8. `FGOTABlueprintCombat::ApplyDamage` takes an optional `bForceInterrupt` (default true, the old behaviour). Only status ticks pass false.
+9. Milestone A: Nyx's Mind Spike stuns (0.8 s, last strike, bosses immune). Bosses now also refuse Stunned and Frozen with the resist line.
+10. The local status line shows FROZEN and STUNNED as well as BURNING (several at once, most important first).
 
 Nothing else changed: the same numbers, the same Blueprint flags, the same damage path.
 

@@ -87,10 +87,13 @@ HEROES = {
              cooldown=7, cast=0.15, recovery=0.25, range=650, interruptible=False,
              anim=CA + "Ability_RMB", rate=1.2, cast_fx=C + "/FX/Particles/Abilities/Blink/FX/P_Countess_TeleportBegin", impact_fx=C + "/FX/Particles/Abilities/Blink/FX/P_Countess_TeleportArrive", fx_scale=1.0, kick=0.0,
              ai=dict(priority=1.0, min=300, max=650)),
-        # Card: "Stuns and disrupts." (a true stun status is not implemented yet: the strikes stagger)
+        # Card: "Stuns and disrupts." The first two strikes stagger; the last one that lands stuns for 0.8 s (GAS Stunned:
+        # hard crowd control, bosses immune, 2 s recovery immunity, so it cannot chain).
         dict(id="MindSpike", name="Mind Spike", short="Mind Spike", kind=K.MULTI_HIT,
-             desc="Disrupts: three rapid psychic strikes that stagger the target in front of Nyx.",
+             desc="Stuns and disrupts: three rapid psychic strikes on the target in front of Nyx. The last strike stuns "
+                  "for 0.8 s (bosses are immune).",
              damage=9, hits=3, interval=0.22, cooldown=7, cast=0.25, recovery=0.45, range=260, arc=110,
+             status=ST.STUNNED, status_duration=0.8,
              anim=CA + "Ability_Q", rate=1.15, impact_fx=C + "/FX/Particles/Abilities/BlinkStrike/FX/P_Countess_BlinkStrike_HitFX", fx_scale=0.8, kick=0.5,
              ai=dict(priority=1.3, min=0, max=280)),
         # Card: "Absorbs damage and negates control."

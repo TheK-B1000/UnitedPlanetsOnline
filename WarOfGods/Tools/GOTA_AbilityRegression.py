@@ -210,6 +210,44 @@ CASES = {
           (r"Burning tick on", 4),
           (r"GAS standalone ascs=2 withStatus=0 burning=0 flames=0 burnTicks=4 burnDamage=7\.0", 1)]),
     ],
+    # GAS milestone A: hard crowd control (Stunned, Frozen). One lock (GOTA.State.Incapacitated) on server and client.
+    "Control": [
+        ("Stunned: cast cut, abilities/counter/melee refused, not extended, recovery", "?Opponent=AI?Hero=Drakon?Foe=Drakon?DevHeroes=1", "control_stun.txt",
+         [(r"MoltenStrike cancelled \(incapacitated\)", 1),                                   # the AI's wind-up cut short
+          (r"status Stunned 1\.5s x0\.00", 2), (r"status Stunned 1\.0s x0\.00", 1),
+          (r"CONTROL lock on \(block ended=\d, montages cut=\d+, ai paused=1\)", True),
+          (r"GAS move scale=0\.00", True),
+          (r"denied \(Incapacitated\)", 2),                                                   # AI slot 1, player slot 0
+          (r"status Stunned refused \(already incapacitated, Stunned [0-9.]+s left; not extended\)", 1),
+          (r"status Frozen refused \(already incapacitated", 1),                              # one hard CC at a time
+          (r"CONTROL lock off \(ai resumed=1, recovery immunity 2\.0s\)", True),
+          (r"control recovery: immune to Stun/Freeze for 2\.0s", True),
+          (r"status Stunned resisted \(whole control \)", 1),                                 # during the recovery
+          (r"FEEDBACK TARGET RESISTS STUN", 1),
+          (r"Divine Counter refused \(incapacitated\)", 1),
+          (r": MeleeAttack refused \(incapacitated\)", 1),
+          (r"CONTROL input disabled \(local\)", 1), (r"CONTROL input enabled \(local\)", 1),
+          (r"FEEDBACK STATUS STUNNED on", 1), (r"FEEDBACK STATUS STUNNED off", 1),
+          (r"-> M_GOTA_Overlay_Stunned on", True),
+          (r"MoltenStrike \(MeleeArc\) cast", 2)]),                                           # AI's, then the player's after the stun
+        ("Frozen: held, burn does not shatter, a hit does, expiry, death", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "control_frozen.txt",
+         [(r"status Frozen 4\.0s x0\.00", 2), (r"status Frozen 1\.0s x0\.00", 1),
+          (r"control cue GameplayCue\.GOTA\.Status\.Frozen on \S+: \d+ montage\(s\) cut, animation held", True),
+          (r"-> M_GOTA_Overlay_Frozen on", True),
+          (r"(?s)Burning tick on .*Burning tick on .*Frozen shattered by a hit", True),       # two ticks, still frozen, then the hit
+          (r"Frozen shattered by a hit", 1),
+          (r"animation released", 3),                                                          # shatter, expiry, death
+          (r"CONTROL lock on \(.*ai paused=1\)", 3),
+          (r"CONTROL lock off \(ai resumed=0, recovery immunity 0\.0s, defeated\)", 1),
+          (r"cleared \d+ status effect\(s\) \(death\)", 1)]),
+        ("Boss immune to Stun and Freeze + feedback", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "control_boss.txt",
+         [(r"BP_Boss\S*: status Stunned resisted \(whole control \)", 1), (r"BP_Boss\S*: status Frozen resisted \(whole control \)", 1),
+          (r"FEEDBACK THE QUARRY BEHEMOTH RESISTS STUN", 1), (r"FEEDBACK THE QUARRY BEHEMOTH RESISTS FREEZE", 1),
+          (r"CONTROL lock on", False)]),
+        ("Mind Spike's last strike stuns (Nyx)", "?Opponent=AI?Hero=Nyx?DevHeroes=1", "control_mindspike.txt",
+         [(r"MindSpike hit \S+ for 9\.0 \(landed=1\)", 3), (r"status Stunned 0\.8s x0\.00", 1),
+          (r"CONTROL lock on", 1), (r"CONTROL lock off", 1)]),
+    ],
 }
 # Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.
 MP = {
@@ -223,6 +261,15 @@ MP = {
 }
 # Multiplayer for statuses: host hero, host script, host-log checks, client-log checks (the remote player's own view).
 MP_STATUS = {
+    "Control": ("Drakon", "control_mp_host.txt",
+                [(r"status Stunned 2\.0s x0\.00", 1), (r"CONTROL lock on", 2), (r": MeleeAttack refused \(incapacitated\)", 1),
+                 (r"status Frozen 4\.0s x0\.00", 1), (r"Frozen shattered by a hit", 1)],
+                # the remote player's own machine: input locked and released, its line, the overlay, the ice
+                [(r"CONTROL input disabled \(local\)", 2), (r"CONTROL input enabled \(local\)", 2),
+                 (r"FEEDBACK STATUS STUNNED on", 1), (r"FEEDBACK STATUS FROZEN on", 1), (r"FEEDBACK STATUS FROZEN off", 1),
+                 (r"overlay \S+ -> M_GOTA_Overlay_Stunned on BP_Player", True),
+                 (r"control cue GameplayCue\.GOTA\.Status\.Frozen on BP_Player\S+: \d+ montage\(s\) cut, animation held", True),
+                 (r"control cue GameplayCue\.GOTA\.Status\.Frozen removed from BP_Player\S+: animation released", True)]),
     "Dread": ("Nyx", "dread_mp_host.txt",
               [(r"SoulDrain hit BP_Player\S+ for [0-9.]+ \(landed=1\)", True), (r"status Dread 4\.0s x0\.35", True)],
               [(r"cue GameplayCue\.GOTA\.Status\.Dread on BP_Player", True), (r"overlay \S+ -> M_GOTA_Overlay_Dread on BP_Player", True), (r"BP_Player\S*: GAS move scale=0\.65", True),

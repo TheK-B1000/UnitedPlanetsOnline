@@ -546,9 +546,9 @@ bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reas
 	const double Now = GetWorld()->GetTimeSeconds();
 	LastArmLead = -1.f;
 	LastArmAttacker.Reset();
-	if (Now <= CounterInvulnEndTime)
+	if (Now <= CounterInvulnEndTime || GOTAGAS::IsIncapacitated(GetOwner()))
 	{
-		return false;
+		return false; // a stunned or frozen fighter cannot dodge
 	}
 	const float Dist = FVector::Dist(Opp->GetActorLocation(), GetOwner()->GetActorLocation());
 	if (const UGOTABossComponent* Boss = Opp->FindComponentByClass<UGOTABossComponent>())
@@ -931,6 +931,11 @@ void UGOTADuelFighterComponent::Server_RequestDivineCounter_Implementation()
 	UStatsComponent* Stats = FindOrAddStats();
 	if (!Owner || !IsRoundLive() || !Stats || bIsChampion || UGOTACombatantObserver::IsCombatantDefeated(Owner))
 	{
+		return;
+	}
+	if (GOTAGAS::IsIncapacitated(Owner))
+	{
+		UE_LOG(LogGOTADuelAI, Log, TEXT("%s: Divine Counter refused (incapacitated)"), *GetNameSafe(Owner));
 		return;
 	}
 	if (Stats->GetDivineMomentum() < DivineCounterCost)

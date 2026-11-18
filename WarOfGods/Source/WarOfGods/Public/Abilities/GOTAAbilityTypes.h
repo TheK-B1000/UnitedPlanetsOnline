@@ -47,7 +47,14 @@ enum class EGOTAStatus : uint8
 	/** Movement speed only, scaled by (1 - Magnitude). No effect on attacks, cooldowns or abilities. */
 	Slowed,
 	/** Fire damage over time: Magnitude damage per second, dealt in ticks through the victim's Blueprint damage system. */
-	Burning
+	Burning,
+	/**
+	 * Hard crowd control: cannot move, attack, block, dodge, parry or use abilities; the current action is cut short.
+	 * Not extended while active; a short recovery immunity follows. Blocked by GOTA.Immunity.Stun (bosses by default).
+	 */
+	Stunned,
+	/** Hard crowd control like Stunned, frozen in place (animation held), ending early on the first real hit. Frost. */
+	Frozen
 };
 
 /** Cosmetic family used to pick placeholder VFX/SFX until hero-specific effects exist. */

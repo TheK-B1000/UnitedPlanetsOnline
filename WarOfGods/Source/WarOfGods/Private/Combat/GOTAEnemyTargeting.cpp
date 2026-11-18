@@ -2,6 +2,7 @@
 
 #include "Combat/GOTAEnemyTargeting.h"
 
+#include "Abilities/GAS/GOTAStatusEffects.h"
 #include "AIController.h"
 #include "Animation/AnimMontage.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
@@ -276,6 +277,26 @@ void UGOTAEnemyTargeting::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		AIC->ReceiveMoveCompleted.AddUniqueDynamic(this, &UGOTAEnemyTargeting::HandleMoveCompleted);
 	}
 	RecentMoveFailures.RemoveAll([Now](double T) { return Now - T > 10.0; });
+	// Stunned / Frozen (GAS hard crowd control): the brain is paused and the enemy cannot move, so standing still is not a
+	// failed pursuit. On release, order the attack again: that restarts the tree's move instead of resuming a move
+	// request the lock stopped, and the pursuit clock starts over.
+	if (GOTAGAS::IsIncapacitated(Self))
+	{
+		bWasIncapacitated = true;
+		return;
+	}
+	if (bWasIncapacitated)
+	{
+		bWasIncapacitated = false;
+		RecentMoveFailures.Reset();
+		APawn* Previous = Cast<APawn>(BB->GetValueAsObject(TargetKey));
+		if (Previous && !UGOTACombatantObserver::IsCombatantDefeated(Previous))
+		{
+			Engage(AIC, Previous, TEXT("released from crowd control"), Now);
+			return;
+		}
+		LastProgressTime = Now;
+	}
 	const FString State = StateName(BB);
 	if (State.Contains(TEXT("Frozen")) || State.Contains(TEXT("Dead")))
 	{

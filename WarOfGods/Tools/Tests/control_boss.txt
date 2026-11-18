@@ -1,0 +1,13 @@
+# GAS milestone A: bosses are immune to hard crowd control by default (status policy GOTA.Immunity.Stun); the player who
+# tried is told. The boss's own Divine Counter stun is not an effect and is unaffected (see the Boss group).
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 300
+wait 0.3
+gota.Ability.Status 1 Stunned 2 0 0
+wait 0.5
+gota.Ability.Status 1 Frozen 2 0 0
+wait 0.5
+gota.Ability.Dump
+wait 1
+quit

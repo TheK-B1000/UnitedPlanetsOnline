@@ -1,0 +1,19 @@
+waitplayers 2 120
+# GAS milestone A on a remote player: the host stuns the remote player (fighter 1), a melee started for it on the server
+# is refused, then freezes it after the recovery and shatters the ice with a hit. The client checks its own view.
+r.MotionBlurQuality 0
+wait 10
+gota.Ability.Place 250
+wait 0.3
+gota.Ability.Status 1 Stunned 2 0 0
+wait 0.3
+gota.Duel.Call 1 MeleeAttack
+gota.Ability.Dump
+wait 4.5
+gota.Ability.Status 1 Frozen 4 0 0
+wait 1.5
+gota.Duel.Hurt 1 10
+wait 1
+gota.Ability.Dump
+wait 75
+quit

@@ -1,0 +1,10 @@
+# GAS milestone A, first real user: Nyx Mind Spike (card "Stuns and disrupts"). Three strikes; the last one stuns.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 200 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 1
+wait 2.5
+gota.Ability.Dump
+quit

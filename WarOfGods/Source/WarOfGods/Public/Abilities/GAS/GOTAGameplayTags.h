@@ -17,8 +17,14 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Unbreakable);
 	/** Damage over time (Drakon Molten Strike). Ticks go through BPC_DamageSystem; see UGOTABurnTickExecution. */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Burning);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Frozen);      // reserved: Phase 2
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Stunned);     // reserved: Phase 2
+	/** Hard crowd control, Frost: held in place, ends early on the first real hit. */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Frozen);
+	/** Hard crowd control: no movement or actions for its duration. */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Stunned);
+
+	// --- States: derived conditions several statuses grant (one reader instead of a list of statuses) ---
+	/** Cannot move or act (Stunned, Frozen). Every lock and its release hangs off this one tag. */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Incapacitated);
 
 	// --- Immunities: one per effect aspect, granted by a status policy (bosses). An effect whose every aspect is
 	// blocked is refused; otherwise only the blocked modifiers stop counting (modifier target-tag filters). ---
@@ -27,8 +33,8 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Slow);
 	/** Attack-power reduction from any effect: Dread's damage modifier. */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Weaken);
-	/** Hard crowd control applied as an effect (future Frozen / Stunned). Does NOT cover a boss's own designed
-	 *  staggers, parry recoil or the Divine Counter stun, which belong to UGOTABossComponent and are not effects. */
+	/** Hard crowd control applied as an effect (Stunned, Frozen); also the short recovery after one ends. Does NOT cover
+	 *  a boss's own designed staggers, parry recoil or the Divine Counter stun, which belong to UGOTABossComponent. */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Stun);
 	/** A hero-ability cast is not interrupted by taking damage (the same check Unbreakable passes). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Interrupt);
@@ -62,6 +68,8 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Veiled);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Unbreakable);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Burning);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Stunned);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Frozen);
 	/** Executed on a target that resisted all or part of a status (immunity / resistance feedback). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Resisted);
 }

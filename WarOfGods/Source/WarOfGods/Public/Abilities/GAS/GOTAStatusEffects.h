@@ -29,7 +29,7 @@ class WAROFGODS_API UGOTAStatusGameplayEffect : public UGameplayEffect
 protected:
 	/** Constructor only: native effects must declare their components while the CDO is being built. */
 	void ConfigureStatus(const FGameplayTag& StatusTag, const FGameplayTag& CueTag, const FGameplayTag& ImmunityTag = FGameplayTag(),
-		const FGameplayTag& ElementTag = FGameplayTag());
+		const FGameplayTag& ElementTag = FGameplayTag(), const FGameplayTag& ExtraGrantedTag = FGameplayTag());
 	/** Constructor only: multiply Attribute by the SetByCaller value DataTag, unless the target has ImmunityTag. */
 	void AddMultiplier(const FGameplayAttribute& Attribute, const FGameplayTag& DataTag, const FGameplayTag& ImmunityTag);
 };
@@ -98,6 +98,41 @@ public:
 	UGOTAGameplayEffect_Burning();
 };
 
+/**
+ * Stunned: hard crowd control. Grants GOTA.State.Incapacitated, which every lock reads (GOTAGAS::SetControlLock):
+ * no movement, attacks, blocks, dodges, parries, Divine Counter or abilities; the current action is cut short.
+ * Blocked by GOTA.Immunity.Stun. Rules in GOTAGAS::ApplyStatus: not extended while active, one hard CC at a time,
+ * refused on an invincible target, followed by a short recovery immunity.
+ */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Stunned : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Stunned();
+};
+
+/** Frozen (Frost): the same lock as Stunned, animation held on every peer, removed early by the first real hit. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Frozen : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Frozen();
+};
+
+/**
+ * Recovery after hard crowd control ends (expiry or shatter): grants GOTA.Immunity.Stun for Data.Duration, so no
+ * combination of casters can chain-lock a target. Not a status (no GOTA.Status tag, no cue).
+ */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_ControlRecovery : public UGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_ControlRecovery();
+};
+
 /** Server only: one Burning tick. Calls GOTAGAS::DealStatusDamage; changes no attribute. */
 UCLASS()
 class WAROFGODS_API UGOTABurnTickExecution : public UGameplayEffectExecutionCalculation
@@ -140,6 +175,21 @@ public:
 };
 
 /**
+ * Stunned and Frozen cue (cosmetic, every peer): the overlay (shared priority logic), the current animation cut short
+ * on the visible body, and for Frozen the body's animation held until the status ends.
+ */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayCue_HardControl : public UGOTAGameplayCue_StatusOverlay
+{
+	GENERATED_BODY()
+
+public:
+	virtual bool OnActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
+	virtual bool WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
+	virtual bool OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
+};
+
+/**
  * Executed on a target that resisted all or part of a status. Cosmetic: logs on every peer and raises
  * GOTAGAS::OnStatusResisted, which the local combat-feedback line turns into "QUARRY BEHEMOTH RESISTS SLOW".
  * RawMagnitude = the status, NormalizedMagnitude = the GOTAGAS::Aspect_* bits, Instigator = who applied it.
@@ -163,8 +213,25 @@ namespace GOTAGAS
 		Aspect_Reduced = 4,   // a resistance rule shortened or weakened it
 		Aspect_Whole = 8,     // nothing was applied
 		Aspect_Burn = 16,     // damage over time from fire (GOTA.Immunity.Burn)
+		Aspect_Control = 32,  // hard crowd control: Stunned, Frozen (GOTA.Immunity.Stun)
 	};
 	int32 AspectsOf(EGOTAStatus Status);
+
+	/** Stunned or Frozen. */
+	inline bool IsHardControl(EGOTAStatus Status) { return Status == EGOTAStatus::Stunned || Status == EGOTAStatus::Frozen; }
+
+	/** Any peer: the actor cannot move or act (GOTA.State.Incapacitated: Stunned or Frozen). */
+	bool IsIncapacitated(const AActor* Actor);
+
+	/** Seconds of GOTA.Immunity.Stun after hard crowd control ends (gota.GAS.ControlRecovery, default 2). */
+	float GetControlRecoverySeconds();
+
+	/**
+	 * Any peer, called by the ASC when GOTA.State.Incapacitated is gained or lost. Server: cuts the current action short
+	 * (cast, montage, block), pauses an AI's brain and movement; on release resumes the AI (never a defeated one) and
+	 * grants the recovery immunity. Locally controlled pawn: disables / re-enables its input.
+	 */
+	void SetControlLock(APawn* Pawn, bool bLocked);
 
 	/** Any peer, local: a status was resisted on Target (from the Resisted cue). */
 	DECLARE_MULTICAST_DELEGATE_FourParams(FOnStatusResisted, AActor* /*Target*/, EGOTAStatus /*Status*/, int32 /*Aspects*/, AActor* /*Instigator*/);

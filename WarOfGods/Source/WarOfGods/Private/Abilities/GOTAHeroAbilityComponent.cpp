@@ -369,6 +369,10 @@ EGOTAAbilityDenied UGOTAHeroAbilityComponent::ValidateServer(int32 Slot, APawn*&
 	{
 		return EGOTAAbilityDenied::NotLive;
 	}
+	if (GOTAGAS::IsIncapacitated(Owner))
+	{
+		return EGOTAAbilityDenied::Incapacitated;
+	}
 	if (IsBusy())
 	{
 		return EGOTAAbilityDenied::Busy;
@@ -539,6 +543,29 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 	}
 	StatusTrackedHealth = bUnbreakable ? UGOTACombatantObserver::ReadVitals(Owner).Health : -1.f;
 
+	// Frozen shatters on the first real hit (a status tick is not a hit: IgnoreHealthLoss discounts it).
+	if (GOTAGAS::HasStatus(Owner, EGOTAStatus::Frozen))
+	{
+		const float HealthNow = UGOTACombatantObserver::ReadVitals(Owner).Health;
+		if (FrozenTrackedHealth >= 0.f && HealthNow < FrozenTrackedHealth - 0.5f && HealthNow > 0.f)
+		{
+			if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Owner))
+			{
+				UE_LOG(LogGOTAAbility, Log, TEXT("%s: Frozen shattered by a hit (%.1f -> %.1f)"), *GetNameSafe(Owner), FrozenTrackedHealth, HealthNow);
+				ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GOTATags::Status_Frozen));
+			}
+			FrozenTrackedHealth = -1.f;
+		}
+		else
+		{
+			FrozenTrackedHealth = HealthNow; // a heal raises the line too
+		}
+	}
+	else
+	{
+		FrozenTrackedHealth = -1.f;
+	}
+
 	// AI momentum from landed hits. Only a duel fighter has momentum to gain: a plain Horde enemy that merely carries a
 	// status skips this, and with it a combat-target search every frame.
 	if (UGOTADuelFighterComponent* Fighter = Owner->IsPlayerControlled() ? nullptr : Owner->FindComponentByClass<UGOTADuelFighterComponent>())
@@ -656,7 +683,12 @@ void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)
 			Face.Pitch = 0.f;
 			Owner->SetActorRotation(Face);
 		}
+		// A striking ability's status (Mind Spike: Stunned) lands with the strike, on the last strike of a combo, and only
+		// on enemies the damage actually reached (a blocked or veiled strike carries nothing).
+		bStatusOnLand = Def->Status != EGOTAStatus::None && Def->StatusDuration > 0.f
+			&& (Def->Kind == EGOTAAbilityKind::MeleeArc || HitIndex >= FMath::Max(1, Def->HitCount) - 1);
 		DamageInArc(*Def, Def->Range, Def->ArcDegrees, 0.f, false, Hit);
+		bStatusOnLand = false;
 		if (Hit.Num() > 0)
 		{
 			FxLoc = Hit[0]->GetActorLocation();
@@ -965,6 +997,10 @@ bool UGOTAHeroAbilityComponent::DealDamage(APawn* Victim, const FGOTAAbilityDef&
 		}
 		// After the impact, never instead of it: a blocked or veiled hit does not ignite.
 		ApplyElementStatus(Victim, Def);
+		if (bStatusOnLand && !UGOTACombatantObserver::IsCombatantDefeated(Victim))
+		{
+			ApplyDefStatus(Victim, Def, GetOwner());
+		}
 	}
 	return bLanded;
 }
@@ -1018,6 +1054,10 @@ void UGOTAHeroAbilityComponent::IgnoreHealthLoss(const APawn* Whose, float Amoun
 		if (HealthAtCastStart >= 0.f)
 		{
 			HealthAtCastStart -= Amount;
+		}
+		if (FrozenTrackedHealth >= 0.f)
+		{
+			FrozenTrackedHealth -= Amount; // a burn tick does not shatter ice
 		}
 	}
 	else if (AITrackedOpponentHealth >= 0.f && Whose == GetOpponentPawn())
@@ -1218,7 +1258,10 @@ void UGOTAHeroAbilityComponent::ApplyMovementStatusLocally()
 	const float SlotScale = bSlotSlows ? FMath::Clamp(1.f - StatusMagnitude, 0.2f, 1.f) : 1.f;
 	const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner());
 	const float GasScale = ASC ? ASC->GetMoveSpeedMultiplier() : 1.f;
-	const float SpeedScale = FMath::Clamp(FMath::Min(SlotScale, GasScale), 0.2f, 1.f);
+	// Hard crowd control holds the fighter still; slows never go below x0.2. The tag replicates to every peer, so the
+	// server and the owning client agree.
+	const bool bLocked = GOTAGAS::IsIncapacitated(GetOwner());
+	const float SpeedScale = bLocked ? 0.f : FMath::Clamp(FMath::Min(SlotScale, GasScale), 0.2f, 1.f);
 	const bool bSlowsMovement = SpeedScale < 0.999f;
 	if (bSlowsMovement)
 	{
