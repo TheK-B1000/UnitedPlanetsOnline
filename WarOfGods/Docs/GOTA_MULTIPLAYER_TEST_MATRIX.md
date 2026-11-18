@@ -254,6 +254,21 @@ Fresh cook at `B:\Unreal\GOTA_Builds\RC13_a941f8c` (Win64 Development, 0 increme
 | R14-1 | Host dodges hit anyway (R13-2: 6 of 27) | **CAUSE FOUND, not changed (design decision pending)** | see "RC14: host dodges" in `GOTA_HORDE_COOP_COMBAT.md`; `rc14_dodge_e1` (editor): host 22 armed, 19 perfect, 2 hit anyway; remote 51/51 |
 | R14-2 | TitanCharge rerun with CPU available (R13-9 INCONCLUSIVE) | **PASS 12/12** | packaged RC13, `--only TitanCharge --repeat 3`, machine at 42% CPU; the RC13 record stays 45/46 with one INCONCLUSIVE |
 
+## Packaged RC14 (2026-11-18)
+
+Fresh cook at `B:\Unreal\GOTA_Builds\RC14_e0f794f` (3,937 packages, 0 incrementally skipped). Clients 120 ± 30 ms, 5% loss; host `-nullrhi`. **Bot evidence only.** Detail: `GOTA_HORDE_COOP_COMBAT.md` "RC14: one perfect-dodge rule".
+
+| # | Test | Result | Evidence |
+|---|---|---|---|
+| R14-3 | Host and remote dodges at 0.10–0.35 s before impact protected against the dodged attack | **PASS** | `rc14p_lead`: armed host 37, remote 81, none hit by the dodged attack (editor `rc14_lead_e3`: 42 / 104, none) |
+| R14-4 | Dodges started too early (> 0.35 s) not protected | **PASS** | not armed, no guard; hit by that attack unless they moved out of reach (remote 21 of 37, host 0 of 3 packaged; editor 9/20, 2/2) |
+| R14-5 | Protection covers the qualifying impact only | **PASS** | 106 guarded impacts, 0 landed; the guarded attacker's follow-up swings landed 16 times; other enemies' hits still land (editor: 9 around guarded impacts) |
+| R14-6 | Regression suite | **PASS 46/46** first pass | `rc14p_regression.txt`; editor 45/46 first pass (GaleRush MP, host stalled 38 s on a shader compile; 8/8 rerun) |
+| R14-7 | Full match to Victory (healing harness), post-victory renderer | **PASS (flow)** | `rc14p_e2e`: one `outcome=Victory score=13875`, boss defeated; rendered client up 1,049 s after, 0 RHI errors |
+| R14-8 | Legitimate four-player Horde | **FAIL to win (bots)** | `rc14p_legit`: waves 1–3 cleared, wave 4 lost at 5/15 (best so far); editor `rc14_legit` wave 2 at 6/11 |
+| R14-9 | Public-menu Horde, Story, Duel rematch, leave / host leave, Drakon vs Rampage | **PASS** | `rc14p_menu_ui` 4/4 ready; Story 0 unresolved bases; Duel 2 matches; leaves exit 0; Rampage defeated; no crash / assertion / ensure in any log |
+| R14-10 | Human playtest | **NOT RUN** | `GOTA_HORDE_PLAYTEST.md` |
+
 ## How to re-run
 
 ```text

@@ -1,5 +1,40 @@
 # Horde cooperative combat
 
+## RC14: one perfect-dodge rule for everyone (2026-11-18, bot evidence)
+
+**Decision (2026-11-17, option 1 below):** keep the 0.35 s perfect-dodge window; the listen host and remote players get identical server-authoritative protection through the qualifying attack's impact (+0.15 s); protect that attack only, not unrelated hits; mistimed dodges stay vulnerable; the Blueprint dodge animation, movement, parry system and attack timing are unchanged. Code `e0f794f`; package `B:\Unreal\GOTA_Builds\RC14_e0f794f` (fresh cook, 3,937 packages, 0 incrementally skipped).
+
+**How it works.**
+
+- When the server accepts a dodge (host: the Blueprint dodge's i-frame edge on the server; remote: the client's dodge notice), it records the **qualifying impact**: the attacker, its montage and the damage notify (`PlayMontageNotify`) about to land, valid until impact + 0.15 s.
+- The qualifying attack is whichever attack is about to land on that player within 650 cm: the assigned opponent's or any other enemy's, soonest impact first. An attack is a playing montage with a damage notify ahead. The Blueprint `Attacking` flag is no longer required: it is set partway into the swing, so a host dodging 0.30–0.35 s early found "no attack" while remote dodges, judged a trip later, qualified.
+- `UGOTAMontageReplicator` (now on every combatant, players included for Duel PvP; it still multicasts only AI montages) listens to `OnPlayMontageNotifyBegin`. It is bound when the pawn spawns, so it runs before the enemy Blueprint's Play Montage listener, which is added per montage and applies the damage. When the recorded notify fires, the dodger's damage system gets `IsInvincible` for the rest of that frame (cleared at the end of the frame, never while Veiled owns it). One impact per dodge.
+- Not covered: other enemies' attacks, the same enemy's next swing or next notify, an impact after the guard expired, and dodges started more than 0.35 s before the impact.
+- The RC13 remote-only window (blocking every attacker until impact + 0.15 s) is gone. Boss dodge protection (`IsDodgeProtected`, checked by the boss's own damage path) is unchanged; dodges against regular enemies no longer extend it.
+- Unchanged and still different by nature: the Blueprint dodge's own 0.20 s i-frames exist on the dodging machine. For the host that machine is the server, so those 0.20 s also cover other enemies; a remote player's do not reach the server. Equalising that would mean adding blanket server i-frames for remote players or removing the Blueprint's for the host. Not done (the decision was not to introduce blanket invulnerability or change the dodge itself); a human playtest should say whether it matters.
+
+**Validation** (dodge-lead runs: every player in dodge mode, dodging when the attack is 0.10 / 0.20 / 0.25 / 0.30 / 0.35 / 0.50 s away, healing harness; remote clients 120 ± 30 ms, 5% loss; bins are the server-measured lead):
+
+| Server lead at the dodge | Editor `rc14_lead_e3` host: armed / hit by that attack | remote | Packaged `rc14p_lead` host | remote |
+|---|---|---|---|---|
+| 0.00–0.10 s | 13 / 0 | 73 / 0 | 7 / 0 | 42 / 0 |
+| 0.10–0.20 s | 4 / 0 | 16 / 0 | 4 / 0 | 10 / 0 |
+| 0.20–0.25 s | 19 / 0 | 4 / 0 | 16 / 0 | 14 / 0 |
+| 0.25–0.30 s | 3 / 0 | 7 / 0 | 4 / 0 | 11 / 0 |
+| 0.30–0.36 s | 3 / 0 | 4 / 0 | 6 / 0 | 4 / 0 |
+| over 0.36 s (too early, not armed) | 2 dodges, 2 hit | 20 dodges, 9 hit | 3 dodges, 0 hit | 37 dodges, 21 hit |
+
+- Guards (the dodged impact refused): editor 134, packaged 106; **0 landed anyway**. Expired guards: 2 / 0.
+- Not blanket: hits by other enemies within 0.35 s before to 0.15 s after a guarded impact still landed (editor 9, packaged 0 in that run), and the guarded attacker's follow-up swings landed (8 and 16).
+- Too-early dodges that were not hit escaped by moving out of reach (a dodge is still a movement).
+- Before (RC14 investigation, `rc13p_dodge`): host 6 of 27 armed dodges counted as hit, of which 3 real, all at 0.22–0.29 s; remote protected by a blanket window.
+
+**Regression:** editor suite 45/46 first pass (GaleRush multiplayer: the host froze 38 s compiling shaders for the client's hero, the client's script finished before the cast; GaleRush 8/8 in two reruns); packaged suite **46/46 first pass**. Packaged battery: full match to Victory (`score=13875`, Horde boss defeated, clients up 1,049 s after it, 0 RHI errors), public-menu Horde 4/4 ready, Story float and net (0 unresolved movement bases), Duel rematch, client and host leave, Drakon versus Rampage (parries, perfect dodges, Divine Counter stuns, Phase II, boss defeated); no crash, assertion or ensure in any log. Editor: Story, Duel rematch, Rampage pass.
+
+**Legitimate matches (bots, no healing, nothing injected):** packaged `rc14p_legit` cleared waves 1–3 and lost wave 4 at 5/15, one `outcome=Defeat score=4800`, the best bot result so far; editor `rc14_legit` lost wave 2 at 6/11. Bots in normal mode dodge only the ground smash (1–4 dodges per match), so the dodge rule barely enters these; the spread is run-to-run variance.
+
+**Test tools:** `gota.Net.Fight <s> dodge <lead>`; `Tools/Tests/mp_dodge_lead_*.txt`; `GOTA_DodgeReport.py` bins by lead and checks guards; `GOTA_MPSession.py` launches clients once the host is listening and removes old logs of the same tag first (a cold host start took 58 s, and a stale log once satisfied the check); the suite reports a host stall of 15 s or more as INCONCLUSIVE.
+
 ## RC14: host dodges (2026-11-17, bot evidence)
 
 **Question (R13-2):** the listen host had 6 of 27 armed dodges hit anyway in `rc13p_dodge`; remote players 1 of 68. Mistiming or inconsistency?
@@ -20,7 +55,7 @@
 2. Protect remote players only for the Blueprint i-frame length (about 0.20 s), so everyone gets the Blueprint's window. Remote players then lose what latency costs them.
 3. Arm a perfect dodge only within the i-frame length (about 0.20 s), and keep the protection as it is.
 
-Recommendation: decide after the human playtest asks whether dodging feels too strict or too lenient; meanwhile option 1 is the smallest code change and makes host and remote equal.
+Recommendation: decide after the human playtest asks whether dodging feels too strict or too lenient; meanwhile option 1 is the smallest code change and makes host and remote equal. **Option 1 approved and implemented (above).**
 
 ## RC13: human combat validation (2026-11-17)
 

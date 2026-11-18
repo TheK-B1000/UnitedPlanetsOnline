@@ -188,6 +188,16 @@ Nothing else changed: the same numbers, the same Blueprint flags, the same damag
 
 ## Test record
 
+### RC14 one perfect-dodge rule (`e0f794f`), editor and packaged RC14
+
+No GAS feature was added (Frozen / Stun stay on hold); no enemy damage, dodge animation, movement, parry or attack timing changed. Package `B:\Unreal\GOTA_Builds\RC14_e0f794f` (fresh cook). Detail: `GOTA_HORDE_COOP_COMBAT.md` "RC14"; matrix rows R14-1 to R14-10.
+
+- **Approved rule (2026-11-17):** host and remote players get the same server-authoritative perfect-dodge protection, 0.35 s window, through the qualifying attack's impact + 0.15 s, for that impact only. Implemented as a per-impact guard at the attacker's damage notify (`UGOTAMontageReplicator` → `UGOTADuelFighterComponent::TryGuardDodgedImpact`), replacing RC13's remote-only blanket window. The qualifying attack is whichever is about to land (any enemy in reach), judged by the montage's damage notify.
+- **Results (bots):** packaged armed dodges host 37 / remote 81, none hit by the dodged attack; 106 guarded impacts, 0 landed; too-early dodges unprotected; follow-up swings and other enemies still land. Suite 46/46 packaged first pass; Victory flow, Story, Duel, Rampage, menu, leave all pass. Best legitimate bot match: wave 4.
+- **Remaining asymmetry, not changed:** the Blueprint dodge's own 0.20 s i-frames are on the server only for the host (all attackers).
+
+**Release blockers after RC14:** (1) human playtest; (2) a legitimate five-wave victory; (3) quiet-machine render profile; (4) separate PCs.
+
 ### RC13 human combat validation (`a941f8c`, `04b69f8`), editor and packaged RC13
 
 No GAS feature was added (Frozen / Stun stay on hold); no enemy damage or difficulty was changed. Package `B:\Unreal\GOTA_Builds\RC13_a941f8c` (fresh cook). Horde detail: `GOTA_HORDE_COOP_COMBAT.md` "RC13"; matrix rows R13-1 to R13-13. **All results are bot evidence; no human has played RC13.**
