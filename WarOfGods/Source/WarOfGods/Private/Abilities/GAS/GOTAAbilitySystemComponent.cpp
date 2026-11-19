@@ -184,6 +184,24 @@ float UGOTAAbilitySystemComponent::GetOutgoingDamageMultiplier() const
 	return ReadMultiplier(UGOTACombatAttributeSet::GetOutgoingDamageMultiplierAttribute());
 }
 
+float UGOTAAbilitySystemComponent::GetIncomingDamageMultiplier() const
+{
+	return ReadMultiplier(UGOTACombatAttributeSet::GetIncomingDamageMultiplierAttribute());
+}
+
+float UGOTAAbilitySystemComponent::GetShieldPool() const
+{
+	return GetSet<UGOTACombatAttributeSet>() ? FMath::Max(0.f, GetNumericAttribute(UGOTACombatAttributeSet::GetShieldPoolAttribute())) : 0.f;
+}
+
+void UGOTAAbilitySystemComponent::SetShieldPool(float Value)
+{
+	if (IsOwnerActorAuthoritative() && GetSet<UGOTACombatAttributeSet>())
+	{
+		SetNumericAttributeBase(UGOTACombatAttributeSet::GetShieldPoolAttribute(), FMath::Max(0.f, Value));
+	}
+}
+
 int32 UGOTAAbilitySystemComponent::ClearStatusEffects(const TCHAR* Why)
 {
 	if (!IsOwnerActorAuthoritative())

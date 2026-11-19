@@ -121,6 +121,63 @@ public:
 	UGOTAGameplayEffect_Frozen();
 };
 
+// --- Buffs and debuffs (milestone B). One stack per target; re-applying refreshes the duration, a stronger application
+// replaces the running one (GOTAGAS::ApplyStatus). Numbers are SetByCaller values from the ability definition. ---
+
+/** Shielded: tag + cue only. The pool (Data.Magnitude) is over-health kept by UGOTAHeroAbilityComponent's bookkeeping. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Shielded : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Shielded();
+};
+
+/** Empowered: OutgoingDamageMultiplier x(1 + Magnitude). */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Empowered : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Empowered();
+};
+
+/** Fortified: IncomingDamageMultiplier x(1 - Magnitude). */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Fortified : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Fortified();
+};
+
+/** Vulnerable: IncomingDamageMultiplier x(1 + Magnitude). Blocked by GOTA.Immunity.Vulnerable. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Vulnerable : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Vulnerable();
+};
+
+/** Hasted: MoveSpeedMultiplier x(1 + Magnitude). */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Hasted : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Hasted();
+};
+
+/** Weakened: OutgoingDamageMultiplier x(1 - Magnitude). Blocked by GOTA.Immunity.Weaken. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Weakened : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Weakened();
+};
+
 /**
  * Recovery after hard crowd control ends (expiry or shatter): grants GOTA.Immunity.Stun for Data.Duration, so no
  * combination of casters can chain-lock a target. Not a status (no GOTA.Status tag, no cue).
@@ -214,7 +271,14 @@ namespace GOTAGAS
 		Aspect_Whole = 8,     // nothing was applied
 		Aspect_Burn = 16,     // damage over time from fire (GOTA.Immunity.Burn)
 		Aspect_Control = 32,  // hard crowd control: Stunned, Frozen (GOTA.Immunity.Stun)
+		Aspect_Vulnerable = 64, // incoming-damage amplification (GOTA.Immunity.Vulnerable)
 	};
+
+	/** Statuses whose re-application keeps the stronger of the running and the new magnitude (buffs and debuffs). */
+	bool KeepsStronger(EGOTAStatus Status);
+
+	/** Any peer: the actor's incoming damage multiplier (1 without an ASC). */
+	float GetIncomingDamageMultiplier(const AActor* Actor);
 	int32 AspectsOf(EGOTAStatus Status);
 
 	/** Stunned or Frozen. */

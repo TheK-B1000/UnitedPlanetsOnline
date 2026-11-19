@@ -42,6 +42,24 @@ public:
 	FGameplayAttributeData OutgoingDamageMultiplier;
 	ATTRIBUTE_ACCESSORS_BASIC(UGOTACombatAttributeSet, OutgoingDamageMultiplier);
 
+	/**
+	 * Damage this combatant takes, from every source (milestone B). Below 1 = Fortified, above 1 = Vulnerable; the
+	 * strongest reduction counts, vulnerabilities add up. Applied exactly to C++ damage (abilities, boss attacks, status
+	 * ticks: FGOTABlueprintCombat::ApplyDamage) and as an immediate correction after a Blueprint hit (refund or extra).
+	 */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_IncomingDamageMultiplier, Category = "GOTA|Attributes")
+	FGameplayAttributeData IncomingDamageMultiplier;
+	ATTRIBUTE_ACCESSORS_BASIC(UGOTACombatAttributeSet, IncomingDamageMultiplier);
+
+	/**
+	 * Shield hit points left (Shielded). Written by the server's shield bookkeeping (UGOTAHeroAbilityComponent), not by
+	 * effect modifiers; replicated so every HUD can draw it. The health it protects is held in the Blueprint damage
+	 * system as over-health, so lethal-hit and kill rules stay the Blueprint's.
+	 */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ShieldPool, Category = "GOTA|Attributes")
+	FGameplayAttributeData ShieldPool;
+	ATTRIBUTE_ACCESSORS_BASIC(UGOTACombatAttributeSet, ShieldPool);
+
 	/** Lowest value any combination of effects can reach (matches the pre-GAS clamps). */
 	static constexpr float MinMultiplier = 0.2f;
 	static constexpr float MaxMultiplier = 3.f;
@@ -51,4 +69,10 @@ protected:
 	void OnRep_MoveSpeedMultiplier(const FGameplayAttributeData& OldValue);
 	UFUNCTION()
 	void OnRep_OutgoingDamageMultiplier(const FGameplayAttributeData& OldValue);
+	UFUNCTION()
+	void OnRep_IncomingDamageMultiplier(const FGameplayAttributeData& OldValue);
+	UFUNCTION()
+	void OnRep_ShieldPool(const FGameplayAttributeData& OldValue);
+
+	bool IsMultiplier(const FGameplayAttribute& Attribute) const;
 };

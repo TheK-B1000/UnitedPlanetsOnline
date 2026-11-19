@@ -282,6 +282,8 @@ FText UGOTACombatFeedbackSubsystem::DescribeResist(const AActor* Target, EGOTASt
 	case EGOTAStatus::Burning: What = NSLOCTEXT("GOTA", "ResistBurning", "BURNING"); break;
 	case EGOTAStatus::Stunned: What = NSLOCTEXT("GOTA", "ResistStunned", "STUN"); break;
 	case EGOTAStatus::Frozen: What = NSLOCTEXT("GOTA", "ResistFrozen", "FREEZE"); break;
+	case EGOTAStatus::Weakened: What = NSLOCTEXT("GOTA", "ResistWeakened", "WEAKNESS"); break;
+	case EGOTAStatus::Vulnerable: What = NSLOCTEXT("GOTA", "ResistVulnerable", "VULNERABILITY"); break;
 	default: What = NSLOCTEXT("GOTA", "ResistEffect", "EFFECT"); break;
 	}
 	if (Aspects & GOTAGAS::Aspect_Whole)

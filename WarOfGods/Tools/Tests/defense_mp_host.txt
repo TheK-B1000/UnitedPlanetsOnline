@@ -1,0 +1,19 @@
+waitplayers 2 120
+# GAS milestone B on a remote player: shield and vulnerability are decided on the server; the client sees the cues,
+# the overlay and the replicated shield.
+gota.GAS.ElementStatus 0
+r.MotionBlurQuality 0
+wait 10
+gota.Ability.Place 250
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Status 1 Shielded 6 30 0
+wait 0.5
+gota.Ability.Use 0 0
+wait 1.5
+gota.Ability.Dump
+gota.Ability.Status 1 Vulnerable 4 0.5 0
+wait 4.5
+gota.Ability.Dump
+wait 75
+quit

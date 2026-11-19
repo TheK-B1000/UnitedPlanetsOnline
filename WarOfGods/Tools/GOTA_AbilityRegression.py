@@ -248,6 +248,34 @@ CASES = {
          [(r"MindSpike hit \S+ for 9\.0 \(landed=1\)", 3), (r"status Stunned 0\.8s x0\.00", 1),
           (r"CONTROL lock on", 1), (r"CONTROL lock off", 1)]),
     ],
+    # GAS milestone B: shields (over-health), Fortified / Vulnerable on every source, Empowered, Weakened, Hasted.
+    "Defense": [
+        ("Shielded: absorbs Blueprint and ability hits, breaks, refresh, stronger, expiry, survives a big hit",
+         "?Opponent=AI?Hero=Drakon?DevHeroes=1", "defense_shield.txt",
+         [(r"ABILITY f1 \S+ hp=290\.0/290\.0", True), (r"shield=30\.0", True),
+          (r"shield absorbed 20\.0 of 20\.0 \(10\.0 left\)", 1),                          # Blueprint hit
+          (r"ABILITY f1 \S+ hp=270\.0/270\.0", True),
+          (r"shield absorbed 10\.0 of 22\.0 \(0\.0 left\)", 1), (r"shield broken", 2),     # Molten Strike, then the big hit
+          (r"ABILITY f1 \S+ hp=248\.0/260\.0", 2),                                        # after the break, after expiry
+          (r"ABILITY f1 \S+ hp=288\.0/300\.0", True),
+          (r"status Shielded refreshed \(keeps x40\.00; x25\.00 is not stronger\)", 1),
+          (r"status Shielded replaced \(x40\.00 -> x60\.00, stronger\)", 1),
+          (r"shield ended with 60\.0 left", 1),                                            # expiry takes the unused part back
+          (r"shield absorbed 100\.0 of 300\.0 \(0\.0 left\)", 1),
+          (r"ABILITY f1 \S+ hp=48\.0/260\.0", True),                                      # 248 + 100 shield - 300: alive
+          (r"defeated", False)]),
+        ("Fortified, Vulnerable, Empowered, Hasted, Weakened: every source, stacking",
+         "?Opponent=AI?Hero=Drakon?DevHeroes=1", "defense_mods.txt",
+         [(r"incoming x0\.50 on a Blueprint hit: 20\.0 -> 10\.0 \(refund 10\.0\)", 1),
+          (r"incoming x0\.50: 22\.0 -> 11\.0", 1),
+          (r"status Fortified refreshed \(keeps x0\.50; x0\.30 is not stronger\)", 1),
+          (r"ABILITY f1 gas=\[.*\] immune=\[\] walkx=1\.00 dmgx=1\.00 inx=1\.00", True),  # best reduction x0.5 + vulnerability +0.5
+          (r"incoming x1\.50 on a Blueprint hit: 20\.0 -> 30\.0 \(extra 10\.0\)", 1),
+          (r"incoming x1\.50: 22\.0 -> 33\.0", 1),
+          (r"MoltenStrike hit \S+ for 33\.0 \(landed=1\)", 1), (r"incoming x1\.50: 33\.0 -> 49\.5", 1),   # Empowered x1.5
+          (r"GAS move scale=1\.30", True), (r"GAS move scale=0\.90", True),               # Hasted, then Hasted + Slowed
+          (r"ABILITY f0 gas=\[.*\] immune=\[\] walkx=0\.90 dmgx=1\.00", True)]),          # Empowered + Weakened
+    ],
 }
 # Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.
 MP = {
@@ -261,6 +289,12 @@ MP = {
 }
 # Multiplayer for statuses: host hero, host script, host-log checks, client-log checks (the remote player's own view).
 MP_STATUS = {
+    "Defense": ("Drakon", "defense_mp_host.txt",
+                [(r"shield up 30\.0", 1), (r"shield absorbed 22\.0 of 22\.0 \(8\.0 left\)", 1), (r"shield ended with 8\.0 left", 1),
+                 (r"status Vulnerable 4\.0s x0\.50", 1)],
+                [(r"cue GameplayCue\.GOTA\.Status\.Shielded on BP_Player", True), (r"overlay \S+ -> M_GOTA_Overlay_Shielded on BP_Player", True),
+                 (r"cue GameplayCue\.GOTA\.Status\.Shielded removed from BP_Player", True),
+                 (r"cue GameplayCue\.GOTA\.Status\.Vulnerable on BP_Player", True), (r"cue GameplayCue\.GOTA\.Status\.Vulnerable removed from BP_Player", True)]),
     "Control": ("Drakon", "control_mp_host.txt",
                 [(r"status Stunned 2\.0s x0\.00", 1), (r"CONTROL lock on", 2), (r": MeleeAttack refused \(incapacitated\)", 1),
                  (r"status Frozen 4\.0s x0\.00", 1), (r"Frozen shattered by a hit", 1)],

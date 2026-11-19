@@ -197,8 +197,31 @@ bool FGOTABlueprintCombat::Call(UObject* Obj, FName Function, UObject* Target, c
 }
 
 bool FGOTABlueprintCombat::ApplyDamage(AActor* Victim, AActor* Causer, float Amount, bool bCanBeBlocked, bool bCanBeParried, const FString& Response,
-	bool bForceInterrupt)
+	bool bForceInterrupt, bool bApplyIncoming)
 {
+	// Fortified / Vulnerable, exactly, before the Blueprint sees the number (milestone B).
+	if (bApplyIncoming && Victim)
+	{
+		const float Incoming = GOTAGAS::GetIncomingDamageMultiplier(Victim);
+		if (!FMath::IsNearlyEqual(Incoming, 1.f))
+		{
+			UE_LOG(LogGOTADuelAI, Log, TEXT("%s: incoming x%.2f: %.1f -> %.1f"), *GetNameSafe(Victim), Incoming, Amount, Amount * Incoming);
+			Amount *= Incoming;
+		}
+	}
+	UGOTAHeroAbilityComponent* VictimAbilities = Victim && Victim->HasAuthority() ? Victim->FindComponentByClass<UGOTAHeroAbilityComponent>() : nullptr;
+	const float HealthBefore = VictimAbilities ? UGOTACombatantObserver::ReadVitals(Victim).Health : 0.f;
+	struct FReportScaled
+	{
+		UGOTAHeroAbilityComponent* Abilities; AActor* Victim; float Before;
+		~FReportScaled()
+		{
+			if (Abilities && IsValid(Victim))
+			{
+				Abilities->NoteScaledLoss(FMath::Max(0.f, Before - UGOTACombatantObserver::ReadVitals(Victim).Health));
+			}
+		}
+	} Report{ VictimAbilities, Victim, HealthBefore };
 	UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Victim);
 	UFunction* Fn = nullptr;
 	for (TFieldIterator<UFunction> It(DS ? DS->GetClass() : nullptr, EFieldIteratorFlags::ExcludeSuper); DS && It; ++It)

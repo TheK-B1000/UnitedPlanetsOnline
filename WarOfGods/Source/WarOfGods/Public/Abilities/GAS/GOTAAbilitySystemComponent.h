@@ -57,6 +57,11 @@ public:
 	/** Combat AttributeSet values, or 1 when the set has not replicated yet. Clamped to the attribute's range. */
 	float GetMoveSpeedMultiplier() const;
 	float GetOutgoingDamageMultiplier() const;
+	float GetIncomingDamageMultiplier() const;
+	/** Shield hit points left (0 when not shielded). Replicated attribute, readable on every peer. */
+	float GetShieldPool() const;
+	/** Server: write the shield pool (only the shield bookkeeping does). */
+	void SetShieldPool(float Value);
 
 	/** Server: remove every effect that grants a GOTA.Status tag (death, round reset, test reset). */
 	int32 ClearStatusEffects(const TCHAR* Why = TEXT("reset"));

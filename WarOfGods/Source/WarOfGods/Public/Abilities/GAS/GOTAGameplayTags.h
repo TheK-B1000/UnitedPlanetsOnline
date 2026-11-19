@@ -22,6 +22,14 @@ namespace GOTATags
 	/** Hard crowd control: no movement or actions for its duration. */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Stunned);
 
+	// Buffs and debuffs (milestone B). Each is one effect with SetByCaller numbers from the ability definition.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Shielded);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Empowered);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Fortified);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Vulnerable);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Hasted);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Weakened);
+
 	// --- States: derived conditions several statuses grant (one reader instead of a list of statuses) ---
 	/** Cannot move or act (Stunned, Frozen). Every lock and its release hangs off this one tag. */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Incapacitated);
@@ -40,6 +48,8 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Interrupt);
 	/** Cannot be set alight: Burning is refused (the hit that carried it still lands). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Burn);
+	/** Incoming-damage amplification (Vulnerable) is refused. */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Immunity_Vulnerable);
 
 	// --- Elements: the damage type of an ability or a status. No element tag means untyped (physical) damage.
 	// Each element's tuning is one FGOTAElementDef row (Abilities/GAS/GOTAElements.h). Only Fire has gameplay so far. ---
@@ -61,6 +71,8 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_DamageMultiplier);
 	/** Damage one periodic tick deals (Burning: damage per second x tick interval). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_TickDamage);
+	/** Incoming damage multiplier (Fortified 1 - Magnitude, Vulnerable 1 + Magnitude). */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_IncomingMultiplier);
 
 	// --- Gameplay Cues (presentation only) ---
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Slowed);
@@ -70,6 +82,12 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Burning);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Stunned);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Frozen);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Shielded);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Empowered);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Fortified);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Vulnerable);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Hasted);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Weakened);
 	/** Executed on a target that resisted all or part of a status (immunity / resistance feedback). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Resisted);
 }

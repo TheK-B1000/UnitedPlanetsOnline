@@ -15,6 +15,13 @@ OVERLAYS = [
     # name, colour, strength, rim exponent, opacity
     ("M_GOTA_Overlay_Frozen", (0.55, 0.85, 1.0), 7.0, 1.4, 0.95),   # ice: wide pale-cyan rim, nearly opaque
     ("M_GOTA_Overlay_Stunned", (1.0, 0.82, 0.18), 6.0, 2.2, 0.85),  # dazed: gold rim
+    # milestone B: buffs bright and warm or clear, debuffs dark or sickly
+    ("M_GOTA_Overlay_Shielded", (0.75, 0.95, 1.0), 5.0, 1.6, 0.9),  # bright white-cyan bubble
+    ("M_GOTA_Overlay_Empowered", (1.0, 0.35, 0.1), 5.0, 2.4, 0.8),  # ember red
+    ("M_GOTA_Overlay_Fortified", (0.7, 0.75, 0.85), 4.0, 2.6, 0.8), # steel
+    ("M_GOTA_Overlay_Vulnerable", (0.85, 0.1, 0.55), 5.0, 2.0, 0.85),  # bruised magenta
+    ("M_GOTA_Overlay_Hasted", (0.45, 1.0, 0.75), 4.0, 2.8, 0.75),  # quick mint
+    ("M_GOTA_Overlay_Weakened", (0.45, 0.4, 0.35), 3.0, 2.0, 0.8),  # dull ash
 ]
 
 

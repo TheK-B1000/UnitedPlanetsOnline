@@ -53,9 +53,15 @@ namespace
 		{ EGOTAStatus::Frozen, GOTATags::Status_Frozen, GOTATags::Cue_Status_Frozen, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Frozen.M_GOTA_Overlay_Frozen") },
 		{ EGOTAStatus::Stunned, GOTATags::Status_Stunned, GOTATags::Cue_Status_Stunned, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Stunned.M_GOTA_Overlay_Stunned") },
 		{ EGOTAStatus::Veiled, GOTATags::Status_Veiled, GOTATags::Cue_Status_Veiled, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Veiled.M_GOTA_Overlay_Veiled") },
+		{ EGOTAStatus::Shielded, GOTATags::Status_Shielded, GOTATags::Cue_Status_Shielded, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Shielded.M_GOTA_Overlay_Shielded") },
 		{ EGOTAStatus::Unbreakable, GOTATags::Status_Unbreakable, GOTATags::Cue_Status_Unbreakable, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Unbreakable.M_GOTA_Overlay_Unbreakable") },
+		{ EGOTAStatus::Vulnerable, GOTATags::Status_Vulnerable, GOTATags::Cue_Status_Vulnerable, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Vulnerable.M_GOTA_Overlay_Vulnerable") },
 		{ EGOTAStatus::Dread, GOTATags::Status_Dread, GOTATags::Cue_Status_Dread, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Dread.M_GOTA_Overlay_Dread") },
+		{ EGOTAStatus::Weakened, GOTATags::Status_Weakened, GOTATags::Cue_Status_Weakened, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Weakened.M_GOTA_Overlay_Weakened") },
 		{ EGOTAStatus::Slowed, GOTATags::Status_Slowed, GOTATags::Cue_Status_Slowed, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Slowed.M_GOTA_Overlay_Slowed") },
+		{ EGOTAStatus::Fortified, GOTATags::Status_Fortified, GOTATags::Cue_Status_Fortified, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Fortified.M_GOTA_Overlay_Fortified") },
+		{ EGOTAStatus::Empowered, GOTATags::Status_Empowered, GOTATags::Cue_Status_Empowered, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Empowered.M_GOTA_Overlay_Empowered") },
+		{ EGOTAStatus::Hasted, GOTATags::Status_Hasted, GOTATags::Cue_Status_Hasted, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Hasted.M_GOTA_Overlay_Hasted") },
 		// Burning shows as attached flames (UGOTAGameplayCue_Burning), not as an overlay, so it never hides another status.
 		{ EGOTAStatus::Burning, GOTATags::Status_Burning, GOTATags::Cue_Status_Burning, nullptr },
 	};
@@ -96,6 +102,12 @@ namespace
 		case EGOTAStatus::Burning: return UGOTAGameplayEffect_Burning::StaticClass();
 		case EGOTAStatus::Stunned: return UGOTAGameplayEffect_Stunned::StaticClass();
 		case EGOTAStatus::Frozen: return UGOTAGameplayEffect_Frozen::StaticClass();
+		case EGOTAStatus::Shielded: return UGOTAGameplayEffect_Shielded::StaticClass();
+		case EGOTAStatus::Empowered: return UGOTAGameplayEffect_Empowered::StaticClass();
+		case EGOTAStatus::Fortified: return UGOTAGameplayEffect_Fortified::StaticClass();
+		case EGOTAStatus::Vulnerable: return UGOTAGameplayEffect_Vulnerable::StaticClass();
+		case EGOTAStatus::Hasted: return UGOTAGameplayEffect_Hasted::StaticClass();
+		case EGOTAStatus::Weakened: return UGOTAGameplayEffect_Weakened::StaticClass();
 		default: return nullptr;
 		}
 	}
@@ -281,7 +293,10 @@ void UGOTAStatusGameplayEffect::AddMultiplier(const FGameplayAttribute& Attribut
 	Mod.ModifierMagnitude = FGameplayEffectModifierMagnitude(Caller);
 	// For instant and periodic effects the engine skips this modifier on an immune target. Duration effects aggregate
 	// without target tags (an engine limitation), so GOTAGAS::ApplyStatus neutralises a blocked aspect's SetByCaller.
-	Mod.TargetTags.IgnoreTags.AddTag(ImmunityTag);
+	if (ImmunityTag.IsValid())
+	{
+		Mod.TargetTags.IgnoreTags.AddTag(ImmunityTag);
+	}
 	Modifiers.Add(Mod);
 }
 
@@ -338,6 +353,41 @@ UGOTAGameplayEffect_Frozen::UGOTAGameplayEffect_Frozen()
 {
 	ConfigureStatus(GOTATags::Status_Frozen, GOTATags::Cue_Status_Frozen, GOTATags::Immunity_Stun, GOTATags::Element_Frost, GOTATags::State_Incapacitated);
 	StackDurationRefreshPolicy = EGameplayEffectStackingDurationPolicy::NeverRefresh;
+}
+
+UGOTAGameplayEffect_Shielded::UGOTAGameplayEffect_Shielded()
+{
+	ConfigureStatus(GOTATags::Status_Shielded, GOTATags::Cue_Status_Shielded);
+}
+
+UGOTAGameplayEffect_Empowered::UGOTAGameplayEffect_Empowered()
+{
+	ConfigureStatus(GOTATags::Status_Empowered, GOTATags::Cue_Status_Empowered);
+	AddMultiplier(UGOTACombatAttributeSet::GetOutgoingDamageMultiplierAttribute(), GOTATags::Data_DamageMultiplier, FGameplayTag());
+}
+
+UGOTAGameplayEffect_Fortified::UGOTAGameplayEffect_Fortified()
+{
+	ConfigureStatus(GOTATags::Status_Fortified, GOTATags::Cue_Status_Fortified);
+	AddMultiplier(UGOTACombatAttributeSet::GetIncomingDamageMultiplierAttribute(), GOTATags::Data_IncomingMultiplier, FGameplayTag());
+}
+
+UGOTAGameplayEffect_Vulnerable::UGOTAGameplayEffect_Vulnerable()
+{
+	ConfigureStatus(GOTATags::Status_Vulnerable, GOTATags::Cue_Status_Vulnerable, GOTATags::Immunity_Vulnerable);
+	AddMultiplier(UGOTACombatAttributeSet::GetIncomingDamageMultiplierAttribute(), GOTATags::Data_IncomingMultiplier, GOTATags::Immunity_Vulnerable);
+}
+
+UGOTAGameplayEffect_Hasted::UGOTAGameplayEffect_Hasted()
+{
+	ConfigureStatus(GOTATags::Status_Hasted, GOTATags::Cue_Status_Hasted);
+	AddMultiplier(UGOTACombatAttributeSet::GetMoveSpeedMultiplierAttribute(), GOTATags::Data_Multiplier, FGameplayTag());
+}
+
+UGOTAGameplayEffect_Weakened::UGOTAGameplayEffect_Weakened()
+{
+	ConfigureStatus(GOTATags::Status_Weakened, GOTATags::Cue_Status_Weakened, GOTATags::Immunity_Weaken);
+	AddMultiplier(UGOTACombatAttributeSet::GetOutgoingDamageMultiplierAttribute(), GOTATags::Data_DamageMultiplier, GOTATags::Immunity_Weaken);
 }
 
 UGOTAGameplayEffect_ControlRecovery::UGOTAGameplayEffect_ControlRecovery()
@@ -486,8 +536,22 @@ namespace GOTAGAS
 		case EGOTAStatus::Burning: return Aspect_Burn;
 		case EGOTAStatus::Stunned:
 		case EGOTAStatus::Frozen: return Aspect_Control;
-		default: return 0;
+		case EGOTAStatus::Weakened: return Aspect_Weaken;
+		case EGOTAStatus::Vulnerable: return Aspect_Vulnerable;
+		default: return 0; // buffs (Shielded, Empowered, Fortified, Hasted) and the self statuses
 		}
+	}
+
+	bool KeepsStronger(EGOTAStatus Status)
+	{
+		return Status == EGOTAStatus::Shielded || Status == EGOTAStatus::Empowered || Status == EGOTAStatus::Fortified
+			|| Status == EGOTAStatus::Vulnerable || Status == EGOTAStatus::Hasted || Status == EGOTAStatus::Weakened;
+	}
+
+	float GetIncomingDamageMultiplier(const AActor* Actor)
+	{
+		const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Actor);
+		return ASC ? ASC->GetIncomingDamageMultiplier() : 1.f;
 	}
 
 	bool IsIncapacitated(const AActor* Actor)
@@ -511,7 +575,7 @@ namespace GOTAGAS
 		// Migration order (one status per verified step): Slowed, Dread, Veiled, Unbreakable.
 		// Burning has only ever been a gameplay effect.
 		return Status == EGOTAStatus::Slowed || Status == EGOTAStatus::Dread || Status == EGOTAStatus::Veiled || Status == EGOTAStatus::Unbreakable
-			|| Status == EGOTAStatus::Burning || IsHardControl(Status);
+			|| Status == EGOTAStatus::Burning || IsHardControl(Status) || KeepsStronger(Status);
 	}
 
 	bool ApplyStatus(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)
@@ -568,6 +632,10 @@ namespace GOTAGAS
 		{
 			Blocked |= Aspect_Control; // a boss policy, or the recovery right after a stun
 		}
+		if ((Aspects & Aspect_Vulnerable) && ASC->HasMatchingGameplayTag(GOTATags::Immunity_Vulnerable))
+		{
+			Blocked |= Aspect_Vulnerable;
+		}
 		bool bWhole = Aspects != 0 && Blocked == Aspects;
 		if (const FGOTAStatusResistance* Rule = ASC->FindStatusResistance(Status))
 		{
@@ -602,6 +670,28 @@ namespace GOTAGAS
 			return false;
 		}
 
+		// Buffs and debuffs: one per target. Re-applying refreshes the duration and keeps the running strength; a stronger
+		// application replaces the running one (two sources of different strength: the stronger wins, never both).
+		if (KeepsStronger(Status) && HasStatus(Victim, Status))
+		{
+			const float Running = GetStatusMagnitude(Victim, Status);
+			if (Magnitude > Running + KINDA_SMALL_NUMBER)
+			{
+				const FStatusInfo* Entry = Info(Status);
+				ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(Entry->Tag.GetTag()));
+				UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s replaced (x%.2f -> x%.2f, stronger) from %s"), *GetNameSafe(Victim), *Name, Running, Magnitude,
+					*GetNameSafe(Source));
+			}
+			else
+			{
+				UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s refreshed (keeps x%.2f; x%.2f is not stronger) from %s"), *GetNameSafe(Victim), *Name, Running,
+					Magnitude, *GetNameSafe(Source));
+				// A stacked re-application takes the new spec's numbers in GAS, so it is made with the running strength:
+				// only the duration changes.
+				Magnitude = Running;
+			}
+		}
+
 		FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
 		Context.AddInstigator(Source, Source);
 		Context.AddSourceObject(Source);
@@ -614,11 +704,28 @@ namespace GOTAGAS
 		// Every number comes from the ability definition. The pre-GAS formulas and clamps, unchanged.
 		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Duration, Duration);
 		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Magnitude, Magnitude);
-		// A blocked aspect gets a neutral x1 (it then never wins the "strongest penalty" aggregation).
-		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Multiplier,
-			(Blocked & Aspect_Movement) ? 1.f : FMath::Clamp(1.f - Magnitude, UGOTACombatAttributeSet::MinMultiplier, 1.f));
-		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_DamageMultiplier,
-			(Blocked & Aspect_Weaken) ? 1.f : FMath::Clamp(1.f - Magnitude * 0.5f, UGOTACombatAttributeSet::MinMultiplier, 1.f));
+		// A blocked aspect gets a neutral x1 (it then never wins the "strongest penalty" aggregation). Each status's
+		// formula; every multiplier stays inside the attribute range [0.2, 3].
+		const float MinM = UGOTACombatAttributeSet::MinMultiplier;
+		const float MaxM = UGOTACombatAttributeSet::MaxMultiplier;
+		float MoveMult = 1.f, DamageMult = 1.f, IncomingMult = 1.f;
+		switch (Status)
+		{
+		case EGOTAStatus::Slowed: MoveMult = FMath::Clamp(1.f - Magnitude, MinM, 1.f); break;
+		case EGOTAStatus::Dread:
+			MoveMult = FMath::Clamp(1.f - Magnitude, MinM, 1.f);
+			DamageMult = FMath::Clamp(1.f - Magnitude * 0.5f, MinM, 1.f);
+			break;
+		case EGOTAStatus::Hasted: MoveMult = FMath::Clamp(1.f + Magnitude, 1.f, MaxM); break;
+		case EGOTAStatus::Empowered: DamageMult = FMath::Clamp(1.f + Magnitude, 1.f, MaxM); break;
+		case EGOTAStatus::Weakened: DamageMult = FMath::Clamp(1.f - Magnitude, MinM, 1.f); break;
+		case EGOTAStatus::Fortified: IncomingMult = FMath::Clamp(1.f - Magnitude, MinM, 1.f); break;
+		case EGOTAStatus::Vulnerable: IncomingMult = FMath::Clamp(1.f + Magnitude, 1.f, MaxM); break;
+		default: break;
+		}
+		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Multiplier, (Blocked & Aspect_Movement) ? 1.f : MoveMult);
+		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_DamageMultiplier, (Blocked & Aspect_Weaken) ? 1.f : DamageMult);
+		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_IncomingMultiplier, (Blocked & Aspect_Vulnerable) ? 1.f : IncomingMult);
 		// Damage over time: Magnitude is damage per second; the element row gives the tick interval.
 		float TickInterval = 0.f;
 		float TickDamage = 0.f;

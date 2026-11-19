@@ -221,6 +221,29 @@ Both are status effects (`UGOTAGameplayEffect_Stunned`, `UGOTAGameplayEffect_Fro
 
 Ownership: the lock is `GOTAGAS::SetControlLock`; walk speed stays with `UGOTAHeroAbilityComponent` (the only `MaxWalkSpeed` writer; created on an enemy when a hard CC lands, as for slows); the shatter rule lives in its server tick next to the Unbreakable refund.
 
+## Shields, buffs and debuffs (milestone B)
+
+Six status effects, numbers from the ability definition (`StatusDuration`, `Magnitude`), like every status:
+
+| Status | Effect | Immunity |
+|---|---|---|
+| Shielded | absorbs `Magnitude` damage from every source before health; breaks when used up; the unused part ends with the effect | none |
+| Empowered | outgoing ability and boss damage ×(1 + Magnitude) | none |
+| Weakened | outgoing ability and boss damage ×(1 − Magnitude) | `GOTA.Immunity.Weaken` |
+| Fortified | incoming damage from every source ×(1 − Magnitude) | none |
+| Vulnerable | incoming damage from every source ×(1 + Magnitude) | `GOTA.Immunity.Vulnerable` (new) |
+| Hasted | walk speed ×(1 + Magnitude) | none |
+
+**Attributes.** `IncomingDamageMultiplier` (new) joins walk speed and outgoing damage, all three in [0.2, 3] with the same aggregation: only the strongest penalty counts and every bonus adds (Fortified 0.5 + Vulnerable 0.5 = ×1.0; Hasted +0.3 with Slowed 0.4 = ×0.9; Empowered 0.5 with Weakened 0.5 = ×1.0). `ShieldPool` (new) is written by the server's shield bookkeeping and replicated for HUDs.
+
+**Stacking.** One per target. Re-applying refreshes the duration and keeps the running strength; a **stronger** application replaces the running one ("replaced (x40.00 -> x60.00, stronger)"). Found while testing: a stacked GAS re-application takes the new spec's numbers, so a weaker one is re-made with the running strength.
+
+**Incoming damage, every source.** C++ damage (hero abilities, boss attacks, status ticks) goes through `FGOTABlueprintCombat::ApplyDamage`, which applies the victim's multiplier **before** the Blueprint sees the number. A Blueprint hit (enemy and player melee) cannot be intercepted before the Blueprint subtracts health (Blueprint-to-Blueprint calls never reach C++), so the victim's ability component corrects it in the same server tick: a refund through the Blueprint's own `Heal` (Fortified) or extra damage that is not a hit (Vulnerable). Known limit: a Blueprint hit that is lethal before the reduction still kills; C++ damage has no such edge.
+
+**Shield as over-health.** On application the Blueprint's `MaxHealth` and `Health` rise by the pool; as damage lands the pool shrinks and `MaxHealth` falls with it, so heals (including the Horde intermission restore) never refill the shield, and a hit bigger than shield + health still kills by the Blueprint's own rule. On expiry or removal the unused pool is taken back off health. Order in one server pass: incoming multiplier, shield, Unbreakable refund (Unbreakable only refunds what reached health).
+
+**Bookkeeping owner.** `UGOTAHeroAbilityComponent::TickDefense` (server), which replaces the Unbreakable-only refund; the component is created on any combatant a status needing it lands on, as for slows.
+
 ## Behavior changes
 
 1. Statuses coexist (the point of this milestone). Before, a second status silently replaced the first.
@@ -238,6 +261,17 @@ Ownership: the lock is `GOTAGAS::SetControlLock`; walk speed stays with `UGOTAHe
 Nothing else changed: the same numbers, the same Blueprint flags, the same damage path.
 
 ## Test record
+
+### GAS milestones A and B (`3475459`, then B), editor and packaged
+
+| Check | A: Stunned / Frozen | B: shields, buffs, debuffs |
+|---|---|---|
+| New suite group | Control 5/5 (stun, frozen, boss immunity, Mind Spike, multiplayer) | Defense 3/3 (shield, modifiers, multiplayer) |
+| Editor suite | 51/51 first pass | 54/54 first pass |
+| Packaged | `B:\Unreal\GOTA_Builds\GAS_A_3475459` (fresh cook, 3,939 packages, 0 incrementally skipped): **51/51 first pass** | see below |
+| Horde, four players, 120 ms / 5% loss | whole waves stunned and frozen five times (`gasA_horde3`): 19 locks, 19 releases, every released enemy attacked again, 0 stalls, 0 crashes | not run |
+
+Found and fixed during A: released AI resumed a move task that waited forever for the move the lock stopped (now the tree restarts on release); targeting counted locked time as failed pursuit; the stall watch counted locked enemies; Blueprint-internal calls cannot be refused from C++ (input lock covers the human, C++ callers are refused).
 
 ### RC14 one perfect-dodge rule (`e0f794f`), editor and packaged RC14
 

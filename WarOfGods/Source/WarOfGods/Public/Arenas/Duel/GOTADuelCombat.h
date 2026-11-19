@@ -79,7 +79,12 @@ struct WAROFGODS_API FGOTABlueprintCombat
 	 * Blueprint's ShouldForceInterrupt: true for hits; false for damage that must not cut an action short (status ticks).
 	 */
 	static bool ApplyDamage(AActor* Victim, AActor* Causer, float Amount, bool bCanBeBlocked, bool bCanBeParried, const FString& Response,
-		bool bForceInterrupt = true);
+		bool bForceInterrupt = true, bool bApplyIncoming = true);
+	/**
+	 * Server: the victim's incoming damage multiplier (Fortified / Vulnerable) is applied to Amount first unless
+	 * bApplyIncoming is false (a correction that is already final). The health the call took is reported to the
+	 * victim's ability component as already scaled, so its Blueprint-hit correction does not apply it twice.
+	 */
 	/** Spawn-time tuning of the Blueprint health authority's own MaxHealth/Health (before combat). */
 	static bool ConfigureHealth(AActor* Fighter, float MaxHealth);
 	static UAnimMontage* GetActiveMontage(const AActor* Actor, float* OutPosition = nullptr);

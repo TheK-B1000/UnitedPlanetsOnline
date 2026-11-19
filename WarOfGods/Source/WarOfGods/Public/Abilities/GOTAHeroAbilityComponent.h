@@ -112,6 +112,11 @@ public:
 	void ResetAbilities(bool bClearCooldowns);
 	/** Server: cut the current cast short (hard crowd control). The cooldown stays spent, as for a hit interrupt. */
 	void InterruptCast(const TCHAR* Why) { CancelCastServer(Why); }
+	/**
+	 * Server: FGOTABlueprintCombat::ApplyDamage just took Amount health from this pawn with the incoming multiplier
+	 * already applied. The defence pass corrects only the rest (Blueprint hits), so nothing is scaled twice.
+	 */
+	void NoteScaledLoss(float Amount) { PendingScaledLoss += Amount; }
 
 	/** Test hook: force the AI to use a slot now (ignores the AI gap, not the rules). */
 	void DebugAIUse(int32 Slot);
@@ -220,7 +225,19 @@ protected:
 	int32 ForcedAISlot = INDEX_NONE;
 	bool bInputBound = false;
 
-	/** Health last tick while Unbreakable is up (server). */
+	/** Health last tick (server), for the defence pass: incoming correction, shield, Unbreakable refund. */
+	float DefenseTrackedHealth = -1.f;
+	/** Health already taken this frame by C++ damage with the incoming multiplier applied (NoteScaledLoss). */
+	float PendingScaledLoss = 0.f;
+	/** Shield bookkeeping (server): over-health on top of ShieldBaseMax, pool mirrored in the ASC's ShieldPool. */
+	bool bShieldActive = false;
+	float ShieldBaseMax = 0.f;
+	float ShieldGranted = 0.f;
+	float ShieldPool = 0.f;
+	/** Server, once per tick: shield start / stronger refill / end, then the frame's health loss through every defence. */
+	void TickDefense(APawn* Owner);
+	void SetShieldPoolValue(float Value);
+	/** Health last tick while Unbreakable is up (server; kept for the Unbreakable-only path). */
 	float StatusTrackedHealth = -1.f;
 	/** Health last tick while Frozen (server); a drop that is not a status tick shatters the ice. */
 	float FrozenTrackedHealth = -1.f;

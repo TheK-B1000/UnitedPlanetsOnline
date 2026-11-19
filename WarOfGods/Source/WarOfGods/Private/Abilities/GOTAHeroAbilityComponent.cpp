@@ -2,6 +2,7 @@
 
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTACombatAttributeSet.h"
 #include "Abilities/GAS/GOTAElements.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GAS/GOTAGameplayTags.h"
@@ -249,9 +250,11 @@ float UGOTAHeroAbilityComponent::GetOutgoingDamageScale() const
 {
 	// Dread is a gameplay effect on the OutgoingDamageMultiplier attribute. The legacy slot term only matters if
 	// Dread is ever handed back to the slot; the strongest penalty wins, so the two are never multiplied.
-	const float SlotScale = (ActiveStatus == EGOTAStatus::Dread && GetStatusRemaining() > 0.f) ? FMath::Clamp(1.f - StatusMagnitude * 0.5f, 0.2f, 1.f) : 1.f;
+	const bool bSlotDread = ActiveStatus == EGOTAStatus::Dread && GetStatusRemaining() > 0.f;
+	const float SlotScale = bSlotDread ? FMath::Clamp(1.f - StatusMagnitude * 0.5f, 0.2f, 1.f) : 1.f;
 	const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner());
-	return FMath::Min(SlotScale, ASC ? ASC->GetOutgoingDamageMultiplier() : 1.f);
+	const float GasScale = ASC ? ASC->GetOutgoingDamageMultiplier() : 1.f; // Empowered can raise it above 1
+	return bSlotDread ? FMath::Min(SlotScale, GasScale) : GasScale;
 }
 
 bool UGOTAHeroAbilityComponent::IsUntargetable() const
@@ -529,19 +532,10 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 	{
 		ApplyStatus(EGOTAStatus::None, 0.f, 0.f, nullptr);
 	}
+	// Shield, incoming-damage correction for Blueprint hits, Unbreakable refund: one pass over this frame's health loss.
+	TickDefense(Owner);
 	const float Health = UGOTACombatantObserver::ReadVitals(Owner).Health;
-	float UnbreakableMagnitude = 0.f;
-	const bool bUnbreakable = IsUnbreakable(&UnbreakableMagnitude);
-	if (bUnbreakable && StatusTrackedHealth >= 0.f && Health < StatusTrackedHealth - 0.5f && Health > 0.f)
-	{
-		const float Refund = (StatusTrackedHealth - Health) * FMath::Clamp(UnbreakableMagnitude, 0.f, 0.9f);
-		if (UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Owner))
-		{
-			FGOTABlueprintCombat::Call(DS, TEXT("Heal"), nullptr, FString(), Refund);
-			UE_LOG(LogGOTAAbility, Log, TEXT("%s: Unbreakable absorbed %.1f of %.1f"), *GetNameSafe(Owner), Refund, StatusTrackedHealth - Health);
-		}
-	}
-	StatusTrackedHealth = bUnbreakable ? UGOTACombatantObserver::ReadVitals(Owner).Health : -1.f;
+	const bool bUnbreakable = IsUnbreakable();
 
 	// Frozen shatters on the first real hit (a status tick is not a hit: IgnoreHealthLoss discounts it).
 	if (GOTAGAS::HasStatus(Owner, EGOTAStatus::Frozen))
@@ -656,6 +650,131 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 	{
 		FinishCastServer(ActiveSlot);
 	}
+}
+
+void UGOTAHeroAbilityComponent::SetShieldPoolValue(float Value)
+{
+	ShieldPool = FMath::Max(0.f, Value);
+	if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner()))
+	{
+		ASC->SetShieldPool(ShieldPool); // replicated for every HUD
+	}
+}
+
+void UGOTAHeroAbilityComponent::TickDefense(APawn* Owner)
+{
+	UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Owner);
+	if (!DS)
+	{
+		return;
+	}
+	const bool bAlive = !UGOTACombatantObserver::IsCombatantDefeated(Owner) && UGOTACombatantObserver::ReadVitals(Owner).Health > 0.f;
+
+	// 1. Shield start, stronger refill, end. The pool is over-health in the Blueprint damage system: MaxHealth and
+	// Health both rise by it, and MaxHealth falls as it is used, so heals can never refill it and a hit bigger than
+	// shield + health still kills (the Blueprint's own rule).
+	const bool bShielded = GOTAGAS::HasStatus(Owner, EGOTAStatus::Shielded);
+	const float Granted = bShielded ? GOTAGAS::GetStatusMagnitude(Owner, EGOTAStatus::Shielded) : 0.f;
+	if (bShielded && bAlive && (!bShieldActive || Granted > ShieldGranted + KINDA_SMALL_NUMBER))
+	{
+		const FGOTACombatantVitals V = UGOTACombatantObserver::ReadVitals(Owner);
+		if (!bShieldActive)
+		{
+			ShieldBaseMax = V.MaxHealth;
+		}
+		const float Add = FMath::Max(0.f, Granted - ShieldPool);
+		SetShieldPoolValue(Granted);
+		ShieldGranted = Granted;
+		bShieldActive = true;
+		FGOTABlueprintCombat::SetNumber(DS, TEXT("MaxHealth"), ShieldBaseMax + ShieldPool);
+		FGOTABlueprintCombat::SetNumber(DS, TEXT("Health"), V.Health + Add);
+		if (DefenseTrackedHealth >= 0.f)
+		{
+			DefenseTrackedHealth += Add; // not a heal to correct for
+		}
+		UE_LOG(LogGOTAAbility, Log, TEXT("%s: shield up %.1f (health %.1f/%.1f + shield)"), *GetNameSafe(Owner), ShieldPool, V.Health, ShieldBaseMax);
+	}
+	else if (!bShielded && bShieldActive)
+	{
+		// Expired, broken, cleared by death or reset: take the unused pool back off the Blueprint's health.
+		const float Left = ShieldPool;
+		if (bAlive)
+		{
+			const float H = UGOTACombatantObserver::ReadVitals(Owner).Health;
+			FGOTABlueprintCombat::SetNumber(DS, TEXT("Health"), FMath::Max(1.f, H - Left));
+			FGOTABlueprintCombat::SetNumber(DS, TEXT("MaxHealth"), ShieldBaseMax);
+			if (DefenseTrackedHealth >= 0.f)
+			{
+				DefenseTrackedHealth -= FMath::Min(Left, H - 1.f);
+			}
+		}
+		UE_LOG(LogGOTAAbility, Log, TEXT("%s: shield ended with %.1f left%s"), *GetNameSafe(Owner), Left, bAlive ? TEXT("") : TEXT(" (defeated)"));
+		bShieldActive = false;
+		ShieldGranted = 0.f;
+		SetShieldPoolValue(0.f);
+	}
+
+	// 2. This frame's health loss through every defence, in order: incoming multiplier (Blueprint hits only; C++ damage
+	// arrived already scaled), shield, Unbreakable refund.
+	const float HealthNow = UGOTACombatantObserver::ReadVitals(Owner).Health;
+	if (bAlive && DefenseTrackedHealth >= 0.f && HealthNow < DefenseTrackedHealth - 0.01f)
+	{
+		const float Loss = DefenseTrackedHealth - HealthNow;
+		const float Prescaled = FMath::Min(Loss, PendingScaledLoss);
+		const float BlueprintLoss = Loss - Prescaled;
+		float Refund = 0.f;
+		float Extra = 0.f;
+		const float Incoming = GOTAGAS::GetIncomingDamageMultiplier(Owner);
+		if (BlueprintLoss > 0.01f && Incoming < 0.999f)
+		{
+			Refund += BlueprintLoss * (1.f - Incoming);
+			UE_LOG(LogGOTAAbility, Log, TEXT("%s: incoming x%.2f on a Blueprint hit: %.1f -> %.1f (refund %.1f)"), *GetNameSafe(Owner), Incoming,
+				BlueprintLoss, BlueprintLoss * Incoming, BlueprintLoss * (1.f - Incoming));
+		}
+		else if (BlueprintLoss > 0.01f && Incoming > 1.001f)
+		{
+			Extra = BlueprintLoss * (Incoming - 1.f);
+			UE_LOG(LogGOTAAbility, Log, TEXT("%s: incoming x%.2f on a Blueprint hit: %.1f -> %.1f (extra %.1f)"), *GetNameSafe(Owner), Incoming,
+				BlueprintLoss, BlueprintLoss * Incoming, Extra);
+			// Already final: not scaled again, not a hit (no stagger, no interrupt), credited to the last damager. Its health
+			// loss is counted right here (shield, Unbreakable), and the tracked health below already includes it.
+			const UStatsComponent* Stats = GetStats();
+			const float Before = UGOTACombatantObserver::ReadVitals(Owner).Health;
+			FGOTABlueprintCombat::ApplyDamage(Owner, Stats ? Stats->GetRecentDamager(1.f) : nullptr, Extra, false, false, TEXT("None"), false, false);
+			Extra = FMath::Max(0.f, Before - UGOTACombatantObserver::ReadVitals(Owner).Health);
+		}
+		float Remaining = Loss - Refund + Extra;
+		if (bShieldActive && ShieldPool > 0.f && Remaining > 0.f)
+		{
+			const float Absorbed = FMath::Min(ShieldPool, Remaining);
+			const float Seen = Remaining;
+			SetShieldPoolValue(ShieldPool - Absorbed);
+			Remaining -= Absorbed;
+			FGOTABlueprintCombat::SetNumber(DS, TEXT("MaxHealth"), ShieldBaseMax + ShieldPool);
+			UE_LOG(LogGOTAAbility, Log, TEXT("%s: shield absorbed %.1f of %.1f (%.1f left)"), *GetNameSafe(Owner), Absorbed, Seen, ShieldPool);
+			if (ShieldPool <= 0.01f)
+			{
+				UE_LOG(LogGOTAAbility, Log, TEXT("%s: shield broken"), *GetNameSafe(Owner));
+				if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Owner))
+				{
+					ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GOTATags::Status_Shielded)); // ends next tick
+				}
+			}
+		}
+		float UnbreakableMagnitude = 0.f;
+		if (Remaining > 0.01f && IsUnbreakable(&UnbreakableMagnitude))
+		{
+			const float UnbreakableRefund = Remaining * FMath::Clamp(UnbreakableMagnitude, 0.f, 0.9f);
+			Refund += UnbreakableRefund;
+			UE_LOG(LogGOTAAbility, Log, TEXT("%s: Unbreakable absorbed %.1f of %.1f"), *GetNameSafe(Owner), UnbreakableRefund, Remaining);
+		}
+		if (Refund > 0.f)
+		{
+			FGOTABlueprintCombat::Call(DS, TEXT("Heal"), nullptr, FString(), Refund); // through the Blueprint's own Heal
+		}
+	}
+	PendingScaledLoss = 0.f;
+	DefenseTrackedHealth = bAlive ? UGOTACombatantObserver::ReadVitals(Owner).Health : -1.f;
 }
 
 void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)
@@ -1261,8 +1380,10 @@ void UGOTAHeroAbilityComponent::ApplyMovementStatusLocally()
 	// Hard crowd control holds the fighter still; slows never go below x0.2. The tag replicates to every peer, so the
 	// server and the owning client agree.
 	const bool bLocked = GOTAGAS::IsIncapacitated(GetOwner());
-	const float SpeedScale = bLocked ? 0.f : FMath::Clamp(FMath::Min(SlotScale, GasScale), 0.2f, 1.f);
-	const bool bSlowsMovement = SpeedScale < 0.999f;
+	// Hasted can raise it above 1 (the attribute's range is [0.2, 3]).
+	const float SpeedScale = bLocked ? 0.f
+		: FMath::Clamp(bSlotSlows ? FMath::Min(SlotScale, GasScale) : GasScale, 0.2f, UGOTACombatAttributeSet::MaxMultiplier);
+	const bool bSlowsMovement = !FMath::IsNearlyEqual(SpeedScale, 1.f, 0.001f); // any change from the base: slow, haste or held
 	if (bSlowsMovement)
 	{
 		// Capture the base once; if something else (a Blueprint stance change...) wrote MaxWalkSpeed since our last

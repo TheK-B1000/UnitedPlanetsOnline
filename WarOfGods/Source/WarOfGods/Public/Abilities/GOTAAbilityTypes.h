@@ -54,7 +54,19 @@ enum class EGOTAStatus : uint8
 	 */
 	Stunned,
 	/** Hard crowd control like Stunned, frozen in place (animation held), ending early on the first real hit. Frost. */
-	Frozen
+	Frozen,
+	/** Absorbs Magnitude damage from every source before health (over-health); breaks when used up, the rest expires. */
+	Shielded,
+	/** Outgoing ability and boss damage x(1 + Magnitude). */
+	Empowered,
+	/** Incoming damage from every source x(1 - Magnitude); the strongest reduction counts. */
+	Fortified,
+	/** Incoming damage from every source x(1 + Magnitude). Blocked by GOTA.Immunity.Vulnerable. */
+	Vulnerable,
+	/** Walk speed x(1 + Magnitude). A slow and a haste partly cancel. */
+	Hasted,
+	/** Outgoing ability and boss damage x(1 - Magnitude). Blocked by GOTA.Immunity.Weaken. */
+	Weakened
 };
 
 /** Cosmetic family used to pick placeholder VFX/SFX until hero-specific effects exist. */

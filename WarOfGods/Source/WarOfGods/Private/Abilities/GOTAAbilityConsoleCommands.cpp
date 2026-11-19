@@ -84,8 +84,9 @@ namespace GOTAAbilityTest
 				A ? *A->DescribeState() : TEXT("(no abilities)"));
 			if (const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Pawn))
 			{
-				UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY f%d gas=[%s] immune=[%s] walkx=%.2f dmgx=%.2f"), F, *ASC->DescribeStatusEffects(),
-					*ASC->DescribeImmunities(), ASC->GetMoveSpeedMultiplier(), ASC->GetOutgoingDamageMultiplier());
+				UE_LOG(LogGOTAAbilityTest, Log, TEXT("ABILITY f%d gas=[%s] immune=[%s] walkx=%.2f dmgx=%.2f inx=%.2f shield=%.1f"), F, *ASC->DescribeStatusEffects(),
+					*ASC->DescribeImmunities(), ASC->GetMoveSpeedMultiplier(), ASC->GetOutgoingDamageMultiplier(), ASC->GetIncomingDamageMultiplier(),
+					ASC->GetShieldPool());
 			}
 			if (const ACharacter* Char = Cast<ACharacter>(Pawn))
 			{
