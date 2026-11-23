@@ -31,7 +31,10 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestones C and D: elements, hero abilities | `a38b241` | Done (editor 63/63; packaged 62/63 first pass, the one timing failure passed 3 of 3 on rerun) |
 | Milestone E, part 1: projectiles, zones, World Burn zone | `d6a9ae2` | Editor only: 65/66, the one failure a stale ignite count; Heroes and Delivery 8/8 after correcting it. Full suite not repeated. No packaged run |
 | Milestone E: remote-client delivery test | `a956541` | Editor, listen server + one client: pass |
-| Milestone E, part 2: enemy powers | `729852b` | Editor, clean build: 72/72 on the first run. Packaged: 70/72 on the first pass, see the milestone E section. Four-player and latency runs still to do |
+| Milestone E, part 2: enemy powers | `729852b` | Editor, clean build: 72/72 on the first run. Packaged: 70/72 on the first pass, see the milestone E section. Superseded by `553fd5a` |
+| Milestone E: status widget teardown fix, multiplayer tests | `e8a6364` | Editor 72/72. Packaged 70/72 on the first pass; exposed the Titan Charge bug |
+| Milestone E: Titan Charge dash timing | `a022514` | Editor 73/73, packaged 73/73 on the first pass. Its four-player lag run exposed the boss intro bug |
+| Milestone E: boss intro releases the player it held | `553fd5a` | Editor, clean build: 73/73. Packaged: 67/73 on the first pass, no failure reproduced on rerun. Four-player, latency and dodge runs pass. See the milestone E section |
 | Milestones F, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
@@ -281,7 +284,7 @@ The card effects use the statuses and elements from A–C through new data field
 | Zephyr | Gale Rush | Lightning: shocks |
 | Lysara | Gravity Well | Frost: chills |
 
-## Projectiles and zones (milestone E, in progress)
+## Projectiles and zones (milestone E)
 
 `GOTAEffectDelivery` adds a data payload (`FGOTAEffectPayload`), a straight-line projectile (`AGOTAProjectile`) and a persistent area (`AGOTAEffectZone`). The server alone decides who is hit. Clients receive the initial state once and draw it. Every hit goes through `GOTAGAS::DeliverEffect`, then `DealElementalHit` and the victim's `BPC_DamageSystem`, so there is no second health, immunity or attribution path.
 
@@ -314,7 +317,31 @@ The card effects use the statuses and elements from A–C through new data field
 
 **Known limits.** Only the Quarry Behemoth has powers. Regular Horde enemies and Story's Blueprint shrine boss do not. The ground-marker effect has not been checked by eye. A Blueprint hit that is lethal before reduction still kills. The host's Blueprint 0.20 s i-frames also cover other attackers. A modified client's local dodge is only corrected by server movement.
 
-Not done yet: packaged verification, four-player Horde and Story with these effects, and a run under simulated latency and loss.
+**Bugs found by this verification.**
+
+- **Titan Charge (`a022514`).** The dash deadline came from the scheduled launch, so a frame stall across the launch used up the dash and it missed. It is now timed from the real launch, with a regression case that stalls 0.5 s.
+- **Boss intro (`553fd5a`).** The intro held its nearest player (invulnerable, movement and camera locked), then looked up the nearest player again to release them. If that changed during the 4.6 s intro, the first player stayed invulnerable and locked. This predates milestone E and appeared in the `e8a6364` and `a022514` four-player Horde logs. The intro now releases the pawn and controller it held, including when the pawn is lost or the boss is removed.
+
+**Packaged record (`553fd5a`, `B:\Unreal\GOTA_Builds\GAS_E_553fd5a`).** First pass: 67/73, with 5 failures and 1 inconclusive case. The machine was heavily loaded: clients took up to 88 s for a scripted 18 s wait.
+
+| First-pass result | Evidence | Rerun on the same package, 3 passes |
+|---|---|---|
+| Gale Rush sidestep: failed | A 0.73 s frame stall put the test's sidestep at or before the launch, so the dash could aim at the moved target. Consistent with the log, not proven | 3/3 |
+| Shadow Step cooldown: failed | A frame stall made the retry arrive during the first cast, so it was refused as Busy instead of Cooldown | 3/3 |
+| Titan Charge multiplayer: failed | The client received a console exit request 2 s after launch and never joined. The source of that request is unknown | 1 pass, 2 inconclusive |
+| Control multiplayer: failed | Client evidence missing under load | 1 pass, 2 inconclusive |
+| Delivery multiplayer: failed | Client evidence missing under load | 2 passes, 1 inconclusive |
+| Element multiplayer: inconclusive | Client starved | 1 pass, 2 inconclusive |
+
+The rerun covered the six affected ability groups, 27 cases per pass. It had no failures: single-player cases 63/63, multiplayer cases 9 passes and 9 inconclusive (client starved). The third pass was 27/27. An inconclusive case is neither a pass nor a failure.
+
+**Four-player Horde and Story (`553fd5a`, packaged; host Varoth, clients Nyx, Kairos, Drakon).** Each mode ran clean and at 120 +/- 30 ms with 5% loss. Each run had 2 boulders hit and 3 Scorched Earth zones: 2 armed and ran their duration, and 1 was cleared by the boss's death. All three clients saw, received impacts for and removed every delivery, and logged no server-side hit. No ensures or fatals, and all four players were alive at the end. Healing was on, so these runs are not difficulty evidence.
+
+**Remote dodge under the same latency and loss (`553fd5a`, packaged).** 9 of 10 timed dodges were protected. In the tenth, the dodge notice reached the server 275 ms after impact, so the hit stood. All 6 too-early dodges were hit.
+
+**Boss intro (`553fd5a`, packaged, two players).** When another player became nearest, the held player was released with invincibility and movement lock cleared. When the held pawn was lost, its controller was released.
+
+**Not verified.** No human, separate-PC or quiet-machine run. Real network conditions were simulated on one PC. The console exit request in the first-pass Titan Charge case is unexplained. Boss power and World Burn balance remain provisional.
 
 ## Behavior changes
 
