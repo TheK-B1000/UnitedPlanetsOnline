@@ -24,7 +24,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPROJECT = os.path.join(ROOT, "WarOfGods.uproject")
 EDITOR = os.environ.get("GOTA_EDITOR", r"K:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe")
 PACKAGE_DIR = os.environ.get("GOTA_PACKAGE_DIR", r"B:\Unreal\GOTA_Builds\Pass2_Paragon\Windows")
-LOGS = os.path.join(ROOT, "Saved", "AbilityRegression")
+LOGS = os.environ.get("GOTA_REGRESSION_LOGS", os.path.join(ROOT, "Saved", "AbilityRegression"))
 QUARRY = "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?BestOf=3"
 
 # (name, url-options, script, [(regex, expect)])  expect: True = must appear, False = must NOT appear, int = exact count, (lo, hi) = count in range.
@@ -69,6 +69,8 @@ CASES = {
         ("hit+cooldown+sidestep", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "ability_titancharge.txt",
          [(r"TitanCharge \(Charge\) cast", 3), (r"TitanCharge hit BP_Enemy\S+ for 14\.0 \(landed=1\)", 2),
           (r"TitanCharge denied \(Cooldown\)", True)]),
+        ("lands through a frame stall at launch", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "ability_titancharge_stall.txt",
+         [(r"TitanCharge hit BP_Enemy\S+ for 14\.0 \(landed=1\)", 1), (r"TitanCharge missed", False)]),
         ("breaks guard (AI vs blocking player)", "?Opponent=AI?Hero=UPAWarden?Foe=Drakon?DevHeroes=1", "ability_titancharge_block.txt",
          [(r"TitanCharge hit BP_Player\S+ for 14\.0 \(landed=1\)", True)]),
         ("death during cast", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "ability_death_cast_s1.txt",

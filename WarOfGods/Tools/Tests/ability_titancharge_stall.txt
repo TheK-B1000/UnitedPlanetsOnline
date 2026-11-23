@@ -1,0 +1,13 @@
+# Drakon - Titan Charge with a 0.5 s frame stall across its launch: the dash still gets its full time and lands.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 500 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 1
+wait 0.2
+gota.Test.Stall 0.5
+wait 1.5
+gota.Ability.Dump
+quit

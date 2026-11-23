@@ -4,6 +4,7 @@
 r.MotionBlurQuality 0
 wait 4
 gota.Boss.Skip
+gota.Boss.AI 2
 wait 3
 # Boss brain off for the Time Lash step: its own attack would interrupt the 0.5 s cast.
 gota.Boss.AI 0

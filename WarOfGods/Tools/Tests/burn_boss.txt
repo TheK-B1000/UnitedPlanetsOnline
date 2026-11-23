@@ -5,6 +5,7 @@
 r.MotionBlurQuality 0
 wait 4
 gota.Boss.Skip
+gota.Boss.AI 2
 wait 3
 gota.Boss.AI 0
 wait 3.5

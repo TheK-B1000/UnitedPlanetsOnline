@@ -213,6 +213,7 @@ protected:
 	FVector ChargeStart = FVector::ZeroVector;
 	FVector ChargeDir = FVector::ForwardVector;
 	bool bCharging = false;
+	double ChargeEndTime = 0.0;
 	TSet<TWeakObjectPtr<APawn>> ChargeHit;
 	bool bOwnerInvincibleByUs = false;
 	float BaseWalkSpeed = -1.f;

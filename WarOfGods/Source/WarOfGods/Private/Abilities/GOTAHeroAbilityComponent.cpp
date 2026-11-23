@@ -619,7 +619,7 @@ void UGOTAHeroAbilityComponent::TickServer(float DeltaTime)
 				}
 			}
 		}
-		if (bCharging && Now >= CastResolveTime + Def->HitInterval)
+		if (bCharging && Now >= ChargeEndTime)
 		{
 			LogMissedResolve(*Def);
 			bCharging = false; // ran out of charge (missed)
@@ -936,6 +936,8 @@ void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)
 		ChargeDir = Dir;
 		ChargeStart = Owner->GetActorLocation();
 		bCharging = true;
+		// Timed from the real launch: a frame stall can delay it past the scheduled resolve.
+		ChargeEndTime = ServerNow() + Def->HitInterval;
 		if (Char)
 		{
 			const float Speed = Def->Range / FMath::Max(Def->HitInterval, 0.1f);
