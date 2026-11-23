@@ -276,6 +276,48 @@ CASES = {
           (r"GAS move scale=1\.30", True), (r"GAS move scale=0\.90", True),               # Hasted, then Hasted + Slowed
           (r"ABILITY f0 gas=\[.*\] immune=\[\] walkx=0\.90 dmgx=1\.00", True)]),          # Empowered + Weakened
     ],
+    # GAS milestone D: hero ability enhancements (card effects) on the shared GAS rules.
+    "Heroes": [
+        ("Nyx Void Shield: usable while stunned, breaks free, veils, then shields", "?Opponent=AI?Hero=Nyx?Foe=Drakon?DevHeroes=1", "hero_voidshield.txt",
+         [(r"ShadowStep denied \(Incapacitated\)", 1), (r"VoidShield \(SelfGuard\) cast", 1),
+          (r"VoidShield cleansed 1 control effect\(s\)", 1), (r"BP_Player\S*: CONTROL lock off", 1),
+          (r"status Veiled 1\.3s", 1), (r"status Shielded 4\.0s x25\.00", 1), (r"shield up 25\.0", 1)]),
+        ("Nyx Soul Drain steals momentum", "?Opponent=AI?Hero=Nyx?Foe=Drakon?DevHeroes=1", "hero_souldrain.txt",
+         [(r"SoulDrain hit \S+ for 18\.0 \(landed=1\)", 1), (r"SoulDrain stole 20 momentum from", 1), (r"status Dread 4\.0s x0\.35", 1)]),
+        ("Varoth: World Burn ignites, Colossus Form empowers", "?Opponent=AI?Hero=Varoth?DevHeroes=1", "hero_varoth.txt",
+         [(r"WorldBurn hit \S+ for 5\.0 \(landed=1\)", 1), (r"BP_Enemy\S*: status Burning 3\.0s x2\.00", 1), (r"BP_Enemy\S*: status Dread 4\.0s x0\.35", 1),
+          (r"status Unbreakable 6\.0s x0\.50", 1), (r"status Empowered 6\.0s x0\.25", 1),
+          (r"InfernoSlam hit \S+ for 27\.5 \(landed=1\)", 1)]),
+        ("Zephyr Gale Rush shocks (Lightning)", "?Opponent=AI?Hero=Zephyr?DevHeroes=1", "hero_elements.txt",
+         [(r"GaleRush hit \S+ for 16\.0 \(landed=1\)", 1), (r"BP_Enemy\S*: status Shocked 3\.0s x0\.20", 1)]),
+        ("Lysara Gravity Well chills (Frost)", "?Opponent=AI?Hero=Lysara?DevHeroes=1", "hero_elements.txt",
+         [(r"GravityWell hit \S+ for 10\.0 \(landed=1\)", 1), (r"BP_Enemy\S*: status Chilled 3\.0s x0\.30", 1)]),
+    ],
+    # GAS milestone C: element statuses, the follow-up, the interaction table, element resistance.
+    "Element": [
+        ("Frost chill + deep freeze, Fire thaws, Frost extinguishes, Lightning shocks, Shadow dreads",
+         "?Opponent=AI?Hero=Drakon?DevHeroes=1", "element_table.txt",
+         [(r"ELEMENT hit GOTA\.Element\.Frost 10\.0 \(x1\.00 element\) -> 10\.0 \(landed=1\)", 3),
+          (r"status Chilled 3\.0s x0\.30", 1), (r"GAS move scale=0\.70", True),
+          (r"ELEMENT Frost follow-up: Chilled -> Frozen 1\.5s", 1), (r"status Frozen 1\.5s x0\.00", 1), (r"CONTROL lock on", 1),
+          (r"ELEMENT Fire thawed Chilled/Frozen \(no Burning from this hit\)", 1), (r"Frozen shattered", False),
+          (r"status Burning 3\.0s x2\.00", 1),
+          (r"ELEMENT Frost extinguished Burning \(no Chilled from this hit\)", 1),
+          (r"status Shocked 3\.0s x0\.20", 1), (r"ABILITY f1 gas=\[.*\] immune=\[\] walkx=1\.00 dmgx=1\.00 inx=1\.20", True),
+          (r"status Dread 3\.0s x0\.25", 1), (r"incoming x1\.20: 10\.0 -> 12\.0", 1)]),
+        ("Element resistance: elemental hit, ability hit, burn ticks; full resistance",
+         "?Opponent=AI?Hero=Drakon?DevHeroes=1", "element_resist.txt",
+         [(r"element resistance GOTA\.Element\.Fire x0\.50", 1),
+          (r"ELEMENT hit GOTA\.Element\.Fire 20\.0 \(x0\.50 element\) -> 10\.0 \(landed=1\)", 1),
+          (r"Burning tick on \S+ for 1\.0 \(landed=1\)", True),
+          (r"MoltenStrike element GOTA\.Element\.Fire x0\.50", 1), (r"MoltenStrike hit \S+ for 11\.0 \(landed=1\)", 1),
+          (r"ELEMENT hit GOTA\.Element\.Lightning 20\.0 \(x0\.00 element\) -> 0\.0 \(landed=0\)", 1),
+          (r"status Shocked", False)]),
+        ("Boss: Frost resisted as a slow, never deep-frozen; Lightning shocks",
+         "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "element_boss.txt",
+         [(r"BP_Boss\S*: status Chilled resisted \(whole movement \)", 2), (r"FEEDBACK THE QUARRY BEHEMOTH RESISTS CHILL", 2),
+          (r"follow-up", False), (r"status Frozen", False), (r"BP_Boss\S*: status Shocked 3\.0s x0\.20", 1)]),
+    ],
 }
 # Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.
 MP = {
@@ -289,6 +331,11 @@ MP = {
 }
 # Multiplayer for statuses: host hero, host script, host-log checks, client-log checks (the remote player's own view).
 MP_STATUS = {
+    "Element": ("Drakon", "element_mp_host.txt",
+                [(r"status Chilled 3\.0s x0\.30", 1), (r"ELEMENT Frost follow-up: Chilled -> Frozen 1\.5s", 1)],
+                [(r"cue GameplayCue\.GOTA\.Status\.Chilled on BP_Player", True), (r"overlay \S+ -> M_GOTA_Overlay_Chilled on BP_Player", True),
+                 (r"BP_Player\S*: GAS move scale=0\.70", True),
+                 (r"cue GameplayCue\.GOTA\.Status\.Frozen on BP_Player", True), (r"FEEDBACK STATUS FROZEN on", 1), (r"FEEDBACK STATUS FROZEN off", 1)]),
     "Defense": ("Drakon", "defense_mp_host.txt",
                 [(r"shield up 30\.0", 1), (r"shield absorbed 22\.0 of 22\.0 \(8\.0 left\)", 1), (r"shield ended with 8\.0 left", 1),
                  (r"status Vulnerable 4\.0s x0\.50", 1)],
@@ -395,7 +442,8 @@ def keep_failure(run_dir, *logs):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--packaged", action="store_true")
-    ap.add_argument("--only")
+    ap.add_argument("--only", help="comma-separated groups to run")
+    ap.add_argument("--skip", default="", help="comma-separated groups to leave out (e.g. groups newer than the build)")
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--mp-only", action="store_true", help="only the multiplayer (listen server + client) cases")
     ap.add_argument("--repeat", type=int, default=1, help="run the selected cases N times in a row")
@@ -419,7 +467,7 @@ def run_suite(a):
     mode = "packaged" if a.packaged else "editor"
     fails = 0
     for ability, cases in CASES.items():
-        if a.only and a.only != ability:
+        if (a.only and ability not in a.only.split(",")) or (a.skip and ability in a.skip.split(",")):
             continue
         for name, opts, script, exp in ([] if a.mp_only else cases):
             log = os.path.join(LOGS, "%s_%s_%s.log" % (mode, ability, re.sub(r"\W+", "_", name)))

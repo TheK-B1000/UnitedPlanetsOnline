@@ -22,6 +22,9 @@ OVERLAYS = [
     ("M_GOTA_Overlay_Vulnerable", (0.85, 0.1, 0.55), 5.0, 2.0, 0.85),  # bruised magenta
     ("M_GOTA_Overlay_Hasted", (0.45, 1.0, 0.75), 4.0, 2.8, 0.75),  # quick mint
     ("M_GOTA_Overlay_Weakened", (0.45, 0.4, 0.35), 3.0, 2.0, 0.8),  # dull ash
+    # milestone C: element statuses
+    ("M_GOTA_Overlay_Chilled", (0.6, 0.85, 1.0), 4.0, 2.4, 0.7),   # frost-blue, lighter than Frozen
+    ("M_GOTA_Overlay_Shocked", (0.75, 0.6, 1.0), 6.0, 3.2, 0.8),   # electric violet, thin rim
 ]
 
 

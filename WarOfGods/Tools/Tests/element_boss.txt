@@ -1,0 +1,14 @@
+# GAS milestone C on the Quarry Behemoth (policy immune to Slow and Stun): Frost's Chilled is resisted, so two Frost hits
+# never deep-freeze it; Lightning shocks it (no vulnerability immunity by default).
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 300
+wait 0.3
+gota.Ability.ElementHit 1 Frost 10 0
+wait 0.3
+gota.Ability.ElementHit 1 Frost 10 0
+wait 0.3
+gota.Ability.ElementHit 1 Lightning 10 0
+wait 0.3
+gota.Ability.Dump
+quit

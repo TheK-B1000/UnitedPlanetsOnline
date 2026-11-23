@@ -178,6 +178,24 @@ public:
 	UGOTAGameplayEffect_Weakened();
 };
 
+/** Chilled (Frost): MoveSpeedMultiplier x(1 - Magnitude). Blocked by GOTA.Immunity.Slow. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Chilled : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Chilled();
+};
+
+/** Shocked (Lightning): IncomingDamageMultiplier x(1 + Magnitude). Blocked by GOTA.Immunity.Vulnerable. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayEffect_Shocked : public UGOTAStatusGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UGOTAGameplayEffect_Shocked();
+};
+
 /**
  * Recovery after hard crowd control ends (expiry or shatter): grants GOTA.Immunity.Stun for Data.Duration, so no
  * combination of casters can chain-lock a target. Not a status (no GOTA.Status tag, no cue).
@@ -279,6 +297,27 @@ namespace GOTAGAS
 
 	/** Any peer: the actor's incoming damage multiplier (1 without an ASC). */
 	float GetIncomingDamageMultiplier(const AActor* Actor);
+
+	/** Server: x damage Victim takes from Element (its status policy's element resistance; 1 by default or untyped). */
+	float GetElementDamageScale(const AActor* Victim, const FGameplayTag& Element);
+
+	/**
+	 * Server: an Element hit just landed on Victim (called after the damage, never instead of it). Runs the element
+	 * interaction table, then applies the element's status (or its follow-up), through ApplyStatus with every rule:
+	 *   Fire on Chilled or Frozen  -> both removed ("thawed"), no Burning from this hit
+	 *   Frost on Burning           -> Burning removed ("extinguished"), no Chilled from this hit
+	 *   Frost on Chilled           -> Chilled removed, Frozen for the row's FollowUpDuration ("deep freeze")
+	 * Off with gota.GAS.ElementStatus 0 (damage only). Returns the status applied (None if none).
+	 */
+	EGOTAStatus ApplyElementOnHit(APawn* Victim, const FGameplayTag& Element, AActor* Source);
+
+	/**
+	 * Server: one elemental hit from code that is not a hero ability (enemy powers, projectiles, zones, tests): the
+	 * element resistance, the victim's incoming multiplier and the Blueprint damage system, then ApplyElementOnHit if it
+	 * landed. Returns whether the damage system took it.
+	 */
+	bool DealElementalHit(APawn* Victim, AActor* Source, float Amount, const FGameplayTag& Element, bool bCanBeBlocked = true,
+		const FString& Response = TEXT("Stagger"));
 	int32 AspectsOf(EGOTAStatus Status);
 
 	/** Stunned or Frozen. */

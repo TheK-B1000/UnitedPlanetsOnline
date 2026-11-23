@@ -51,6 +51,10 @@ public:
 	void ApplyStatusPolicy(const FGOTAStatusPolicy& Policy, FName PolicyOwner);
 	/** Server: the resistance rule for Status from the current policy, if any. */
 	const FGOTAStatusResistance* FindStatusResistance(EGOTAStatus Status) const { return Policy.FindResistance(Status); }
+	/** Server: x damage this combatant takes from Element (its policy's element resistance; 1 by default). */
+	float GetElementDamageScale(const FGameplayTag& Element) const { return Policy.ElementDamageScale(Element); }
+	/** Server, tests and content: set one element's damage scale in the current policy. */
+	void SetElementResistance(const FGameplayTag& Element, float DamageScale);
 	/** "Slow Stun" for the GOTA.Immunity.* tags this actor carries on this peer; empty when none. */
 	FString DescribeImmunities() const;
 

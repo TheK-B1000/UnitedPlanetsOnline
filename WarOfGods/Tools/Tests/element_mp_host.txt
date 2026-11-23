@@ -1,0 +1,14 @@
+waitplayers 2 120
+# GAS milestone C on a remote player: Frost chills it (its own machine slows it and shows the overlay), a second Frost
+# deep-freezes it (its FROZEN line and the ice), then it thaws on its own.
+r.MotionBlurQuality 0
+wait 10
+gota.Ability.Place 250
+wait 0.3
+gota.Ability.ElementHit 1 Frost 5 0
+wait 1.0
+gota.Ability.ElementHit 1 Frost 5 0
+wait 3
+gota.Ability.Dump
+wait 75
+quit

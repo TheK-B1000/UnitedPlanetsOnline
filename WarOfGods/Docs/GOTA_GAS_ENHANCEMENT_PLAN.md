@@ -26,6 +26,10 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | RC12 enemy combat fixes (spin, replication, dead AI, armed heroes, targeting, Story bases, lobby) | `336b6cb` | Done (packaged RC12c) |
 | Reflection-buffer crash fix, lobby button | `10f4bb2` | Done (packaged RC12c) |
 | Boss definition kept loaded on the server | `05704ae` | Done (packaged RC12c) |
+| Milestone A: Stunned and Frozen | `3475459` | Done (packaged, 51/51) |
+| Milestone B: shields, buffs, debuffs | `9d53e51` | Done (packaged, 54/54) |
+| Milestones C and D: elements, hero abilities | this commit | Editor 63/63; packaged pending |
+| Milestones E, F, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
 
@@ -244,6 +248,36 @@ Six status effects, numbers from the ability definition (`StatusDuration`, `Magn
 
 **Bookkeeping owner.** `UGOTAHeroAbilityComponent::TickDefense` (server), which replaces the Unbreakable-only refund; the component is created on any combatant a status needing it lands on, as for slows.
 
+## Elements: Fire, Frost, Lightning, Shadow (milestone C)
+
+| Element | Status from a hit (element row) | Notes |
+|---|---|---|
+| Fire | Burning, 2 per second for 3 s | unchanged |
+| Frost | **Chilled**, walk ×0.7 for 3 s | another Frost hit while chilled: **deep freeze**, Frozen 1.5 s (the row's `FollowUpStatus`); hard-CC rules apply, so the recovery immunity also stops a third |
+| Lightning | **Shocked**, incoming damage ×1.2 for 3 s | aggregates like Vulnerable |
+| Shadow | Dread 0.25 for 3 s | the status Nyx and Varoth already use |
+
+**Interaction table** (`GOTAGAS::ApplyElementOnHit`, fixed, after the damage): Fire on a Chilled or Frozen target thaws both and does not ignite; Frost on a Burning target puts it out and does not chill; Frost on a Chilled target deep-freezes. Nothing else combines.
+
+**Element resistance.** `FGOTAStatusPolicy::ElementResistances` (element, damage scale 0–3), applied at every elemental damage point: hero abilities with an element (`DealDamage`), status ticks of that element (`DealStatusDamage`: Burning is Fire) and elemental hits from other code (`GOTAGAS::DealElementalHit`, the entry point enemy powers and projectiles use). 0 = no damage, and a hit that lands no damage carries no status. Status immunities still apply per aspect: the default boss policy (immune to slows) means Frost never chills or freezes a boss.
+
+**Entry points.** Hero abilities keep `Element` + `bInflictsElementStatus` on the ability definition; any other code calls `GOTAGAS::DealElementalHit`. Test commands: `gota.Ability.ElementHit <fighter> <Element> <damage> [source]`, `gota.Ability.ElementResist <fighter> <Element> <scale>`. Rollback: `gota.GAS.ElementStatus 0` (damage only).
+
+## Hero abilities (milestone D)
+
+The card effects use the statuses and elements from A–C through new data fields on `FGOTAAbilityDef` (`BonusStatus`, `BonusStatusDuration`, `BonusMagnitude`, `bCleansesControl`, `bUsableWhileIncapacitated`, `MomentumSteal`), set in `Tools/GOTA_BuildHeroAbilities.py`. There is no second cooldown system; `UGOTAHeroAbilityComponent` still owns activation and cooldowns, and `UStatsComponent` still owns Divine Momentum.
+
+| Hero | Ability | New effect |
+|---|---|---|
+| Nyx | Mind Spike | Stuns for 0.8 s on the last strike (shipped in milestone A) |
+| Nyx | Void Shield | Usable while stunned or frozen, breaks free of control, Veiled 1.3 s, then a 25-point shield for 4 s |
+| Nyx | Soul Drain | Steals up to 20 Divine Momentum from the target, in addition to Dread |
+| Drakon | Unchained Fury | Fire: ignites |
+| Varoth | World Burn | Fire: ignites and still dreads. It is an instant hit; the persistent burning zone belongs to milestone E |
+| Varoth | Colossus Form | Also Empowered: +25% outgoing damage for 6 s |
+| Zephyr | Gale Rush | Lightning: shocks |
+| Lysara | Gravity Well | Frost: chills |
+
 ## Behavior changes
 
 1. Statuses coexist (the point of this milestone). Before, a second status silently replaced the first.
@@ -257,19 +291,28 @@ Six status effects, numbers from the ability definition (`StatusDuration`, `Magn
 8. `FGOTABlueprintCombat::ApplyDamage` takes an optional `bForceInterrupt` (default true, the old behaviour). Only status ticks pass false.
 9. Milestone A: Nyx's Mind Spike stuns (0.8 s, last strike, bosses immune). Bosses now also refuse Stunned and Frozen with the resist line.
 10. The local status line shows FROZEN and STUNNED as well as BURNING (several at once, most important first).
+11. Milestone B: all incoming damage passes through the shield and incoming multiplier, including Blueprint melee, which is corrected just after the Blueprint subtracts health.
+12. Milestone C: Frost, Lightning and Shadow hits apply their statuses, and the fixed interactions in the element section apply.
+13. Milestone D: the hero abilities in the table above gain their card effects. These change hero balance and have had no human balance testing.
 
-Nothing else changed: the same numbers, the same Blueprint flags, the same damage path.
+Apart from these, the same numbers, Blueprint flags and damage path are in use.
 
 ## Test record
 
-### GAS milestones A and B (`3475459`, then B), editor and packaged
+### GAS milestones A to D (`3475459`, `9d53e51`, then C and D together), editor and packaged
 
-| Check | A: Stunned / Frozen | B: shields, buffs, debuffs |
-|---|---|---|
-| New suite group | Control 5/5 (stun, frozen, boss immunity, Mind Spike, multiplayer) | Defense 3/3 (shield, modifiers, multiplayer) |
-| Editor suite | 51/51 first pass | 54/54 first pass |
-| Packaged | `B:\Unreal\GOTA_Builds\GAS_A_3475459` (fresh cook, 3,939 packages, 0 incrementally skipped): **51/51 first pass** | see below |
-| Horde, four players, 120 ms / 5% loss | whole waves stunned and frozen five times (`gasA_horde3`): 19 locks, 19 releases, every released enemy attacked again, 0 stalls, 0 crashes | not run |
+| Check | A: Stunned / Frozen | B: shields, buffs, debuffs | C + D: elements, hero abilities |
+|---|---|---|---|
+| New suite group | Control 5/5 (stun, frozen, boss immunity, Mind Spike, multiplayer) | Defense 3/3 (shield, modifiers, multiplayer) | Element 4/4 (table, resistance, boss, multiplayer); Heroes 5/5 (Void Shield, Soul Drain, Varoth, Gale Rush, Gravity Well) |
+| Editor suite | 51/51 first pass | 54/54 first pass | **63/63 first pass** |
+| Packaged | `GAS_A_3475459` (fresh cook, 3,939 packages, 0 incrementally skipped): **51/51 first pass** | `GAS_B_9d53e51` (fresh cook, 3,945 packages): **54/54 first pass**, run from the staged build after the archive copy failed for disk space; archive completed afterwards | pending |
+| Horde, four players, 120 ms / 5% loss | whole waves stunned and frozen five times (`gasA_horde3`): 19 locks, 19 releases, every released enemy attacked again, 0 stalls, 0 crashes | not run | not run |
+
+Not tested for B, C or D: Horde and Story with these effects, human play and balance, separate PCs, quiet-machine profiling. The Heroes multiplayer path is covered only through the shared Element and Defense multiplayer cases; no hero-specific case runs on a remote client.
+
+Known limits: a Blueprint hit that is lethal before reduction still kills; the host's Blueprint 0.20 s i-frames also cover other attackers, while remote players' do not reach the server; a modified client's local dodge is corrected only by server movement; the HUD health bar is inflated by a shield until milestone F.
+
+Disk: drive B: filled up during the B archive (0.3 GB free; a successful-looking cook left an archive without its 8.7 GB container). Pass2_Paragon and RC1–RC9 were deleted with approval (their commits remain); RC10–RC14 and the GAS packages are kept.
 
 Found and fixed during A: released AI resumed a move task that waited forever for the move the lock stopped (now the tree restarts on release); targeting counted locked time as failed pursuit; the stall watch counted locked enemies; Blueprint-internal calls cannot be refused from C++ (input lock covers the human, C++ callers are refused).
 

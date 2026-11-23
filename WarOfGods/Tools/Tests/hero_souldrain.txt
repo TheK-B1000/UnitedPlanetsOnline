@@ -1,0 +1,15 @@
+# GAS milestone D, Nyx Soul Drain ("steals energy and weakens"): the AI hero (Foe=Drakon) loses up to 20 Divine
+# Momentum to Nyx, and is gripped by Dread as before.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Momentum 1 50
+gota.Duel.Momentum 0 100
+wait 0.2
+gota.Ability.Dump
+gota.Ability.Use 0 3
+wait 1.5
+gota.Ability.Dump
+quit

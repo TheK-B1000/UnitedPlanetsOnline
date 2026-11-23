@@ -1,0 +1,18 @@
+# GAS milestone C, element resistance in the status policy: halves Fire on an elemental hit, on an ability hit (Drakon's
+# Molten Strike, element Fire) and on the Burning ticks it leaves; full Lightning resistance means no damage and no
+# Shocked. Then the boss: Frost is resisted as a slow (Immunity.Slow), so it is never chilled and never deep-frozen.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.ElementResist 1 Fire 0.5
+gota.Ability.ElementHit 1 Fire 20 0
+wait 1.3
+gota.Ability.Use 0 0
+wait 1.5
+gota.Ability.ElementResist 1 Lightning 0
+gota.Ability.ElementHit 1 Lightning 20 0
+wait 0.3
+gota.Ability.Dump
+quit

@@ -153,6 +153,22 @@ void UGOTAAbilitySystemComponent::ApplyStatusPolicy(const FGOTAStatusPolicy& InP
 		*DescribeImmunities(), Policy.Resistances.Num());
 }
 
+void UGOTAAbilitySystemComponent::SetElementResistance(const FGameplayTag& Element, float DamageScale)
+{
+	if (!IsOwnerActorAuthoritative() || !Element.IsValid())
+	{
+		return;
+	}
+	FGOTAElementResistance* Existing = Policy.ElementResistances.FindByPredicate([&Element](const FGOTAElementResistance& E) { return E.Element == Element; });
+	if (!Existing)
+	{
+		Existing = &Policy.ElementResistances.AddDefaulted_GetRef();
+		Existing->Element = Element;
+	}
+	Existing->DamageScale = FMath::Clamp(DamageScale, 0.f, 3.f);
+	UE_LOG(LogGOTAGAS, Log, TEXT("%s: element resistance %s x%.2f"), *GetNameSafe(GetOwner()), *Element.ToString(), Existing->DamageScale);
+}
+
 FString UGOTAAbilitySystemComponent::DescribeImmunities() const
 {
 	FGameplayTagContainer Owned;

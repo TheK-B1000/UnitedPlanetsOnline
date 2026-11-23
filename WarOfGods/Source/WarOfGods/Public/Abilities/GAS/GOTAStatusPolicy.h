@@ -27,6 +27,19 @@ struct WAROFGODS_API FGOTAStatusResistance
 	float MagnitudeScale = 1.f;
 };
 
+/** Damage taken from one element (GOTA.Element.*): x DamageScale. 0 = immune to that element's damage, 2 = weak to it. */
+USTRUCT(BlueprintType)
+struct WAROFGODS_API FGOTAElementResistance
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Element", meta = (Categories = "GOTA.Element"))
+	FGameplayTag Element;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Element", meta = (ClampMin = "0", ClampMax = "3"))
+	float DamageScale = 1.f;
+};
+
 USTRUCT(BlueprintType)
 struct WAROFGODS_API FGOTAStatusPolicy
 {
@@ -43,7 +56,19 @@ struct WAROFGODS_API FGOTAStatusPolicy
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Status")
 	TArray<FGOTAStatusResistance> Resistances;
 
-	bool IsEmpty() const { return Immunities.IsEmpty() && Resistances.Num() == 0; }
+	/** Elemental damage scaling, applied where elemental damage is dealt (abilities, status ticks, elemental hits). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Element")
+	TArray<FGOTAElementResistance> ElementResistances;
+
+	bool IsEmpty() const { return Immunities.IsEmpty() && Resistances.Num() == 0 && ElementResistances.Num() == 0; }
+
+	/** x damage from Element (1 when the policy says nothing). */
+	float ElementDamageScale(const FGameplayTag& Element) const
+	{
+		const FGOTAElementResistance* R = Element.IsValid()
+			? ElementResistances.FindByPredicate([&Element](const FGOTAElementResistance& E) { return E.Element == Element; }) : nullptr;
+		return R ? R->DamageScale : 1.f;
+	}
 
 	const FGOTAStatusResistance* FindResistance(EGOTAStatus InStatus) const
 	{

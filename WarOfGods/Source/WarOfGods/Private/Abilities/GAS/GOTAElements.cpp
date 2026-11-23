@@ -24,10 +24,24 @@ UGOTAElementSettings::UGOTAElementSettings()
 	Fire.TickInterval = 1.f;
 	// The brazier fire the arenas already use (Realistic Starter VFX Vol 2): a continuous flame, visible on a standing body.
 	Fire.StatusFX = FSoftObjectPath(TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Fire/P_Fire_Small.P_Fire_Small"));
-	// Named so abilities can already be typed; they inflict no status until their gameplay is designed.
-	Add(GOTATags::Element_Frost, TEXT("Frost"));
-	Add(GOTATags::Element_Lightning, TEXT("Lightning"));
-	Add(GOTATags::Element_Shadow, TEXT("Shadow"));
+	// Frost (milestone C): Chilled, 30% slower for 3 s; a second Frost hit while chilled deep-freezes for 1.5 s (Frozen:
+	// hard crowd control with its own rules, so the recovery immunity also stops a third freeze).
+	FGOTAElementDef& Frost = Add(GOTATags::Element_Frost, TEXT("Frost"));
+	Frost.Status = EGOTAStatus::Chilled;
+	Frost.StatusDuration = 3.f;
+	Frost.StatusMagnitude = 0.3f;
+	Frost.FollowUpStatus = EGOTAStatus::Frozen;
+	Frost.FollowUpDuration = 1.5f;
+	// Lightning: Shocked, takes 20% more damage for 3 s.
+	FGOTAElementDef& Lightning = Add(GOTATags::Element_Lightning, TEXT("Lightning"));
+	Lightning.Status = EGOTAStatus::Shocked;
+	Lightning.StatusDuration = 3.f;
+	Lightning.StatusMagnitude = 0.2f;
+	// Shadow: Dread (slower, weaker), the status Nyx and Varoth already use, at a lighter 0.25 for 3 s.
+	FGOTAElementDef& Shadow = Add(GOTATags::Element_Shadow, TEXT("Shadow"));
+	Shadow.Status = EGOTAStatus::Dread;
+	Shadow.StatusDuration = 3.f;
+	Shadow.StatusMagnitude = 0.25f;
 }
 
 const FGOTAElementDef* UGOTAElementSettings::Find(const FGameplayTag& Element)
@@ -45,5 +59,6 @@ const FGOTAElementDef* UGOTAElementSettings::FindByStatus(EGOTAStatus Status)
 	{
 		return nullptr;
 	}
+	// Dread is also Shadow's status, but it is not owned by Shadow (Soul Drain, World Burn): only Burning reads this today.
 	return GetDefault<UGOTAElementSettings>()->Elements.FindByPredicate([Status](const FGOTAElementDef& Def) { return Def.Status == Status; });
 }

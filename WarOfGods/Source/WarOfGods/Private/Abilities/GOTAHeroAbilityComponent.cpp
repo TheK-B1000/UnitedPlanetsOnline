@@ -372,9 +372,9 @@ EGOTAAbilityDenied UGOTAHeroAbilityComponent::ValidateServer(int32 Slot, APawn*&
 	{
 		return EGOTAAbilityDenied::NotLive;
 	}
-	if (GOTAGAS::IsIncapacitated(Owner))
+	if (GOTAGAS::IsIncapacitated(Owner) && !Def->bUsableWhileIncapacitated)
 	{
-		return EGOTAAbilityDenied::Incapacitated;
+		return EGOTAAbilityDenied::Incapacitated; // only a break-free ability (Void Shield) works while stunned or frozen
 	}
 	if (IsBusy())
 	{
@@ -839,6 +839,20 @@ void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)
 	}
 	case EGOTAAbilityKind::SelfGuard:
 	{
+		if (Def->bCleansesControl)
+		{
+			// Break free: crowd control and slows end now (the recovery immunity follows a hard CC as usual).
+			if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Owner))
+			{
+				FGameplayTagContainer Control;
+				Control.AddTag(GOTATags::Status_Stunned);
+				Control.AddTag(GOTATags::Status_Frozen);
+				Control.AddTag(GOTATags::Status_Chilled);
+				Control.AddTag(GOTATags::Status_Slowed);
+				const int32 Removed = ASC->RemoveActiveEffectsWithGrantedTags(Control);
+				UE_LOG(LogGOTAAbility, Log, TEXT("%s: %s cleansed %d control effect(s)"), *GetNameSafe(Owner), *Def->AbilityId.ToString(), Removed);
+			}
+		}
 		ApplyDefStatus(Cast<APawn>(Owner), *Def, Owner);
 		FxLoc = Owner->GetActorLocation();
 		break;
@@ -1103,7 +1117,14 @@ bool UGOTAHeroAbilityComponent::DealDamage(APawn* Victim, const FGOTAAbilityDef&
 	{
 		return false;
 	}
-	const float Scaled = Amount * GetOutgoingDamageScale();
+	// Outgoing (Empowered, Weakened, Dread) and the victim's resistance to this ability's element (status policy).
+	const float ElementScale = GOTAGAS::GetElementDamageScale(Victim, Def.Element);
+	const float Scaled = Amount * GetOutgoingDamageScale() * ElementScale;
+	if (!FMath::IsNearlyEqual(ElementScale, 1.f))
+	{
+		UE_LOG(LogGOTAAbility, Log, TEXT("%s: %s element %s x%.2f on %s"), *GetNameSafe(GetOwner()), *Def.AbilityId.ToString(), *Def.Element.ToString(),
+			ElementScale, *GetNameSafe(Victim));
+	}
 	// The victim's own BPC_DamageSystem applies (and may block) the hit: the single health authority.
 	const bool bLanded = FGOTABlueprintCombat::ApplyDamage(Victim, GetOwner(), Scaled, Def.bCanBeBlocked, false, Def.HitResponse);
 	++GOTAAbilityLandedCount;
@@ -1120,20 +1141,30 @@ bool UGOTAHeroAbilityComponent::DealDamage(APawn* Victim, const FGOTAAbilityDef&
 		{
 			ApplyDefStatus(Victim, Def, GetOwner());
 		}
+		// Milestone D: steal Divine Momentum (as much as the victim has, up to MomentumSteal).
+		if (Def.MomentumSteal > 0.f)
+		{
+			UStatsComponent* VictimStats = Victim->FindComponentByClass<UStatsComponent>();
+			UStatsComponent* MyStats = GetStats();
+			const float Taken = VictimStats ? FMath::Min(Def.MomentumSteal, VictimStats->GetDivineMomentum()) : 0.f;
+			if (Taken > 0.f && MyStats && VictimStats->ConsumeDivineMomentum(Taken))
+			{
+				MyStats->AddDivineMomentum(Taken);
+				UE_LOG(LogGOTAAbility, Log, TEXT("%s: %s stole %.0f momentum from %s"), *GetNameSafe(GetOwner()), *Def.AbilityId.ToString(), Taken, *GetNameSafe(Victim));
+			}
+		}
 	}
 	return bLanded;
 }
 
 void UGOTAHeroAbilityComponent::ApplyElementStatus(APawn* Victim, const FGOTAAbilityDef& Def)
 {
-	const FGOTAElementDef* Element = Def.bInflictsElementStatus ? UGOTAElementSettings::Find(Def.Element) : nullptr;
-	if (!Element || Element->Status == EGOTAStatus::None || Element->StatusDuration <= 0.f || UGOTACombatantObserver::IsCombatantDefeated(Victim)
-		|| CVarGOTAElementStatus.GetValueOnGameThread() == 0)
+	if (!Def.bInflictsElementStatus || !Def.Element.IsValid() || CVarGOTAElementStatus.GetValueOnGameThread() == 0)
 	{
 		return;
 	}
-	// The same entry point every status uses: policies, immunity feedback, refresh and replication all come with it.
-	ApplyStatusTo(Victim, Element->Status, Element->StatusDuration, Element->StatusMagnitude, GetOwner());
+	// The element's interactions (thaw, extinguish, deep freeze) and status, through the one shared entry point.
+	GOTAGAS::ApplyElementOnHit(Victim, Def.Element, GetOwner());
 }
 
 void UGOTAHeroAbilityComponent::ApplyStatusTo(APawn* Victim, EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)
@@ -1304,12 +1335,20 @@ bool UGOTAHeroAbilityComponent::FindTeleportDestination(APawn* Target, float Ran
 
 void UGOTAHeroAbilityComponent::ApplyDefStatus(APawn* Victim, const FGOTAAbilityDef& Def, AActor* Source)
 {
-	if (!Victim || Def.Status == EGOTAStatus::None || Def.StatusDuration <= 0.f)
+	if (!Victim)
 	{
 		return;
 	}
 	// Opponents without an ability component still get the status: this component is the one that ticks walk speed.
-	ApplyStatusTo(Victim, Def.Status, Def.StatusDuration, Def.Magnitude, Source);
+	if (Def.Status != EGOTAStatus::None && Def.StatusDuration > 0.f)
+	{
+		ApplyStatusTo(Victim, Def.Status, Def.StatusDuration, Def.Magnitude, Source);
+	}
+	// Milestone D: a second status on the same target, through the same entry point and rules.
+	if (Def.BonusStatus != EGOTAStatus::None && Def.BonusStatusDuration > 0.f)
+	{
+		ApplyStatusTo(Victim, Def.BonusStatus, Def.BonusStatusDuration, Def.BonusMagnitude, Source);
+	}
 }
 
 void UGOTAHeroAbilityComponent::ApplyStatus(EGOTAStatus Status, float Duration, float Magnitude, AActor* Source)

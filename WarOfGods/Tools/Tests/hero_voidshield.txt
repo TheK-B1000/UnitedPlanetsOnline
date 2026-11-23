@@ -1,0 +1,16 @@
+# GAS milestone D, Nyx Void Shield ("absorbs damage and negates control"): stunned Nyx cannot Shadow Step, but Void
+# Shield works, breaks her free, veils her and then shields her.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 300 1
+wait 0.3
+gota.Ability.Status 0 Stunned 3 0 1
+wait 0.3
+gota.Ability.Use 0 0
+gota.Ability.Use 0 2
+wait 0.5
+gota.Ability.Dump
+wait 1.5
+gota.Ability.Dump
+quit

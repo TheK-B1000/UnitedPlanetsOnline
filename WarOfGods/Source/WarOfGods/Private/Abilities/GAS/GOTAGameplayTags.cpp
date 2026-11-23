@@ -18,6 +18,8 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Vulnerable, "GOTA.Status.Vulnerable", "Takes more damage from every source.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Hasted, "GOTA.Status.Hasted", "Moves faster.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Weakened, "GOTA.Status.Weakened", "Deals less ability and boss damage.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Chilled, "GOTA.Status.Chilled", "Frost: slowed; another Frost hit deep-freezes.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Shocked, "GOTA.Status.Shocked", "Lightning: takes more damage.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Incapacitated, "GOTA.State.Incapacitated", "Cannot move or act (granted by Stunned and Frozen).");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Immunity, "GOTA.Immunity", "Parent of the effect-aspect immunities a status policy grants.");
@@ -56,5 +58,7 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Vulnerable, "GameplayCue.GOTA.Status.Vulnerable");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Hasted, "GameplayCue.GOTA.Status.Hasted");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Weakened, "GameplayCue.GOTA.Status.Weakened");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Chilled, "GameplayCue.GOTA.Status.Chilled");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Shocked, "GameplayCue.GOTA.Status.Shocked");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Resisted, "GameplayCue.GOTA.Resisted");
 }

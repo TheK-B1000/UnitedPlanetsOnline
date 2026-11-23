@@ -29,6 +29,9 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Vulnerable);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Hasted);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Weakened);
+	// Element statuses (milestone C): Frost and Lightning. Fire is Burning, Shadow is Dread.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Chilled);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Shocked);
 
 	// --- States: derived conditions several statuses grant (one reader instead of a list of statuses) ---
 	/** Cannot move or act (Stunned, Frozen). Every lock and its release hangs off this one tag. */
@@ -88,6 +91,8 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Vulnerable);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Hasted);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Weakened);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Chilled);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Shocked);
 	/** Executed on a target that resisted all or part of a status (immunity / resistance feedback). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Resisted);
 }

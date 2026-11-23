@@ -66,7 +66,11 @@ enum class EGOTAStatus : uint8
 	/** Walk speed x(1 + Magnitude). A slow and a haste partly cancel. */
 	Hasted,
 	/** Outgoing ability and boss damage x(1 - Magnitude). Blocked by GOTA.Immunity.Weaken. */
-	Weakened
+	Weakened,
+	/** Frost: walk speed x(1 - Magnitude). Another Frost hit while chilled deep-freezes (Frozen). Blocked by GOTA.Immunity.Slow. */
+	Chilled,
+	/** Lightning: incoming damage x(1 + Magnitude). Blocked by GOTA.Immunity.Vulnerable. */
+	Shocked
 };
 
 /** Cosmetic family used to pick placeholder VFX/SFX until hero-specific effects exist. */
@@ -118,6 +122,18 @@ struct WAROFGODS_API FGOTAAbilityDef
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance", meta = (Categories = "GOTA.Element")) FGameplayTag Element;
 	/** Every enemy this ability's damage lands on also receives its element's status (Fire: Burning). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") bool bInflictsElementStatus = false;
+
+	// --- GAS milestone D: hero ability extensions (all optional; defaults change nothing) ---
+	/** A second status for the same targets as Status (Void Shield: Veiled and Shielded; Colossus Form: Unbreakable and Empowered). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") EGOTAStatus BonusStatus = EGOTAStatus::None;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") float BonusStatusDuration = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") float BonusMagnitude = 0.f;
+	/** Self abilities: ends the caster's crowd control and slows when it resolves (Stunned, Frozen, Chilled, Slowed). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") bool bCleansesControl = false;
+	/** May be used while Stunned or Frozen: the hero's break-free ability (everything else stays locked). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") bool bUsableWhileIncapacitated = false;
+	/** Divine Momentum taken from each enemy the damage lands on and given to the caster (as much as the enemy has). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") float MomentumSteal = 0.f;
 
 	// --- presentation ---
 	/** Hero-specific animation played on the visible body (Paragon sequence). */

@@ -1,0 +1,17 @@
+# GAS milestone D, Varoth: World Burn now sets the area burning (and still dreads); Colossus Form now also empowers him,
+# so the next Inferno Slam hits 25% harder (22 -> 27.5).
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 2
+wait 1.2
+gota.Duel.Momentum 0 100
+gota.Ability.Use 0 3
+wait 1.0
+gota.Ability.Dump
+gota.Ability.Use 0 0
+wait 1.5
+gota.Ability.Dump
+quit

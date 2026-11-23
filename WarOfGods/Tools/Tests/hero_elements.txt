@@ -1,0 +1,11 @@
+# GAS milestone D, elemental signature abilities: Zephyr's Gale Rush shocks (Lightning), Lysara's Gravity Well chills
+# (Frost). Run once per hero (the case's URL picks the hero; the other line is denied as a missing slot or misses).
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 400 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 0
+wait 1.5
+gota.Ability.Dump
+quit

@@ -1,0 +1,23 @@
+# GAS milestone C on a plain enemy: each element's status, the follow-up (Frost twice = deep freeze), the interaction
+# table (Fire thaws, Frost extinguishes), Lightning's Shocked raising the next hit, Shadow's Dread.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.Place 250 1
+wait 0.3
+gota.Ability.ElementHit 1 Frost 10 0
+wait 0.3
+gota.Ability.ElementHit 1 Frost 10 0
+wait 0.3
+gota.Ability.ElementHit 1 Fire 10 0
+wait 2.6
+gota.Ability.ElementHit 1 Fire 10 0
+wait 0.3
+gota.Ability.ElementHit 1 Frost 10 0
+wait 0.3
+gota.Ability.ElementHit 1 Lightning 10 0
+wait 0.2
+gota.Ability.Dump
+gota.Ability.ElementHit 1 Shadow 10 0
+wait 0.2
+gota.Ability.Dump
+quit

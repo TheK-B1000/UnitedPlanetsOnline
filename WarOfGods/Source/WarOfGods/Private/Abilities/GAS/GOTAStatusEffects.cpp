@@ -20,6 +20,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameplayCueManager.h"
 #include "GameplayCueSet.h"
+#include "HAL/IConsoleManager.h"
 #include "GameplayEffectComponents/TargetTagRequirementsGameplayEffectComponent.h"
 #include "GameplayEffectComponents/TargetTagsGameplayEffectComponent.h"
 #include "GameplayEffectComponents/AssetTagsGameplayEffectComponent.h"
@@ -58,6 +59,8 @@ namespace
 		{ EGOTAStatus::Vulnerable, GOTATags::Status_Vulnerable, GOTATags::Cue_Status_Vulnerable, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Vulnerable.M_GOTA_Overlay_Vulnerable") },
 		{ EGOTAStatus::Dread, GOTATags::Status_Dread, GOTATags::Cue_Status_Dread, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Dread.M_GOTA_Overlay_Dread") },
 		{ EGOTAStatus::Weakened, GOTATags::Status_Weakened, GOTATags::Cue_Status_Weakened, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Weakened.M_GOTA_Overlay_Weakened") },
+		{ EGOTAStatus::Shocked, GOTATags::Status_Shocked, GOTATags::Cue_Status_Shocked, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Shocked.M_GOTA_Overlay_Shocked") },
+		{ EGOTAStatus::Chilled, GOTATags::Status_Chilled, GOTATags::Cue_Status_Chilled, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Chilled.M_GOTA_Overlay_Chilled") },
 		{ EGOTAStatus::Slowed, GOTATags::Status_Slowed, GOTATags::Cue_Status_Slowed, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Slowed.M_GOTA_Overlay_Slowed") },
 		{ EGOTAStatus::Fortified, GOTATags::Status_Fortified, GOTATags::Cue_Status_Fortified, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Fortified.M_GOTA_Overlay_Fortified") },
 		{ EGOTAStatus::Empowered, GOTATags::Status_Empowered, GOTATags::Cue_Status_Empowered, TEXT("/Game/Heroes/Abilities/Materials/M_GOTA_Overlay_Empowered.M_GOTA_Overlay_Empowered") },
@@ -108,6 +111,8 @@ namespace
 		case EGOTAStatus::Vulnerable: return UGOTAGameplayEffect_Vulnerable::StaticClass();
 		case EGOTAStatus::Hasted: return UGOTAGameplayEffect_Hasted::StaticClass();
 		case EGOTAStatus::Weakened: return UGOTAGameplayEffect_Weakened::StaticClass();
+		case EGOTAStatus::Chilled: return UGOTAGameplayEffect_Chilled::StaticClass();
+		case EGOTAStatus::Shocked: return UGOTAGameplayEffect_Shocked::StaticClass();
 		default: return nullptr;
 		}
 	}
@@ -390,6 +395,18 @@ UGOTAGameplayEffect_Weakened::UGOTAGameplayEffect_Weakened()
 	AddMultiplier(UGOTACombatAttributeSet::GetOutgoingDamageMultiplierAttribute(), GOTATags::Data_DamageMultiplier, GOTATags::Immunity_Weaken);
 }
 
+UGOTAGameplayEffect_Chilled::UGOTAGameplayEffect_Chilled()
+{
+	ConfigureStatus(GOTATags::Status_Chilled, GOTATags::Cue_Status_Chilled, GOTATags::Immunity_Slow, GOTATags::Element_Frost);
+	AddMultiplier(UGOTACombatAttributeSet::GetMoveSpeedMultiplierAttribute(), GOTATags::Data_Multiplier, GOTATags::Immunity_Slow);
+}
+
+UGOTAGameplayEffect_Shocked::UGOTAGameplayEffect_Shocked()
+{
+	ConfigureStatus(GOTATags::Status_Shocked, GOTATags::Cue_Status_Shocked, GOTATags::Immunity_Vulnerable, GOTATags::Element_Lightning);
+	AddMultiplier(UGOTACombatAttributeSet::GetIncomingDamageMultiplierAttribute(), GOTATags::Data_IncomingMultiplier, GOTATags::Immunity_Vulnerable);
+}
+
 UGOTAGameplayEffect_ControlRecovery::UGOTAGameplayEffect_ControlRecovery()
 {
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
@@ -538,6 +555,8 @@ namespace GOTAGAS
 		case EGOTAStatus::Frozen: return Aspect_Control;
 		case EGOTAStatus::Weakened: return Aspect_Weaken;
 		case EGOTAStatus::Vulnerable: return Aspect_Vulnerable;
+		case EGOTAStatus::Chilled: return Aspect_Movement;
+		case EGOTAStatus::Shocked: return Aspect_Vulnerable;
 		default: return 0; // buffs (Shielded, Empowered, Fortified, Hasted) and the self statuses
 		}
 	}
@@ -545,13 +564,83 @@ namespace GOTAGAS
 	bool KeepsStronger(EGOTAStatus Status)
 	{
 		return Status == EGOTAStatus::Shielded || Status == EGOTAStatus::Empowered || Status == EGOTAStatus::Fortified
-			|| Status == EGOTAStatus::Vulnerable || Status == EGOTAStatus::Hasted || Status == EGOTAStatus::Weakened;
+			|| Status == EGOTAStatus::Vulnerable || Status == EGOTAStatus::Hasted || Status == EGOTAStatus::Weakened
+			|| Status == EGOTAStatus::Chilled || Status == EGOTAStatus::Shocked;
 	}
 
 	float GetIncomingDamageMultiplier(const AActor* Actor)
 	{
 		const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Actor);
 		return ASC ? ASC->GetIncomingDamageMultiplier() : 1.f;
+	}
+
+	float GetElementDamageScale(const AActor* Victim, const FGameplayTag& Element)
+	{
+		const UGOTAAbilitySystemComponent* ASC = Element.IsValid() ? UGOTAAbilitySystemComponent::Find(Victim) : nullptr;
+		return ASC ? ASC->GetElementDamageScale(Element) : 1.f;
+	}
+
+	EGOTAStatus ApplyElementOnHit(APawn* Victim, const FGameplayTag& Element, AActor* Source)
+	{
+		const FGOTAElementDef* Row = UGOTAElementSettings::Find(Element);
+		static const IConsoleVariable* ElementStatusVar = IConsoleManager::Get().FindConsoleVariable(TEXT("gota.GAS.ElementStatus"));
+		if (!Row || !Victim || !Victim->HasAuthority() || UGOTACombatantObserver::IsCombatantDefeated(Victim)
+			|| (ElementStatusVar && ElementStatusVar->GetInt() == 0))
+		{
+			return EGOTAStatus::None;
+		}
+		UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Victim);
+		const FString Who = GetNameSafe(Victim);
+		// The interaction table: few, fixed, readable. Each one replaces the hit's own status.
+		if (Element == GOTATags::Element_Fire && ASC && (HasStatus(Victim, EGOTAStatus::Chilled) || HasStatus(Victim, EGOTAStatus::Frozen)))
+		{
+			FGameplayTagContainer Ice;
+			Ice.AddTag(GOTATags::Status_Chilled);
+			Ice.AddTag(GOTATags::Status_Frozen);
+			ASC->RemoveActiveEffectsWithGrantedTags(Ice);
+			UE_LOG(LogGOTAStatus, Log, TEXT("%s: ELEMENT Fire thawed Chilled/Frozen (no Burning from this hit) from %s"), *Who, *GetNameSafe(Source));
+			return EGOTAStatus::None;
+		}
+		if (Element == GOTATags::Element_Frost && ASC && HasStatus(Victim, EGOTAStatus::Burning))
+		{
+			ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GOTATags::Status_Burning));
+			UE_LOG(LogGOTAStatus, Log, TEXT("%s: ELEMENT Frost extinguished Burning (no Chilled from this hit) from %s"), *Who, *GetNameSafe(Source));
+			return EGOTAStatus::None;
+		}
+		if (Row->Status == EGOTAStatus::None || Row->StatusDuration <= 0.f)
+		{
+			return EGOTAStatus::None;
+		}
+		if (Row->FollowUpStatus != EGOTAStatus::None && Row->FollowUpDuration > 0.f && HasStatus(Victim, Row->Status) && ASC)
+		{
+			const FStatusInfo* First = Info(Row->Status);
+			ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(First->Tag.GetTag()));
+			UE_LOG(LogGOTAStatus, Log, TEXT("%s: ELEMENT %s follow-up: %s -> %s %.1fs from %s"), *Who, *Row->DisplayName.ToString(),
+				*StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Row->Status)),
+				*StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Row->FollowUpStatus)), Row->FollowUpDuration, *GetNameSafe(Source));
+			UGOTAHeroAbilityComponent::ApplyStatusTo(Victim, Row->FollowUpStatus, Row->FollowUpDuration, 0.f, Source);
+			return Row->FollowUpStatus;
+		}
+		UGOTAHeroAbilityComponent::ApplyStatusTo(Victim, Row->Status, Row->StatusDuration, Row->StatusMagnitude, Source);
+		return Row->Status;
+	}
+
+	bool DealElementalHit(APawn* Victim, AActor* Source, float Amount, const FGameplayTag& Element, bool bCanBeBlocked, const FString& Response)
+	{
+		if (!Victim || !Victim->HasAuthority() || Amount <= 0.f || UGOTACombatantObserver::IsCombatantDefeated(Victim))
+		{
+			return false;
+		}
+		const float Scale = GetElementDamageScale(Victim, Element);
+		const float Scaled = Amount * Scale;
+		const bool bLanded = Scaled > 0.f && FGOTABlueprintCombat::ApplyDamage(Victim, Source, Scaled, bCanBeBlocked, false, Response);
+		UE_LOG(LogGOTAStatus, Log, TEXT("%s: ELEMENT hit %s %.1f (x%.2f element) -> %.1f (landed=%d) from %s"), *GetNameSafe(Victim), *Element.ToString(),
+			Amount, Scale, Scaled, bLanded ? 1 : 0, *GetNameSafe(Source));
+		if (bLanded)
+		{
+			ApplyElementOnHit(Victim, Element, Source);
+		}
+		return bLanded;
 	}
 
 	bool IsIncapacitated(const AActor* Actor)
@@ -720,7 +809,9 @@ namespace GOTAGAS
 		case EGOTAStatus::Empowered: DamageMult = FMath::Clamp(1.f + Magnitude, 1.f, MaxM); break;
 		case EGOTAStatus::Weakened: DamageMult = FMath::Clamp(1.f - Magnitude, MinM, 1.f); break;
 		case EGOTAStatus::Fortified: IncomingMult = FMath::Clamp(1.f - Magnitude, MinM, 1.f); break;
-		case EGOTAStatus::Vulnerable: IncomingMult = FMath::Clamp(1.f + Magnitude, 1.f, MaxM); break;
+		case EGOTAStatus::Vulnerable:
+		case EGOTAStatus::Shocked: IncomingMult = FMath::Clamp(1.f + Magnitude, 1.f, MaxM); break;
+		case EGOTAStatus::Chilled: MoveMult = FMath::Clamp(1.f - Magnitude, MinM, 1.f); break;
 		default: break;
 		}
 		Spec.Data->SetSetByCallerMagnitude(GOTATags::Data_Multiplier, (Blocked & Aspect_Movement) ? 1.f : MoveMult);
@@ -760,6 +851,14 @@ namespace GOTAGAS
 		if (!Victim || !Victim->HasAuthority() || Amount <= 0.f || UGOTACombatantObserver::IsCombatantDefeated(Victim)
 			|| !GOTACombatLive::IsCombatLive(Victim->GetWorld()))
 		{
+			return 0.f;
+		}
+		// The victim's resistance to the tick's element (Burning: Fire), as for a hit of that element.
+		Amount *= GetElementDamageScale(Victim, Element);
+		if (Amount <= 0.f)
+		{
+			UE_LOG(LogGOTAStatus, Log, TEXT("%s: %s tick on %s resisted by element (%s)"), *GetNameSafe(Instigator),
+				*StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Status)), *GetNameSafe(Victim), *Element.ToString());
 			return 0.f;
 		}
 		const float Before = UGOTACombatantObserver::ReadVitals(Victim).Health;

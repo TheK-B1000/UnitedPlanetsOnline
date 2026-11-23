@@ -72,9 +72,10 @@ HEROES = {
              ai=dict(priority=1.1, min=0, max=380)),
         # Card: "Ultimate. Massive area damage."
         dict(id="UnchainedFury", name="Unchained Fury", short="Unchained Fury", kind=K.AREA_BURST, ult=True,
-             desc="Ultimate. Massive area damage: after a long, visible wind-up Drakon slams the ground and throws back "
-                  "everything nearby. Leave the radius or dodge through it.",
+             desc="Ultimate. Massive area damage: after a long, visible wind-up Drakon slams the ground, throws back "
+                  "everything nearby and sets it burning. Leave the radius or dodge through it.",
              damage=45, cooldown=40, momentum=100, cast=1.0, recovery=1.0, radius=450, magnitude=700, blockable=False, interruptible=False,
+             element="GOTA.Element.Fire", ignite=True,  # GAS D: Drakon's fire, everything it lands on burns
              anim=GA + "Ability_Ultimate", cast_fx=GFX + "P_Greystone_Ultimate_Glow_Activate", impact_fx=GFX + "P_Greystone_LeapAOE_GroundSmash", fx_scale=1.3, fx_life=2.0,
              cast_sfx="/Game/ParagonGreystone/Audio/Cues/Greystone_Effort_Ability_Ultimate_Rebirth", kick=2.4,
              ai=dict(priority=2.0, min=0, max=380)),
@@ -98,16 +99,19 @@ HEROES = {
              ai=dict(priority=1.3, min=0, max=280)),
         # Card: "Absorbs damage and negates control."
         dict(id="VoidShield", name="Void Shield", short="Void Shield", kind=K.SELF_GUARD,
-             desc="Absorbs damage and negates control: for 1.3 s Nyx is wrapped in void, untargetable and immune to hits.",
+             desc="Absorbs damage and negates control: usable even while stunned or frozen, it breaks Nyx free of control "
+                  "and slows, wraps her in void for 1.3 s (untargetable, immune to hits), then a 25-point shield holds "
+                  "for 4 s.",
              cooldown=14, cast=0.05, recovery=0.0, status=ST.VEILED, status_duration=1.3, interruptible=False,
+             bonus_status=ST.SHIELDED, bonus_duration=4.0, bonus_magnitude=25, cleanse=True, break_free=True,
              anim=CA + "Ability_E", rate=1.3, cast_fx=C + "/FX/Particles/Abilities/ShadowClone/FX/p_Countess_ShadowCloneBurst", fx_scale=1.0, kick=0.0,
              ai=dict(priority=1.5, min=0, max=400, max_hp=0.7)),
         # Card: "Steals energy and weakens." Ultimate here. (energy steal not implemented yet: drains health + weakens)
         dict(id="SoulDrain", name="Soul Drain", short="Soul Drain", kind=K.AURA, ult=True,
-             desc="Ultimate. Nyx drains the souls around her: enemies within 4.5 m take damage and are weakened "
-                  "(Dread: slower, softer divine abilities) for 4 s.",
+             desc="Ultimate. Nyx drains the souls around her: enemies within 4.5 m take damage, are weakened "
+                  "(Dread: slower, softer divine abilities) for 4 s, and lose up to 20 Divine Momentum to her.",
              damage=18, cooldown=40, momentum=100, cast=0.6, recovery=0.6, radius=450, status=ST.DREAD, status_duration=4.0, magnitude=0.35,
-             blockable=False, interruptible=False,
+             momentum_steal=20, blockable=False, interruptible=False,
              anim=CA + "Ability_Ultimate", cast_fx=C + "/FX/Particles/Abilities/Ultimate/FX/p_CountessUlt_CastFX", impact_fx=C + "/FX/Particles/Abilities/Ultimate/FX/p_CountessUlt_SlashFX", fx_scale=0.9, kick=0.9,
              ai=dict(priority=2.0, min=0, max=430)),
     ]),
@@ -126,34 +130,39 @@ HEROES = {
              ai=dict(priority=1.2, min=400, max=700)),
         # Card: "Burning area. Damage over time." (DoT not implemented yet: one burn tick + Dread)
         dict(id="WorldBurn", name="World Burn", short="World Burn", kind=K.AURA,
-             desc="Burning area: enemies within 5 m are scorched and gripped by dread for 4 s - 35% slower and "
+             desc="Burning area: enemies within 5 m are set burning and gripped by dread for 4 s - 35% slower and "
                   "their divine abilities hit softer.",
              damage=5, cooldown=16, cast=0.5, recovery=0.4, radius=500, status=ST.DREAD, status_duration=4.0, magnitude=0.35,
+             element="GOTA.Element.Fire", ignite=True,
              anim=SA + "Cast", cast_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_SubjugateSwirls", impact_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_Sub_Cast", fx_scale=1.2, kick=0.6,
              ai=dict(priority=1.1, min=0, max=480)),
         # Card: "Increased power, defense, and area damage." (defense part: Unbreakable; power/area bonus not implemented yet)
         dict(id="ColossusForm", name="Colossus Form", short="Colossus Form", kind=K.SELF_GUARD, ult=True,
-             desc="Ultimate. Varoth becomes the colossus for 6 s: half of all damage is shrugged off and he cannot "
-                  "be staggered.",
+             desc="Ultimate. Varoth becomes the colossus for 6 s: half of all damage is shrugged off, he cannot "
+                  "be staggered, and his divine abilities hit 25% harder.",
              cooldown=40, momentum=100, cast=0.4, recovery=0.3, status=ST.UNBREAKABLE, status_duration=6.0, magnitude=0.5, interruptible=False,
+             bonus_status=ST.EMPOWERED, bonus_duration=6.0, bonus_magnitude=0.25,
              anim=SA + "Subjugation", cast_fx=S + "/FX/Particles/Abilities/Ultimate/FX/P_UltActivate", fx_scale=1.4, fx_life=6.0, kick=1.0,
              ai=dict(priority=2.0, min=0, max=500, max_hp=0.8)),
     ]),
     # Signature-ability milestone (Docs/GOTA_HERO_ABILITIES_PLAN.md): one card ability per new god, slot 0.
     "Zephyr": dict(health=0.95, gap=3.5, look=LOOK.SHADOW, abilities=[
         dict(id="GaleRush", name="Gale Rush", short="Gale Rush", kind=K.CHARGE,
-             desc="High-speed dash attack. Zephyr rides the wind straight at the enemy; the first one struck is "
-                  "knocked away. Sidestep the line to avoid it.",
+             desc="High-speed dash attack. Zephyr rides the storm straight at the enemy; the first one struck is "
+                  "knocked away and shocked (takes 20% more damage for 3 s). Sidestep the line to avoid it.",
              damage=16, cooldown=8, cast=0.15, recovery=0.35, range=700, interval=0.3, magnitude=750,
+             element="GOTA.Element.Lightning", ignite=True,
              anim=KWA + "Ability_RMB", cast_fx=KWFX + "Ultimate/FX/P_KwangAfterImage",
              impact_fx=KWFX + "Primary/FX/P_Kwang_Primary_Impact", fx_scale=1.0, kick=1.2,
              ai=dict(priority=1.2, min=350, max=700)),
     ]),
     "Lysara": dict(health=1.0, gap=3.5, look=LOOK.VOID, abilities=[
         dict(id="GravityWell", name="Gravity Well", short="Gravity Well", kind=K.PULL,
-             desc="Lysara bends gravity around a visible enemy and drags them to her, staggering them. Needs line "
-                  "of sight; breaking sight or leaving range during the cast makes it fizzle.",
+             desc="Lysara bends gravity around a visible enemy and drags them to her through the cold of the void, "
+                  "staggering and chilling them. Needs line of sight; breaking sight or leaving range during the cast "
+                  "makes it fizzle.",
              damage=10, cooldown=12, cast=0.5, recovery=0.4, range=850, magnitude=1600,
+             element="GOTA.Element.Frost", ignite=True,
              anim=AUA + "Ability_R_InPlace", cast_fx=AUFX + "Ultimate/FX/P_Aurora_Ultimate_Warmup",
              impact_fx=AUFX + "Freeze/FX/P_Aurora_Freeze_Whrilwind", fx_scale=1.0, kick=0.8,
              ai=dict(priority=1.3, min=380, max=840)),
@@ -271,6 +280,13 @@ def build_set(hero, cfg):
             if a["element"] not in d.get_editor_property("element").export_text():
                 raise RuntimeError("element tag %s did not import" % a["element"])
         d.set_editor_property("inflicts_element_status", bool(a.get("ignite", False)))
+        # GAS milestone D extensions (defaults change nothing)
+        d.set_editor_property("bonus_status", a.get("bonus_status", ST.NONE))
+        d.set_editor_property("bonus_status_duration", float(a.get("bonus_duration", 0)))
+        d.set_editor_property("bonus_magnitude", float(a.get("bonus_magnitude", 0)))
+        d.set_editor_property("cleanses_control", bool(a.get("cleanse", False)))
+        d.set_editor_property("usable_while_incapacitated", bool(a.get("break_free", False)))
+        d.set_editor_property("momentum_steal", float(a.get("momentum_steal", 0)))
         d.set_editor_property("look", cfg["look"])
         d.set_editor_property("impact_kick", float(a.get("kick", 1.0)))
         d.set_editor_property("anim_play_rate", float(a.get("rate", 1.0)))

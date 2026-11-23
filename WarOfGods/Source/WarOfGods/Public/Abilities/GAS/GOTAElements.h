@@ -37,6 +37,16 @@ struct WAROFGODS_API FGOTAElementDef
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Status", meta = (ClampMin = "0"))
 	float StatusMagnitude = 0.f;
 
+	/**
+	 * A hit of this element on a target that already has the element's status applies this one instead and removes the
+	 * first (Frost: Chilled, then Frozen). None = re-application only refreshes.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Status")
+	EGOTAStatus FollowUpStatus = EGOTAStatus::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Status", meta = (ClampMin = "0"))
+	float FollowUpDuration = 0.f;
+
 	/** Damage-over-time statuses: seconds between ticks. Each tick deals StatusMagnitude x TickInterval. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Status", meta = (ClampMin = "0.1"))
 	float TickInterval = 1.f;

@@ -6,6 +6,7 @@
 #include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "HAL/IConsoleManager.h"
@@ -265,6 +266,33 @@ namespace GOTAAbilityTest
 		}
 		UGOTAHeroAbilityComponent::ApplyStatusTo(Pawn, Status, FCString::Atof(*Args[2]), FCString::Atof(*Args[3]), Source);
 	}
+	/** gota.Ability.ElementHit <fighter> <Fire|Frost|Lightning|Shadow> <damage> [source fighter]: one elemental hit (milestone C). */
+	static void ElementHit(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
+		APawn* Pawn = GM && Args.Num() >= 3 ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		const FGameplayTag Element = Args.Num() >= 3 ? FGameplayTag::RequestGameplayTag(FName(*(TEXT("GOTA.Element.") + Args[1])), false) : FGameplayTag();
+		if (!Pawn || !Element.IsValid())
+		{
+			UE_LOG(LogGOTAAbilityTest, Warning, TEXT("ElementHit: <fighter> <Element> <damage> [source]"));
+			return;
+		}
+		AActor* Source = Args.Num() > 3 ? GM->GetFighterPawn(FCString::Atoi(*Args[3])) : nullptr;
+		GOTAGAS::DealElementalHit(Pawn, Source, FCString::Atof(*Args[2]), Element);
+	}
+	/** gota.Ability.ElementResist <fighter> <Element> <damage scale>: set an element resistance in the fighter's policy. */
+	static void ElementResist(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
+		APawn* Pawn = GM && Args.Num() >= 3 ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		const FGameplayTag Element = Args.Num() >= 3 ? FGameplayTag::RequestGameplayTag(FName(*(TEXT("GOTA.Element.") + Args[1])), false) : FGameplayTag();
+		if (UGOTAAbilitySystemComponent* ASC = Pawn && Element.IsValid() ? UGOTAAbilitySystemComponent::EnsureOnPawn(Pawn) : nullptr)
+		{
+			ASC->SetElementResistance(Element, FCString::Atof(*Args[2]));
+		}
+	}
 	/**
 	 * gota.Test.SetupBlocker <minDist> <maxDist> [place 0|1] [behind=150]: find solid WorldStatic geometry around fighter 0
 	 * (36 chest-height traces), face it, and optionally put a frozen fighter 1 on open floor directly behind it
@@ -402,6 +430,8 @@ namespace GOTAAbilityTest
 		}
 	}
 	static FAutoConsoleCommand CmdResetCooldowns(TEXT("gota.Ability.ResetCooldowns"), TEXT("Clear a fighter's cooldowns/casts/status [fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&ResetCooldowns));
+	static FAutoConsoleCommand CmdElementHit(TEXT("gota.Ability.ElementHit"), TEXT("One elemental hit: <fighter> <Fire|Frost|Lightning|Shadow> <damage> [source fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&ElementHit));
+	static FAutoConsoleCommand CmdElementResist(TEXT("gota.Ability.ElementResist"), TEXT("Element resistance: <fighter> <Element> <damage scale>."), FConsoleCommandWithArgsDelegate::CreateStatic(&ElementResist));
 	static FAutoConsoleCommand CmdStatus(TEXT("gota.Ability.Status"), TEXT("Apply a status: <fighter> <Status> <seconds> <magnitude> [source fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Status));
 	static FAutoConsoleCommand CmdPlaceOnCast(TEXT("gota.Ability.PlaceOnCast"), TEXT("After fighter 0's next cast starts, wait <delay>s then Place <dist> (frozen) [side]."), FConsoleCommandWithArgsDelegate::CreateStatic(&PlaceOnCast));
 	static FAutoConsoleCommand CmdPlace(TEXT("gota.Ability.Place"), TEXT("Test: place fighter 1 <dist> in front of fighter 0 [freeze 0|1] [side cm]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Place));
