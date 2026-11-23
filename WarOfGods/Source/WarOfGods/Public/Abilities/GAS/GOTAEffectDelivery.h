@@ -57,6 +57,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Impact(FVector_NetQuantize Location);

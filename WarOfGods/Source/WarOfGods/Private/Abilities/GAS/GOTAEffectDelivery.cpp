@@ -213,6 +213,10 @@ void AGOTAEffectDelivery::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 void AGOTAEffectDelivery::BeginPlay()
 {
 	Super::BeginPlay();
+	if (!HasAuthority())
+	{
+		UE_LOG(LogGOTADelivery, Log, TEXT("DELIVERY client sees %s"), IsA<AGOTAProjectile>() ? TEXT("projectile") : TEXT("zone"));
+	}
 	if (BodyFX && GetNetMode() != NM_DedicatedServer)
 	{
 		UGameplayStatics::SpawnEmitterAttached(BodyFX, RootComponent, NAME_None, FVector::ZeroVector, FRotator::ZeroRotator, FVector(FXScale),
@@ -220,8 +224,21 @@ void AGOTAEffectDelivery::BeginPlay()
 	}
 }
 
+void AGOTAEffectDelivery::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (!HasAuthority() && Reason == EEndPlayReason::Destroyed)
+	{
+		UE_LOG(LogGOTADelivery, Log, TEXT("DELIVERY client removed %s"), IsA<AGOTAProjectile>() ? TEXT("projectile") : TEXT("zone"));
+	}
+	Super::EndPlay(Reason);
+}
+
 void AGOTAEffectDelivery::Multicast_Impact_Implementation(FVector_NetQuantize Location)
 {
+	if (!HasAuthority())
+	{
+		UE_LOG(LogGOTADelivery, Log, TEXT("DELIVERY client impact"));
+	}
 	if (ImpactFX && GetNetMode() != NM_DedicatedServer)
 	{
 		const FVector Where = Location;

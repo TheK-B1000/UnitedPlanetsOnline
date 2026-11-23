@@ -29,8 +29,9 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestone A: Stunned and Frozen | `3475459` | Done (packaged, 51/51) |
 | Milestone B: shields, buffs, debuffs | `9d53e51` | Done (packaged, 54/54) |
 | Milestones C and D: elements, hero abilities | `a38b241` | Done (editor 63/63; packaged 62/63 first pass, the one timing failure passed 3 of 3 on rerun) |
-| Milestone E, part 1: projectiles, zones, World Burn zone | this commit | Editor only: 65/66, the one failure a stale ignite count; Heroes and Delivery 8/8 after correcting it. Full suite not repeated. No remote-client or packaged run |
-| Milestone E, part 2: remote-client test, enemy powers | | Not started |
+| Milestone E, part 1: projectiles, zones, World Burn zone | `d6a9ae2` | Editor only: 65/66, the one failure a stale ignite count; Heroes and Delivery 8/8 after correcting it. Full suite not repeated. No packaged run |
+| Milestone E: remote-client delivery test | this commit | Editor, listen server + one client: pass |
+| Milestone E, part 2: enemy powers | | Not started |
 | Milestones F, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
@@ -290,7 +291,9 @@ The card effects use the statuses and elements from A–C through new data field
 - **Cleanup.** Deliveries end when their source is defeated or its abilities reset for a round.
 - **First user.** World Burn leaves a 4 s, 1 s interval burning zone in its radius. Standing in it keeps Burning refreshed, so a target that stays takes up to 7 burn ticks (14 damage) instead of 3 (6). This has had no human balance testing.
 
-Not done yet: a remote-client test of projectiles and zones, real enemy powers using this path, and packaged verification.
+**Remote client (editor, listen server + one client, no added latency or loss).** The host decided a projectile hit and three zone pulses. The client saw both deliveries, received the impact, removed both, and logged no hit of its own.
+
+Not done yet: real enemy powers using this path, a run under simulated latency and loss, and packaged verification.
 
 ## Behavior changes
 

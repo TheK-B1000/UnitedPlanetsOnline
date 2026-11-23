@@ -348,6 +348,13 @@ MP = {
 }
 # Multiplayer for statuses: host hero, host script, host-log checks, client-log checks (the remote player's own view).
 MP_STATUS = {
+    "Delivery": ("Drakon", "delivery_mp_host.txt",
+                 [(r"PROJECTILE TestPower hit BP_Player\S+ after \d+ \(landed=1\)", 1), (r"ZONE TestPower started", 1),
+                  (r"ZONE TestPower pulse: 1 target\(s\)", True), (r"ZONE TestPower ended \(duration\)", 1)],
+                 [(r"DELIVERY client sees projectile", 1), (r"DELIVERY client sees zone", 1), (r"DELIVERY client impact", 1),
+                  (r"DELIVERY client removed projectile", 1), (r"DELIVERY client removed zone", 1),
+                  (r"cue GameplayCue\.GOTA\.Status\.Shocked on BP_Player", True),
+                  (r"ELEMENT hit", False), (r"PROJECTILE TestPower hit", False), (r"ZONE TestPower pulse", False)]),  # hits are server-only
     "Element": ("Drakon", "element_mp_host.txt",
                 [(r"status Chilled 3\.0s x0\.30", 1), (r"ELEMENT Frost follow-up: Chilled -> Frozen 1\.5s", 1)],
                 [(r"cue GameplayCue\.GOTA\.Status\.Chilled on BP_Player", True), (r"overlay \S+ -> M_GOTA_Overlay_Chilled on BP_Player", True),

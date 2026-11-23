@@ -1,0 +1,14 @@
+waitplayers 2 120
+# GAS milestone E on a remote player: the host's server decides a projectile hit and a zone's pulses; the remote machine
+# sees both, receives the impact and removes them, and never runs the hit itself.
+r.MotionBlurQuality 0
+wait 10
+gota.Ability.Place 500
+wait 0.3
+gota.Ability.Projectile 0 Lightning 5
+wait 1.0
+gota.Ability.Zone 0 Shadow 3 650 1.5 0.5
+wait 2.5
+gota.Ability.Dump
+wait 75
+quit
