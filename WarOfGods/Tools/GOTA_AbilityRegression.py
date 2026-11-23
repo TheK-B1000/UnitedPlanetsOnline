@@ -285,7 +285,8 @@ CASES = {
         ("Nyx Soul Drain steals momentum", "?Opponent=AI?Hero=Nyx?Foe=Drakon?DevHeroes=1", "hero_souldrain.txt",
          [(r"SoulDrain hit \S+ for 18\.0 \(landed=1\)", 1), (r"SoulDrain stole 20 momentum from", 1), (r"status Dread 4\.0s x0\.35", 1)]),
         ("Varoth: World Burn ignites, Colossus Form empowers", "?Opponent=AI?Hero=Varoth?DevHeroes=1", "hero_varoth.txt",
-         [(r"WorldBurn hit \S+ for 5\.0 \(landed=1\)", 1), (r"BP_Enemy\S*: status Burning 3\.0s x2\.00", 1), (r"BP_Enemy\S*: status Dread 4\.0s x0\.35", 1),
+         [(r"WorldBurn hit \S+ for 5\.0 \(landed=1\)", 1), (r"BP_Enemy\S*: status Burning 3\.0s x2\.00", True),  # milestone E: the zone refreshes it
+          (r"BP_Enemy\S*: status Dread 4\.0s x0\.35", 1),
           (r"status Unbreakable 6\.0s x0\.50", 1), (r"status Empowered 6\.0s x0\.25", 1),
           (r"InfernoSlam hit \S+ for 27\.5 \(landed=1\)", 1)]),
         ("Zephyr Gale Rush shocks (Lightning)", "?Opponent=AI?Hero=Zephyr?DevHeroes=1", "hero_elements.txt",
@@ -317,6 +318,22 @@ CASES = {
          "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "element_boss.txt",
          [(r"BP_Boss\S*: status Chilled resisted \(whole movement \)", 2), (r"FEEDBACK THE QUARRY BEHEMOTH RESISTS CHILL", 2),
           (r"follow-up", False), (r"status Frozen", False), (r"BP_Boss\S*: status Shocked 3\.0s x0\.20", 1)]),
+    ],
+    # GAS milestone E: projectiles and zones, server-decided, through the shared hit path.
+    "Delivery": [
+        ("Projectile: hit, Veiled passes through, resistance, max range, cleared on reset",
+         "?Opponent=AI?Hero=Drakon?DevHeroes=1", "delivery_projectile.txt",
+         [(r"PROJECTILE TestPower launched", 5), (r"ELEMENT hit GOTA\.Element\.Lightning 10\.0 \(x1\.00 element\) -> 10\.0 \(landed=1\)", 1),
+          (r"status Shocked 3\.0s x0\.20", 1), (r"PROJECTILE TestPower ended \(max range\)", 2),
+          (r"ELEMENT hit GOTA\.Element\.Frost 10\.0 \(x0\.00 element\) -> 0\.0 \(landed=0\)", 1), (r"status Chilled", False),
+          (r"PROJECTILE TestPower ended \(cleared\)", 1)]),
+        ("Zone: pulses on its interval, radius, ends on time, cleared on reset",
+         "?Opponent=AI?Hero=Drakon?DevHeroes=1", "delivery_zone.txt",
+         [(r"ZONE TestPower started", 3), (r"ELEMENT hit GOTA\.Element\.Shadow 4\.0 \(x1\.00 element\) -> 4\.0 \(landed=1\)", 4),
+          (r"ZONE TestPower pulse: 0 target\(s\)", 2), (r"ZONE TestPower ended \(duration\)", 2), (r"ZONE TestPower ended \(cleared\)", 1)]),
+        ("World Burn leaves a burning zone", "?Opponent=AI?Hero=Varoth?DevHeroes=1", "delivery_worldburn.txt",
+         [(r"WorldBurn hit \S+ for 5\.0 \(landed=1\)", 1), (r"ZONE WorldBurn started by \S+: radius 500, 4\.0s, every 1\.00s, damage 0\.0", 1),
+          (r"ZONE WorldBurn pulse: 1 target\(s\)", 4), (r"ZONE WorldBurn ended \(duration\)", 1), (r"Burning tick on \S+ for 2\.0 \(landed=1\)", True)]),
     ],
 }
 # Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.

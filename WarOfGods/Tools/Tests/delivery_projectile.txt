@@ -1,0 +1,27 @@
+# GAS milestone E: a server-side projectile lands through the shared hit path, respects Veiled and full resistance,
+# stops at its maximum range, and is removed with its source's round reset.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 500 1
+wait 0.3
+gota.Ability.Projectile 0 Lightning 10
+wait 1.0
+gota.Ability.Dump
+gota.Ability.ResetCooldowns 1
+gota.Ability.Status 1 Veiled 1.0 0
+gota.Ability.Projectile 0 Fire 10 1500 30 700
+wait 1.2
+gota.Ability.ResetCooldowns 1
+gota.Ability.ElementResist 1 Frost 0
+gota.Ability.Projectile 0 Frost 10
+wait 1.0
+gota.Ability.ElementResist 1 Frost 1
+gota.Ability.Projectile 0 Fire 10 1500 30 200
+wait 0.6
+gota.Ability.Projectile 0 Fire 10 100
+wait 0.2
+gota.Ability.ResetCooldowns 0
+wait 0.5
+gota.Ability.Dump
+quit

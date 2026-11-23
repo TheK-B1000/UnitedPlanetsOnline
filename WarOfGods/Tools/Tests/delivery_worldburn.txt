@@ -1,0 +1,11 @@
+# GAS milestone E: World Burn leaves a 4 s burning zone. The target stands in it, so the burn is kept up after the cast.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 2
+wait 5.5
+gota.Ability.Dump
+quit

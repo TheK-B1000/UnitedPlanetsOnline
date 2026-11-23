@@ -6,6 +6,7 @@
 #include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAEffectDelivery.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -293,6 +294,45 @@ namespace GOTAAbilityTest
 			ASC->SetElementResistance(Element, FCString::Atof(*Args[2]));
 		}
 	}
+	static FGOTAEffectPayload DeliveryPayload(const FString& ElementName, float Damage)
+	{
+		FGOTAEffectPayload Payload;
+		Payload.Label = TEXT("TestPower");
+		Payload.Damage = Damage;
+		Payload.Element = FGameplayTag::RequestGameplayTag(FName(*(TEXT("GOTA.Element.") + ElementName)), false);
+		return Payload;
+	}
+	/** gota.Ability.Projectile <source fighter> <Element> <damage> [speed=1500] [radius=30] [range=2000]: fire at the other fighter (milestone E). */
+	static void Projectile(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
+		const int32 From = Args.Num() >= 3 ? FCString::Atoi(*Args[0]) : 0;
+		APawn* Source = GM && Args.Num() >= 3 ? GM->GetFighterPawn(From) : nullptr;
+		APawn* Other = GM ? GM->GetFighterPawn(From == 0 ? 1 : 0) : nullptr;
+		if (!Source || !Other)
+		{
+			UE_LOG(LogGOTAAbilityTest, Warning, TEXT("Projectile: <source fighter> <Element> <damage> [speed] [radius] [range]"));
+			return;
+		}
+		const FVector Start = Source->GetActorLocation() + (Other->GetActorLocation() - Source->GetActorLocation()).GetSafeNormal2D() * 80.f;
+		GOTAGAS::FireProjectile(Source, Start, (Other->GetActorLocation() - Start).GetSafeNormal2D(), DeliveryPayload(Args[1], FCString::Atof(*Args[2])),
+			Args.Num() > 3 ? FCString::Atof(*Args[3]) : 1500.f, Args.Num() > 4 ? FCString::Atof(*Args[4]) : 30.f, Args.Num() > 5 ? FCString::Atof(*Args[5]) : 2000.f);
+	}
+	/** gota.Ability.Zone <source fighter> <Element> <damage> <radius> <seconds> <interval>: a zone at the source's feet (milestone E). */
+	static void Zone(const TArray<FString>& Args)
+	{
+		UWorld* World = GameWorld();
+		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
+		APawn* Source = GM && Args.Num() >= 6 ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		if (!Source)
+		{
+			UE_LOG(LogGOTAAbilityTest, Warning, TEXT("Zone: <source fighter> <Element> <damage> <radius> <seconds> <interval>"));
+			return;
+		}
+		GOTAGAS::SpawnZone(Source, Source->GetActorLocation(), DeliveryPayload(Args[1], FCString::Atof(*Args[2])), FCString::Atof(*Args[3]),
+			FCString::Atof(*Args[4]), FCString::Atof(*Args[5]));
+	}
 	/**
 	 * gota.Test.SetupBlocker <minDist> <maxDist> [place 0|1] [behind=150]: find solid WorldStatic geometry around fighter 0
 	 * (36 chest-height traces), face it, and optionally put a frozen fighter 1 on open floor directly behind it
@@ -432,6 +472,8 @@ namespace GOTAAbilityTest
 	static FAutoConsoleCommand CmdResetCooldowns(TEXT("gota.Ability.ResetCooldowns"), TEXT("Clear a fighter's cooldowns/casts/status [fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&ResetCooldowns));
 	static FAutoConsoleCommand CmdElementHit(TEXT("gota.Ability.ElementHit"), TEXT("One elemental hit: <fighter> <Fire|Frost|Lightning|Shadow> <damage> [source fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&ElementHit));
 	static FAutoConsoleCommand CmdElementResist(TEXT("gota.Ability.ElementResist"), TEXT("Element resistance: <fighter> <Element> <damage scale>."), FConsoleCommandWithArgsDelegate::CreateStatic(&ElementResist));
+	static FAutoConsoleCommand CmdProjectile(TEXT("gota.Ability.Projectile"), TEXT("Fire at the other fighter: <source> <Element> <damage> [speed] [radius] [range]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Projectile));
+	static FAutoConsoleCommand CmdZone(TEXT("gota.Ability.Zone"), TEXT("Zone at the source: <source> <Element> <damage> <radius> <seconds> <interval>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Zone));
 	static FAutoConsoleCommand CmdStatus(TEXT("gota.Ability.Status"), TEXT("Apply a status: <fighter> <Status> <seconds> <magnitude> [source fighter]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Status));
 	static FAutoConsoleCommand CmdPlaceOnCast(TEXT("gota.Ability.PlaceOnCast"), TEXT("After fighter 0's next cast starts, wait <delay>s then Place <dist> (frozen) [side]."), FConsoleCommandWithArgsDelegate::CreateStatic(&PlaceOnCast));
 	static FAutoConsoleCommand CmdPlace(TEXT("gota.Ability.Place"), TEXT("Test: place fighter 1 <dist> in front of fighter 0 [freeze 0|1] [side cm]."), FConsoleCommandWithArgsDelegate::CreateStatic(&Place));

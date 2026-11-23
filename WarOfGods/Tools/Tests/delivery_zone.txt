@@ -1,0 +1,22 @@
+# GAS milestone E: a zone pulses on its interval, only inside its radius, ends on time, and is cleared by a round reset.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Ability.Zone 0 Shadow 4 400 2.0 0.5
+wait 2.6
+gota.Ability.Dump
+gota.Ability.ResetCooldowns 1
+gota.Ability.Place 900 1
+wait 0.3
+gota.Ability.Zone 0 Fire 4 400 1.0 0.5
+wait 1.4
+gota.Ability.Place 250 1
+wait 0.2
+gota.Ability.Zone 0 Fire 4 400 5.0 0.5
+wait 0.7
+gota.Ability.ResetCooldowns 0
+wait 1.0
+gota.Ability.Dump
+quit

@@ -135,6 +135,11 @@ struct WAROFGODS_API FGOTAAbilityDef
 	/** Divine Momentum taken from each enemy the damage lands on and given to the caster (as much as the enemy has). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") float MomentumSteal = 0.f;
 
+	// --- GAS milestone E: persistent zone left where the ability resolves (0 seconds = none) ---
+	/** Seconds the area keeps applying the ability's element to whoever stands in it (radius = Radius). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") float ZoneDuration = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Balance") float ZoneInterval = 1.f;
+
 	// --- presentation ---
 	/** Hero-specific animation played on the visible body (Paragon sequence). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Presentation") TSoftObjectPtr<UAnimSequenceBase> Animation;

@@ -3,6 +3,7 @@
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
 #include "Abilities/GAS/GOTACombatAttributeSet.h"
+#include "Abilities/GAS/GOTAEffectDelivery.h"
 #include "Abilities/GAS/GOTAElements.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GAS/GOTAGameplayTags.h"
@@ -835,6 +836,14 @@ void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)
 			ApplyDefStatus(P, *Def, Owner);
 		}
 		FxLoc = Owner->GetActorLocation();
+		// Milestone E: the area stays dangerous (World Burn). The zone carries the element only; its damage is the burn.
+		if (Def->ZoneDuration > 0.f)
+		{
+			FGOTAEffectPayload ZonePayload;
+			ZonePayload.Label = Def->AbilityId;
+			ZonePayload.Element = Def->Element;
+			GOTAGAS::SpawnZone(Owner, Owner->GetActorLocation(), ZonePayload, Def->Radius, Def->ZoneDuration, Def->ZoneInterval, Def->ImpactFX.LoadSynchronous(), Def->FXScale);
+		}
 		break;
 	}
 	case EGOTAAbilityKind::SelfGuard:
@@ -986,6 +995,7 @@ void UGOTAHeroAbilityComponent::CancelCastServer(const TCHAR* Why)
 void UGOTAHeroAbilityComponent::ResetAbilities(bool bClearCooldowns)
 {
 	CancelCastServer(TEXT("reset"));
+	GOTAGAS::ClearDeliveries(GetWorld(), GetOwner()); // projectiles and zones never outlive the round
 	ApplyStatus(EGOTAStatus::None, 0.f, 0.f, nullptr);
 	if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner()))
 	{

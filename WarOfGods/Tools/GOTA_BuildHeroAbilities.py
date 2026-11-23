@@ -131,9 +131,9 @@ HEROES = {
         # Card: "Burning area. Damage over time." (DoT not implemented yet: one burn tick + Dread)
         dict(id="WorldBurn", name="World Burn", short="World Burn", kind=K.AURA,
              desc="Burning area: enemies within 5 m are set burning and gripped by dread for 4 s - 35% slower and "
-                  "their divine abilities hit softer.",
+                  "their divine abilities hit softer. The ground keeps burning for 4 s.",
              damage=5, cooldown=16, cast=0.5, recovery=0.4, radius=500, status=ST.DREAD, status_duration=4.0, magnitude=0.35,
-             element="GOTA.Element.Fire", ignite=True,
+             element="GOTA.Element.Fire", ignite=True, zone_duration=4.0, zone_interval=1.0,  # GAS E: the ground keeps burning
              anim=SA + "Cast", cast_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_SubjugateSwirls", impact_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_Sub_Cast", fx_scale=1.2, kick=0.6,
              ai=dict(priority=1.1, min=0, max=480)),
         # Card: "Increased power, defense, and area damage." (defense part: Unbreakable; power/area bonus not implemented yet)
@@ -287,6 +287,8 @@ def build_set(hero, cfg):
         d.set_editor_property("cleanses_control", bool(a.get("cleanse", False)))
         d.set_editor_property("usable_while_incapacitated", bool(a.get("break_free", False)))
         d.set_editor_property("momentum_steal", float(a.get("momentum_steal", 0)))
+        d.set_editor_property("zone_duration", float(a.get("zone_duration", 0)))
+        d.set_editor_property("zone_interval", float(a.get("zone_interval", 1.0)))
         d.set_editor_property("look", cfg["look"])
         d.set_editor_property("impact_kick", float(a.get("kick", 1.0)))
         d.set_editor_property("anim_play_rate", float(a.get("rate", 1.0)))
