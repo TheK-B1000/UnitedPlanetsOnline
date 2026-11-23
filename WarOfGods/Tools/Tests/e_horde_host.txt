@@ -1,0 +1,53 @@
+# GAS milestone E, four-player Horde (healing harness: NOT difficulty evidence). Waves 1-5 are force-cleared to reach the
+# real Quarry Behemoth. It throws Molten Boulder and lays Scorched Earth among four players, then dies with a zone still
+# arming, which must clear it.
+waitplayers 4 120
+gota.Net.Sustain 420 25
+gota.Net.Fight 400
+wait 15
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 14
+gota.Boss.Skip
+gota.Boss.Dump
+gota.Net.Players
+gota.Boss.Attack MoltenBoulder
+wait 6
+gota.Boss.Attack ScorchedEarth
+wait 9
+gota.Boss.Attack MoltenBoulder
+wait 6
+gota.Boss.Attack ScorchedEarth
+wait 9
+gota.Net.GAS
+gota.Net.Players
+gota.Boss.AI 2
+wait 5
+gota.Boss.Attack ScorchedEarth
+wait 1.4
+gota.Net.KillEnemy 0 boss
+wait 6
+gota.Net.GAS
+gota.Horde.Dump
+gota.Net.Players
+wait 12
+quit

@@ -1,0 +1,5 @@
+# Remote side of e_dodge_host: dodge when the boulder is 0.30 s away.
+wait 3
+gota.Net.DodgeProjectile 240 0.30
+wait 240
+quit

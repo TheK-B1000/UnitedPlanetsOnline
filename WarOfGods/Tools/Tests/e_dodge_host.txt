@@ -1,0 +1,59 @@
+# GAS milestone E: a remote defender's timed dodge against Molten Boulder under latency. The client dodges straight back
+# along the boulder's path, so only the server's protection can save it.
+waitplayers 2 120
+wait 25
+gota.Boss.Skip
+gota.Boss.AI 2
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 800 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Boss.Dump
+quit

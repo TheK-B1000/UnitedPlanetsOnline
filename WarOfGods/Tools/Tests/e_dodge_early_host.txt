@@ -1,0 +1,38 @@
+# GAS milestone E: the same remote dodge made far too early. The boulder is 0.8 s away, so the server must not protect it.
+waitplayers 2 120
+wait 25
+gota.Boss.Skip
+gota.Boss.AI 2
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 1400 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 1400 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 1400 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 1400 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 1400 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Test.Heal 0 400
+gota.Boss.PlaceTarget 1400 0
+wait 0.4
+gota.Boss.Attack MoltenBoulder
+wait 5
+gota.Boss.Dump
+quit

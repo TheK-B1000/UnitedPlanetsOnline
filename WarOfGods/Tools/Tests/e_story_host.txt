@@ -1,0 +1,30 @@
+# GAS milestone E, four-player Story (healing harness: NOT difficulty evidence). Story's own shrine boss has no powers, so
+# the Quarry Behemoth is spawned into the level to run the shared delivery path in this game mode.
+waitplayers 4 120
+gota.Net.Sustain 200 25
+wait 25
+gota.Net.Players
+gota.Boss.Spawn QuarryBehemoth
+wait 3
+gota.Boss.Skip
+gota.Boss.Dump
+gota.Boss.Attack MoltenBoulder
+wait 6
+gota.Boss.Attack ScorchedEarth
+wait 9
+gota.Boss.Attack MoltenBoulder
+wait 6
+gota.Boss.Attack ScorchedEarth
+wait 9
+gota.Net.GAS
+gota.Net.Players
+gota.Boss.AI 2
+wait 5
+gota.Boss.Attack ScorchedEarth
+wait 1.4
+gota.Net.KillEnemy 0 boss
+wait 6
+gota.Net.GAS
+gota.Net.Players
+wait 10
+quit

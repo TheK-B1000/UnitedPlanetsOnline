@@ -11,6 +11,7 @@
 #if !UE_BUILD_SHIPPING
 
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAEffectDelivery.h"
 #include "Abilities/GAS/GOTAGameplayTags.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
@@ -470,6 +471,65 @@ namespace GOTANetTest
 		}
 		return true;
 	}
+
+	static FTSTicker::FDelegateHandle ProjectileDodgeHandle;
+	static double ProjectileDodgeUntil = 0.0;
+	static float ProjectileDodgeLead = 0.3f;
+	static TWeakObjectPtr<const AActor> ProjectileDodgeLast;
+
+	/** Client test input: dodge straight back along an incoming projectile's path, so only the server's protection can save the player. */
+	static bool TickProjectileDodge(float)
+	{
+		UWorld* World = GameWorld();
+		if (!World || FPlatformTime::Seconds() > ProjectileDodgeUntil)
+		{
+			ProjectileDodgeHandle.Reset();
+			return false;
+		}
+		APlayerController* PC = World->GetFirstPlayerController();
+		APawn* Me = PC ? PC->GetPawn() : nullptr;
+		if (!Me)
+		{
+			return true;
+		}
+		for (TActorIterator<AGOTAProjectile> It(World); It; ++It)
+		{
+			const FVector V = It->Velocity;
+			const float Speed = V.Size();
+			if (*It == ProjectileDodgeLast.Get() || Speed <= 0.f)
+			{
+				continue;
+			}
+			const FVector Dir = V / Speed;
+			const FVector ToMe = Me->GetActorLocation() - It->GetActorLocation();
+			const float Along = FVector::DotProduct(ToMe, Dir);
+			if (Along <= 0.f || (ToMe - Dir * Along).Size2D() > 150.f || Along / Speed > ProjectileDodgeLead)
+			{
+				continue;
+			}
+			ProjectileDodgeLast = *It;
+			CallVector(Me, TEXT("DodgeToLocation"), Me->GetActorLocation() + Dir * 380.f);
+			if (UGOTADuelFighterComponent* Fighter = Me->FindComponentByClass<UGOTADuelFighterComponent>())
+			{
+				Fighter->RequestDodgeNotify();
+			}
+			UE_LOG(LogGOTANet, Log, TEXT("REMOTE projectile dodge client-lead=%.2f (legitimate local input)"), Along / Speed);
+			break;
+		}
+		return true;
+	}
+
+	/** gota.Net.DodgeProjectile <seconds> <lead>: on a client, dodge each incoming projectile when it is <lead> s away. */
+	static void DodgeProjectile(const TArray<FString>& Args)
+	{
+		ProjectileDodgeUntil = FPlatformTime::Seconds() + (Args.Num() > 0 ? FCString::Atof(*Args[0]) : 30.f);
+		ProjectileDodgeLead = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 0.3f;
+		if (!ProjectileDodgeHandle.IsValid())
+		{
+			ProjectileDodgeHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateStatic(&TickProjectileDodge), 0.f);
+		}
+	}
+	static FAutoConsoleCommand CmdDodgeProjectile(TEXT("gota.Net.DodgeProjectile"), TEXT("Client test: dodge incoming projectiles at a set lead. Args: seconds lead."), FConsoleCommandWithArgsDelegate::CreateStatic(&DodgeProjectile));
 
 	static void RemoteParry(const TArray<FString>& Args)
 	{

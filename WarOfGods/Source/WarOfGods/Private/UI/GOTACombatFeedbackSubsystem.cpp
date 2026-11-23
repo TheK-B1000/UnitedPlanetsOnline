@@ -128,7 +128,8 @@ UGOTACombatFeedbackWidget* UGOTACombatFeedbackSubsystem::EnsureWidget()
 	ULocalPlayer* LP = GetLocalPlayer();
 	UWorld* World = LP ? LP->GetWorld() : nullptr;
 	APlayerController* PC = LP ? LP->GetPlayerController(World) : nullptr;
-	if (!PC)
+	// A pawn destroyed while the world shuts down still refreshes the status line. Widgets cannot be created then.
+	if (!PC || World->bIsTearingDown)
 	{
 		return nullptr;
 	}

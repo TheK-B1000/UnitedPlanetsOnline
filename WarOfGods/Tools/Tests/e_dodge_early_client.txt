@@ -1,0 +1,5 @@
+# Remote side of e_dodge_early_host: dodge as soon as a boulder is under 1.0 s away.
+wait 3
+gota.Net.DodgeProjectile 240 1.0
+wait 240
+quit
