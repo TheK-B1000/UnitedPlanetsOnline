@@ -28,7 +28,7 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Boss definition kept loaded on the server | `05704ae` | Done (packaged RC12c) |
 | Milestone A: Stunned and Frozen | `3475459` | Done (packaged, 51/51) |
 | Milestone B: shields, buffs, debuffs | `9d53e51` | Done (packaged, 54/54) |
-| Milestones C and D: elements, hero abilities | this commit | Editor 63/63; packaged pending |
+| Milestones C and D: elements, hero abilities | `a38b241` | Done (editor 63/63; packaged 62/63 first pass, the one timing failure passed 3 of 3 on rerun) |
 | Milestones E, F, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
@@ -305,7 +305,7 @@ Apart from these, the same numbers, Blueprint flags and damage path are in use.
 |---|---|---|---|
 | New suite group | Control 5/5 (stun, frozen, boss immunity, Mind Spike, multiplayer) | Defense 3/3 (shield, modifiers, multiplayer) | Element 4/4 (table, resistance, boss, multiplayer); Heroes 5/5 (Void Shield, Soul Drain, Varoth, Gale Rush, Gravity Well) |
 | Editor suite | 51/51 first pass | 54/54 first pass | **63/63 first pass** |
-| Packaged | `GAS_A_3475459` (fresh cook, 3,939 packages, 0 incrementally skipped): **51/51 first pass** | `GAS_B_9d53e51` (fresh cook, 3,945 packages): **54/54 first pass**, run from the staged build after the archive copy failed for disk space; archive completed afterwards | pending |
+| Packaged | `GAS_A_3475459` (fresh cook, 3,939 packages, 0 incrementally skipped): **51/51 first pass** | `GAS_B_9d53e51` (fresh cook, 3,945 packages): **54/54 first pass**, run from the staged build after the archive copy failed for disk space; archive completed afterwards | `GAS_CD_a38b241` (fresh cook, 3,947 packages, 0 incrementally skipped, `.ucas` 8.68 GB verified): **62/63 first pass**. The failure was Time Lash `hit+slow+restore+cooldown+radius`: a first-use shader compile and audio underrun stalled the frame, the 0.5 s cast landed about 1.03 s after it started, and the scripted second press arrived during recovery, so it was refused as Busy rather than Cooldown. Rerun of the Time Lash group on the same package, test unchanged: **12/12 (3 passes of 4 cases)**. The full 63-case suite was not repeated |
 | Horde, four players, 120 ms / 5% loss | whole waves stunned and frozen five times (`gasA_horde3`): 19 locks, 19 releases, every released enemy attacked again, 0 stalls, 0 crashes | not run | not run |
 
 Not tested for B, C or D: Horde and Story with these effects, human play and balance, separate PCs, quiet-machine profiling. The Heroes multiplayer path is covered only through the shared Element and Defense multiplayer cases; no hero-specific case runs on a remote client.
