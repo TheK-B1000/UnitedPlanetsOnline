@@ -154,6 +154,46 @@ namespace GOTABossTest
 		UE_LOG(LogGOTABossTest, Log, TEXT("BOSS place target fwd=%s right=%s"), *Args[0], *Args[1]);
 	}
 
+	/**
+	 * gota.Boss.IntroRetarget near <distance>: put another player between the boss and the player the intro holds.
+	 * gota.Boss.IntroRetarget lost: drop the held player out of the arena, so its pawn is lost during the intro.
+	 */
+	static void IntroRetarget(const TArray<FString>& Args)
+	{
+		UGOTABossComponent* B = Boss();
+		APawn* Held = B ? B->DebugGetIntroPlayer() : nullptr;
+		const AActor* BossActor = B ? B->GetOwner() : nullptr;
+		UWorld* World = GameWorld();
+		if (!Held || !BossActor || !World || Args.Num() < 1)
+		{
+			UE_LOG(LogGOTABossTest, Warning, TEXT("BOSS intro retarget: no held player"));
+			return;
+		}
+		const FVector Away = (Held->GetActorLocation() - BossActor->GetActorLocation()).GetSafeNormal2D();
+		if (Args[0] == TEXT("lost"))
+		{
+			FVector Loc = BossActor->GetActorLocation() + Away * 3000.f;
+			Loc.Z = Held->GetActorLocation().Z;
+			Held->TeleportTo(Loc, Held->GetActorRotation(), false, true);
+			UE_LOG(LogGOTABossTest, Log, TEXT("BOSS intro retarget: dropped held player %s"), *GetNameSafe(Held));
+			return;
+		}
+		const float Distance = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 350.f;
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		{
+			APawn* Other = It->Get() ? It->Get()->GetPawn() : nullptr;
+			if (Other && Other != Held)
+			{
+				FVector Loc = BossActor->GetActorLocation() + Away * Distance;
+				Loc.Z = Held->GetActorLocation().Z;
+				Other->TeleportTo(Loc, Other->GetActorRotation(), false, true);
+				UE_LOG(LogGOTABossTest, Log, TEXT("BOSS intro retarget: %s is now nearer than held %s"), *GetNameSafe(Other), *GetNameSafe(Held));
+				return;
+			}
+		}
+		UE_LOG(LogGOTABossTest, Warning, TEXT("BOSS intro retarget: no other player"));
+	}
+
 	/** gota.Boss.Spawn <BossId>: server-only; spawn BP_Boss_<Id> with DA_Boss_<Id> for Story/Horde coop tests. */
 	static void Spawn(const TArray<FString>& Args)
 	{
@@ -254,6 +294,7 @@ namespace GOTABossTest
 	static FAutoConsoleCommand CmdDump(TEXT("gota.Boss.Dump"), TEXT("Log boss state."), FConsoleCommandWithArgsDelegate::CreateStatic(&Dump));
 	static FAutoConsoleCommand CmdAttack(TEXT("gota.Boss.Attack"), TEXT("Force the boss's next attack: <AttackId>."), FConsoleCommandWithArgsDelegate::CreateStatic(&Attack));
 	static FAutoConsoleCommand CmdAI(TEXT("gota.Boss.AI"), TEXT("Boss brain on/off: 1|0."), FConsoleCommandWithArgsDelegate::CreateStatic(&AI));
+	static FAutoConsoleCommand CmdIntroRetarget(TEXT("gota.Boss.IntroRetarget"), TEXT("During a boss intro: near <distance> | lost."), FConsoleCommandWithArgsDelegate::CreateStatic(&IntroRetarget));
 	static FAutoConsoleCommand CmdSkip(TEXT("gota.Boss.Skip"), TEXT("Skip the boss intro."), FConsoleCommandWithArgsDelegate::CreateStatic(&Skip));
 }
 

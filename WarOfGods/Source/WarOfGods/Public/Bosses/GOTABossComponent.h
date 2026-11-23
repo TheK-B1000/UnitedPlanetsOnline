@@ -89,6 +89,7 @@ public:
 	/** Test hooks (server). */
 	void DebugForceAttack(FName AttackId);
 	void DebugSetAI(bool bEnabled) { bAIEnabled = bEnabled; }
+	APawn* DebugGetIntroPlayer() const { return IntroPlayer.Get(); }
 	/** Test scripts (gota.Boss.AI 2): the boss stands still and uses only forced attacks. */
 	void DebugSetForcedOnly(bool bOn) { bDebugForcedOnly = bOn; }
 
@@ -126,6 +127,8 @@ protected:
 	void PlayFlinch(double Now);
 	void Die();
 	void EndIntro();
+	/** Gives back the invulnerability, movement and camera the intro took from the player it held. */
+	void ReleaseIntroPlayer();
 	void ResolveWindow(const FGOTABossAttack& Attack, const FGOTABossHitWindow& Window, int32 WindowIndex, APawn* Target);
 	bool DamageTarget(APawn* Target, const FGOTABossAttack& Attack, float Amount);
 	void Knock(APawn* Target, float Speed, float Up);
@@ -138,6 +141,11 @@ protected:
 	bool IsRoundLive() const;
 	float CurrentAttackGap() const;
 	float AttackClock(double Now) const;
+
+	/** Server: the player the intro made invulnerable and locked. The nearest player can change before it ends. */
+	TWeakObjectPtr<APawn> IntroPlayer;
+	/** Server: that player's controller, released even if the pawn is lost during the intro. */
+	TWeakObjectPtr<APlayerController> IntroController;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Definition)
 	TSoftObjectPtr<UGOTABossDefinition> Definition;

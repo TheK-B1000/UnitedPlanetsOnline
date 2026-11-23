@@ -1,0 +1,10 @@
+# Boss intro with two players: another player becomes the nearest before the intro ends. The held player must be released.
+waitplayers 2 120
+wait 8
+gota.Boss.Spawn QuarryBehemoth
+wait 1
+gota.Boss.IntroRetarget near 350
+wait 6
+gota.Boss.Dump
+gota.Net.Players
+quit

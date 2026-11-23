@@ -112,6 +112,10 @@ void UGOTABossComponent::BeginPlay()
 
 void UGOTABossComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+	if (Reason == EEndPlayReason::Destroyed)
+	{
+		ReleaseIntroPlayer(); // a boss removed mid-intro must not leave its player locked
+	}
 	if (IntroCamera)
 	{
 		IntroCamera->Destroy();
@@ -1109,8 +1113,11 @@ void UGOTABossComponent::StartIntro()
 	{
 		IntroCamera->GetCameraComponent()->SetFieldOfView(62.f);
 	}
+	IntroPlayer = Player;
+	IntroController = Player ? Cast<APlayerController>(Player->GetController()) : nullptr;
 	if (Player)
 	{
+		UE_LOG(LogGOTABoss, Log, TEXT("Boss intro holds %s"), *GetNameSafe(Player));
 		if (UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Player))
 		{
 			FGOTABlueprintCombat::SetBool(DS, TEXT("IsInvincible"), true); // noninteractive: the player cannot be hurt
@@ -1163,24 +1170,7 @@ void UGOTABossComponent::SkipIntro()
 void UGOTABossComponent::EndIntro()
 {
 	bIntroDone = true;
-	APawn* Player = FindTarget();
-	if (Player)
-	{
-		if (UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Player))
-		{
-			FGOTABlueprintCombat::SetBool(DS, TEXT("IsInvincible"), false);
-		}
-		FGOTABlueprintCombat::SetBool(Player, TEXT("CanMove"), true);
-		if (APlayerController* PC = Cast<APlayerController>(Player->GetController()))
-		{
-			PC->SetViewTargetWithBlend(Player, 0.7f, VTBlend_Cubic);
-			PC->SetIgnoreMoveInput(false);
-			if (PC->InputComponent)
-			{
-				PC->InputComponent->KeyBindings.RemoveAll([this](const FInputKeyBinding& B) { return B.KeyDelegate.IsBoundToObject(this); });
-			}
-		}
-	}
+	ReleaseIntroPlayer();
 	if (IntroCamera)
 	{
 		FTimerHandle H;
@@ -1193,6 +1183,47 @@ void UGOTABossComponent::EndIntro()
 	State = EGOTABossState::Chase;
 	LastAttackEnd = GetWorld()->GetTimeSeconds() + 0.8; // short beat before the first attack
 	UE_LOG(LogGOTABoss, Log, TEXT("Boss intro ended — fight"));
+}
+
+void UGOTABossComponent::ReleaseIntroPlayer()
+{
+	APawn* Player = IntroPlayer.Get();
+	APlayerController* PC = IntroController.Get();
+	const bool bWasHolding = IntroPlayer.IsExplicitlyNull() == false || IntroController.IsExplicitlyNull() == false;
+	IntroPlayer.Reset();
+	IntroController.Reset();
+	if (!bWasHolding)
+	{
+		return;
+	}
+	UActorComponent* DS = Player ? UGOTACombatantObserver::FindDamageSystem(Player) : nullptr;
+	if (DS)
+	{
+		FGOTABlueprintCombat::SetBool(DS, TEXT("IsInvincible"), false);
+	}
+	if (Player)
+	{
+		FGOTABlueprintCombat::SetBool(Player, TEXT("CanMove"), true);
+	}
+	if (PC)
+	{
+		// A lost pawn may already have been replaced: the camera goes back to whatever the controller has now.
+		if (APawn* Current = PC->GetPawn())
+		{
+			PC->SetViewTargetWithBlend(Current, 0.7f, VTBlend_Cubic);
+		}
+		else if (PC->GetViewTarget() == IntroCamera)
+		{
+			PC->SetViewTarget(PC);
+		}
+		PC->SetIgnoreMoveInput(false);
+		if (PC->InputComponent)
+		{
+			PC->InputComponent->KeyBindings.RemoveAll([this](const FInputKeyBinding& B) { return B.KeyDelegate.IsBoundToObject(this); });
+		}
+	}
+	UE_LOG(LogGOTABoss, Log, TEXT("Boss intro released %s (pawn kept=%d, invincible=%d, move ignored=%d, nearest now %s)"), *GetNameSafe(Player), Player ? 1 : 0,
+		DS && FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible")) ? 1 : 0, PC && PC->IsMoveInputIgnored() ? 1 : 0, *GetNameSafe(FindTarget()));
 }
 
 // ============================================================================ movement helpers

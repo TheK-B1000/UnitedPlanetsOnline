@@ -1,0 +1,10 @@
+# Boss intro with two players: the held player's pawn is lost during the intro. Its controller must still be released.
+waitplayers 2 120
+wait 8
+gota.Boss.Spawn QuarryBehemoth
+wait 1
+gota.Boss.IntroRetarget lost
+wait 6
+gota.Boss.Dump
+gota.Net.Players
+quit
