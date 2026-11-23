@@ -1,0 +1,13 @@
+# GAS milestone E, damage cap: two burning zones over one target do not stack. Burning runs once at 2 per second, 5 ticks
+# in all (pulses at 1, 2 and 3 s keep it up to 6 s), credited to the caster, and a shield absorbs every tick.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Ability.Status 1 Shielded 9 20
+gota.Ability.Zone 0 Fire 0 400 3.0 1.0
+gota.Ability.Zone 0 Fire 0 400 3.0 1.0
+wait 7.5
+gota.Ability.Dump
+quit

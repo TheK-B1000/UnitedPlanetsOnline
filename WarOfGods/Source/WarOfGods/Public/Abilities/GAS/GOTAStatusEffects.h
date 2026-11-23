@@ -317,7 +317,7 @@ namespace GOTAGAS
 	 * landed. Returns whether the damage system took it.
 	 */
 	bool DealElementalHit(APawn* Victim, AActor* Source, float Amount, const FGameplayTag& Element, bool bCanBeBlocked = true,
-		const FString& Response = TEXT("Stagger"));
+		const FString& Response = TEXT("Stagger"), bool bForceInterrupt = true);
 	int32 AspectsOf(EGOTAStatus Status);
 
 	/** Stunned or Frozen. */

@@ -1,0 +1,12 @@
+# GAS milestone E: when the caster dies, its zone and its projectile in flight end at once.
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 900 1
+wait 0.3
+gota.Ability.Zone 0 Fire 0 400 10.0 0.5
+gota.Ability.Projectile 0 Fire 10 100
+wait 0.2
+gota.Duel.Hurt 0 9999
+wait 1.5
+quit

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Abilities/GAS/GOTAEffectDelivery.h"
 #include "Abilities/GAS/GOTAStatusPolicy.h"
 #include "GOTABossTypes.generated.h"
 
@@ -24,7 +25,11 @@ enum class EGOTABossAttackKind : uint8
 	/** Radial damage at each hit window's start (the impact frame). Repeats ChainCount times in phase II. */
 	Slam,
 	/** Close-range grapple: validated range + facing at the window; damage + toss (no attachment). */
-	Grab
+	Grab,
+	/** Supernatural: at the window's start, launches a projectile at where the target is then (a sidestep avoids it). */
+	Projectile,
+	/** Supernatural: at the window's start, marks a zone under the target; it arms after ZoneArmDelay. */
+	Hazard
 };
 
 /** One damaging moment inside an attack animation, in montage seconds (play rate already applied by the montage). */
@@ -84,6 +89,20 @@ struct WAROFGODS_API FGOTABossAttack
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") TSoftObjectPtr<USoundBase> CastSound;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") TSoftObjectPtr<USoundBase> ImpactSound;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boss") float ImpactKick = 1.2f;
+
+	// --- GAS milestone E: supernatural attacks (Projectile, Hazard) ---
+	/** What the projectile or zone does. Damage comes from the hit window; blocking from bCanBeBlocked; the label from AttackId. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") FGOTAEffectPayload Power;
+	/** The projectile in flight, or the zone's ground marking. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") TSoftObjectPtr<UParticleSystem> PowerFX;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") float ProjectileSpeed = 1400.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") float ProjectileRadius = 45.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") float ProjectileRange = 1800.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") float ZoneRadius = 300.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") float ZoneSeconds = 5.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") float ZoneInterval = 1.f;
+	/** The warning: the zone is marked but harmless for this long. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power") float ZoneArmDelay = 1.f;
 };
 
 /** A boss encounter's creature: body, movement, health, phases and attacks. Primary asset "GOTABoss". */

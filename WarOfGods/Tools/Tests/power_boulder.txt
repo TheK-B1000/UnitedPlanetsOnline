@@ -1,0 +1,23 @@
+# GAS milestone E, Molten Boulder: lands and ignites; a player who moves after the release is missed; a shield absorbs it.
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+gota.Boss.AI 2
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 800 0
+gota.Boss.Attack MoltenBoulder
+wait 2.6
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 800 0
+gota.Boss.PlaceOnAttack 1.02 800 600
+gota.Boss.Attack MoltenBoulder
+wait 3.2
+gota.Ability.ResetCooldowns 0
+gota.Test.Heal 0 200
+gota.Ability.Status 0 Shielded 5 30
+gota.Boss.PlaceTarget 800 0
+gota.Boss.Attack MoltenBoulder
+wait 2.2
+gota.Ability.Dump
+quit

@@ -5,6 +5,7 @@
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
+#include "Combat/GOTACombatLive.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SceneComponent.h"
@@ -83,20 +84,18 @@ namespace GOTAGAS
 		{
 			return false;
 		}
-		if (const UGOTADuelFighterComponent* Fighter = Victim->FindComponentByClass<UGOTADuelFighterComponent>(); Fighter && Fighter->IsDodgeProtected())
-		{
-			UE_LOG(LogGOTADelivery, Log, TEXT("%s on %s: perfect-dodged"), *Payload.Label.ToString(), *GetNameSafe(Victim));
-			return false;
-		}
 		bool bLanded;
 		if (Payload.Damage > 0.f)
 		{
-			bLanded = DealElementalHit(Victim, Source, Payload.Damage, Payload.Element, Payload.bCanBeBlocked, Payload.HitResponse);
+			bLanded = DealElementalHit(Victim, Source, Payload.Damage, Payload.Element, Payload.bCanBeBlocked, Payload.HitResponse, Payload.bInterrupts);
 		}
 		else
 		{
 			// Status only: full resistance to the element means nothing lands, as for a damaging hit.
-			bLanded = !Payload.Element.IsValid() || GetElementDamageScale(Victim, Payload.Element) > 0.f;
+			// So do invincibility frames.
+			const UActorComponent* DS = UGOTACombatantObserver::FindDamageSystem(Victim);
+			bLanded = !(DS && FGOTABlueprintCombat::GetBool(DS, TEXT("IsInvincible")))
+				&& (!Payload.Element.IsValid() || GetElementDamageScale(Victim, Payload.Element) > 0.f);
 			if (bLanded && Payload.Element.IsValid())
 			{
 				ApplyElementOnHit(Victim, Payload.Element, Source);
@@ -146,7 +145,7 @@ namespace GOTAGAS
 	}
 
 	AGOTAEffectZone* SpawnZone(AActor* Source, const FVector& Location, const FGOTAEffectPayload& Payload, float Radius, float Duration, float Interval,
-		UParticleSystem* BodyFX, float FXScale)
+		UParticleSystem* BodyFX, float FXScale, UParticleSystem* ImpactFX, float ArmDelay)
 	{
 		UWorld* World = Source ? Source->GetWorld() : nullptr;
 		if (!World || !Source->HasAuthority() || Radius <= 0.f || Duration <= 0.f || Interval <= 0.f)
@@ -165,14 +164,56 @@ namespace GOTAGAS
 		Zone->Source = Source;
 		Zone->Payload = Payload;
 		Zone->Payload.Damage *= OutgoingScale(Source);
+		Zone->Payload.bInterrupts = false;
 		Zone->Radius = Radius;
 		Zone->BodyFX = BodyFX;
+		Zone->ImpactFX = ImpactFX;
 		Zone->FXScale = FXScale;
 		Zone->FinishSpawning(FTransform(Location));
-		Zone->StartZone(Duration, Interval);
-		UE_LOG(LogGOTADelivery, Log, TEXT("ZONE %s started by %s: radius %.0f, %.1fs, every %.2fs, damage %.1f"), *Payload.Label.ToString(), *GetNameSafe(Source),
-			Radius, Duration, Interval, Zone->Payload.Damage);
+		Zone->StartZone(Duration, Interval, ArmDelay);
+		UE_LOG(LogGOTADelivery, Log, TEXT("ZONE %s started by %s: radius %.0f, %.1fs, every %.2fs, damage %.1f, arms in %.1fs"), *Payload.Label.ToString(), *GetNameSafe(Source),
+			Radius, Duration, Interval, Zone->Payload.Damage, ArmDelay);
 		return Zone;
+	}
+
+	AGOTAProjectile* FindIncomingProjectile(const APawn* Victim, float MaxLead, float& OutLead)
+	{
+		const UWorld* World = Victim ? Victim->GetWorld() : nullptr;
+		if (!World)
+		{
+			return nullptr;
+		}
+		float CapRadius, CapHalf;
+		CapsuleOf(Victim, CapRadius, CapHalf);
+		const FVector Centre = Victim->GetActorLocation();
+		AGOTAProjectile* Best = nullptr;
+		OutLead = MaxLead;
+		for (TActorIterator<AGOTAProjectile> It(World); It; ++It)
+		{
+			AGOTAProjectile* P = *It;
+			const FVector V = P->Velocity;
+			const float Speed = V.Size();
+			if (P->HasExpired() || Speed <= 0.f || !CanAffect(P->Source.Get(), Victim))
+			{
+				continue;
+			}
+			const FVector Dir = V / Speed;
+			const FVector From = P->GetActorLocation();
+			const float Along = FVector::DotProduct(Centre - From, Dir);
+			const FVector Closest = From + Dir * FMath::Max(Along, 0.f);
+			if (Along < -CapRadius || FVector::Dist2D(Closest, Centre) > P->CollisionRadius + CapRadius
+				|| FMath::Abs(Closest.Z - Centre.Z) > P->CollisionRadius + CapHalf)
+			{
+				continue;
+			}
+			const float Lead = FMath::Max(Along - P->CollisionRadius - CapRadius, 0.f) / Speed;
+			if (Lead <= OutLead)
+			{
+				OutLead = Lead;
+				Best = P;
+			}
+		}
+		return Best;
 	}
 
 	void ClearDeliveries(const UWorld* World, const AActor* Source)
@@ -249,7 +290,7 @@ void AGOTAEffectDelivery::Multicast_Impact_Implementation(FVector_NetQuantize Lo
 bool AGOTAEffectDelivery::SourceIsGone() const
 {
 	const AActor* S = Source.Get();
-	return !S || UGOTACombatantObserver::IsCombatantDefeated(S);
+	return !S || UGOTACombatantObserver::IsCombatantDefeated(S) || !GOTACombatLive::IsCombatLive(GetWorld());
 }
 
 void AGOTAEffectDelivery::Expire(const TCHAR* Why)
@@ -302,7 +343,7 @@ void AGOTAProjectile::Tick(float DeltaSeconds)
 	}
 	if (SourceIsGone())
 	{
-		Expire(TEXT("source gone"));
+		Expire(TEXT("source gone or round over"));
 		return;
 	}
 
@@ -325,7 +366,7 @@ void AGOTAProjectile::Tick(float DeltaSeconds)
 	for (TActorIterator<APawn> It(World); It; ++It)
 	{
 		APawn* P = *It;
-		if (!GOTAGAS::CanAffect(Source.Get(), P))
+		if (!GOTAGAS::CanAffect(Source.Get(), P) || DodgedBy.Contains(P))
 		{
 			continue;
 		}
@@ -342,6 +383,13 @@ void AGOTAProjectile::Tick(float DeltaSeconds)
 				Best = P;
 			}
 		}
+	}
+	if (UGOTADuelFighterComponent* Fighter = Best ? Best->FindComponentByClass<UGOTADuelFighterComponent>() : nullptr; Fighter && Fighter->ConsumeDodgedDelivery(this))
+	{
+		// That fighter's perfect dodge covers this projectile only; it flies on and can still hit someone behind them.
+		DodgedBy.Add(Best);
+		UE_LOG(LogGOTADelivery, Log, TEXT("PROJECTILE %s perfect-dodged by %s"), *Payload.Label.ToString(), *GetNameSafe(Best));
+		Best = nullptr;
 	}
 	if (Best)
 	{
@@ -382,26 +430,33 @@ void AGOTAEffectZone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME_CONDITION(AGOTAEffectZone, Radius, COND_InitialOnly);
 }
 
-void AGOTAEffectZone::StartZone(float InDuration, float InInterval)
+void AGOTAEffectZone::StartZone(float InDuration, float InInterval, float InArmDelay)
 {
 	if (!HasAuthority())
 	{
 		return;
 	}
 	Interval = InInterval;
-	EndTime = GetWorld()->GetTimeSeconds() + InDuration;
-	GetWorldTimerManager().SetTimer(PulseTimer, this, &AGOTAEffectZone::Pulse, Interval, true);
+	bAnnounceArming = InArmDelay > 0.f;
+	EndTime = GetWorld()->GetTimeSeconds() + InArmDelay + InDuration;
+	GetWorldTimerManager().SetTimer(PulseTimer, this, &AGOTAEffectZone::Pulse, Interval, true, InArmDelay > 0.f ? InArmDelay : Interval);
 }
 
 void AGOTAEffectZone::Pulse()
 {
 	if (SourceIsGone())
 	{
-		Expire(TEXT("source gone"));
+		Expire(TEXT("source gone or round over"));
 		return;
 	}
 	UWorld* World = GetWorld();
 	const FVector Centre = GetActorLocation();
+	if (bAnnounceArming)
+	{
+		bAnnounceArming = false;
+		UE_LOG(LogGOTADelivery, Log, TEXT("ZONE %s armed"), *Payload.Label.ToString());
+		Multicast_Impact(Centre);
+	}
 	int32 Reached = 0;
 	for (TActorIterator<APawn> It(World); It; ++It)
 	{

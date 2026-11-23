@@ -122,7 +122,9 @@ namespace GOTABossTest
 	{
 		if (UGOTABossComponent* B = Boss(); B && Args.Num() > 0)
 		{
-			B->DebugSetAI(FCString::Atoi(*Args[0]) != 0);
+			const int32 Mode = FCString::Atoi(*Args[0]);
+			B->DebugSetAI(Mode != 0);
+			B->DebugSetForcedOnly(Mode == 2);
 		}
 	}
 

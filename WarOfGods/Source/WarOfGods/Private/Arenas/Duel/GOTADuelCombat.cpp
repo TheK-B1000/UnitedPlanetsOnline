@@ -8,6 +8,7 @@
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "Arenas/Duel/DuelGameMode.h"
 #include "Arenas/Duel/DuelGameState.h"
+#include "Abilities/GAS/GOTAEffectDelivery.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
 #include "Abilities/GAS/GOTAGameplayTags.h"
@@ -561,6 +562,45 @@ void UGOTADuelFighterComponent::TickChallengerClient()
 }
 
 bool UGOTADuelFighterComponent::TryArmPerfectDodge(APawn* Opp, const TCHAR* Reason)
+{
+	const bool bAttack = TryArmAttackDodge(Opp, Reason);
+	UWorld* World = GetWorld();
+	if (!World || World->GetTimeSeconds() <= CounterInvulnEndTime || GOTAGAS::IsIncapacitated(GetOwner()))
+	{
+		return bAttack;
+	}
+	float Lead = 0.f;
+	const AGOTAProjectile* Projectile = GOTAGAS::FindIncomingProjectile(Cast<APawn>(GetOwner()), PerfectDodgeLeadSeconds, Lead);
+	if (!Projectile)
+	{
+		return bAttack;
+	}
+	const double Now = World->GetTimeSeconds();
+	GuardDelivery = Projectile;
+	GuardDeliveryUntil = Now + Lead + 0.15;
+	DodgeResolveTime = FMath::Max(DodgeResolveTime, Now + Lead + 0.2);
+	if (!bAttack)
+	{
+		bDodgeArmed = true;
+		HealthAtDodge = UGOTACombatantObserver::ReadVitals(GetOwner()).Health;
+		LastArmLead = Lead;
+		LastArmAttacker = Cast<APawn>(Projectile->Source.Get());
+	}
+	UE_LOG(LogGOTADuelAI, Log, TEXT("Dodge arm (%s): projectile lead=%.2f, guarding %s until %.2f"), Reason, Lead, *GetNameSafe(Projectile), GuardDeliveryUntil);
+	return true;
+}
+
+bool UGOTADuelFighterComponent::ConsumeDodgedDelivery(const AActor* Delivery)
+{
+	if (!Delivery || GuardDelivery.Get() != Delivery || !GetWorld())
+	{
+		return false;
+	}
+	GuardDelivery.Reset();
+	return GetWorld()->GetTimeSeconds() <= GuardDeliveryUntil;
+}
+
+bool UGOTADuelFighterComponent::TryArmAttackDodge(APawn* Opp, const TCHAR* Reason)
 {
 	if (!IsValid(Opp) || !GetWorld())
 	{

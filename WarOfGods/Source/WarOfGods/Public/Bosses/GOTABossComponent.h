@@ -89,6 +89,8 @@ public:
 	/** Test hooks (server). */
 	void DebugForceAttack(FName AttackId);
 	void DebugSetAI(bool bEnabled) { bAIEnabled = bEnabled; }
+	/** Test scripts (gota.Boss.AI 2): the boss stands still and uses only forced attacks. */
+	void DebugSetForcedOnly(bool bOn) { bDebugForcedOnly = bOn; }
 
 protected:
 	UFUNCTION()
@@ -177,6 +179,7 @@ protected:
 
 	// Server state
 	bool bAIEnabled = true;
+	bool bDebugForcedOnly = false;
 	bool bIntroDone = false;
 	bool bBodyApplied = false;
 	double StateUntil = 0.0;

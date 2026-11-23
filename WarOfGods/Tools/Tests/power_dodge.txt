@@ -1,0 +1,24 @@
+# GAS milestone E: a dodge timed against a boulder in flight is protected from that boulder. A dodge long before it
+# flies arms nothing, so the boulder lands.
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+gota.Boss.AI 2
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 800 0
+gota.Boss.Attack MoltenBoulder
+wait 1.08
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 3.2
+gota.Ability.ResetCooldowns 0
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 800 0
+gota.Boss.Attack MoltenBoulder
+wait 0.15
+gota.Duel.CallF 0 DodgeInDirection 450
+wait 0.5
+gota.Boss.PlaceTarget 800 0
+wait 2.5
+gota.Ability.Dump
+quit

@@ -142,6 +142,9 @@ public:
 	 */
 	bool TryGuardDodgedImpact(APawn* Attacker, const UAnimMontage* Montage, float NotifyTime);
 
+	/** Server: true once if this fighter's perfect dodge was timed against exactly this projectile (same window rule). */
+	bool ConsumeDodgedDelivery(const AActor* Delivery);
+
 	UFUNCTION(BlueprintPure, Category = "Duel|Combat")
 	APawn* GetOpponent() const { return Opponent.Get(); }
 
@@ -202,6 +205,8 @@ protected:
 	void TickChallengerClient();
 	/** Server: arm dodge protection if Opp has a timely incoming impact. Returns true when armed/extended. */
 	bool TryArmPerfectDodge(APawn* Opp, const TCHAR* Reason);
+	/** The melee, boss and charge part of TryArmPerfectDodge. */
+	bool TryArmAttackDodge(APawn* Opp, const TCHAR* Reason);
 	ADuelGameState* GetDuelGS() const;
 	UStatsComponent* FindOrAddStats() const;
 	bool IsRoundLive() const;
@@ -250,6 +255,9 @@ protected:
 	TWeakObjectPtr<const UAnimMontage> GuardMontage;
 	float GuardNotifyTime = -1.f;
 	double GuardUntil = 0.0;
+	/** The one projectile an armed dodge is timed against, until its arrival + 0.15 s. */
+	TWeakObjectPtr<const AActor> GuardDelivery;
+	double GuardDeliveryUntil = 0.0;
 	bool bServerDodgeInvincible = false;
 	FDelegateHandle GuardClearHandle;
 	void SetServerDodgeInvincible(bool bOn);

@@ -1,0 +1,26 @@
+# GAS milestone E, Scorched Earth: warned for 1 s, then burns whoever stays. Stepping out during the warning avoids it.
+# The boss's death clears a zone that has not armed yet.
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+gota.Boss.AI 2
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 500 0
+gota.Boss.Attack ScorchedEarth
+wait 7.5
+gota.Ability.ResetCooldowns 0
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 500 0
+gota.Boss.PlaceOnAttack 1.1 500 750
+gota.Boss.Attack ScorchedEarth
+wait 7.5
+gota.Ability.ResetCooldowns 0
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 500 0
+gota.Boss.Attack ScorchedEarth
+wait 1.4
+gota.Duel.Hurt 1 9999
+wait 1.5
+gota.Ability.Dump
+quit

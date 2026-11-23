@@ -625,7 +625,7 @@ namespace GOTAGAS
 		return Row->Status;
 	}
 
-	bool DealElementalHit(APawn* Victim, AActor* Source, float Amount, const FGameplayTag& Element, bool bCanBeBlocked, const FString& Response)
+	bool DealElementalHit(APawn* Victim, AActor* Source, float Amount, const FGameplayTag& Element, bool bCanBeBlocked, const FString& Response, bool bForceInterrupt)
 	{
 		if (!Victim || !Victim->HasAuthority() || Amount <= 0.f || UGOTACombatantObserver::IsCombatantDefeated(Victim))
 		{
@@ -633,7 +633,7 @@ namespace GOTAGAS
 		}
 		const float Scale = GetElementDamageScale(Victim, Element);
 		const float Scaled = Amount * Scale;
-		const bool bLanded = Scaled > 0.f && FGOTABlueprintCombat::ApplyDamage(Victim, Source, Scaled, bCanBeBlocked, false, Response);
+		const bool bLanded = Scaled > 0.f && FGOTABlueprintCombat::ApplyDamage(Victim, Source, Scaled, bCanBeBlocked, false, Response, bForceInterrupt);
 		UE_LOG(LogGOTAStatus, Log, TEXT("%s: ELEMENT hit %s %.1f (x%.2f element) -> %.1f (landed=%d) from %s"), *GetNameSafe(Victim), *Element.ToString(),
 			Amount, Scale, Scaled, bLanded ? 1 : 0, *GetNameSafe(Source));
 		if (bLanded)

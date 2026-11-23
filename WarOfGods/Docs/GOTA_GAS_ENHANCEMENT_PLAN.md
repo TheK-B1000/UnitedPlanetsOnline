@@ -30,8 +30,8 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestone B: shields, buffs, debuffs | `9d53e51` | Done (packaged, 54/54) |
 | Milestones C and D: elements, hero abilities | `a38b241` | Done (editor 63/63; packaged 62/63 first pass, the one timing failure passed 3 of 3 on rerun) |
 | Milestone E, part 1: projectiles, zones, World Burn zone | `d6a9ae2` | Editor only: 65/66, the one failure a stale ignite count; Heroes and Delivery 8/8 after correcting it. Full suite not repeated. No packaged run |
-| Milestone E: remote-client delivery test | this commit | Editor, listen server + one client: pass |
-| Milestone E, part 2: enemy powers | | Not started |
+| Milestone E: remote-client delivery test | `a956541` | Editor, listen server + one client: pass |
+| Milestone E, part 2: enemy powers | this commit | Editor, clean build: 72/72 on the first run. Packaged, four-player and latency runs still to do |
 | Milestones F, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
@@ -276,7 +276,7 @@ The card effects use the statuses and elements from A–C through new data field
 | Nyx | Void Shield | Usable while stunned or frozen, breaks free of control, Veiled 1.3 s, then a 25-point shield for 4 s |
 | Nyx | Soul Drain | Steals up to 20 Divine Momentum from the target, in addition to Dread |
 | Drakon | Unchained Fury | Fire: ignites |
-| Varoth | World Burn | Fire: ignites and still dreads. It is an instant hit; the persistent burning zone belongs to milestone E |
+| Varoth | World Burn | Fire: ignites and still dreads. Milestone E adds a 4 s burning zone (provisional balance, see below) |
 | Varoth | Colossus Form | Also Empowered: +25% outgoing damage for 6 s |
 | Zephyr | Gale Rush | Lightning: shocks |
 | Lysara | Gravity Well | Frost: chills |
@@ -285,15 +285,27 @@ The card effects use the statuses and elements from A–C through new data field
 
 `GOTAEffectDelivery` adds a data payload (`FGOTAEffectPayload`), a straight-line projectile (`AGOTAProjectile`) and a persistent area (`AGOTAEffectZone`). The server alone decides who is hit. Clients receive the initial state once and draw it. Every hit goes through `GOTAGAS::DeliverEffect`, then `DealElementalHit` and the victim's `BPC_DamageSystem`, so there is no second health, immunity or attribution path.
 
-- **Targets (`GOTAGAS::CanAffect`).** Living combatants only, never the source, a co-op ally or an untargetable (Veiled) pawn. Enemy powers never hit other enemies. A perfect dodge is honoured.
+- **Targets (`GOTAGAS::CanAffect`).** Living combatants only, never the source, a co-op ally or an untargetable (Veiled) pawn. Enemy powers never hit other enemies.
+- **Dodge.** A dodge timed within 0.35 s of a projectile's arrival protects against that one projectile, through its impact plus 0.15 s. An early dodge protects nothing. Zones are avoided by leaving them, so a dodge gives no protection from a zone pulse.
 - **Projectile.** Swept every server frame. World geometry stops it, and it ends at maximum range.
 - **Zone.** A server timer at its interval, with no per-frame work. Needs a clear line from the centre. A zone with 0 damage applies only its element's status, and full resistance stops that too.
-- **Cleanup.** Deliveries end when their source is defeated or its abilities reset for a round.
-- **First user.** World Burn leaves a 4 s, 1 s interval burning zone in its radius. Standing in it keeps Burning refreshed, so a target that stays takes up to 7 burn ticks (14 damage) instead of 3 (6). This has had no human balance testing.
+- **Cleanup.** Deliveries end when their source is defeated, its abilities reset for a round, or the round is no longer live.
+- **World Burn (provisional balance).** It leaves a 4 s, 1 s interval burning zone in its radius. Standing in it keeps Burning refreshed, so a target that stays takes up to 7 burn ticks (14 damage) instead of 3 (6). This has had no human balance testing and is not to be retuned without evidence.
+
+**Enemy powers (Quarry Behemoth, data in `DA_Boss_QuarryBehemoth`, built by `Tools/GOTA_BuildBosses.py`).** Both are boss attack entries that use the delivery path above, so there is no second damage system. Their numbers are provisional.
+
+| Power | Use | Warning and counterplay |
+|---|---|---|
+| Molten Boulder | Fire projectile, 12 damage plus ignite, range 420 to 1500, cooldown 9 s, blockable | Telegraph text and a 0.95 s wind-up. Sidestep, block, shield or a timed dodge |
+| Scorched Earth | Phase II only. Fire zone, radius 300, 5 s, 1 s pulses, no direct damage, never staggers, cooldown 14 s | Telegraph text and a 1 s arming delay. Walk out. A dodge does not protect |
+
+**Verified in the editor.** Overlapping zones gave exactly 5 ticks of 2.0 rather than stacking, and a shield absorbed each. World Burn gave at most 7 ticks (14 damage), all credited to the caster. A caster's death ended its zone and projectile, and a boss's death cleared a zone that had not armed.
 
 **Remote client (editor, listen server + one client, no added latency or loss).** The host decided a projectile hit and three zone pulses. The client saw both deliveries, received the impact, removed both, and logged no hit of its own.
 
-Not done yet: real enemy powers using this path, a run under simulated latency and loss, and packaged verification.
+**Known limits.** Only the Quarry Behemoth has powers. Regular Horde enemies and Story's Blueprint shrine boss do not. The ground-marker effect has not been checked by eye. A Blueprint hit that is lethal before reduction still kills. The host's Blueprint 0.20 s i-frames also cover other attackers. A modified client's local dodge is only corrected by server movement.
+
+Not done yet: packaged verification, four-player Horde and Story with these effects, and a run under simulated latency and loss.
 
 ## Behavior changes
 

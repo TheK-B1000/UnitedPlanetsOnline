@@ -32,6 +32,8 @@ struct WAROFGODS_API FGOTAEffectPayload
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect") float StatusMagnitude = 0.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect") bool bCanBeBlocked = true;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect") FString HitResponse = TEXT("Stagger");
+	/** The hit cuts the victim's action short. Zones never do: a repeating pulse must not become a stun lock. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect") bool bInterrupts = true;
 };
 
 /** Shared base: source, payload and cleanup. Server decides everything; clients only draw. */
@@ -47,6 +49,7 @@ public:
 
 	/** Server: stop now, deal nothing more. Clients keep the actor just long enough to receive the last impact. */
 	void Expire(const TCHAR* Why);
+	bool HasExpired() const { return bExpired; }
 
 	FGOTAEffectPayload Payload;
 	TWeakObjectPtr<AActor> Source;
@@ -87,6 +90,8 @@ public:
 
 private:
 	float Travelled = 0.f;
+	/** Fighters who perfect-dodged this projectile: it flies on through them. */
+	TArray<TWeakObjectPtr<const APawn>> DodgedBy;
 };
 
 /** Persistent area: applies the payload to everyone inside on a fixed server interval, then ends. */
@@ -101,7 +106,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Server, once after spawning. */
-	void StartZone(float InDuration, float InInterval);
+	void StartZone(float InDuration, float InInterval, float InArmDelay = 0.f);
 
 	UPROPERTY(Replicated) float Radius = 300.f;
 
@@ -111,6 +116,8 @@ private:
 	FTimerHandle PulseTimer;
 	double EndTime = 0.0;
 	float Interval = 1.f;
+	/** A warned zone: harmless for its arm delay, then the impact effect plays and the first pulse lands. */
+	bool bAnnounceArming = false;
 };
 
 namespace GOTAGAS
@@ -124,7 +131,9 @@ namespace GOTAGAS
 		float Speed, float CollisionRadius, float MaxDistance, UParticleSystem* BodyFX = nullptr, UParticleSystem* ImpactFX = nullptr, float FXScale = 1.f);
 	/** Server: start a zone at Location. The source's outgoing damage modifiers are taken when it starts. */
 	WAROFGODS_API AGOTAEffectZone* SpawnZone(AActor* Source, const FVector& Location, const FGOTAEffectPayload& Payload, float Radius, float Duration,
-		float Interval, UParticleSystem* BodyFX = nullptr, float FXScale = 1.f);
+		float Interval, UParticleSystem* BodyFX = nullptr, float FXScale = 1.f, UParticleSystem* ImpactFX = nullptr, float ArmDelay = 0.f);
+	/** Server: the hostile projectile that will reach Victim soonest, within MaxLead seconds (perfect dodge timing). */
+	WAROFGODS_API AGOTAProjectile* FindIncomingProjectile(const APawn* Victim, float MaxLead, float& OutLead);
 	/** Server: end every projectile and zone from Source (round reset, match transition). */
 	WAROFGODS_API void ClearDeliveries(const UWorld* World, const AActor* Source);
 }

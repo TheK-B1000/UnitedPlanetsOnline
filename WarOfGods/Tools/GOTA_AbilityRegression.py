@@ -333,7 +333,28 @@ CASES = {
           (r"ZONE TestPower pulse: 0 target\(s\)", 2), (r"ZONE TestPower ended \(duration\)", 2), (r"ZONE TestPower ended \(cleared\)", 1)]),
         ("World Burn leaves a burning zone", "?Opponent=AI?Hero=Varoth?DevHeroes=1", "delivery_worldburn.txt",
          [(r"WorldBurn hit \S+ for 5\.0 \(landed=1\)", 1), (r"ZONE WorldBurn started by \S+: radius 500, 4\.0s, every 1\.00s, damage 0\.0", 1),
-          (r"ZONE WorldBurn pulse: 1 target\(s\)", 4), (r"ZONE WorldBurn ended \(duration\)", 1), (r"Burning tick on \S+ for 2\.0 \(landed=1\)", True)]),
+          (r"ZONE WorldBurn pulse: 1 target\(s\)", 4), (r"ZONE WorldBurn ended \(duration\)", 1),
+          (r"BP_Player\S*: Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\)", 7)]),  # provisional: 14 burn damage at most, credited to the caster
+        ("Overlapping zones do not stack; attribution; shield absorbs the burn", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "delivery_overlap.txt",
+         [(r"ZONE TestPower started", 2), (r"BP_Player\S*: Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\)", 5), (r"Burning tick on \S+ for (?!2\.0)", False),
+          (r"shield absorbed 2\.0 of 2\.0", 5)]),
+        ("Caster death ends its zone and projectile", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "delivery_cleanup.txt",
+         [(r"ZONE TestPower ended \(source gone or round over\)", 1), (r"PROJECTILE TestPower ended \(source gone or round over\)", 1),
+          (r"PROJECTILE TestPower hit", False)]),
+    ],
+    # GAS milestone E: the Quarry Behemoth's supernatural attacks, through the same delivery and damage path.
+    "EnemyPower": [
+        ("Molten Boulder: hits and ignites, sidestep misses, shield absorbs", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "power_boulder.txt",
+         [(r"PROJECTILE MoltenBoulder launched by BP_Boss\S+: damage 12\.0", 3), (r"PROJECTILE MoltenBoulder hit BP_Player\S+ after \d+ \(landed=1\)", 2),
+          (r"ELEMENT hit GOTA\.Element\.Fire 12\.0 \(x1\.00 element\) -> 12\.0 \(landed=1\)", 2), (r"BP_Player\S*: status Burning 3\.0s x2\.00", True),
+          (r"PROJECTILE MoltenBoulder (ended \(max range\)|stopped by)", True), (r"shield absorbed 12\.0 of 12\.0", 1)]),
+        ("Molten Boulder: a timed dodge is protected, an early dodge is not", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "power_dodge.txt",
+         [(r"PROJECTILE MoltenBoulder launched", 2), (r"Dodge arm \(\S+\): projectile lead=0\.\d+", 1),
+          (r"PROJECTILE MoltenBoulder hit BP_Player\S+ after \d+ \(landed=1\)", 1)]),
+        ("Scorched Earth: warned, burns who stays, avoidable, cleared on boss death", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "power_zone.txt",
+         [(r"ZONE ScorchedEarth started by BP_Boss\S+: radius 300, 5\.0s, every 1\.00s, damage 0\.0, arms in 1\.0s", 3), (r"ZONE ScorchedEarth armed", 2),
+          (r"ZONE ScorchedEarth pulse: 1 target\(s\)", True), (r"ZONE ScorchedEarth pulse: 0 target\(s\)", True), (r"ZONE ScorchedEarth ended \(duration\)", 2),
+          (r"ZONE ScorchedEarth ended \(cleared\)", 1), (r"BP_Boss\S*: Burning tick on BP_Player\S+ for 2\.0 \(landed=1\)", True)]),
     ],
 }
 # Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.

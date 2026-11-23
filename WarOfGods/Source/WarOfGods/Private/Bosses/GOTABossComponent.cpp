@@ -2,6 +2,7 @@
 
 #include "Bosses/GOTABossComponent.h"
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
+#include "Abilities/GAS/GOTAEffectDelivery.h"
 #include "Abilities/GAS/GOTAGameplayTags.h"
 #include "AIController.h"
 #include "Animation/AnimInstance.h"
@@ -441,6 +442,11 @@ void UGOTABossComponent::TickChase(APawn* Target, double Now)
 	const UGOTABossDefinition* Def = Definition.Get();
 	APawn* Owner = Cast<APawn>(GetOwner());
 	const float Dist = FVector::Dist2D(Target->GetActorLocation(), Owner->GetActorLocation());
+	if (bDebugForcedOnly && ForcedAttack.IsNone())
+	{
+		SetBrainMoving(nullptr, false); // test mode: stands still and uses only the attacks a script asks for
+		return;
+	}
 	if ((Now - LastAttackEnd >= CurrentAttackGap() || !ForcedAttack.IsNone()) && ChooseAttack(Target, Now))
 	{
 		return;
@@ -754,6 +760,29 @@ void UGOTABossComponent::ResolveWindow(const FGOTABossAttack& A, const FGOTABoss
 		UE_LOG(LogGOTABoss, Log, TEXT("Boss grapple: dist %.0f facing %.2f landed=%d"), To.Size(), Facing, bLanded ? 1 : 0);
 		break;
 	}
+	case EGOTABossAttackKind::Projectile:
+	case EGOTABossAttackKind::Hazard:
+	{
+		// The delivery layer decides who is hit and sends it through the victim's damage system.
+		ResolvedWindows.Add(WindowIndex);
+		FGOTAEffectPayload Payload = A.Power;
+		Payload.Label = A.AttackId;
+		Payload.Damage = Win.Damage;
+		Payload.bCanBeBlocked = A.bCanBeBlocked;
+		Payload.HitResponse = A.HitResponse;
+		if (A.Kind == EGOTABossAttackKind::Projectile)
+		{
+			const FVector From = Char->GetActorLocation() + Char->GetActorForwardVector() * (Char->GetCapsuleComponent()->GetScaledCapsuleRadius() + 60.f) + FVector(0.f, 0.f, 40.f);
+			GOTAGAS::FireProjectile(Char, From, Target->GetActorLocation() - From, Payload, A.ProjectileSpeed, A.ProjectileRadius, A.ProjectileRange,
+				A.PowerFX.LoadSynchronous(), A.ImpactFX.LoadSynchronous(), A.FXScale);
+		}
+		else
+		{
+			GOTAGAS::SpawnZone(Char, Target->GetActorLocation(), Payload, A.ZoneRadius, A.ZoneSeconds, A.ZoneInterval, A.PowerFX.LoadSynchronous(), A.FXScale,
+				A.ImpactFX.LoadSynchronous(), A.ZoneArmDelay);
+		}
+		break;
+	}
 	default:
 		break;
 	}
@@ -864,6 +893,10 @@ bool UGOTABossComponent::GetIncomingImpact(float& OutLead, bool& bOutBlockable, 
 		return false;
 	}
 	const FGOTABossAttack& A = Def->Attacks[AttackIndex];
+	if (A.Kind == EGOTABossAttackKind::Projectile || A.Kind == EGOTABossAttackKind::Hazard)
+	{
+		return false; // the danger is the projectile or zone, judged when it arrives, not the throwing animation
+	}
 	bOutBlockable = A.bCanBeBlocked;
 	bOutParryable = A.bCanBeBlocked && A.bCanBeParried;
 	if (A.Kind == EGOTABossAttackKind::Charge)
@@ -1029,6 +1062,7 @@ void UGOTABossComponent::Die()
 		return;
 	}
 	State = EGOTABossState::Dead;
+	GOTAGAS::ClearDeliveries(GetWorld(), GetOwner());
 	AttackIndex = INDEX_NONE;
 	bCharging = false;
 	SetBrainMoving(nullptr, false);

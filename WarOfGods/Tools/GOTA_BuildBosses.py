@@ -76,6 +76,22 @@ ATTACKS = [
          min=0, max=260, cooldown=11.0, w1=0.6, w2=0.8, track=0.35, recovery=1.2, rec2=0.8, block=False,
          telegraph="CRUSHING GRASP  -  BACK OFF!",
          impact_fx=VFX + "Hit/P_Concrete", fx_scale=1.6, cast_sfx=RS + "Rampage_Effort_Ability_E", impact_sfx="/Game/Audio/axe-block", kick=1.6),
+    # GAS milestone E, provisional balance. Answers a player who keeps away: aimed at where they stand at release, so a
+    # sidestep avoids it; blockable; a timed dodge passes through it. Ignites.
+    dict(id="MoltenBoulder", name="Molten Boulder", kind=K.PROJECTILE, anims=["Ability_RipNToss_Rip", "Ability_RipNToss_Toss"], rate=1.0,
+         windows=[(0.95, 1.00, 12, "hand_r")], min=420, max=1500, cooldown=9.0, w1=0.7, w2=0.9, track=0.85, recovery=1.1, rec2=0.8, block=True,
+         telegraph="MOLTEN BOULDER  -  SIDESTEP!", element="GOTA.Element.Fire", projectile_speed=1400, projectile_radius=45, projectile_range=1800,
+         power_fx="/Game/ParagonRampage/FX/Particles/Abilities/RipNToss/FX/P_Rampage_Rock_Flying",
+         impact_fx="/Game/ParagonRampage/FX/Particles/Abilities/RipNToss/FX/P_Rampage_Rock_HitWorld", fx_scale=1.0,
+         cast_sfx=RS + "Rampage_Effort_Ability_E", impact_sfx="/Game/Audio/axe-block", kick=1.0),
+    # Phase II only. Marks the ground under the target, harmless for 1 s, then keeps Burning on whoever stays (no direct
+    # damage, no stagger). Burning does not stack, so overlapping zones cannot exceed its 2 damage per second.
+    dict(id="ScorchedEarth", name="Scorched Earth", kind=K.HAZARD, anims=["Ability_GroundSmash_Start", "Ability_GroundSmash_End"], rate=1.0,
+         windows=[(0.80, 0.86, 0, "root")], min=0, max=1200, cooldown=14.0, w1=0.0, w2=0.8, track=0.70, recovery=1.2, rec2=0.8, block=False,
+         telegraph="SCORCHED EARTH  -  MOVE OUT!", element="GOTA.Element.Fire", zone_radius=300, zone_seconds=5.0, zone_interval=1.0, zone_arm_delay=1.0,
+         power_fx="/Game/ParagonSparrow/FX/Particles/Sparrow/Abilities/RainOfArrows/FX/P_RainArrowsTarget",
+         impact_fx=GFX + "P_Greystone_LeapAOE_GroundSmash", fx_scale=1.0,
+         cast_sfx=RS + "Rampage_Effort_Ability_Q", impact_sfx="/Game/Audio/sci-fi-explosion", kick=0.8),
 ]
 
 
@@ -140,6 +156,18 @@ def build_definition():
         at.set_editor_property("cast_sound", asset(a.get("cast_sfx")))
         at.set_editor_property("impact_sound", asset(a.get("impact_sfx")))
         at.set_editor_property("impact_kick", float(a.get("kick", 1.0)))
+        if a["kind"] in (K.PROJECTILE, K.HAZARD):
+            power = unreal.GOTAEffectPayload()
+            tag = unreal.GameplayTag()
+            tag.import_text('(TagName="%s")' % a["element"])
+            if a["element"] not in tag.export_text():
+                raise RuntimeError("element tag %s did not import" % a["element"])
+            power.set_editor_property("element", tag)
+            at.set_editor_property("power", power)
+            at.set_editor_property("power_fx", asset(a.get("power_fx")))
+            for key in ("projectile_speed", "projectile_radius", "projectile_range", "zone_radius", "zone_seconds", "zone_interval", "zone_arm_delay"):
+                if key in a:
+                    at.set_editor_property(key, float(a[key]))
         attacks.append(at)
         P(" attack", a["id"], "anims", [bool(x) for x in at.get_editor_property("animations")], "fx", bool(at.get_editor_property("impact_fx")))
     da.set_editor_property("attacks", attacks)
