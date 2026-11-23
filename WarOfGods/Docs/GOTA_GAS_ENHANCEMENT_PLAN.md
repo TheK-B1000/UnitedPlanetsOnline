@@ -31,7 +31,7 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestones C and D: elements, hero abilities | `a38b241` | Done (editor 63/63; packaged 62/63 first pass, the one timing failure passed 3 of 3 on rerun) |
 | Milestone E, part 1: projectiles, zones, World Burn zone | `d6a9ae2` | Editor only: 65/66, the one failure a stale ignite count; Heroes and Delivery 8/8 after correcting it. Full suite not repeated. No packaged run |
 | Milestone E: remote-client delivery test | `a956541` | Editor, listen server + one client: pass |
-| Milestone E, part 2: enemy powers | this commit | Editor, clean build: 72/72 on the first run. Packaged, four-player and latency runs still to do |
+| Milestone E, part 2: enemy powers | `729852b` | Editor, clean build: 72/72 on the first run. Packaged: 70/72 on the first pass, see the milestone E section. Four-player and latency runs still to do |
 | Milestones F, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
@@ -299,7 +299,16 @@ The card effects use the statuses and elements from A–C through new data field
 | Molten Boulder | Fire projectile, 12 damage plus ignite, range 420 to 1500, cooldown 9 s, blockable | Telegraph text and a 0.95 s wind-up. Sidestep, block, shield or a timed dodge |
 | Scorched Earth | Phase II only. Fire zone, radius 300, 5 s, 1 s pulses, no direct damage, never staggers, cooldown 14 s | Telegraph text and a 1 s arming delay. Walk out. A dodge does not protect |
 
-**Verified in the editor.** Overlapping zones gave exactly 5 ticks of 2.0 rather than stacking, and a shield absorbed each. World Burn gave at most 7 ticks (14 damage), all credited to the caster. A caster's death ended its zone and projectile, and a boss's death cleared a zone that had not armed.
+**Verified in the editor and package.** Overlapping zones never stacked: two zones gave 4 or 5 ticks of 2.0, and a shield absorbed each. World Burn gave 6 or 7 ticks (14 damage at most), all credited to the caster. A caster's death ended its zone and projectile, and a boss's death cleared a zone that had not armed.
+
+**Burn tick count varies by one.** A zone refresh restarts Burning's duration but not its tick timer, so the expiry and the last tick can fall within a few milliseconds of each other. Frame order then decides whether that last tick fires. The upper limit holds, and the result can only be one tick (2 damage) lower. The two tests were changed from an exact count to these ranges after the first packaged pass exposed this. Game code was not changed.
+
+**Packaged record (`729852b`, `B:\Unreal\GOTA_Builds\GAS_E_729852b`).** First pass: 70/72.
+
+| First-pass failure | Cause | Rerun on the same package |
+|---|---|---|
+| Time Lash, hit + slow + restore + cooldown + radius | Frame stall: the 0.5 s cast took 1.17 s to land, so the second press arrived during recovery. Same failure as the C + D package | TimeLash group, 3 passes: 12/12 cases, test unchanged |
+| Overlapping zones | Exact count of 5 ticks was wrong (see above); this run had 4 | Delivery group, 5 passes: 30/30 cases, with the corrected range |
 
 **Remote client (editor, listen server + one client, no added latency or loss).** The host decided a projectile hit and three zone pulses. The client saw both deliveries, received the impact, removed both, and logged no hit of its own.
 
