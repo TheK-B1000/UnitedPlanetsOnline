@@ -38,8 +38,9 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestone F1: status chips, shield bar, real health on every HUD | `a5ee0fd` | Editor, incremental build: 77/77 on the final code. Duel and Horde latency runs clean. No clean build, packaged or four-player run yet. See "Status HUD (F1)" |
 | Milestone F2: status bursts and shield break | `767ed26` | Editor, incremental build: 78/78 on the final code. Three latency runs clean. No packaged or four-player run yet. See "Status bursts (F2)" |
 | Milestone F3: hazard ground marks (boulder lane, zone edge, warning to burning, friend or foe) | `ee9896f` | Editor, incremental build: 80/80 on the final code. Four latency runs clean. No packaged or four-player run yet. See "Hazard ground marks (F3)" |
-| Milestone F4: ability sounds, shield break and fade, own hard control, resist and dodge feedback | this commit | Editor, incremental build: 81/81 on the final code. Two latency runs clean. No packaged or four-player run, and no human listening. See "Sound and feedback (F4)" |
-| Milestones F5, G | | Not started |
+| Milestone F4: ability sounds, shield break and fade, own hard control, resist and dodge feedback | `f17f47c` | Editor, incremental build: 81/81 on the final code. Two latency runs clean. No human listening. See "Sound and feedback (F4)" |
+| Milestone F5: final GAS integration checkpoint, A to F | game code `f17f47c`, scripts `a6d3f4d`, record this commit | Editor, clean build: 81/81 first pass. Packaged (`GAS_F_f17f47c`): 81/81 first pass. Four-player Horde and Story, clean and at 120±30 ms with 5% loss: all clean. See "Final GAS integration checkpoint (F5)" |
+| Milestone G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
 
@@ -277,7 +278,44 @@ Verified on the final F4 code (editor, incremental build):
 | Focused: new multiplayer feedback case, Control (boss resist sound), Delivery (World Burn sounds) | 12/12 |
 | Latency, 120±30 ms and 5% loss, two runs (remote player) | stun and freeze each sounded once on and once off; break said SHIELD BROKEN; expiry said SHIELD FADED; death silent; no ensure or fatal; clean exits |
 
-Not verified: a human listening to any of it (sounds were chosen by name and checked for length and looping only), the Horde and Story PERFECT DODGE line in a live run (checked by reading the code; no cheap test makes a boss projectile meet a remote dodger outside Duel), four players casting together, and a packaged build.
+Not verified: a human listening to any of it (sounds were chosen by name and checked for length and looping only), the Horde and Story PERFECT DODGE line in a live run (checked by reading the code; no cheap test makes a boss projectile meet a remote dodger outside Duel), four players casting together, and a packaged build. (F5 later ran the packaged build and four-player sessions.)
+
+### Final GAS integration checkpoint (F5)
+
+One checkpoint over milestones A to F on the final code. Nothing was changed for it except two test scripts.
+
+**Machine.** The leftover editor test process from 2026-11-23 (PID 20992, with its crash reporter, PID 14656) ended when the PC restarted at 06:25 on 2026-11-24. It was not stopped by hand. Every later run started after that restart with no other Unreal process running. The earlier evidence stands as recorded: the milestone E packaged first pass of 67/73 and the unexplained console exit request in its Titan Charge case are unchanged above. B: had 367 GB free before packaging and 358 GB after. All earlier builds (RC10 to RC14, GAS A, B, C+D and the four E packages, including `GAS_E_553fd5a`) are kept.
+
+**Revision.** The package `B:\Unreal\GOTA_Builds\GAS_F_f17f47c` was built from game code `f17f47c` (the last commit touching Source, Content, Config or the project file). HEAD was `a6d3f4d`, which adds only the F5 test scripts, and there were no tracked changes. `GOTA_REVISION.txt` beside the package records this. This document's commit comes later and changes no code.
+
+| Check | First pass | Reruns |
+|---|---|---|
+| Editor, clean build of the game module | 81/81 | none needed |
+| Packaged `GAS_F_f17f47c` | 81/81 | none needed |
+| Four-player Horde, clean (host Varoth; remote Nyx, Kairos, Drakon) | clean | none |
+| Four-player Horde, 120±30 ms and 5% loss | clean | none |
+| Four-player Story, clean | clean | none |
+| Four-player Story, 120±30 ms and 5% loss | clean | none |
+
+The 81 cases cover milestones A to F in Duel, with remote-client cases for every status family, Horde and Story HUD cases, death and respawn cleanup, and the F2 to F4 presentation cases. Unlike the C+D package (62/63) and the E package (67/73), the first pass had no failure or inconclusive case. It ran on a freshly restarted machine; the E package's first pass ran under heavy load.
+
+**Four-player sessions** (healing harness, not difficulty evidence; Milestone E's boss runs plus remote shields, hard control, a break, and a remote death with statuses up). In all four sessions:
+
+- Every remote client drew each Molten Boulder lane and each Scorched Earth zone as a threat and turned it red on arming; the host decided every hit.
+- The shield break reached the player it belonged to (SHIELD BROKEN) and no one else; the host logged one break.
+- The stunned and frozen remote players each sounded once on and once off. The player who died with Shielded, Dread and Stunned up had them cleared by the death (logged on the host) with no release sound, and came back through the mode's own respawn (Horde at the next wave, Story after 6 s).
+- No foreign health bar on any screen (`bar=-4` never seen), the host removed the extra HUDs `BP_Player` adds, no missing asset or sound, no ensure, assertion or fatal. The host exited by itself; the harness closed the clients afterwards, as in milestone E's four-player runs, because their scripts outlast the host's.
+- A Scorched Earth zone still arming when the boss died was cleared in three of the four sessions. In the clean Horde session the boss died during that wind-up, before the zone was laid, so there was nothing to clear.
+
+**Four-player screen review** (the rendered remote player, Nyx, every 6 s; the lag sessions' frames). In Horde, the health bar, the target's chips (DREAD, BURN), the BURNING line and World Burn's calm blue edge with flames read clearly with four heroes, enemies and the boss on screen. In Story's dark red prologue, a burning zone reads as a lit orange floor area with flames, the BURNING line and its chip. One Horde frame caught SHIELD BROKEN faint over the sandstone wall; the line fades over its last 0.4 s and the frame time was random, so this is most likely the fade, but its readability at full strength over bright walls has not been confirmed by eye.
+
+**Still open after F5.**
+
+- No human playtest, separate-PC run or human listening. Network conditions were simulated on one PC.
+- The Horde and Story PERFECT DODGE line has not been seen in a live run (code reading only).
+- SHIELD BROKEN over bright walls, above.
+- The milestone E console exit request in the Titan Charge client and the two suspected timing failures stay unexplained; none recurred here.
+- Boss power, World Burn (4 s zone) and all ability numbers remain provisional balance. The F milestones changed no balance.
 
 ## Status policies (boss immunity and resistance)
 
