@@ -1,0 +1,60 @@
+# GAS milestone F2 visual check: each status burst on the opponent, a quarter second after it lands.
+r.MotionBlurQuality 0
+gota.GAS.ElementStatus 0
+wait 6
+gota.Ability.AI off
+gota.Ability.Place 420 1 230
+wait 0.5
+gota.Ability.Status 1 Stunned 1 1 0
+wait 0.25
+gota.Test.Shot f2_stunned
+wait 3.2
+gota.Ability.Status 1 Frozen 1 1 0
+wait 0.25
+gota.Test.Shot f2_frozen
+wait 1.5
+gota.Ability.Status 1 Chilled 1 0.3 0
+wait 0.25
+gota.Test.Shot f2_chilled
+wait 1.2
+gota.Ability.Status 1 Shocked 1 0.2 0
+wait 0.25
+gota.Test.Shot f2_shocked
+wait 1.2
+gota.Ability.Status 1 Dread 1 0.2 0
+wait 0.25
+gota.Test.Shot f2_dread
+wait 1.2
+gota.Ability.Status 1 Veiled 1 0 0
+wait 0.25
+gota.Test.Shot f2_veiled
+wait 1.2
+gota.Ability.Status 1 Vulnerable 1 0.1 0
+wait 0.25
+gota.Test.Shot f2_vulnerable
+wait 1.2
+gota.Ability.Status 1 Fortified 1 0.1 0
+wait 0.25
+gota.Test.Shot f2_fortified
+wait 1.2
+gota.Ability.Status 1 Empowered 1 0.1 0
+wait 0.25
+gota.Test.Shot f2_empowered
+wait 1.2
+gota.Ability.Status 1 Hasted 1 0.1 0
+wait 0.25
+gota.Test.Shot f2_hasted
+wait 1.2
+gota.Ability.Status 1 Unbreakable 1 0.1 0
+wait 0.25
+gota.Test.Shot f2_unbreakable
+wait 1.2
+gota.Ability.Status 1 Shielded 5 30 0
+wait 0.25
+gota.Test.Shot f2_shielded
+wait 0.8
+gota.Ability.ElementHit 1 Fire 40
+wait 0.2
+gota.Test.Shot f2_shield_break
+wait 1
+quit

@@ -61,4 +61,5 @@ namespace GOTATags
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Chilled, "GameplayCue.GOTA.Status.Chilled");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Status_Shocked, "GameplayCue.GOTA.Status.Shocked");
 	UE_DEFINE_GAMEPLAY_TAG(Cue_Resisted, "GameplayCue.GOTA.Resisted");
+	UE_DEFINE_GAMEPLAY_TAG(Cue_ShieldBroken, "GameplayCue.GOTA.ShieldBroken");
 }

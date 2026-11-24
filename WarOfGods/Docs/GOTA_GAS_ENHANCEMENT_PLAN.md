@@ -35,8 +35,9 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestone E: status widget teardown fix, multiplayer tests | `e8a6364` | Editor 72/72. Packaged 70/72 on the first pass; exposed the Titan Charge bug |
 | Milestone E: Titan Charge dash timing | `a022514` | Editor 73/73, packaged 73/73 on the first pass. Its four-player lag run exposed the boss intro bug |
 | Milestone E: boss intro releases the player it held | `553fd5a` | Editor, clean build: 73/73. Packaged: 67/73 on the first pass, no failure reproduced on rerun. Four-player, latency and dodge runs pass. See the milestone E section |
-| Milestone F1: status chips, shield bar, real health on every HUD | this commit | Editor, incremental build: 77/77 on the final code. Duel and Horde latency runs clean. No clean build, packaged or four-player run yet. See "Status HUD (F1)" |
-| Milestones F2 to F5, G | | Not started |
+| Milestone F1: status chips, shield bar, real health on every HUD | `a5ee0fd` | Editor, incremental build: 77/77 on the final code. Duel and Horde latency runs clean. No clean build, packaged or four-player run yet. See "Status HUD (F1)" |
+| Milestone F2: status bursts and shield break | this commit | Editor, incremental build: 78/78 on the final code. Three latency runs clean. No packaged or four-player run yet. See "Status bursts (F2)" |
+| Milestones F3 to F5, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
 
@@ -204,6 +205,26 @@ Verified on the final F1 code (editor, incremental build):
 | Latency, 120±30 ms and 5% loss, Duel and Horde, one run each | no wrong health bar, no second HUD, no ensure or fatal |
 
 Not verified yet: clean build, packaged build, four-player HUD, Story under latency, and a visual review of the HUD in Horde and Story. The Duel layout screenshot predates the last health fixes. A HUD that `BP_Player` added more than ten seconds after a pawn appeared would not be removed; none was seen.
+
+### Status bursts (F2)
+
+Presentation only. Status rules, durations, shields, damage and balance are unchanged.
+
+- **What bursts:** a short particle burst (0.8 s at most) on the body when a status lands or is refreshed. Only states the player has to react to get one: Stunned (sparks), Frozen (Aurora freeze), Chilled (ice), Shocked (electric), Dread (Sevarog siphon), Veiled (Countess dark burst), Shielded (Steel armour), and shield break (Steel armour break). Buffs and soft debuffs (Hasted, Empowered, Fortified, Unbreakable, Slowed, Weakened, Vulnerable) have no burst. Their candidate effects either whited out the screen or looked like fire next to Burning, so those states use body colour and the F1 chip instead. Burning keeps its flames.
+- **No spam:** the same status on the same actor bursts at most once per 0.5 s, and any two bursts on one actor need 0.15 s between them, except hard control, which always shows. In the test, a repeated Shocked in the same frame and Veiled landing with Dread showed nothing extra.
+- **Network:** bursts come from the existing status cues on each peer, with no new RPC or replicated state. Shield break is one new execute cue (`GameplayCue.GOTA.ShieldBroken`), sent by the server only when damage empties the shield. Expiry does not send it. It also raises `GOTAGAS::OnShieldBroken` for later feedback. Like every execute cue, it is unreliable, so heavy packet loss can drop one break burst. The shield bar still empties, because it reads replicated state.
+- **Assets:** existing project packs only (Realistic Starter VFX Vol 2 and the Paragon Aurora, Steel, Sevarog and Countess packs). The few small folders they come from are in `DirectoriesToAlwaysCook`.
+
+Verified on the final F2 code (editor, incremental build):
+
+| Check | Result |
+|---|---|
+| Full editor suite | 78/78, first pass |
+| Focused StatusFX, StatusHUD, Defense (host and remote client) | 3/3 |
+| Latency, 120±30 ms and 5% loss, three runs (remote client) | one burst per status, shield burst on apply and re-apply, one shield break, no missing asset, no ensure or fatal, both processes exited by themselves |
+| Visual review (Duel, rendered): every burst visible on the opponent, none hides the screen | pass after two rounds of asset changes |
+
+The latency hosts ran without rendering, so they log no bursts. The focused run checks the rendering host. Not verified yet: packaged build, four-player Horde with many bursts at once, and the shield-break frame in the last visual review, where the target had moved. It was readable in the first review.
 
 ## Status policies (boss immunity and resistance)
 

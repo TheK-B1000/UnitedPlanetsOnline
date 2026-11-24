@@ -1,0 +1,37 @@
+waitplayers 2 120
+# GAS milestone F2: each status shows one short burst on every peer. A repeat in the same frame and a second status landing
+# with it show nothing extra, Slowed has no burst, and only damage (not expiry) plays the shield break.
+gota.GAS.ElementStatus 0
+wait 10
+gota.Ability.Place 250
+wait 0.3
+gota.Ability.Status 1 Stunned 1 1 0
+wait 3.2
+gota.Ability.Status 1 Frozen 1 1 0
+wait 1.5
+gota.Ability.Status 1 Chilled 3 0.3 0
+wait 0.4
+gota.Ability.Status 1 Shocked 3 0.2 0
+gota.Ability.Status 1 Shocked 3 0.2 0
+wait 0.4
+gota.Ability.Status 1 Dread 3 0.2 0
+gota.Ability.Status 1 Veiled 0.3 0 0
+wait 0.6
+gota.Ability.Status 1 Vulnerable 3 0.1 0
+wait 0.4
+gota.Ability.Status 1 Fortified 3 0.1 0
+wait 0.4
+gota.Ability.Status 1 Empowered 3 0.1 0
+gota.Ability.Status 1 Hasted 3 0.1 0
+wait 0.4
+gota.Ability.Status 1 Slowed 3 0.2 0
+wait 0.4
+gota.Ability.Status 1 Shielded 6 30 0
+wait 0.7
+gota.Ability.ElementHit 1 Fire 40
+wait 1
+gota.Ability.Status 1 Shielded 1 10 0
+wait 2.5
+gota.Ability.Dump
+wait 60
+quit

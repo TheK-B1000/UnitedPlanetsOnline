@@ -280,6 +280,16 @@ public:
 	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
 };
 
+/** Executed once when damage empties a shield (not when it expires). Cosmetic, every peer: the break burst and GOTAGAS::OnShieldBroken. */
+UCLASS()
+class WAROFGODS_API UGOTAGameplayCue_ShieldBroken : public UGameplayCueNotify_Static
+{
+	GENERATED_BODY()
+
+public:
+	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
+};
+
 namespace GOTAGAS
 {
 	/** What a status does to its target, for policy checks and feedback. */
@@ -345,6 +355,10 @@ namespace GOTAGAS
 	/** Any peer, local: a status cue started (or is running) or ended on Target. Event source for status indicators. */
 	DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnStatusCue, AActor* /*Target*/, EGOTAStatus /*Status*/, bool /*bActive*/);
 	extern WAROFGODS_API FOnStatusCue OnStatusCue;
+
+	/** Any peer, local: damage emptied Target's shield (from the ShieldBroken cue). */
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnShieldBroken, AActor* /*Target*/);
+	extern WAROFGODS_API FOnShieldBroken OnShieldBroken;
 
 	/** Any peer: does the actor's ASC carry Tag (tags replicate to everyone)? */
 	bool HasTag(const AActor* Actor, const FGameplayTag& Tag);

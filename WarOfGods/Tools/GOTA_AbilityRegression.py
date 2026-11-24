@@ -255,6 +255,7 @@ CASES = {
     "StatusHUDDeath": [],  # multiplayer only: chips and shield clear on death, the next pawn starts clean
     "StatusHUDHorde": [],  # multiplayer only: a remote player's shared health bar, behind a shield
     "StatusHUDStory": [],  # the same in Story
+    "StatusFX": [],  # multiplayer only: one burst per status on every peer, shield break from damage only
     "Defense": [
         ("Shielded: absorbs Blueprint and ability hits, breaks, refresh, stronger, expiry, survives a big hit",
          "?Opponent=AI?Hero=Drakon?DevHeroes=1", "defense_shield.txt",
@@ -386,7 +387,13 @@ HUD_BAR_CHECKS = [(r"FEEDBACK CHIPS local=\[Shielded [^\]]*\] shield=\d+/30 hp=(
 HOST_BAR_CHECKS = [(r"shield absorbed", True), (r"FEEDBACK CHIPS .*hp=(\d+)/100 .* bar=(?!\1\b)", False),
                    (r"HUD: removed extra W_PlayerHUD\S* \(for BP_Player", True), (r"FEEDBACK CHIPS .* bar=-4\b", False)]
 
+# One burst per status on this peer: no repeat, nothing for a status landing in the same instant, a break only from damage.
+FX_BURST_CHECKS = [(r"FX BURST %s on " % s, 1) for s in ("Stunned", "Frozen", "Chilled", "Shocked", "Dread", "ShieldBroken")] + [
+    (r"FX BURST Shielded on ", 2), (r"FX BURST Veiled on ", False),  # Veiled lands in the same instant as Dread
+    (r"FX BURST (Hasted|Empowered|Fortified|Unbreakable|Slowed|Weakened|Vulnerable) on ", False), (r"FX BURST \w+ missing", False)]
+
 MP_STATUS = {
+    "StatusFX": ("Drakon", "f_status_fx_mp_host.txt", FX_BURST_CHECKS, FX_BURST_CHECKS),
     "Delivery": ("Drakon", "delivery_mp_host.txt",
                  [(r"PROJECTILE TestPower hit BP_Player\S+ after \d+ \(landed=1\)", 1), (r"ZONE TestPower started", 1),
                   (r"ZONE TestPower pulse: 1 target\(s\)", True), (r"ZONE TestPower ended \(duration\)", 1)],

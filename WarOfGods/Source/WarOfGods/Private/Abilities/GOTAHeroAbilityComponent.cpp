@@ -759,6 +759,9 @@ void UGOTAHeroAbilityComponent::TickDefense(APawn* Owner)
 				UE_LOG(LogGOTAAbility, Log, TEXT("%s: shield broken"), *GetNameSafe(Owner));
 				if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Owner))
 				{
+					FGameplayCueParameters BreakCue;
+					BreakCue.Location = Owner->GetActorLocation();
+					ASC->ExecuteGameplayCue(GOTATags::Cue_ShieldBroken, BreakCue);
 					ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GOTATags::Status_Shielded)); // ends next tick
 				}
 			}

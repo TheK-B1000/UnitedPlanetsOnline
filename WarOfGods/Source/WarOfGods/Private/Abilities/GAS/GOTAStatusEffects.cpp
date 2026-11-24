@@ -13,8 +13,10 @@
 #include "Combat/GOTACombatLive.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "AIController.h"
+#include "Algo/Find.h"
 #include "Animation/AnimInstance.h"
 #include "BrainComponent.h"
+#include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -192,6 +194,105 @@ namespace
 			PSC->DestroyComponent();
 			UE_LOG(LogGOTAStatus, Log, TEXT("burn fx removed from %s"), *GetNameSafe(Actor));
 		}
+	}
+
+	/**
+	 * The one short burst a status shows when it lands. The overlay and HUD chip carry the ongoing state, so four players'
+	 * worth of statuses never become a screen of looping particles. Only control, elements, shadow and shields burst: buffs and
+	 * soft debuffs read from their body colour and chip (in review their bursts looked like fire or like the shield).
+	 */
+	struct FStatusBurst
+	{
+		EGOTAStatus Status;
+		const TCHAR* Path;
+		float Scale;
+	};
+	const FStatusBurst StatusBursts[] = {
+		{ EGOTAStatus::Frozen, TEXT("/Game/ParagonAurora/FX/Particles/Abilities/Freeze/FX/P_Aurora_Freeze_Rooted.P_Aurora_Freeze_Rooted"), 1.f },
+		{ EGOTAStatus::Stunned, TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Sparks/P_Sparks_C.P_Sparks_C"), 0.8f },
+		{ EGOTAStatus::Chilled, TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Hit/P_Ice.P_Ice"), 0.8f },
+		{ EGOTAStatus::Shocked, TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Destruction/P_Destruction_Electric.P_Destruction_Electric"), 0.5f },
+		{ EGOTAStatus::Dread, TEXT("/Game/ParagonSevarog/FX/Particles/Abilities/SoulSiphon/FX/P_SiphonImpact.P_SiphonImpact"), 0.8f },
+		{ EGOTAStatus::Veiled, TEXT("/Game/ParagonCountess/FX/Particles/Abilities/RollingDark/FX/P_Countess_RD_CastBurst.P_Countess_RD_CastBurst"), 0.7f },
+		{ EGOTAStatus::Shielded, TEXT("/Game/ParagonSteel/FX/Particles/Steel/Abilities/AbilityArmor/FX/P_Steel_AbilityArmor_Spawn.P_Steel_AbilityArmor_Spawn"), 1.f },
+	};
+	const TCHAR* const ShieldBreakFX = TEXT("/Game/ParagonSteel/FX/Particles/Steel/Abilities/AbilityArmor/FX/P_Steel_AbilityArmor_Break.P_Steel_AbilityArmor_Break");
+	const float BurstSeconds = 0.8f;       // a looping asset is stopped after this long
+	const float SameBurstGap = 0.5f;       // OnActive and WhileActive can both arrive for one application
+	const float AnyBurstGap = 0.15f;       // overlapping statuses landing together show one burst, hard control excepted
+
+	struct FBurstHistory
+	{
+		double LastAny = -100.0;
+		TMap<uint8, double> LastByStatus;
+	};
+	TMap<TWeakObjectPtr<const AActor>, FBurstHistory> BurstHistory;
+
+	/** Cosmetic, this machine only. Owned by the actor and removes itself, so death and travel need no cleanup. */
+	void SpawnBodyBurst(AActor* Actor, const TCHAR* Path, float Scale, const TCHAR* Label)
+	{
+		UWorld* World = Actor ? Actor->GetWorld() : nullptr;
+		UParticleSystem* FX = World && Actor->GetRootComponent() ? LoadObject<UParticleSystem>(nullptr, Path) : nullptr;
+		if (!FX)
+		{
+			UE_LOG(LogGOTAStatus, Warning, TEXT("FX BURST %s missing asset %s"), Label, Path);
+			return;
+		}
+		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAttached(FX, Actor->GetRootComponent(), NAME_None, FVector::ZeroVector,
+			FRotator::ZeroRotator, FVector(Scale), EAttachLocation::KeepRelativeOffset, true);
+		if (!PSC)
+		{
+			return;
+		}
+		UE_LOG(LogGOTAStatus, Log, TEXT("FX BURST %s on %s (%s)"), Label, *GetNameSafe(Actor), *GetNameSafe(FX));
+		if (FX->IsLooping())
+		{
+			TWeakObjectPtr<UParticleSystemComponent> Weak(PSC);
+			FTimerHandle Handle;
+			World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([Weak]()
+			{
+				if (UParticleSystemComponent* Live = Weak.Get())
+				{
+					Live->DeactivateSystem();
+				}
+			}), BurstSeconds, false);
+		}
+	}
+
+	void PlayStatusBurst(AActor* Actor, EGOTAStatus Status)
+	{
+		if (!Actor || !Actor->GetWorld() || Actor->GetNetMode() == NM_DedicatedServer)
+		{
+			return;
+		}
+		const FStatusBurst* Burst = Algo::FindBy(StatusBursts, Status, &FStatusBurst::Status);
+		if (!Burst)
+		{
+			return;
+		}
+		for (auto It = BurstHistory.CreateIterator(); It; ++It)
+		{
+			if (!It.Key().IsValid())
+			{
+				It.RemoveCurrent();
+			}
+		}
+		const double Now = Actor->GetWorld()->GetTimeSeconds();
+		FBurstHistory& History = BurstHistory.FindOrAdd(Actor);
+		// A new world restarts the clock: an entry from the future is stale.
+		if (History.LastAny > Now)
+		{
+			History = FBurstHistory();
+		}
+		const double* LastSame = History.LastByStatus.Find(static_cast<uint8>(Status));
+		const bool bHardControl = Status == EGOTAStatus::Frozen || Status == EGOTAStatus::Stunned;
+		if ((LastSame && Now - *LastSame < SameBurstGap) || (!bHardControl && Now - History.LastAny < AnyBurstGap))
+		{
+			return;
+		}
+		History.LastAny = Now;
+		History.LastByStatus.Add(static_cast<uint8>(Status), Now);
+		SpawnBodyBurst(Actor, Burst->Path, Burst->Scale, *StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Status)));
 	}
 
 	int32 StatusDamageTicks = 0;
@@ -445,6 +546,7 @@ void UGOTABurnTickExecution::Execute_Implementation(const FGameplayEffectCustomE
 bool UGOTAGameplayCue_StatusOverlay::OnActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
 {
 	UE_LOG(LogGOTAStatus, Log, TEXT("cue %s on %s"), *Parameters.MatchedTagName.ToString(), *GetNameSafe(MyTarget));
+	PlayStatusBurst(MyTarget, StatusForCue(Parameters));
 	GOTAGAS::RefreshStatusOverlay(MyTarget, StatusForCue(Parameters));
 	GOTAGAS::OnStatusCue.Broadcast(MyTarget, StatusForCue(Parameters), true);
 	return true;
@@ -454,6 +556,7 @@ bool UGOTAGameplayCue_StatusOverlay::WhileActive_Implementation(AActor* MyTarget
 {
 	// A replicated effect can reach a client as WhileActive only (no OnActive), so this logs the same way.
 	UE_LOG(LogGOTAStatus, Log, TEXT("cue %s on %s (while active)"), *Parameters.MatchedTagName.ToString(), *GetNameSafe(MyTarget));
+	PlayStatusBurst(MyTarget, StatusForCue(Parameters));
 	GOTAGAS::RefreshStatusOverlay(MyTarget, StatusForCue(Parameters));
 	GOTAGAS::OnStatusCue.Broadcast(MyTarget, StatusForCue(Parameters), true);
 	return true;
@@ -536,10 +639,24 @@ bool UGOTAGameplayCue_Resisted::OnExecute_Implementation(AActor* MyTarget, const
 	return true;
 }
 
+// ============================================================================ shield break cue
+
+bool UGOTAGameplayCue_ShieldBroken::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
+{
+	UE_LOG(LogGOTAStatus, Log, TEXT("cue ShieldBroken on %s"), *GetNameSafe(MyTarget));
+	if (MyTarget && MyTarget->GetNetMode() != NM_DedicatedServer)
+	{
+		SpawnBodyBurst(MyTarget, ShieldBreakFX, 1.f, TEXT("ShieldBroken"));
+	}
+	GOTAGAS::OnShieldBroken.Broadcast(MyTarget);
+	return true;
+}
+
 // ============================================================================ adapter
 
 namespace GOTAGAS
 {
+	FOnShieldBroken OnShieldBroken;
 	FOnStatusResisted OnStatusResisted;
 	FOnStatusCue OnStatusCue;
 	FOnStatusDamage OnStatusDamage;
@@ -1094,6 +1211,7 @@ namespace GOTAGAS
 				: IsHardControl(Entry.Status) ? UGOTAGameplayCue_HardControl::StaticClass() : UGOTAGameplayCue_StatusOverlay::StaticClass());
 		}
 		Wanted.Emplace(GOTATags::Cue_Resisted.GetTag(), UGOTAGameplayCue_Resisted::StaticClass());
+		Wanted.Emplace(GOTATags::Cue_ShieldBroken.GetTag(), UGOTAGameplayCue_ShieldBroken::StaticClass());
 		TArray<FGameplayCueReferencePair> Missing;
 		for (const TPair<FGameplayTag, UClass*>& W : Wanted)
 		{

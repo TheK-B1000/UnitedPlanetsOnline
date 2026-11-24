@@ -95,4 +95,5 @@ namespace GOTATags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Status_Shocked);
 	/** Executed on a target that resisted all or part of a status (immunity / resistance feedback). */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_Resisted);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cue_ShieldBroken);
 }
