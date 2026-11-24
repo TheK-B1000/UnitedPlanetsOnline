@@ -1,0 +1,44 @@
+# GAS milestone F5, four-player Story (healing harness: NOT difficulty evidence). Milestone E's boss run in Story, plus the
+# F1-F4 integration: statuses and a break on remote players, and a remote death with statuses up, then its respawn.
+waitplayers 4 120
+gota.Net.Sustain 200 25
+wait 25
+# F5: statuses, a shield break and a death with statuses up on remote players; Story respawns the downed after 6 s
+gota.Ability.Status 1 Shielded 8 30 0
+gota.Ability.Status 2 Stunned 1.5 1 0
+gota.Ability.Status 3 Frozen 1.5 1 0
+wait 1
+gota.Ability.ElementHit 1 Fire 40
+wait 3
+gota.Ability.Status 3 Shielded 20 30 0
+gota.Ability.Status 3 Dread 20 0.2 0
+gota.Ability.Status 3 Stunned 20 1 0
+wait 1
+gota.Net.Hurt 3 9999
+wait 9
+gota.Net.Players
+gota.Net.Players
+gota.Boss.Spawn QuarryBehemoth
+wait 3
+gota.Boss.Skip
+gota.Boss.Dump
+gota.Boss.Attack MoltenBoulder
+wait 6
+gota.Boss.Attack ScorchedEarth
+wait 9
+gota.Boss.Attack MoltenBoulder
+wait 6
+gota.Boss.Attack ScorchedEarth
+wait 9
+gota.Net.GAS
+gota.Net.Players
+gota.Boss.AI 2
+wait 5
+gota.Boss.Attack ScorchedEarth
+wait 1.4
+gota.Net.KillEnemy 0 boss
+wait 6
+gota.Net.GAS
+gota.Net.Players
+wait 10
+quit

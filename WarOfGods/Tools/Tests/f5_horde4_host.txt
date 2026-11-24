@@ -1,0 +1,68 @@
+# GAS milestone F5, four-player Horde (healing harness: NOT difficulty evidence). Milestone E's boss run, plus the F1-F4
+# integration: shields, hard control and a break on remote players, and a remote death with statuses up that the next
+# wave's respawn must clear.
+waitplayers 4 120
+gota.Net.Sustain 420 25
+gota.Net.Fight 400
+wait 15
+gota.Horde.SkipPrep
+wait 4
+# F5: statuses, a shield break and a death with statuses up, on remote players, while wave 1 is live
+gota.Ability.Status 1 Shielded 8 30 0
+gota.Ability.Status 2 Stunned 1.5 1 0
+gota.Ability.Status 3 Frozen 1.5 1 0
+wait 1
+gota.Ability.ElementHit 1 Fire 40
+wait 3
+gota.Ability.Status 3 Shielded 20 30 0
+gota.Ability.Status 3 Dread 20 0.2 0
+gota.Ability.Status 3 Stunned 20 1 0
+wait 1
+gota.Net.Hurt 3 9999
+wait 3
+gota.Net.Players
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 3
+gota.Horde.ForceClear
+wait 2
+gota.Horde.SkipPrep
+wait 14
+gota.Boss.Skip
+gota.Boss.Dump
+gota.Net.Players
+gota.Boss.Attack MoltenBoulder
+wait 6
+gota.Boss.Attack ScorchedEarth
+wait 9
+gota.Boss.Attack MoltenBoulder
+wait 6
+gota.Boss.Attack ScorchedEarth
+wait 9
+gota.Net.GAS
+gota.Net.Players
+gota.Boss.AI 2
+wait 5
+gota.Boss.Attack ScorchedEarth
+wait 1.4
+gota.Net.KillEnemy 0 boss
+wait 6
+gota.Net.GAS
+gota.Horde.Dump
+gota.Net.Players
+wait 12
+quit
