@@ -1,0 +1,33 @@
+# GAS milestone F3 visual check: Molten Boulder in flight, Scorched Earth warning then burning, World Burn's ground.
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+gota.Boss.AI 2
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 1200 150
+gota.Boss.Attack MoltenBoulder
+wait 1.15
+gota.Test.Shot f3_boulder_launch
+wait 0.3
+gota.Test.Shot f3_boulder_flight
+wait 2
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 700 0
+gota.Boss.Attack ScorchedEarth
+wait 1.2
+gota.Test.Shot f3_scorch_warning
+wait 0.5
+gota.Boss.PlaceTarget 1100 0
+wait 0.4
+gota.Test.Shot f3_scorch_armed
+wait 2.5
+gota.Test.Shot f3_scorch_late
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 700 -250
+gota.Boss.Attack ScorchedEarth
+wait 1.45
+gota.Test.Shot f3_scorch_fill
+wait 4
+quit

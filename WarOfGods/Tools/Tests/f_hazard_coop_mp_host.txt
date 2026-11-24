@@ -1,0 +1,13 @@
+# GAS milestone F3 in co-op (Horde): an ally's fire zone at the remote player's feet is drawn calm, never as a threat,
+# and it never touches them. The flames still show that the ground burns.
+# The first wave starts while the host waits for the client, and a defeated source's zone ends, so the host is kept
+# alive from the start. Healing here is test support, not balance evidence.
+gota.Net.Sustain 60 150
+waitplayers 2 120
+r.MotionBlurQuality 0
+wait 6
+gota.Ability.Zone 0 Fire 0 300 2 0.5 1.0 1
+wait 4
+gota.Ability.Dump
+wait 60
+quit

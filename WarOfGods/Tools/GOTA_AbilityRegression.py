@@ -256,6 +256,8 @@ CASES = {
     "StatusHUDHorde": [],  # multiplayer only: a remote player's shared health bar, behind a shield
     "StatusHUDStory": [],  # the same in Story
     "StatusFX": [],  # multiplayer only: one burst per status on every peer, shield break from damage only
+    "HazardMarks": [],  # multiplayer only: projectile lane and zone ground, threat on the opponent's screen, calm on the caster's
+    "HazardCoop": [],  # multiplayer only: an ally's zone is drawn calm in Horde
     "Defense": [
         ("Shielded: absorbs Blueprint and ability hits, breaks, refresh, stronger, expiry, survives a big hit",
          "?Opponent=AI?Hero=Drakon?DevHeroes=1", "defense_shield.txt",
@@ -341,7 +343,8 @@ CASES = {
         ("World Burn leaves a burning zone", "?Opponent=AI?Hero=Varoth?DevHeroes=1", "delivery_worldburn.txt",
          [(r"WorldBurn hit \S+ for 5\.0 \(landed=1\)", 1), (r"ZONE WorldBurn started by \S+: radius 500, 4\.0s, every 1\.00s, damage 0\.0", 1),
           (r"ZONE WorldBurn pulse: 1 target\(s\)", 4), (r"ZONE WorldBurn ended \(duration\)", 1),
-          (r"BP_Player\S*: Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\)", (6, 7))]),  # provisional: 14 burn damage at most, credited to the caster. The last tick can lose a same-frame race with expiry
+          (r"BP_Player\S*: Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\)", (6, 7)),  # provisional: 14 burn damage at most, credited to the caster. The last tick can lose a same-frame race with expiry
+          (r"ZONE MARK WorldBurn threat=0 warning=0\.00s radius=500", 1), (r"ZONE MARK WorldBurn flames 7", 1)]),  # F3: the caster's own ground is calm
         ("Overlapping zones do not stack; attribution; shield absorbs the burn", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "delivery_overlap.txt",
          [(r"ZONE TestPower started", 2), (r"BP_Player\S*: Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\)", (4, 5)), (r"Burning tick on \S+ for (?!2\.0)", False),
           (r"shield absorbed 2\.0 of 2\.0", (4, 5))]),
@@ -354,14 +357,18 @@ CASES = {
         ("Molten Boulder: hits and ignites, sidestep misses, shield absorbs", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "power_boulder.txt",
          [(r"PROJECTILE MoltenBoulder launched by BP_Boss\S+: damage 12\.0", 3), (r"PROJECTILE MoltenBoulder hit BP_Player\S+ after \d+ \(landed=1\)", 2),
           (r"ELEMENT hit GOTA\.Element\.Fire 12\.0 \(x1\.00 element\) -> 12\.0 \(landed=1\)", 2), (r"BP_Player\S*: status Burning 3\.0s x2\.00", True),
-          (r"PROJECTILE MoltenBoulder (ended \(max range\)|stopped by)", True), (r"shield absorbed 12\.0 of 12\.0", 1)]),
+          (r"PROJECTILE MoltenBoulder (ended \(max range\)|stopped by)", True), (r"shield absorbed 12\.0 of 12\.0", 1),
+          (r"PROJECTILE MARK MoltenBoulder threat=1 lane=\d+", 3)]),  # F3: every boulder draws its lane
         ("Molten Boulder: a timed dodge is protected, an early dodge is not", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "power_dodge.txt",
          [(r"PROJECTILE MoltenBoulder launched", 2), (r"Dodge arm \(\S+\): projectile lead=0\.\d+", 1),
           (r"PROJECTILE MoltenBoulder hit BP_Player\S+ after \d+ \(landed=1\)", 1)]),
         ("Scorched Earth: warned, burns who stays, avoidable, cleared on boss death", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "power_zone.txt",
          [(r"ZONE ScorchedEarth started by BP_Boss\S+: radius 300, 5\.0s, every 1\.00s, damage 0\.0, arms in 1\.0s", 3), (r"ZONE ScorchedEarth armed", 2),
           (r"ZONE ScorchedEarth pulse: 1 target\(s\)", True), (r"ZONE ScorchedEarth pulse: 0 target\(s\)", True), (r"ZONE ScorchedEarth ended \(duration\)", 2),
-          (r"ZONE ScorchedEarth ended \(cleared\)", 1), (r"BP_Boss\S*: Burning tick on BP_Player\S+ for 2\.0 \(landed=1\)", True)]),
+          (r"ZONE ScorchedEarth ended \(cleared\)", 1), (r"BP_Boss\S*: Burning tick on BP_Player\S+ for 2\.0 \(landed=1\)", True),
+          # F3: warned in amber for its arm delay, red with flames from the first pulse; the zone cleared early never turns
+          (r"ZONE MARK ScorchedEarth threat=1 warning=1\.00s radius=300", 3), (r"ZONE MARK ScorchedEarth burning \(", 2),
+          (r"ZONE MARK ScorchedEarth flames 4", 2)]),
     ],
 }
 # Multiplayer: host hero, host script, host-log regex (the ability landing on the remote player), client animation.
@@ -378,6 +385,7 @@ MP = {
 MP_URL = {
     "StatusHUDHorde": "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry",
     "StatusHUDStory": "/Game/Story/Maps/L_GOTA_Story_Prologue?game=/Script/WarOfGods.GOTAStoryGameMode?Mode=Story",
+    "HazardCoop": "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry",
 }
 # The remote player's shared health bar: present, and full while the shield takes the hit.
 # Enemies may land hits in Horde, so the bar is compared with this player's real health rather than a fixed value.
@@ -394,6 +402,26 @@ FX_BURST_CHECKS = [(r"FX BURST %s on " % s, 1) for s in ("Stunned", "Frozen", "C
 
 MP_STATUS = {
     "StatusFX": ("Drakon", "f_status_fx_mp_host.txt", FX_BURST_CHECKS, FX_BURST_CHECKS),
+    # F3: each screen draws the host's deliveries itself. The caster's screen: calm, no lane. The opponent's: lane, amber
+    # warning counted down from arrival, red no more than 0.3 s before the server arms it (or on the server's arm
+    # impact if that arrives first), flames once burning. A zone with no arm delay is red at once.
+    "HazardMarks": ("Drakon", "f_hazard_mp_host.txt",
+                    [(r"PROJECTILE TestPower hit BP_Player\S+ after \d+ \(landed=1\)", 1), (r"ZONE TestPower armed", 1),
+                     (r"ZONE TestPower pulse: 1 target\(s\)", True),
+                     (r"PROJECTILE MARK", False), (r"ZONE MARK TestPower threat=0 warning=(0\.9\d|1\.00)s radius=300", 1),
+                     (r"ZONE MARK TestPower threat=0 warning=0\.00s radius=300", 1), (r"ZONE MARK TestPower threat=1", False),
+                     (r"ZONE MARK TestPower burning", 1), (r"ZONE MARK TestPower flames 4", 2), (r"missing asset", False)],
+                    [(r"PROJECTILE MARK TestPower threat=1 lane=\d+", 1),
+                     (r"ZONE MARK TestPower threat=1 warning=(0\.[4-9]\d|1\.00)s radius=300", 1),
+                     (r"ZONE MARK TestPower threat=1 warning=0\.00s radius=300", 1), (r"ZONE MARK TestPower threat=0", False),
+                     (r"ZONE MARK TestPower burning \(", 1), (r"server arm (0\.[3-9]|[1-9])\d*s after the mark", False),
+                     (r"ZONE MARK TestPower flames 4", 2),
+                     (r"DELIVERY client impact", 2), (r"missing asset", False)]),
+    "HazardCoop": ("Drakon", "f_hazard_coop_mp_host.txt",
+                   [(r"ZONE TestPower armed", 1), (r"TestPower reached BP_Player", False), (r"ZONE MARK TestPower threat=0", 1),
+                    (r"ZONE MARK TestPower threat=1", False)],
+                   [(r"ZONE MARK TestPower threat=0 warning=", 1), (r"ZONE MARK TestPower threat=1", False),
+                    (r"ZONE MARK TestPower burning", 1), (r"ZONE MARK TestPower flames 4", 1), (r"missing asset", False)]),
     "Delivery": ("Drakon", "delivery_mp_host.txt",
                  [(r"PROJECTILE TestPower hit BP_Player\S+ after \d+ \(landed=1\)", 1), (r"ZONE TestPower started", 1),
                   (r"ZONE TestPower pulse: 1 target\(s\)", True), (r"ZONE TestPower ended \(duration\)", 1)],

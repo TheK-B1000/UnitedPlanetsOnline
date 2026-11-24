@@ -1,0 +1,17 @@
+waitplayers 2 120
+# GAS milestone F3 on a remote player: every screen draws the host's projectile and zones itself. The opponent's screen
+# shows them as a threat (lane, amber warning that turns red on the server's arm time, flames); the caster's shows them calm.
+r.MotionBlurQuality 0
+gota.GAS.ElementStatus 0
+wait 10
+gota.Ability.Place 600
+wait 0.3
+gota.Ability.Projectile 0 Fire 5 1200 45 1800
+wait 1.5
+gota.Ability.Zone 0 Fire 0 300 2 0.5 1.0 1
+wait 3.5
+gota.Ability.Zone 0 Fire 0 300 1.5 0.5
+wait 2.5
+gota.Ability.Dump
+wait 60
+quit

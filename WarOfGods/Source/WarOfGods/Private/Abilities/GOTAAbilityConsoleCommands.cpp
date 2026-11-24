@@ -329,19 +329,23 @@ namespace GOTAAbilityTest
 		GOTAGAS::FireProjectile(Source, Start, (Other->GetActorLocation() - Start).GetSafeNormal2D(), DeliveryPayload(Args[1], FCString::Atof(*Args[2])),
 			Args.Num() > 3 ? FCString::Atof(*Args[3]) : 1500.f, Args.Num() > 4 ? FCString::Atof(*Args[4]) : 30.f, Args.Num() > 5 ? FCString::Atof(*Args[5]) : 2000.f);
 	}
-	/** gota.Ability.Zone <source fighter> <Element> <damage> <radius> <seconds> <interval>: a zone at the source's feet (milestone E). */
+	/**
+	 * gota.Ability.Zone <source> <Element> <damage> <radius> <seconds> <interval> [arm delay=0] [at combatant=source]: a zone at
+	 * a combatant's feet (milestone E; F3 added the warning and the placement). Source and placement are Duel fighters, or
+	 * connected players in Horde and Story.
+	 */
 	static void Zone(const TArray<FString>& Args)
 	{
 		UWorld* World = GameWorld();
-		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
-		APawn* Source = GM && Args.Num() >= 6 ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
-		if (!Source)
+		APawn* Source = Args.Num() >= 6 ? TestCombatant(World, FCString::Atoi(*Args[0])) : nullptr;
+		const APawn* At = Args.Num() > 7 ? TestCombatant(World, FCString::Atoi(*Args[7])) : Source;
+		if (!Source || !At)
 		{
-			UE_LOG(LogGOTAAbilityTest, Warning, TEXT("Zone: <source fighter> <Element> <damage> <radius> <seconds> <interval>"));
+			UE_LOG(LogGOTAAbilityTest, Warning, TEXT("Zone: <source> <Element> <damage> <radius> <seconds> <interval> [arm delay] [at combatant]"));
 			return;
 		}
-		GOTAGAS::SpawnZone(Source, Source->GetActorLocation(), DeliveryPayload(Args[1], FCString::Atof(*Args[2])), FCString::Atof(*Args[3]),
-			FCString::Atof(*Args[4]), FCString::Atof(*Args[5]));
+		GOTAGAS::SpawnZone(Source, At->GetActorLocation(), DeliveryPayload(Args[1], FCString::Atof(*Args[2])), FCString::Atof(*Args[3]),
+			FCString::Atof(*Args[4]), FCString::Atof(*Args[5]), nullptr, 1.f, nullptr, Args.Num() > 6 ? FCString::Atof(*Args[6]) : 0.f);
 	}
 	/**
 	 * gota.Test.SetupBlocker <minDist> <maxDist> [place 0|1] [behind=150]: find solid WorldStatic geometry around fighter 0

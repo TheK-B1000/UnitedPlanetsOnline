@@ -1,0 +1,24 @@
+# GAS milestone F3 visual check: World Burn's ground, seen by its caster (calm) and, cast by the AI, by its target (red).
+r.MotionBlurQuality 0
+wait 4
+gota.Ability.AI off
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Use 0 2
+wait 1.0
+gota.Ability.Place 700 1
+wait 0.3
+gota.Test.Shot f3_worldburn_own
+wait 4
+gota.Ability.ResetCooldowns 1
+gota.Ability.Place 250 1
+wait 0.3
+gota.Duel.Face 1
+gota.Ability.Use 1 2
+wait 1.0
+gota.Ability.Place 700 1
+wait 0.3
+gota.Test.Shot f3_worldburn_enemy
+wait 4
+quit

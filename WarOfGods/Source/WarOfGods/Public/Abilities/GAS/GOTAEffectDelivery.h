@@ -13,6 +13,7 @@
 #include "GOTAEffectDelivery.generated.h"
 
 class UParticleSystem;
+class UDecalComponent;
 
 /** What a delivery does to each target it reaches. Data only, shared by heroes, enemies and tests. */
 USTRUCT(BlueprintType)
@@ -57,6 +58,8 @@ public:
 	UPROPERTY(Replicated) TObjectPtr<UParticleSystem> BodyFX;
 	UPROPERTY(Replicated) TObjectPtr<UParticleSystem> ImpactFX;
 	UPROPERTY(Replicated) float FXScale = 1.f;
+	/** The payload's label, sent once for client logs (the payload itself stays on the server). */
+	UPROPERTY(Replicated) FName ShownLabel;
 
 protected:
 	virtual void BeginPlay() override;
@@ -67,6 +70,11 @@ protected:
 
 	/** The source died or left: its deliveries end with it. */
 	bool SourceIsGone() const;
+
+	/** Milestone F3, drawing only: can this delivery hurt the player watching this screen? Decides red versus calm. */
+	bool ThreatensLocalViewer() const;
+	/** Milestone F3: a ground decal (the project's AOE indicator) that this machine alone draws. Null on a dedicated server. */
+	UDecalComponent* AddGroundDecal(int32 SortOrder);
 
 	bool bExpired = false;
 };
@@ -85,10 +93,23 @@ public:
 
 	UPROPERTY(Replicated) FVector_NetQuantize StartLocation;
 	UPROPERTY(Replicated) FVector_NetQuantize10 Velocity;
-	float CollisionRadius = 30.f;
-	float MaxDistance = 2000.f;
+	UPROPERTY(Replicated) float CollisionRadius = 30.f;
+	UPROPERTY(Replicated) float MaxDistance = 2000.f;
+
+	/** Drawing: the impact was decided here, so the rock stops and its ground marks go (clients no longer fly past it). */
+	void StopAt(const FVector& Location);
+
+protected:
+	virtual void BeginPlay() override;
 
 private:
+	/** F3: the hostile projectile's path on the ground, shrinking as it flies, and a mark under it. Local only. */
+	void UpdateGroundMarks();
+
+	UPROPERTY(Transient) TObjectPtr<UDecalComponent> Lane;
+	UPROPERTY(Transient) TObjectPtr<UDecalComponent> Mark;
+	FVector LaneEnd = FVector::ZeroVector;
+
 	float Travelled = 0.f;
 	/** Fighters who perfect-dodged this projectile: it flies on through them. */
 	TArray<TWeakObjectPtr<const APawn>> DodgedBy;
@@ -109,9 +130,39 @@ public:
 	void StartZone(float InDuration, float InInterval, float InArmDelay = 0.f);
 
 	UPROPERTY(Replicated) float Radius = 300.f;
+	/**
+	 * Seconds from spawn to the first pulse, sent once. Each screen counts it down from when the zone reached it, less half
+	 * its ping; the server's reliable arm impact turns it red if that comes first. (The replicated server clock was measured
+	 * 0.3 to 0.4 s off on a loaded client, which drew a burning zone as a warning.)
+	 */
+	UPROPERTY(Replicated) float ArmDelay = 0.f;
+
+	/** The server's arm impact reached this screen. */
+	void OnServerArmed();
+	/** The payload's element, sent once so screens can draw the ground (flames for Fire). */
+	UPROPERTY(Replicated) FGameplayTag GroundElement;
+
+	virtual void Tick(float DeltaSeconds) override;
+
+protected:
+	virtual void BeginPlay() override;
 
 private:
 	void Pulse();
+
+	/** F3, local only: the edge goes from a flashing amber warning, filling in, to red when the first pulse lands. */
+	void ShowArmed(const TCHAR* Why);
+	/** A few small flames inside a burning Fire zone; they go with the zone. */
+	void LightGround();
+
+	UPROPERTY(Transient) TObjectPtr<UDecalComponent> Edge;
+	UPROPERTY(Transient) TObjectPtr<UDecalComponent> Fill;
+	/** Local clock (this machine's world time). */
+	float WarnStartedAt = 0.f;
+	float ArmsAt = 0.f;
+	float ShownArmedAt = -1.f;
+	bool bShowsThreat = false;
+	bool bArmPending = false;
 
 	FTimerHandle PulseTimer;
 	double EndTime = 0.0;

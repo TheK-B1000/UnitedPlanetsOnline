@@ -36,8 +36,9 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestone E: Titan Charge dash timing | `a022514` | Editor 73/73, packaged 73/73 on the first pass. Its four-player lag run exposed the boss intro bug |
 | Milestone E: boss intro releases the player it held | `553fd5a` | Editor, clean build: 73/73. Packaged: 67/73 on the first pass, no failure reproduced on rerun. Four-player, latency and dodge runs pass. See the milestone E section |
 | Milestone F1: status chips, shield bar, real health on every HUD | `a5ee0fd` | Editor, incremental build: 77/77 on the final code. Duel and Horde latency runs clean. No clean build, packaged or four-player run yet. See "Status HUD (F1)" |
-| Milestone F2: status bursts and shield break | this commit | Editor, incremental build: 78/78 on the final code. Three latency runs clean. No packaged or four-player run yet. See "Status bursts (F2)" |
-| Milestones F3 to F5, G | | Not started |
+| Milestone F2: status bursts and shield break | `767ed26` | Editor, incremental build: 78/78 on the final code. Three latency runs clean. No packaged or four-player run yet. See "Status bursts (F2)" |
+| Milestone F3: hazard ground marks (boulder lane, zone edge, warning to burning, friend or foe) | this commit | Editor, incremental build: 80/80 on the final code. Four latency runs clean. No packaged or four-player run yet. See "Hazard ground marks (F3)" |
+| Milestones F4, F5, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
 
@@ -225,6 +226,34 @@ Verified on the final F2 code (editor, incremental build):
 | Visual review (Duel, rendered): every burst visible on the opponent, none hides the screen | pass after two rounds of asset changes |
 
 The latency hosts ran without rendering, so they log no bursts. The focused run checks the rendering host. Not verified yet: packaged build, four-player Horde with many bursts at once, and the shield-break frame in the last visual review, where the target had moved. It was readable in the first review.
+
+### Hazard ground marks (F3)
+
+Presentation only. Who is hit, when a zone arms, its radius, damage, dodge rules and balance are unchanged.
+
+Before F3, a zone drew only a small effect at its centre: Scorched Earth showed nothing on the ground during its warning and nothing at all while it burned, and Molten Boulder was hard to see in flight.
+
+- **One colour language on every screen.** Gold, spinning: this will hurt you soon. Red: this hurts you now. Calm blue: yours or an ally's. Drawn with the project's own AOE indicator decal (`/Game/AOE/Decals/Decal_AOE`, already used by the Blueprint mage and boss) at the exact radius the server tests.
+- **Zones.** A warned zone (Scorched Earth) shows a gold edge with a fill that grows to the edge as the arm delay runs out. When it arms, the edge turns red and small flames (Burning's own `P_Fire_Small`) appear inside, along with the existing arm burst. A zone with no warning (World Burn) is red, or blue for its caster and allies, with flames, from the start. Flames are drawn only for Fire zones.
+- **Projectiles.** A projectile that can hit you draws a red lane on the ground along its path to where the world stops it, shrinking as it flies, and a mark under it. Your own or an ally's draws nothing extra. On impact the rock now stops where the server decided the hit; before, remote screens let it fly on until the server removed it.
+- **Friend or foe.** The server's team number is not sent to clients, so each screen uses the same sides as `GOTAGAS::CanAffect`: enemies and bosses threaten every player, another player threatens you only in Duel, and your own delivery never does.
+- **Timing on remote screens.** The arm delay is sent once. Each screen counts it down from when the zone reached it, less half its ping, and the server's existing reliable arm impact turns it red if that comes first. The replicated server clock was tried first and was measured 0.3 to 0.4 s behind on a loaded client, which drew a burning zone as a warning, so it is not used.
+- **Network.** No new RPC. A few values are sent once with each delivery: its label, the zone's arm delay and element, and the projectile's radius and range. Drawing is local; a zone ticks only during its warning, on screens that draw it, never on a dedicated server.
+- **Assets.** Existing project assets only. `/Game/AOE/Decals` is added to `DirectoriesToAlwaysCook`.
+
+Verified on the final F3 code (editor, incremental build):
+
+| Check | Result |
+|---|---|
+| Full editor suite | 80/80, first pass |
+| Focused: new Duel and Horde multiplayer cases, Molten Boulder, Scorched Earth, World Burn, all delivery cases | 11/11 |
+| Latency, 120±30 ms and 5% loss, Duel, three runs (remote opponent) | lane drawn; warning 0.92 to 0.93 s of 1.0 s; red 0.08 s before the server armed it, each run; flames; no ensure or fatal; clean exits |
+| Latency, Horde co-op, one run (remote ally) | the host's zone at the ally's feet drawn calm, never touched them; red 0.17 s before arming |
+| Visual review (Duel and boss, rendered) | after three rounds of tuning: warning dimmer than burning, colours stay saturated on the bright Quarry floor |
+
+The Horde co-op test keeps the host alive with the test harness's healing, because the first wave starts while the host waits for the client and a defeated source's zone ends with it. That healing is not balance evidence.
+
+Not verified yet: packaged build, four-player Horde with several zones at once, Story's darker maps, and a human eye on the boulder lane at speed. Boss resistance and "avoided" feedback is left to F4.
 
 ## Status policies (boss immunity and resistance)
 

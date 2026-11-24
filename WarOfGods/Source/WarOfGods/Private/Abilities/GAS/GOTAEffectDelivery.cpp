@@ -4,15 +4,22 @@
 #include "Abilities/GAS/GOTAAbilitySystemComponent.h"
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Abilities/GOTAHeroAbilityComponent.h"
+#include "Arenas/Duel/DuelGameState.h"
 #include "Arenas/Duel/GOTADuelCombat.h"
 #include "Combat/GOTACombatLive.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/DecalComponent.h"
 #include "Components/SceneComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
@@ -48,6 +55,51 @@ namespace
 	{
 		const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Source);
 		return ASC ? ASC->GetOutgoingDamageMultiplier() : 1.f;
+	}
+
+	// ---------------------------------------------------------------- F3 ground marks (drawing only)
+	// One language on every screen: amber = about to hurt you, red = hurting you now, calm blue = yours or an ally's.
+	// The project's own AOE indicator decal (already used by the Blueprint mage and boss).
+	const TCHAR* GroundDecalPath = TEXT("/Game/AOE/Decals/Decal_AOE.Decal_AOE");
+	const TCHAR* GroundFlamePath = TEXT("/Game/Realistic_Starter_VFX_Pack_Vol2/Particles/Fire/P_Fire_Small.P_Fire_Small"); // Burning's own flames
+	// Emission stays low: brighter values bloom to pale yellow on the sandy arena floors and lose the colour.
+	// Speed spins the indicator: fast while warning, slow for a friendly area, still for lanes and fills.
+	struct FGroundLook { FLinearColor Color; float Emission; float Spin; };
+	// The burning state must read stronger than the warning, so the warning is the dimmer of the two.
+	const FGroundLook WarnLook{FLinearColor(0.55f, 0.18f, 0.f), 0.5f, 1.6f};
+	const FGroundLook WarnFillLook{FLinearColor(0.55f, 0.18f, 0.f), 0.3f, 0.f};
+	const FGroundLook DangerLook{FLinearColor(1.f, 0.f, 0.f), 2.4f, 0.4f};
+	const FGroundLook FriendlyLook{FLinearColor(0.1f, 0.45f, 1.f), 0.35f, 0.15f};
+	const FGroundLook LaneLook{FLinearColor(1.f, 0.f, 0.f), 1.2f, 0.f};
+	const FGroundLook LaneMarkLook{FLinearColor(1.f, 0.f, 0.f), 2.4f, 0.f};
+	constexpr float DecalDepth = 260.f;   // reaches the floor from a capsule centre or a projectile's flight height
+	constexpr float LaneHalfWidth = 85.f;  // the boulder's radius plus a fighter's: outside it, a sidestep is enough
+
+	/** Half this machine's round trip to the server, in seconds (0 on the server). */
+	float HalfPing(const UWorld* World)
+	{
+		const APlayerController* PC = World && World->GetNetMode() == NM_Client ? World->GetFirstPlayerController() : nullptr;
+		const APlayerState* PS = PC ? PC->PlayerState : nullptr;
+		return PS ? FMath::Clamp(PS->ExactPing * 0.0005f, 0.f, 0.5f) : 0.f;
+	}
+
+	void SetDecalLook(UDecalComponent* Decal, const FGroundLook& Look)
+	{
+		if (UMaterialInstanceDynamic* MID = Decal ? Cast<UMaterialInstanceDynamic>(Decal->GetDecalMaterial()) : nullptr)
+		{
+			MID->SetVectorParameterValue(TEXT("Color"), Look.Color);
+			MID->SetScalarParameterValue(TEXT("Emission"), Look.Emission);
+			MID->SetScalarParameterValue(TEXT("Speed"), Look.Spin);
+		}
+	}
+
+	/** Lays a decal flat on the floor: centred at Centre, HalfAlong along Dir, HalfAcross across it. */
+	void PlaceOnGround(UDecalComponent* Decal, const FVector& Centre, const FVector& Dir, float HalfAlong, float HalfAcross)
+	{
+		const FVector Along = Dir.GetSafeNormal2D().IsNearlyZero() ? FVector::ForwardVector : Dir.GetSafeNormal2D();
+		Decal->SetWorldLocationAndRotation(Centre, FRotationMatrix::MakeFromXZ(-FVector::UpVector, Along).Rotator());
+		Decal->DecalSize = FVector(DecalDepth, HalfAcross, HalfAlong);
+		Decal->MarkRenderStateDirty();
 	}
 }
 
@@ -135,6 +187,7 @@ namespace GOTAGAS
 		Projectile->Velocity = Dir * Speed;
 		Projectile->CollisionRadius = CollisionRadius;
 		Projectile->MaxDistance = MaxDistance;
+		Projectile->ShownLabel = Payload.Label;
 		Projectile->BodyFX = BodyFX;
 		Projectile->ImpactFX = ImpactFX;
 		Projectile->FXScale = FXScale;
@@ -166,6 +219,9 @@ namespace GOTAGAS
 		Zone->Payload.Damage *= OutgoingScale(Source);
 		Zone->Payload.bInterrupts = false;
 		Zone->Radius = Radius;
+		Zone->ArmDelay = FMath::Max(ArmDelay, 0.f);
+		Zone->GroundElement = Payload.Element;
+		Zone->ShownLabel = Payload.Label;
 		Zone->BodyFX = BodyFX;
 		Zone->ImpactFX = ImpactFX;
 		Zone->FXScale = FXScale;
@@ -249,6 +305,7 @@ void AGOTAEffectDelivery::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME_CONDITION(AGOTAEffectDelivery, BodyFX, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AGOTAEffectDelivery, ImpactFX, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AGOTAEffectDelivery, FXScale, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AGOTAEffectDelivery, ShownLabel, COND_InitialOnly);
 }
 
 void AGOTAEffectDelivery::BeginPlay()
@@ -280,11 +337,66 @@ void AGOTAEffectDelivery::Multicast_Impact_Implementation(FVector_NetQuantize Lo
 	{
 		UE_LOG(LogGOTADelivery, Log, TEXT("DELIVERY client impact"));
 	}
+	if (AGOTAProjectile* Projectile = Cast<AGOTAProjectile>(this))
+	{
+		Projectile->StopAt(Location);
+	}
+	else if (AGOTAEffectZone* Zone = Cast<AGOTAEffectZone>(this))
+	{
+		Zone->OnServerArmed(); // a zone's only impact is its arming
+	}
 	if (ImpactFX && GetNetMode() != NM_DedicatedServer)
 	{
 		const FVector Where = Location;
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactFX.Get(), FTransform(FRotator::ZeroRotator, Where, FVector(FXScale)));
 	}
+}
+
+bool AGOTAEffectDelivery::ThreatensLocalViewer() const
+{
+	// Mirrors GOTAGAS::CanAffect's sides without its team property, which only the server knows: enemies and bosses
+	// threaten every player; another player threatens you only in a Duel; your own delivery never does.
+	const UWorld* World = GetWorld();
+	const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	const APawn* Me = PC ? PC->GetPawn() : nullptr;
+	const APawn* From = Cast<APawn>(GetOwner());
+	if (!From)
+	{
+		return true; // source unknown or gone: show the danger
+	}
+	if (From == Me)
+	{
+		return false;
+	}
+	return !From->IsPlayerControlled() || World->GetGameState<ADuelGameState>() != nullptr;
+}
+
+UDecalComponent* AGOTAEffectDelivery::AddGroundDecal(int32 SortOrder)
+{
+	if (GetNetMode() == NM_DedicatedServer)
+	{
+		return nullptr;
+	}
+	static TWeakObjectPtr<UMaterialInterface> Base;
+	if (!Base.IsValid())
+	{
+		Base = LoadObject<UMaterialInterface>(nullptr, GroundDecalPath);
+	}
+	if (!Base.IsValid())
+	{
+		UE_LOG(LogGOTADelivery, Warning, TEXT("DELIVERY ground mark missing asset %s"), GroundDecalPath);
+		return nullptr;
+	}
+	UDecalComponent* Decal = NewObject<UDecalComponent>(this);
+	Decal->SetUsingAbsoluteLocation(true);
+	Decal->SetUsingAbsoluteRotation(true);
+	Decal->SetUsingAbsoluteScale(true);
+	Decal->SetupAttachment(RootComponent);
+	Decal->SetDecalMaterial(UMaterialInstanceDynamic::Create(Base.Get(), Decal));
+	Decal->SortOrder = SortOrder;
+	Decal->SetFadeScreenSize(0.f); // the whole arena must read it, near or far
+	Decal->RegisterComponent();
+	return Decal;
 }
 
 bool AGOTAEffectDelivery::SourceIsGone() const
@@ -319,11 +431,82 @@ void AGOTAProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(AGOTAProjectile, StartLocation, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AGOTAProjectile, Velocity, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AGOTAProjectile, CollisionRadius, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AGOTAProjectile, MaxDistance, COND_InitialOnly);
+}
+
+void AGOTAProjectile::BeginPlay()
+{
+	Super::BeginPlay();
+	const FVector Dir = FVector(Velocity).GetSafeNormal();
+	if (GetNetMode() == NM_DedicatedServer || Dir.IsNearlyZero() || !ThreatensLocalViewer())
+	{
+		return; // only a projectile that can hit you gets a lane; your own or an ally's adds no clutter
+	}
+	// Where it will stop: the same world sweep the server makes, once, on this machine.
+	const FVector From = StartLocation;
+	LaneEnd = From + Dir * MaxDistance;
+	FHitResult WallHit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GOTAProjectileLane), false, this);
+	Params.AddIgnoredActor(GetOwner());
+	if (GetWorld()->SweepSingleByObjectType(WallHit, From, LaneEnd, FQuat::Identity, FCollisionObjectQueryParams(ECC_WorldStatic),
+		FCollisionShape::MakeSphere(CollisionRadius), Params))
+	{
+		LaneEnd = From + Dir * WallHit.Distance;
+	}
+	Lane = AddGroundDecal(1);
+	Mark = AddGroundDecal(2);
+	SetDecalLook(Lane, LaneLook);
+	SetDecalLook(Mark, LaneMarkLook);
+	UE_LOG(LogGOTADelivery, Log, TEXT("PROJECTILE MARK %s threat=1 lane=%.0f"), *ShownLabel.ToString(), FVector::Dist(From, LaneEnd));
+	UpdateGroundMarks();
+}
+
+void AGOTAProjectile::UpdateGroundMarks()
+{
+	if (!Lane && !Mark)
+	{
+		return;
+	}
+	const FVector Here = GetActorLocation();
+	const FVector Dir = FVector(Velocity).GetSafeNormal();
+	const float Left = FVector::DotProduct(LaneEnd - Here, Dir);
+	if (Lane)
+	{
+		Lane->SetVisibility(Left > 60.f);
+		if (Left > 60.f)
+		{
+			PlaceOnGround(Lane, Here + Dir * (Left * 0.5f), Dir, Left * 0.5f, LaneHalfWidth);
+		}
+	}
+	if (Mark)
+	{
+		PlaceOnGround(Mark, Here, Dir, CollisionRadius + 25.f, CollisionRadius + 25.f);
+	}
+}
+
+void AGOTAProjectile::StopAt(const FVector& Location)
+{
+	for (UDecalComponent* Decal : { Lane.Get(), Mark.Get() })
+	{
+		if (Decal)
+		{
+			Decal->DestroyComponent();
+		}
+	}
+	Lane = nullptr;
+	Mark = nullptr;
+	if (!HasAuthority())
+	{
+		SetActorLocation(Location);
+		Velocity = FVector::ZeroVector; // cosmetic copy only; the server's projectile has already ended
+	}
 }
 
 void AGOTAProjectile::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	UpdateGroundMarks();
 	const float Speed = Velocity.Size();
 	if (Speed <= 0.f)
 	{
@@ -421,13 +604,139 @@ void AGOTAProjectile::Tick(float DeltaSeconds)
 
 AGOTAEffectZone::AGOTAEffectZone()
 {
-	PrimaryActorTick.bCanEverTick = false; // a server timer at the zone's interval; nothing per frame
+	// The rules run on a server timer at the zone's interval. Ticking is only ever switched on to draw a warning fill
+	// on a screen, for the arm delay.
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 }
 
 void AGOTAEffectZone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(AGOTAEffectZone, Radius, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AGOTAEffectZone, ArmDelay, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AGOTAEffectZone, GroundElement, COND_InitialOnly);
+}
+
+void AGOTAEffectZone::LightGround()
+{
+	if (GetNetMode() == NM_DedicatedServer || !GroundElement.MatchesTag(FGameplayTag::RequestGameplayTag(TEXT("GOTA.Element.Fire"), false)))
+	{
+		return;
+	}
+	static TWeakObjectPtr<UParticleSystem> Flame;
+	if (!Flame.IsValid())
+	{
+		Flame = LoadObject<UParticleSystem>(nullptr, GroundFlamePath);
+	}
+	if (!Flame.IsValid())
+	{
+		UE_LOG(LogGOTADelivery, Warning, TEXT("DELIVERY ground flames missing asset %s"), GroundFlamePath);
+		return;
+	}
+	// A ring inside the edge plus the centre: enough to read "this ground burns" without hiding fighters.
+	const int32 Ring = FMath::Clamp(FMath::RoundToInt(Radius / 90.f), 3, 6);
+	const FVector Centre = GetActorLocation() - FVector(0.f, 0.f, 85.f);
+	for (int32 i = 0; i <= Ring; ++i)
+	{
+		const FVector Offset = i == 0 ? FVector::ZeroVector : FRotator(0.f, 360.f * i / Ring + 20.f, 0.f).Vector() * Radius * 0.6f;
+		UGameplayStatics::SpawnEmitterAttached(Flame.Get(), RootComponent, NAME_None, Centre + Offset, FRotator::ZeroRotator, FVector(0.7f),
+			EAttachLocation::KeepWorldPosition, true);
+	}
+	UE_LOG(LogGOTADelivery, Log, TEXT("ZONE MARK %s flames %d"), *ShownLabel.ToString(), Ring + 1);
+}
+
+void AGOTAEffectZone::BeginPlay()
+{
+	Super::BeginPlay();
+	if (GetNetMode() == NM_DedicatedServer)
+	{
+		return;
+	}
+	bShowsThreat = ThreatensLocalViewer();
+	// The zone reached this screen about half a round trip after the server spawned it.
+	const float WarnLeft = ArmDelay - HalfPing(GetWorld());
+	bArmPending = WarnLeft > 0.f;
+	// The edge is the exact radius the server tests (a fighter is caught once their capsule overlaps it).
+	Edge = AddGroundDecal(1);
+	SetDecalLook(Edge, !bShowsThreat ? FriendlyLook : bArmPending ? WarnLook : DangerLook);
+	if (Edge)
+	{
+		PlaceOnGround(Edge, GetActorLocation(), FVector::ForwardVector, Radius, Radius);
+	}
+	UE_LOG(LogGOTADelivery, Log, TEXT("ZONE MARK %s threat=%d warning=%.2fs radius=%.0f"), *ShownLabel.ToString(), bShowsThreat ? 1 : 0,
+		FMath::Max(WarnLeft, 0.f), Radius);
+	if (bArmPending)
+	{
+		if (bShowsThreat)
+		{
+			// The fill grows to the edge as the arm delay runs out: when it is full, the ground burns.
+			Fill = AddGroundDecal(2);
+			SetDecalLook(Fill, WarnFillLook);
+		}
+		WarnStartedAt = GetWorld()->GetTimeSeconds();
+		ArmsAt = WarnStartedAt + WarnLeft;
+		SetActorTickEnabled(true);
+		Tick(0.f);
+	}
+	else
+	{
+		LightGround();
+	}
+}
+
+void AGOTAEffectZone::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (!bArmPending)
+	{
+		SetActorTickEnabled(false);
+		return;
+	}
+	const float Now = GetWorld()->GetTimeSeconds();
+	if (Now >= ArmsAt)
+	{
+		ShowArmed(TEXT("counted down"));
+		return;
+	}
+	if (Fill)
+	{
+		const float Span = FMath::Max(ArmsAt - WarnStartedAt, KINDA_SMALL_NUMBER);
+		const float Frac = FMath::Clamp((Now - WarnStartedAt) / Span, 0.05f, 1.f);
+		PlaceOnGround(Fill, GetActorLocation(), FVector::ForwardVector, Radius * Frac, Radius * Frac);
+	}
+}
+
+void AGOTAEffectZone::OnServerArmed()
+{
+	if (GetNetMode() == NM_DedicatedServer)
+	{
+		return;
+	}
+	if (bArmPending)
+	{
+		ShowArmed(TEXT("server arm arrived first"));
+	}
+	else if (ShownArmedAt >= 0.f)
+	{
+		// How far this screen's countdown was from the server's real arm moment (positive: it turned red early).
+		UE_LOG(LogGOTADelivery, Log, TEXT("ZONE MARK %s server arm %.2fs after the mark"), *ShownLabel.ToString(), GetWorld()->GetTimeSeconds() - ShownArmedAt);
+	}
+}
+
+void AGOTAEffectZone::ShowArmed(const TCHAR* Why)
+{
+	ShownArmedAt = GetWorld()->GetTimeSeconds();
+	bArmPending = false;
+	SetActorTickEnabled(false);
+	if (Fill)
+	{
+		Fill->DestroyComponent();
+		Fill = nullptr;
+	}
+	SetDecalLook(Edge, bShowsThreat ? DangerLook : FriendlyLook);
+	LightGround();
+	UE_LOG(LogGOTADelivery, Log, TEXT("ZONE MARK %s burning (%s)"), *ShownLabel.ToString(), Why);
 }
 
 void AGOTAEffectZone::StartZone(float InDuration, float InInterval, float InArmDelay)
