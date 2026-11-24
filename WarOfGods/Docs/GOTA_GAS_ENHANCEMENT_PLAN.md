@@ -35,7 +35,8 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestone E: status widget teardown fix, multiplayer tests | `e8a6364` | Editor 72/72. Packaged 70/72 on the first pass; exposed the Titan Charge bug |
 | Milestone E: Titan Charge dash timing | `a022514` | Editor 73/73, packaged 73/73 on the first pass. Its four-player lag run exposed the boss intro bug |
 | Milestone E: boss intro releases the player it held | `553fd5a` | Editor, clean build: 73/73. Packaged: 67/73 on the first pass, no failure reproduced on rerun. Four-player, latency and dodge runs pass. See the milestone E section |
-| Milestones F, G | | Not started |
+| Milestone F1: status chips, shield bar, real health on every HUD | this commit | Editor, incremental build: 77/77 on the final code. Duel and Horde latency runs clean. No clean build, packaged or four-player run yet. See "Status HUD (F1)" |
+| Milestones F2 to F5, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
 
@@ -182,6 +183,27 @@ Elemental combinations (for example Frost on a Burning target) are not designed 
 - **Flames:** the Fire row's `StatusFX` (`P_Fire_Small` from Realistic Starter VFX Vol 2, the brazier fire the arenas already use) attached to the body's root. One component per actor, found by tag, so re-application cannot stack them. Removed by the cue's `OnRemove` (expiry, death, reset) and owned by the actor, so it is destroyed with it.
 - **Local indicator:** `UGOTACombatFeedbackSubsystem` shows "BURNING" while the local player's own pawn burns. It is driven by `GOTAGAS::OnStatusCue` (raised by the status cues) and by the pawn's `OnDestroyed`; nothing polls. It works in Duel, Horde and Story. The Duel HUD's older per-tick status text is unchanged and does not list Burning.
 - **Boss immunity:** the existing resist line, "THE QUARRY BEHEMOTH RESISTS BURNING" or "... SHRUGS OFF PART OF BURNING".
+
+### Status HUD (F1)
+
+Display only. Health, damage, cooldowns, status rules and balance are unchanged.
+
+- **Timers:** Mixed replication sends full effects only to the owning client, so the server mirrors each active status into `UGOTAAbilitySystemComponent::StatusTimers`. The list is rebuilt once, on the next tick, only when a status is added, refreshed or removed. Clients count down locally, so there is no per-frame network traffic.
+- **Chips:** coloured text labels with a time bar, up to six, most important first, for the local player and the current target (lock-on, else the Duel opponent, else a living boss). They are not icon textures.
+- **Shield bar:** reads the replicated `ShieldPool` against the amount granted, and hides when the shield is gone.
+- **Real health:** a shield is over-health in the Blueprint damage system, which made a shielded player's bar look damaged. `GOTAGAS::ReadDisplayVitals` removes the over-health for display. The Duel bars and `W_PlayerHUD` both use it.
+- **One health bar per screen:** `BP_Player` added a `W_PlayerHUD` to the host's screen for every remote pawn, so the host's visible bar could show a teammate's health, and remote players had no personal bar outside Duel. Each screen now keeps only its own player's HUD, remote players get one in Horde and Story, and Duel uses only its own bars. `AGOTAPlayerCharacter::ReconcileScreenHuds` checks for ten seconds after each pawn appears.
+
+Verified on the final F1 code (editor, incremental build):
+
+| Check | Result |
+|---|---|
+| Full editor suite | 77/77, first pass |
+| Remote player in Duel, Horde and Story: chips, shield, health bar | pass |
+| Death clears chips and shield; the next pawn starts clean | pass |
+| Latency, 120±30 ms and 5% loss, Duel and Horde, one run each | no wrong health bar, no second HUD, no ensure or fatal |
+
+Not verified yet: clean build, packaged build, four-player HUD, Story under latency, and a visual review of the HUD in Horde and Story. The Duel layout screenshot predates the last health fixes. A HUD that `BP_Player` added more than ten seconds after a pawn appeared would not be removed; none was seen.
 
 ## Status policies (boss immunity and resistance)
 

@@ -659,6 +659,7 @@ void UGOTAHeroAbilityComponent::SetShieldPoolValue(float Value)
 	if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(GetOwner()))
 	{
 		ASC->SetShieldPool(ShieldPool); // replicated for every HUD
+		ASC->SetShieldBaseMaxHealth(ShieldPool > 0.f ? ShieldBaseMax : 0.f);
 	}
 }
 
@@ -776,6 +777,13 @@ void UGOTAHeroAbilityComponent::TickDefense(APawn* Owner)
 	}
 	PendingScaledLoss = 0.f;
 	DefenseTrackedHealth = bAlive ? UGOTACombatantObserver::ReadVitals(Owner).Health : -1.f;
+	if (bShieldActive && bAlive)
+	{
+		if (UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Owner))
+		{
+			ASC->SetShieldedHealth(DefenseTrackedHealth - ShieldPool); // what the health bar shows while shielded
+		}
+	}
 }
 
 void UGOTAHeroAbilityComponent::ResolveServer(int32 Slot, int32 HitIndex)

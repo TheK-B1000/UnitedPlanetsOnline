@@ -32,6 +32,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void PawnClientRestart() override;
 
 	int32 GetRejectedRPCs() const { return RejectedRPCs; }
 
@@ -53,6 +54,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "GOTA|Presentation")
 	float LocalParrySlowMoSeconds = 0.25f;
 
+	/** What W_PlayerHUD's health bar answers right now, 0 to 1. Negative when unreadable: -2 no HUD, -3 not on screen, -4 another player's HUD is on this screen. For the test log. */
+	float ReadHudHealthBar() const;
+
 protected:
 	/** False = drop the call. Only consulted on the server for SR_* functions. */
 	bool ValidateServerRPC(const UFunction* Function, void* Parms);
@@ -63,6 +67,15 @@ protected:
 	void RestoreParryCamera();
 	void BindLocalHud();
 	void UnbindLocalHud();
+	/** Remote client outside Duel: BP_Player's BeginPlay gives this player no W_PlayerHUD, so add it here. Local only. */
+	void EnsureRemoteHud();
+	/**
+	 * BP_Player's BeginPlay can put a W_PlayerHUD on the wrong screen (every remote pawn adds one on a listen host).
+	 * Each screen keeps only its own player's HUD; Duel keeps none, because its HUD has its own health bars. Local only.
+	 */
+	void ReconcileScreenHuds();
+	int32 HudSweepsLeft = 0;
+	FTimerHandle HudSweepTimer;
 
 	UFUNCTION()
 	void HandleHudHealth(float NewValue, float MaxValue);
@@ -77,4 +90,7 @@ protected:
 
 	TWeakObjectPtr<class UStatsComponent> HudStats;
 	TWeakObjectPtr<class UProgressBar> HudBar;
+	UPROPERTY(Transient)
+	TObjectPtr<class UUserWidget> RemoteHud;
+	FTimerHandle RemoteHudRetry;
 };

@@ -10,6 +10,8 @@
 #include "Abilities/GAS/GOTAStatusEffects.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
 #include "HAL/IConsoleManager.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -240,6 +242,16 @@ namespace GOTAAbilityTest
 	 * gota.Ability.Status <fighter> <None|Unbreakable|Veiled|Dread|Slowed|Burning> <seconds> <magnitude> [source fighter]:
 	 * server-side status (tests). The optional source fighter is who applied it (kill credit, resist feedback).
 	 */
+	static APawn* TestCombatant(UWorld* World, int32 Index)
+	{
+		if (ADuelGameMode* Duel = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr)
+		{
+			return Duel->GetFighterPawn(Index);
+		}
+		// Horde and Story have no fighter slots: the Nth connected player.
+		const AGameStateBase* GS = World && World->GetAuthGameMode() ? World->GetGameState() : nullptr;
+		return GS && GS->PlayerArray.IsValidIndex(Index) && GS->PlayerArray[Index] ? GS->PlayerArray[Index]->GetPawn() : nullptr;
+	}
 	static void Status(const TArray<FString>& Args)
 	{
 		if (Args.Num() < 4)
@@ -247,15 +259,14 @@ namespace GOTAAbilityTest
 			return;
 		}
 		UWorld* World = GameWorld();
-		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
-		APawn* Pawn = GM ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		APawn* Pawn = TestCombatant(World, FCString::Atoi(*Args[0]));
 		const int64 Value = StaticEnum<EGOTAStatus>()->GetValueByNameString(Args[1]);
 		if (!Pawn || Value == INDEX_NONE)
 		{
 			return;
 		}
 		const EGOTAStatus Status = static_cast<EGOTAStatus>(Value);
-		AActor* Source = Args.Num() > 4 ? GM->GetFighterPawn(FCString::Atoi(*Args[4])) : nullptr;
+		AActor* Source = Args.Num() > 4 ? TestCombatant(World, FCString::Atoi(*Args[4])) : nullptr;
 		if (Status == EGOTAStatus::None)
 		{
 			// Clearing the legacy slot is a call on the component itself.
@@ -271,15 +282,14 @@ namespace GOTAAbilityTest
 	static void ElementHit(const TArray<FString>& Args)
 	{
 		UWorld* World = GameWorld();
-		ADuelGameMode* GM = World ? World->GetAuthGameMode<ADuelGameMode>() : nullptr;
-		APawn* Pawn = GM && Args.Num() >= 3 ? GM->GetFighterPawn(FCString::Atoi(*Args[0])) : nullptr;
+		APawn* Pawn = Args.Num() >= 3 ? TestCombatant(World, FCString::Atoi(*Args[0])) : nullptr;
 		const FGameplayTag Element = Args.Num() >= 3 ? FGameplayTag::RequestGameplayTag(FName(*(TEXT("GOTA.Element.") + Args[1])), false) : FGameplayTag();
 		if (!Pawn || !Element.IsValid())
 		{
 			UE_LOG(LogGOTAAbilityTest, Warning, TEXT("ElementHit: <fighter> <Element> <damage> [source]"));
 			return;
 		}
-		AActor* Source = Args.Num() > 3 ? GM->GetFighterPawn(FCString::Atoi(*Args[3])) : nullptr;
+		AActor* Source = Args.Num() > 3 ? TestCombatant(World, FCString::Atoi(*Args[3])) : nullptr;
 		GOTAGAS::DealElementalHit(Pawn, Source, FCString::Atof(*Args[2]), Element);
 	}
 	/** gota.Ability.ElementResist <fighter> <Element> <damage scale>: set an element resistance in the fighter's policy. */

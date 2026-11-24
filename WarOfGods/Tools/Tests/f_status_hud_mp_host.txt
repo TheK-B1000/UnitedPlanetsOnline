@@ -1,0 +1,24 @@
+waitplayers 2 120
+# GAS milestone F1 on a remote player: status timers and the shield come from the server. The client must show its own
+# statuses and the host's (a target whose full effects Mixed replication does not send it), through refresh and expiry.
+gota.GAS.ElementStatus 0
+r.MotionBlurQuality 0
+wait 10
+gota.Ability.Place 250
+wait 0.3
+gota.Duel.Face 0
+gota.Ability.Status 1 Shielded 6 30 0
+wait 0.5
+gota.Ability.Use 0 0
+wait 1.5
+gota.Ability.Dump
+gota.Ability.Status 0 Vulnerable 3 0.5 1
+wait 1.5
+gota.Ability.Status 0 Vulnerable 3 0.5 1
+wait 0.5
+gota.Ability.Status 1 Slowed 2 0.3 0
+gota.Ability.Status 1 Weakened 2 0.2 0
+wait 5
+gota.Ability.Dump
+wait 60
+quit

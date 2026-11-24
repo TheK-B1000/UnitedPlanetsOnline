@@ -3,6 +3,8 @@
 #include "Characters/GOTAPlayerCharacter.h"
 
 #include "Abilities/GAS/GOTAStatusEffects.h"
+#include "Arenas/Duel/DuelGameState.h"
+#include "GameFramework/GameStateBase.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
@@ -168,6 +170,18 @@ void AGOTAPlayerCharacter::ProcessEvent(UFunction* Function, void* Parms)
 
 namespace
 {
+	/** The pawn a W_PlayerHUD was created for (its PlayerRef), if it names one. */
+	const APawn* HudPlayerRef(const UUserWidget* Widget)
+	{
+		const FObjectProperty* Prop = Widget ? FindFProperty<FObjectProperty>(Widget->GetClass(), TEXT("PlayerRef")) : nullptr;
+		const UObject* Obj = Prop ? Prop->GetObjectPropertyValue_InContainer(Widget) : nullptr;
+		if (const AController* Controller = Cast<AController>(Obj))
+		{
+			return Controller->GetPawn();
+		}
+		return Cast<APawn>(Obj);
+	}
+
 	float SafeHealthFraction(const UUserWidget* Widget)
 	{
 		if (!Widget)
@@ -199,6 +213,12 @@ namespace
 		if (!IsValid(Pawn))
 		{
 			return 0.f;
+		}
+		// A shield is over-health in the Blueprint; the health bar shows real health and the shield has its own bar.
+		const GOTAGAS::FDisplayVitals Vitals = GOTAGAS::ReadDisplayVitals(Pawn);
+		if (Vitals.MaxHealth > KINDA_SMALL_NUMBER)
+		{
+			return Vitals.GetHealthFraction();
 		}
 		const UStatsComponent* Stats = Pawn->FindComponentByClass<UStatsComponent>();
 		const float Max = Stats ? Stats->GetMaxHealth() : 0.f;
@@ -298,12 +318,103 @@ void AGOTAPlayerCharacter::BeginPlay()
 	{
 		BindLocalHud();
 	}
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		// BP_Player can add its HUD after a delay, on any screen, so check for a few seconds after each pawn appears.
+		HudSweepsLeft = 20;
+		GetWorldTimerManager().SetTimer(HudSweepTimer, this, &AGOTAPlayerCharacter::ReconcileScreenHuds, 0.5f, true, 0.25f);
+	}
+}
+
+void AGOTAPlayerCharacter::ReconcileScreenHuds()
+{
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	const APawn* Mine = PC && PC->IsLocalController() ? PC->GetPawn() : nullptr;
+	if (Mine)
+	{
+		const bool bDuel = World->GetGameState() && World->GetGameState()->IsA<ADuelGameState>();
+		TArray<UUserWidget*> Widgets;
+		UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Widgets, UUserWidget::StaticClass(), false);
+		UUserWidget* Keep = nullptr;
+		if (!bDuel)
+		{
+			for (UUserWidget* Widget : Widgets)
+			{
+				if (!Widget || !Widget->IsInViewport() || !Widget->GetClass()->GetName().StartsWith(TEXT("W_PlayerHUD")))
+				{
+					continue;
+				}
+				const APawn* Ref = HudPlayerRef(Widget);
+				if (Ref == Mine || (!IsValid(Ref) && !Keep))
+				{
+					Keep = Widget;
+				}
+			}
+		}
+		for (UUserWidget* Widget : Widgets)
+		{
+			if (Widget && Widget != Keep && Widget->IsInViewport() && Widget->GetClass()->GetName().StartsWith(TEXT("W_PlayerHUD")))
+			{
+				UE_LOG(LogGOTANetGuard, Log, TEXT("HUD: removed extra %s (for %s) from %s's screen"), *Widget->GetName(), *GetNameSafe(HudPlayerRef(Widget)), *Mine->GetName());
+				Widget->RemoveFromParent();
+			}
+		}
+	}
+	if (--HudSweepsLeft <= 0)
+	{
+		GetWorldTimerManager().ClearTimer(HudSweepTimer);
+	}
 }
 
 void AGOTAPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	UnbindLocalHud();
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(RemoteHudRetry);
+		World->GetTimerManager().ClearTimer(HudSweepTimer);
+	}
+	if (RemoteHud)
+	{
+		RemoteHud->RemoveFromParent();
+		RemoteHud = nullptr;
+	}
 	Super::EndPlay(EndPlayReason);
+}
+
+void AGOTAPlayerCharacter::PawnClientRestart()
+{
+	Super::PawnClientRestart();
+	EnsureRemoteHud();
+}
+
+void AGOTAPlayerCharacter::EnsureRemoteHud()
+{
+	UWorld* World = GetWorld();
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!World || HasAuthority() || RemoteHud || !PC || !PC->IsLocalController())
+	{
+		return;
+	}
+	// The mode is only known once the GameState has arrived. Duel has its own health bars.
+	const AGameStateBase* GameState = World->GetGameState();
+	if (!GameState)
+	{
+		World->GetTimerManager().SetTimer(RemoteHudRetry, this, &AGOTAPlayerCharacter::EnsureRemoteHud, 0.25f, false);
+		return;
+	}
+	if (GameState->IsA<ADuelGameState>())
+	{
+		return;
+	}
+	UClass* HudClass = LoadObject<UClass>(nullptr, TEXT("/Game/Widgets/W_PlayerHUD.W_PlayerHUD_C"));
+	RemoteHud = HudClass ? CreateWidget<UUserWidget>(PC, HudClass) : nullptr;
+	if (RemoteHud)
+	{
+		RemoteHud->AddToViewport();
+		BindLocalHud();
+	}
 }
 
 void AGOTAPlayerCharacter::RestoreParryCamera()
@@ -391,7 +502,11 @@ void AGOTAPlayerCharacter::BindLocalHud()
 	{
 		if (Widget && Widget->GetClass()->GetName().StartsWith(TEXT("W_PlayerHUD")) && Widget->GetOwningPlayer() == PC)
 		{
-			Hud = Widget;
+			const APawn* Ref = HudPlayerRef(Widget);
+			if (!Ref || Ref == this)
+			{
+				Hud = Widget;
+			}
 		}
 	}
 	if (!Hud || !Hud->WidgetTree)
@@ -417,10 +532,63 @@ void AGOTAPlayerCharacter::UnbindLocalHud()
 	HudBar = nullptr;
 }
 
+float AGOTAPlayerCharacter::ReadHudHealthBar() const
+{
+	// Looked up each time: on a remote client the widget can appear after BeginPlay, so HudBar may never have been bound.
+	const APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		return -1.f;
+	}
+	TArray<UUserWidget*> Widgets;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(const_cast<AGOTAPlayerCharacter*>(this), Widgets, UUserWidget::StaticClass(), false);
+	UUserWidget* Hud = nullptr;
+	int32 AnyHud = 0;
+	for (UUserWidget* Widget : Widgets)
+	{
+		if (!Widget || !Widget->GetClass()->GetName().StartsWith(TEXT("W_PlayerHUD")))
+		{
+			continue;
+		}
+		++AnyHud;
+		if (Widget->IsInViewport() && Widget->GetOwningPlayer() == PC)
+		{
+			const APawn* Ref = HudPlayerRef(Widget);
+			if (IsValid(Ref) && Ref != this)
+			{
+				return -4.f;	// another player's HUD is on this screen
+			}
+			Hud = Widget;
+		}
+	}
+	if (!Hud)
+	{
+		// -2: this player has no such HUD at all. -3: one exists but is not on this player's screen.
+		return AnyHud > 0 ? -3.f : -2.f;
+	}
+	UFunction* GetPercent = Hud->FindFunction(TEXT("GetPercent"));
+	const FProperty* ReturnProp = GetPercent ? GetPercent->GetReturnProperty() : nullptr;
+	if (!ReturnProp)
+	{
+		return -1.f;
+	}
+	uint8* Params = static_cast<uint8*>(FMemory_Alloca(GetPercent->ParmsSize));
+	FMemory::Memzero(Params, GetPercent->ParmsSize);
+	Hud->ProcessEvent(GetPercent, Params);
+	const void* Value = ReturnProp->ContainerPtrToValuePtr<void>(Params);
+	return ReturnProp->IsA<FDoubleProperty>() ? static_cast<float>(*static_cast<const double*>(Value)) : *static_cast<const float*>(Value);
+}
+
 void AGOTAPlayerCharacter::HandleHudHealth(float NewValue, float MaxValue)
 {
 	if (UProgressBar* Bar = HudBar.Get())
 	{
+		const GOTAGAS::FDisplayVitals Vitals = GOTAGAS::ReadDisplayVitals(this);
+		if (Vitals.MaxHealth > KINDA_SMALL_NUMBER)
+		{
+			Bar->SetPercent(Vitals.GetHealthFraction());
+			return;
+		}
 		Bar->SetPercent(MaxValue > KINDA_SMALL_NUMBER ? FMath::Clamp(NewValue / MaxValue, 0.f, 1.f) : 0.f);
 	}
 }

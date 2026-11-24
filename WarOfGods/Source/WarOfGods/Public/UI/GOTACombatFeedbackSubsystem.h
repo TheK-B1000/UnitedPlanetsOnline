@@ -8,9 +8,33 @@
 #include "Abilities/GOTAAbilityTypes.h"
 #include "GOTACombatFeedbackSubsystem.generated.h"
 
+class UBorder;
 class UTextBlock;
+class UHorizontalBox;
+class UProgressBar;
+class UVerticalBox;
+class UGOTAAbilitySystemComponent;
 
-/** One centered line of combat feedback above the crosshair. Built in C++; fades out on its own. */
+/** One status chip: short name with seconds left, over a bar that drains. */
+USTRUCT()
+struct FGOTAStatusChip
+{
+	GENERATED_BODY()
+
+	/** Dark backing, so the chip reads on bright sand and over bodies. */
+	UPROPERTY(Transient)
+	TObjectPtr<UBorder> Box;
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> Label;
+	UPROPERTY(Transient)
+	TObjectPtr<UProgressBar> Time;
+};
+
+/**
+ * Combat feedback shared by Duel, Story and Horde: a fading message, the hard-status line, status chips with time left
+ * for the local player and their target, and the local shield bar. Built in C++. The readout refreshes at 10 Hz from
+ * replicated state and sends nothing over the network.
+ */
 UCLASS()
 class WAROFGODS_API UGOTACombatFeedbackWidget : public UUserWidget
 {
@@ -27,12 +51,36 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	void EnsureLayout();
+	void BuildChips(UHorizontalBox* Row, TArray<FGOTAStatusChip>& Pool);
+	/** Show ASC's statuses in a chip row; appends a stable description to OutKey and a readable one to OutLog. */
+	void FillChips(const UGOTAAbilitySystemComponent* ASC, TArray<FGOTAStatusChip>& Pool, FString& OutKey, FString& OutLog);
+	void UpdateReadout();
+	/** Lock-on target, else the Duel opponent, else a living boss. */
+	APawn* ResolveTarget(const APawn* Local) const;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> Line;
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> StatusLine;
+	UPROPERTY(Transient)
+	TObjectPtr<UHorizontalBox> LocalRow;
+	UPROPERTY(Transient)
+	TObjectPtr<UHorizontalBox> TargetRow;
+	UPROPERTY(Transient)
+	TArray<FGOTAStatusChip> LocalChips;
+	UPROPERTY(Transient)
+	TArray<FGOTAStatusChip> TargetChips;
+	UPROPERTY(Transient)
+	TObjectPtr<UBorder> ShieldBox;
+	UPROPERTY(Transient)
+	TObjectPtr<UProgressBar> ShieldBar;
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> ShieldText;
+	TWeakObjectPtr<APawn> ReadoutTarget;
 	float Remaining = 0.f;
+	float ReadoutWait = 0.f;
+	float TargetWait = 0.f;
+	FString LastReadoutKey;
 };
 
 /**

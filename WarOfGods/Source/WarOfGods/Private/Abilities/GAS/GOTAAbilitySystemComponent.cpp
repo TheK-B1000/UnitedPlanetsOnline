@@ -9,7 +9,13 @@
 #include "Characters/StatsComponent.h"
 #include "Combat/GOTACombatantObserver.h"
 #include "Events/CombatEvents.h"
+#include "Engine/World.h"
+#include "GameFramework/GameStateBase.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
+#include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GOTAAbilitySystemComponent)
 
@@ -97,6 +103,8 @@ void UGOTAAbilitySystemComponent::BindServerEvents()
 			.AddUObject(this, &UGOTAAbilitySystemComponent::HandleVeiledChanged);
 		RegisterGameplayTagEvent(GOTATags::Status_Unbreakable, EGameplayTagEventType::NewOrRemoved)
 			.AddUObject(this, &UGOTAAbilitySystemComponent::HandleUnbreakableChanged);
+		OnActiveGameplayEffectAddedDelegateToSelf.AddUObject(this, &UGOTAAbilitySystemComponent::HandleEffectAdded);
+		OnAnyGameplayEffectRemovedDelegate().AddUObject(this, &UGOTAAbilitySystemComponent::HandleEffectRemoved);
 	}
 	if (UStatsComponent* Stats = Owner->FindComponentByClass<UStatsComponent>())
 	{
@@ -218,6 +226,25 @@ void UGOTAAbilitySystemComponent::SetShieldPool(float Value)
 	}
 }
 
+void UGOTAAbilitySystemComponent::SetShieldBaseMaxHealth(float Value)
+{
+	UWorld* World = GetWorld();
+	if (!IsOwnerActorAuthoritative() || !World)
+	{
+		return;
+	}
+	FTimerManager& Timers = World->GetTimerManager();
+	if (Value > 0.f)
+	{
+		Timers.ClearTimer(ShieldBaseClearTimer);
+		ShieldBaseMaxHealth = Value;
+	}
+	else if (ShieldBaseMaxHealth > 0.f && !Timers.IsTimerActive(ShieldBaseClearTimer))
+	{
+		Timers.SetTimer(ShieldBaseClearTimer, FTimerDelegate::CreateWeakLambda(this, [this]() { ShieldBaseMaxHealth = 0.f; }), 1.f, false);
+	}
+}
+
 int32 UGOTAAbilitySystemComponent::ClearStatusEffects(const TCHAR* Why)
 {
 	if (!IsOwnerActorAuthoritative())
@@ -230,6 +257,89 @@ int32 UGOTAAbilitySystemComponent::ClearStatusEffects(const TCHAR* Why)
 		UE_LOG(LogGOTAGAS, Log, TEXT("%s: cleared %d status effect(s) (%s)"), *GetNameSafe(GetOwner()), Removed, Why);
 	}
 	return Removed;
+}
+
+void UGOTAAbilitySystemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UGOTAAbilitySystemComponent, StatusTimers);
+	DOREPLIFETIME(UGOTAAbilitySystemComponent, ShieldBaseMaxHealth);
+	DOREPLIFETIME(UGOTAAbilitySystemComponent, ShieldedHealth);
+}
+
+float UGOTAAbilitySystemComponent::GetStatusTimeLeft(const FGOTAStatusTimer& Timer) const
+{
+	const UWorld* World = GetWorld();
+	const float Left = World ? static_cast<float>(Timer.LocalEndTime - World->GetTimeSeconds()) : 0.f;
+	return FMath::Clamp(Left, 0.f, Timer.Duration);
+}
+
+void UGOTAAbilitySystemComponent::MarkStatusTimersDirty()
+{
+	UWorld* World = GetWorld();
+	if (bStatusTimersDirty || !World || World->bIsTearingDown || !IsOwnerActorAuthoritative())
+	{
+		return;
+	}
+	bStatusTimersDirty = true;
+	// Next tick: a removal callback runs while the effect is still listed.
+	World->GetTimerManager().SetTimerForNextTick(this, &UGOTAAbilitySystemComponent::RebuildStatusTimers);
+}
+
+void UGOTAAbilitySystemComponent::RebuildStatusTimers()
+{
+	bStatusTimersDirty = false;
+	TArray<FGOTAStatusTimer> Fresh;
+	GOTAGAS::CollectStatusTimers(this, Fresh);
+	if (Fresh != StatusTimers)
+	{
+		StatusTimers = MoveTemp(Fresh);
+		LogStatusTimers(TEXT("server"));
+	}
+}
+
+void UGOTAAbilitySystemComponent::OnRep_StatusTimers()
+{
+	if (const UWorld* World = GetWorld())
+	{
+		const AGameStateBase* GS = World->GetGameState();
+		const APlayerController* PC = World->GetFirstPlayerController();
+		const float OneWay = PC && PC->PlayerState ? PC->PlayerState->GetPingInMilliseconds() * 0.0005f : 0.f;
+		const double Now = World->GetTimeSeconds();
+		for (FGOTAStatusTimer& Timer : StatusTimers)
+		{
+			// Time left as sent, less the trip here. The synced clock also answers, and catches a stale value from a late
+			// join or a pawn becoming relevant. Both errors overstate the time, so the smaller is the better answer.
+			double Left = Timer.RemainingAtSend - OneWay;
+			if (GS)
+			{
+				Left = FMath::Min(Left, Timer.EndServerTime - GS->GetServerWorldTimeSeconds());
+			}
+			Timer.LocalEndTime = Now + FMath::Max(0.0, Left);
+		}
+	}
+	LogStatusTimers(TEXT("client"));
+}
+
+void UGOTAAbilitySystemComponent::LogStatusTimers(const TCHAR* Where) const
+{
+	FString Out;
+	for (const FGOTAStatusTimer& Timer : StatusTimers)
+	{
+		Out += FString::Printf(TEXT("%s%s %.1f/%.1f x%.2f"), Out.IsEmpty() ? TEXT("") : TEXT(" "),
+			*StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Timer.Status)), GetStatusTimeLeft(Timer), Timer.Duration, Timer.Magnitude);
+	}
+	UE_LOG(LogGOTAGAS, Log, TEXT("%s: STATUS TIMERS (%s) [%s]"), *GetNameSafe(GetOwner()), Where, *Out);
+}
+
+void UGOTAAbilitySystemComponent::HandleEffectAdded(UAbilitySystemComponent* Target, const FGameplayEffectSpec& Spec, FActiveGameplayEffectHandle Handle)
+{
+	MarkStatusTimersDirty();
+}
+
+void UGOTAAbilitySystemComponent::HandleEffectRemoved(const FActiveGameplayEffect& Effect)
+{
+	MarkStatusTimersDirty();
 }
 
 FString UGOTAAbilitySystemComponent::DescribeStatusEffects() const

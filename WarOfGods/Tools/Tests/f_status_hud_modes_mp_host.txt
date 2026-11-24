@@ -1,0 +1,12 @@
+waitplayers 2 120
+# GAS milestone F1 outside Duel: a remote player must have the shared health bar, and it must stay full while a shield
+# absorbs a hit (a shield is over-health in the Blueprint, which would otherwise read as lost health).
+gota.GAS.ElementStatus 0
+wait 10
+gota.Ability.Status 1 Shielded 6 30 0
+wait 1
+gota.Ability.ElementHit 1 Fire 22
+wait 8
+gota.Ability.Dump
+wait 60
+quit

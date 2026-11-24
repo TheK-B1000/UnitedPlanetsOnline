@@ -309,23 +309,8 @@ void UGOTADuelHUDWidget::RefreshAbilityBar()
 	}
 	if (Text_AbilityStatus)
 	{
-		// Every status the local fighter has, highest priority first. GAS statuses come from the replicated effects
-		// (the owning client receives them in Mixed mode); a status still on the legacy slot is read from the slot.
-		struct FLabel { EGOTAStatus Status; const TCHAR* Text; };
-		static const FLabel Labels[] = {
-			{ EGOTAStatus::Veiled, TEXT("VEILED") }, { EGOTAStatus::Unbreakable, TEXT("UNBREAKABLE") },
-			{ EGOTAStatus::Dread, TEXT("DREAD  -  SLOWED") }, { EGOTAStatus::Slowed, TEXT("TIME-LASHED  -  SLOWED") },
-		};
-		FString Status;
-		for (const FLabel& L : Labels)
-		{
-			const float Left = A->GetStatus() == L.Status ? A->GetStatusRemaining() : GOTAGAS::GetStatusRemaining(A->GetOwner(), L.Status);
-			if (Left > 0.f)
-			{
-				Status += FString::Printf(TEXT("%s%s  %.1fs"), Status.IsEmpty() ? TEXT("") : TEXT("     "), L.Text, Left);
-			}
-		}
-		Text_AbilityStatus->SetText(FText::FromString(Status));
+		// Statuses are shown once, by the status chips every mode shares (UGOTACombatFeedbackWidget).
+		Text_AbilityStatus->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	// Server refusals (cooldown / momentum / range / line of sight ...).
 	double When = 0.0;
@@ -494,13 +479,12 @@ void UGOTADuelHUDWidget::RefreshFromGameState()
 	// Health is read from the Blueprint damage system (read-only observer).
 	if (Bar_LocalHealth)
 	{
-		const FGOTACombatantVitals Vitals = UGOTACombatantObserver::ReadVitals(LocalPawn);
-		Bar_LocalHealth->SetPercent(Vitals.bHasDamageSystem ? Vitals.GetFraction() : 0.f);
+		// Real health: a shield is over-health in the damage system and has its own bar (UGOTACombatFeedbackWidget).
+		Bar_LocalHealth->SetPercent(GOTAGAS::ReadDisplayVitals(LocalPawn).GetHealthFraction());
 	}
 	if (Bar_OpponentHealth)
 	{
-		const FGOTACombatantVitals Vitals = UGOTACombatantObserver::ReadVitals(OpponentPawn);
-		Bar_OpponentHealth->SetPercent(Vitals.bHasDamageSystem ? Vitals.GetFraction() : 0.f);
+		Bar_OpponentHealth->SetPercent(GOTAGAS::ReadDisplayVitals(OpponentPawn).GetHealthFraction());
 	}
 }
 

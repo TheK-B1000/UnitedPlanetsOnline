@@ -15,6 +15,8 @@
 
 class AActor;
 class APawn;
+class UGOTAAbilitySystemComponent;
+struct FGOTAStatusTimer;
 
 /**
  * Shared shape of every status: duration from Data.Duration, one stack per target, re-application refreshes the
@@ -388,6 +390,19 @@ namespace GOTAGAS
 
 	/** Server and owning client: the ability definition's Magnitude on the running status (0 when absent). */
 	float GetStatusMagnitude(const AActor* Actor, EGOTAStatus Status);
+
+	/** Server: the actor's active statuses for display, most important first (the overlay priority order). */
+	void CollectStatusTimers(const UGOTAAbilitySystemComponent* ASC, TArray<FGOTAStatusTimer>& Out);
+
+	/** Health and shield as a HUD should draw them: the shield is held as over-health, so it is separated out here. */
+	struct FDisplayVitals
+	{
+		float Health = 0.f;
+		float MaxHealth = 0.f;
+		float Shield = 0.f;
+		float GetHealthFraction() const { return MaxHealth > 0.f ? FMath::Clamp(Health / MaxHealth, 0.f, 1.f) : 0.f; }
+	};
+	WAROFGODS_API FDisplayVitals ReadDisplayVitals(const AActor* Actor);
 
 	/**
 	 * Any peer: put the highest-priority overlay on the body, from GAS tags and the ability component's slot.

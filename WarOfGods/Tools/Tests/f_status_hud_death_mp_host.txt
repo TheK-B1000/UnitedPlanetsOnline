@@ -1,0 +1,19 @@
+waitplayers 2 120
+# GAS milestone F1: a remote player dies with a shield, a burn and a debuff up. Every chip and the shield bar must clear,
+# and the next round's pawn must start clean and show only what is applied to it.
+gota.GAS.ElementStatus 0
+r.MotionBlurQuality 0
+wait 8
+gota.Ability.Status 1 Shielded 20 30 0
+gota.Ability.Status 1 Dread 20 0.35 0
+gota.Ability.Status 1 Burning 20 1 0
+wait 1
+gota.Ability.Dump
+gota.Duel.Hurt 1 9999
+wait 9
+gota.Ability.Dump
+gota.Ability.Status 1 Slowed 3 0.3 0
+wait 4
+gota.Ability.Dump
+wait 60
+quit

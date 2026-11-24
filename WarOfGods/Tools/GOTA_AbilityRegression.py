@@ -251,6 +251,10 @@ CASES = {
           (r"CONTROL lock on", 1), (r"CONTROL lock off", 1)]),
     ],
     # GAS milestone B: shields (over-health), Fortified / Vulnerable on every source, Empowered, Weakened, Hasted.
+    "StatusHUD": [],  # multiplayer only (MP_STATUS): what a remote player is shown
+    "StatusHUDDeath": [],  # multiplayer only: chips and shield clear on death, the next pawn starts clean
+    "StatusHUDHorde": [],  # multiplayer only: a remote player's shared health bar, behind a shield
+    "StatusHUDStory": [],  # the same in Story
     "Defense": [
         ("Shielded: absorbs Blueprint and ability hits, breaks, refresh, stronger, expiry, survives a big hit",
          "?Opponent=AI?Hero=Drakon?DevHeroes=1", "defense_shield.txt",
@@ -370,6 +374,18 @@ MP = {
     "InfernoSlam": ("Varoth", "infernoslam_mp_host.txt", r"InfernoSlam hit BP_Player\S+ for [0-9.]+ \(landed=1\)", "Swing3_Slow"),
 }
 # Multiplayer for statuses: host hero, host script, host-log checks, client-log checks (the remote player's own view).
+MP_URL = {
+    "StatusHUDHorde": "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry",
+    "StatusHUDStory": "/Game/Story/Maps/L_GOTA_Story_Prologue?game=/Script/WarOfGods.GOTAStoryGameMode?Mode=Story",
+}
+# The remote player's shared health bar: present, and full while the shield takes the hit.
+# Enemies may land hits in Horde, so the bar is compared with this player's real health rather than a fixed value.
+HUD_BAR_CHECKS = [(r"FEEDBACK CHIPS local=\[Shielded [^\]]*\] shield=\d+/30 hp=(\d+)/100 .* bar=\1\b", True),
+                  (r"FEEDBACK CHIPS .*hp=(\d+)/100 .* bar=(?!\1\b)", False)]
+# The host's bar must be the host's: never a remote player's health, never a second HUD on its screen.
+HOST_BAR_CHECKS = [(r"shield absorbed", True), (r"FEEDBACK CHIPS .*hp=(\d+)/100 .* bar=(?!\1\b)", False),
+                   (r"HUD: removed extra W_PlayerHUD\S* \(for BP_Player", True), (r"FEEDBACK CHIPS .* bar=-4\b", False)]
+
 MP_STATUS = {
     "Delivery": ("Drakon", "delivery_mp_host.txt",
                  [(r"PROJECTILE TestPower hit BP_Player\S+ after \d+ \(landed=1\)", 1), (r"ZONE TestPower started", 1),
@@ -389,6 +405,29 @@ MP_STATUS = {
                 [(r"cue GameplayCue\.GOTA\.Status\.Shielded on BP_Player", True), (r"overlay \S+ -> M_GOTA_Overlay_Shielded on BP_Player", True),
                  (r"cue GameplayCue\.GOTA\.Status\.Shielded removed from BP_Player", True),
                  (r"cue GameplayCue\.GOTA\.Status\.Vulnerable on BP_Player", True), (r"cue GameplayCue\.GOTA\.Status\.Vulnerable removed from BP_Player", True)]),
+    "StatusHUD": ("Drakon", "f_status_hud_mp_host.txt",
+                  [(r"shield absorbed 22\.0 of 22\.0 \(8\.0 left\)", 1), (r"STATUS TIMERS \(server\) \[.*Vulnerable", True),
+                   (r"status Vulnerable refreshed|status Vulnerable 3\.0s", True)],
+                  # what the remote player was shown: its own chips and shield, then the host's timer as a target
+                  [(r"STATUS TIMERS \(client\) \[.*Shielded", True),
+                   (r"FEEDBACK CHIPS local=\[Shielded [0-9.]+/6\.0\] shield=30/30", True),
+                   (r"FEEDBACK CHIPS local=\[Shielded [0-9.]+/6\.0\] shield=8/30", True),
+                   (r"FEEDBACK CHIPS .*target=\S+\[Vulnerable (2\.[5-9]|3\.0)/3\.0\]", True),   # first seen, near full
+                   (r"STATUS TIMERS \(client\) \[(Shielded (6\.[1-9]|[7-9])|Vulnerable (3\.[1-9]|[4-9]))", False),  # never more than the duration
+                   (r"target=\S+\[Vulnerable 0\.[89]/3\.0\]", False),                            # the host's timer ends on time here
+                   (r"FEEDBACK CHIPS .* hp=(?!100/100|0/0)", False),                              # the shield took the hit: health never moved
+                   (r"FEEDBACK CHIPS .* bar=(?!-[123]\b)", False),                               # Duel has its own bars: no second HUD on a remote player
+                   (r"FEEDBACK CHIPS local=\[.*Weakened [0-9.]+/2\.0.*Slowed [0-9.]+/2\.0", True),   # priority order, both shown
+                   (r"FEEDBACK CHIPS local=\[\] shield=0/0 hp=\S+ target=\S+\[\]", True)]),          # everything expired
+    "StatusHUDHorde": ("Drakon", "f_status_hud_modes_mp_host.txt", HOST_BAR_CHECKS, HUD_BAR_CHECKS),
+    "StatusHUDStory": ("Drakon", "f_status_hud_modes_mp_host.txt", HOST_BAR_CHECKS, HUD_BAR_CHECKS),
+    "StatusHUDDeath": ("Drakon", "f_status_hud_death_mp_host.txt",
+                       [(r"cleared 3 status effect\(s\) \(death\)", 1), (r"status Slowed 3\.0s x0\.30", 1)],
+                       [(r"FEEDBACK CHIPS local=\[Shielded [0-9.]+/20\.0 Dread [0-9.]+/20\.0 Burning [0-9.]+/20\.0\] shield=30/30", True),
+                        (r"FEEDBACK STATUS BURNING off", 1),
+                        (r"FEEDBACK CHIPS local=\[\] shield=0/0", True),
+                        (r"FEEDBACK CHIPS local=\[Slowed [0-9.]+/3\.0\] shield=0/0", True),     # the new pawn: only what it was given
+                        (r"FEEDBACK CHIPS local=\[[^\]]*(Shielded|Dread|Burning)[^\]]*Slowed", False)]),
     "Control": ("Drakon", "control_mp_host.txt",
                 [(r"status Stunned 2\.0s x0\.00", 1), (r"CONTROL lock on", 2), (r": MeleeAttack refused \(incapacitated\)", 1),
                  (r"status Frozen 4\.0s x0\.00", 1), (r"Frozen shattered by a hit", 1)],
@@ -543,7 +582,7 @@ def run_suite(a):
         host_log = os.path.join(LOGS, "%s_%s_mp_host.log" % (mode, ability))
         client_log = os.path.join(LOGS, "%s_%s_mp_client.log" % (mode, ability))
         if not a.check_only:
-            host = launch(a.packaged, QUARRY + "?Hero=%s?DevHeroes=1?listen" % hero, host_script, host_log, wait=False)
+            host = launch(a.packaged, MP_URL.get(ability, QUARRY) + "?Hero=%s?DevHeroes=1?listen" % hero, host_script, host_log, wait=False)
             # Start the client once the host is listening (a cold host start took 49 s; a fixed 15 s launched the
             # client too early and it never joined). The host script itself waits for the client (waitplayers).
             deadline = time.time() + 150

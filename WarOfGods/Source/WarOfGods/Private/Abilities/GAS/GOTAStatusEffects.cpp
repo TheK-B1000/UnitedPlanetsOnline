@@ -835,6 +835,7 @@ namespace GOTAGAS
 			UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s rejected (immune) from %s"), *GetNameSafe(Victim), *Name, *GetNameSafe(Source));
 			return false;
 		}
+		ASC->MarkStatusTimersDirty(); // a refresh changes the end time without adding an effect
 		// Same leading wording as the ability component's slot log, so the regression suite reads both.
 		UE_LOG(LogGOTAStatus, Log, TEXT("%s: status %s %.1fs x%.2f (from %s) [GAS walk x%.2f dmg x%.2f]"), *GetNameSafe(Victim), *Name, Duration, Magnitude,
 			*GetNameSafe(Source), ASC->GetMoveSpeedMultiplier(), ASC->GetOutgoingDamageMultiplier());
@@ -905,6 +906,48 @@ namespace GOTAGAS
 		const UGOTAAbilitySystemComponent* ASC = nullptr;
 		const FActiveGameplayEffect* Effect = FindStatusEffect(Actor, Status, ASC);
 		return Effect ? Effect->Spec.GetSetByCallerMagnitude(GOTATags::Data_Magnitude, false, 0.f) : 0.f;
+	}
+
+	void CollectStatusTimers(const UGOTAAbilitySystemComponent* ASC, TArray<FGOTAStatusTimer>& Out)
+	{
+		Out.Reset();
+		const AActor* Actor = ASC ? ASC->GetOwner() : nullptr;
+		for (const FStatusInfo& Entry : Statuses)
+		{
+			const UGOTAAbilitySystemComponent* Found = nullptr;
+			const FActiveGameplayEffect* Effect = Actor ? FindStatusEffect(Actor, Entry.Status, Found) : nullptr;
+			if (!Effect || Effect->IsPendingRemove)
+			{
+				continue;
+			}
+			FGOTAStatusTimer& Timer = Out.AddDefaulted_GetRef();
+			Timer.Status = Entry.Status;
+			Timer.EndServerTime = Effect->GetEndTime(); // the server's world time, the clock clients synchronise to
+			Timer.LocalEndTime = Timer.EndServerTime;
+			Timer.RemainingAtSend = ASC->GetWorld() ? FMath::Max(0.f, Effect->GetTimeRemaining(ASC->GetWorld()->GetTimeSeconds())) : 0.f;
+			Timer.Duration = Effect->GetDuration();
+			Timer.Magnitude = Effect->Spec.GetSetByCallerMagnitude(GOTATags::Data_Magnitude, false, 0.f);
+			Timer.Stacks = static_cast<uint8>(FMath::Clamp(Effect->Spec.GetStackCount(), 1, 255));
+		}
+	}
+
+	FDisplayVitals ReadDisplayVitals(const AActor* Actor)
+	{
+		FDisplayVitals Out;
+		const FGOTACombatantVitals V = UGOTACombatantObserver::ReadVitals(Actor);
+		if (!V.bHasDamageSystem)
+		{
+			return Out;
+		}
+		const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Actor);
+		const float BaseMax = ASC ? ASC->GetShieldBaseMaxHealth() : 0.f;
+		const float Over = BaseMax > 0.f ? FMath::Max(0.f, V.MaxHealth - BaseMax) : 0.f;
+		Out.Shield = Over;
+		Out.MaxHealth = V.MaxHealth - Over;
+		// While the Blueprint still holds over-health, its Health passes through a moment where a hit is subtracted but not
+		// yet absorbed. The bookkeeping's settled value never shows that as a loss of real health.
+		Out.Health = FMath::Clamp(Over > 0.01f ? ASC->GetShieldedHealth() : V.Health, 0.f, Out.MaxHealth);
+		return Out;
 	}
 
 	void RefreshStatusOverlay(AActor* Actor, EGOTAStatus Adding, EGOTAStatus Removing)
