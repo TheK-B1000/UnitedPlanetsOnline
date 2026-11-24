@@ -37,8 +37,9 @@ We use GAS where it improves on what we already have. Health, momentum, cooldown
 | Milestone E: boss intro releases the player it held | `553fd5a` | Editor, clean build: 73/73. Packaged: 67/73 on the first pass, no failure reproduced on rerun. Four-player, latency and dodge runs pass. See the milestone E section |
 | Milestone F1: status chips, shield bar, real health on every HUD | `a5ee0fd` | Editor, incremental build: 77/77 on the final code. Duel and Horde latency runs clean. No clean build, packaged or four-player run yet. See "Status HUD (F1)" |
 | Milestone F2: status bursts and shield break | `767ed26` | Editor, incremental build: 78/78 on the final code. Three latency runs clean. No packaged or four-player run yet. See "Status bursts (F2)" |
-| Milestone F3: hazard ground marks (boulder lane, zone edge, warning to burning, friend or foe) | this commit | Editor, incremental build: 80/80 on the final code. Four latency runs clean. No packaged or four-player run yet. See "Hazard ground marks (F3)" |
-| Milestones F4, F5, G | | Not started |
+| Milestone F3: hazard ground marks (boulder lane, zone edge, warning to burning, friend or foe) | `ee9896f` | Editor, incremental build: 80/80 on the final code. Four latency runs clean. No packaged or four-player run yet. See "Hazard ground marks (F3)" |
+| Milestone F4: ability sounds, shield break and fade, own hard control, resist and dodge feedback | this commit | Editor, incremental build: 81/81 on the final code. Two latency runs clean. No packaged or four-player run, and no human listening. See "Sound and feedback (F4)" |
+| Milestones F5, G | | Not started |
 
 ## GAS completion roadmap (from 2026-11-18; GAS is the sole feature priority)
 
@@ -254,6 +255,29 @@ Verified on the final F3 code (editor, incremental build):
 The Horde co-op test keeps the host alive with the test harness's healing, because the first wave starts while the host waits for the client and a defeated source's zone ends with it. That healing is not balance evidence.
 
 Not verified yet: packaged build, four-player Horde with several zones at once, Story's darker maps, and a human eye on the boulder lane at speed. Boss resistance and "avoided" feedback is left to F4.
+
+### Sound and feedback (F4)
+
+Presentation only. No status, shield, dodge, damage or balance rule changed, and nothing new crosses the network: every sound and line rides an existing cue or multicast.
+
+- **One way to play a combat sound.** None of the project's sound assets carries attenuation, so each played at full volume on every screen wherever it happened. `GOTAGAS::PlayWorldSound` gives every ability and status sound the same falloff (full within 9 m, silent past 39 m) and allows at most three of one sound at once. `PlayLocalSound` is for cues meant only for this screen. Boss and Duel sounds are unchanged.
+- **Ability sounds.** The 12 hero abilities that were silent now have a cast voice from their own body's Paragon pack (Countess for Nyx, Sevarog for Varoth, Kwang for Zephyr, Aurora for Lysara, Gideon for Kairos, Steel for Orion), as Drakon already had. Shadow Step, Inferno Slam, World Burn and Gravity Slam also have an impact sound from the project's generic set. Set in `Tools/GOTA_BuildHeroAbilities.py`; a dump of every ability field before and after the rebuild differed only in these sound fields.
+- **Shield break.** Everyone near hears a sharp clang with the F2 break burst. The owner also reads SHIELD BROKEN.
+- **Expiration.** Your own Stun or Freeze thuds once when it lands (lower for ice) and ticks once when you can act again. Your own shield running out reads SHIELD FADED. A death that clears statuses makes no sound. Buffs, debuffs and Burning stay silent: they already have body colour, chips and the status line.
+- **Shield fade versus break.** The status-timer list and the cue's removal reach a client in either order. SHIELD FADED shows only when this screen saw the timer run out; if it cannot tell, it says nothing (logged as "cause unknown"). In every run the removal arrived before the break cue, so the screen stayed silent and the break cue then said SHIELD BROKEN. If heavy loss drops that unreliable cue, the player gets no shield message, never a wrong one.
+- **Resisted.** The existing "... RESISTS ..." line for the player who applied the status now also plays a dull sound.
+- **Avoided.** A perfect dodge already sent a cue with a chime to every screen; only Duel's HUD said PERFECT DODGE. Horde and Story now show it to the player who dodged.
+- **Assets.** Existing project sounds only, cooked through the ability sets that reference them.
+
+Verified on the final F4 code (editor, incremental build):
+
+| Check | Result |
+|---|---|
+| Full editor suite | 81/81, first pass |
+| Focused: new multiplayer feedback case, Control (boss resist sound), Delivery (World Burn sounds) | 12/12 |
+| Latency, 120±30 ms and 5% loss, two runs (remote player) | stun and freeze each sounded once on and once off; break said SHIELD BROKEN; expiry said SHIELD FADED; death silent; no ensure or fatal; clean exits |
+
+Not verified: a human listening to any of it (sounds were chosen by name and checked for length and looping only), the Horde and Story PERFECT DODGE line in a live run (checked by reading the code; no cheap test makes a boss projectile meet a remote dodger outside Duel), four players casting together, and a packaged build.
 
 ## Status policies (boss immunity and resistance)
 

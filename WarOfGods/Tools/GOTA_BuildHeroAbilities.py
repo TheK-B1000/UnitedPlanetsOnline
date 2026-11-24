@@ -82,7 +82,7 @@ HEROES = {
     ]),
     "Nyx": dict(health=0.85, gap=3.0, look=LOOK.SHADOW, abilities=[
         # Card: "Short-range teleportation." Signature ability.
-        dict(id="ShadowStep", name="Shadow Step", short="Shadow Step", kind=K.TELEPORT,
+        dict(id="ShadowStep", cast_sfx="/Game/ParagonCountess/Characters/Heroes/Countess/Sounds/SoundCues/Countess_Effort_Ability_RMB", impact_sfx="/Game/Audio/teleport-sound", name="Shadow Step", short="Shadow Step", kind=K.TELEPORT,
              desc="Short-range teleportation: Nyx blinks behind the enemy (or forward). The destination is checked "
                   "for navmesh, sight and collision.",
              cooldown=7, cast=0.15, recovery=0.25, range=650, interruptible=False,
@@ -90,7 +90,7 @@ HEROES = {
              ai=dict(priority=1.0, min=300, max=650)),
         # Card: "Stuns and disrupts." The first two strikes stagger; the last one that lands stuns for 0.8 s (GAS Stunned:
         # hard crowd control, bosses immune, 2 s recovery immunity, so it cannot chain).
-        dict(id="MindSpike", name="Mind Spike", short="Mind Spike", kind=K.MULTI_HIT,
+        dict(id="MindSpike", cast_sfx="/Game/ParagonCountess/Characters/Heroes/Countess/Sounds/SoundCues/Countess_Effort_Ability_Q", name="Mind Spike", short="Mind Spike", kind=K.MULTI_HIT,
              desc="Stuns and disrupts: three rapid psychic strikes on the target in front of Nyx. The last strike stuns "
                   "for 0.8 s (bosses are immune).",
              damage=9, hits=3, interval=0.22, cooldown=7, cast=0.25, recovery=0.45, range=260, arc=110,
@@ -98,7 +98,7 @@ HEROES = {
              anim=CA + "Ability_Q", rate=1.15, impact_fx=C + "/FX/Particles/Abilities/BlinkStrike/FX/P_Countess_BlinkStrike_HitFX", fx_scale=0.8, kick=0.5,
              ai=dict(priority=1.3, min=0, max=280)),
         # Card: "Absorbs damage and negates control."
-        dict(id="VoidShield", name="Void Shield", short="Void Shield", kind=K.SELF_GUARD,
+        dict(id="VoidShield", cast_sfx="/Game/ParagonCountess/Characters/Heroes/Countess/Sounds/SoundCues/Countess_Effort_Ability_E", name="Void Shield", short="Void Shield", kind=K.SELF_GUARD,
              desc="Absorbs damage and negates control: usable even while stunned or frozen, it breaks Nyx free of control "
                   "and slows, wraps her in void for 1.3 s (untargetable, immune to hits), then a 25-point shield holds "
                   "for 4 s.",
@@ -107,7 +107,7 @@ HEROES = {
              anim=CA + "Ability_E", rate=1.3, cast_fx=C + "/FX/Particles/Abilities/ShadowClone/FX/p_Countess_ShadowCloneBurst", fx_scale=1.0, kick=0.0,
              ai=dict(priority=1.5, min=0, max=400, max_hp=0.7)),
         # Card: "Steals energy and weakens." Ultimate here. (energy steal not implemented yet: drains health + weakens)
-        dict(id="SoulDrain", name="Soul Drain", short="Soul Drain", kind=K.AURA, ult=True,
+        dict(id="SoulDrain", cast_sfx="/Game/ParagonCountess/Characters/Heroes/Countess/Sounds/SoundCues/Countess_Effort_Ability_Ultimate", name="Soul Drain", short="Soul Drain", kind=K.AURA, ult=True,
              desc="Ultimate. Nyx drains the souls around her: enemies within 4.5 m take damage, are weakened "
                   "(Dread: slower, softer divine abilities) for 4 s, and lose up to 20 Divine Momentum to her.",
              damage=18, cooldown=40, momentum=100, cast=0.6, recovery=0.6, radius=450, status=ST.DREAD, status_duration=4.0, magnitude=0.35,
@@ -117,19 +117,19 @@ HEROES = {
     ]),
     "Varoth": dict(health=1.05, gap=4.0, look=LOOK.VOID, abilities=[
         # Card: "Area damage. Launch enemies." Signature ability.
-        dict(id="InfernoSlam", name="Inferno Slam", short="Inferno Slam", kind=K.AREA_BURST,
+        dict(id="InfernoSlam", cast_sfx="/Game/ParagonSevarog/Characters/Heroes/Sevarog/Sounds/SoundCues/Sevarog_Effort_Ability_Q", impact_sfx="/Game/Audio/ground-smash-explode", name="Inferno Slam", short="Inferno Slam", kind=K.AREA_BURST,
              desc="Area damage. Varoth slams the ground: enemies within 3.5 m are hit and launched away.",
              damage=22, cooldown=8, cast=0.6, recovery=0.6, radius=350, magnitude=650,
              anim=SA + "Swing3_Slow", cast_fx=None, impact_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_Sevarog_Subjugate_Blast", fx_scale=0.9, kick=1.6,
              ai=dict(priority=1.0, min=0, max=330)),
         # Card: "High-impact rush attack." (replaces the non-card Grasp of the Void pull)
-        dict(id="AshenCharge", name="Ashen Charge", short="Ashen Charge", kind=K.CHARGE,
+        dict(id="AshenCharge", cast_sfx="/Game/ParagonSevarog/Characters/Heroes/Sevarog/Sounds/SoundCues/Sevarog_Effort_Ability_RMB", name="Ashen Charge", short="Ashen Charge", kind=K.CHARGE,
              desc="High-impact rush: Varoth bursts forward; the first enemy struck is knocked back. Sidestep the line.",
              damage=16, cooldown=11, cast=0.3, recovery=0.5, range=700, interval=0.4, magnitude=950,
              anim=SA + "Speedburst", cast_fx=S + "/FX/Particles/Abilities/SoulSiphon/FX/P_SiphonCasting", impact_fx=S + "/FX/Particles/Abilities/Primary/FX/P_Sevarog_Melee_SucessfulImpact", fx_scale=1.0, kick=1.5,
              ai=dict(priority=1.2, min=400, max=700)),
         # Card: "Burning area. Damage over time." (DoT not implemented yet: one burn tick + Dread)
-        dict(id="WorldBurn", name="World Burn", short="World Burn", kind=K.AURA,
+        dict(id="WorldBurn", cast_sfx="/Game/ParagonSevarog/Characters/Heroes/Sevarog/Sounds/SoundCues/Sevarog_Effort_Ability_E", impact_sfx="/Game/Audio/ground-smash-cast", name="World Burn", short="World Burn", kind=K.AURA,
              desc="Burning area: enemies within 5 m are set burning and gripped by dread for 4 s - 35% slower and "
                   "their divine abilities hit softer. The ground keeps burning for 4 s.",
              damage=5, cooldown=16, cast=0.5, recovery=0.4, radius=500, status=ST.DREAD, status_duration=4.0, magnitude=0.35,
@@ -137,7 +137,7 @@ HEROES = {
              anim=SA + "Cast", cast_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_SubjugateSwirls", impact_fx=S + "/FX/Particles/Abilities/Subjugate/FX/P_Sub_Cast", fx_scale=1.2, kick=0.6,
              ai=dict(priority=1.1, min=0, max=480)),
         # Card: "Increased power, defense, and area damage." (defense part: Unbreakable; power/area bonus not implemented yet)
-        dict(id="ColossusForm", name="Colossus Form", short="Colossus Form", kind=K.SELF_GUARD, ult=True,
+        dict(id="ColossusForm", cast_sfx="/Game/ParagonSevarog/Characters/Heroes/Sevarog/Sounds/SoundCues/Sevarog_Effort_Ability_Ultimate", name="Colossus Form", short="Colossus Form", kind=K.SELF_GUARD, ult=True,
              desc="Ultimate. Varoth becomes the colossus for 6 s: half of all damage is shrugged off, he cannot "
                   "be staggered, and his divine abilities hit 25% harder.",
              cooldown=40, momentum=100, cast=0.4, recovery=0.3, status=ST.UNBREAKABLE, status_duration=6.0, magnitude=0.5, interruptible=False,
@@ -147,7 +147,7 @@ HEROES = {
     ]),
     # Signature-ability milestone (Docs/GOTA_HERO_ABILITIES_PLAN.md): one card ability per new god, slot 0.
     "Zephyr": dict(health=0.95, gap=3.5, look=LOOK.SHADOW, abilities=[
-        dict(id="GaleRush", name="Gale Rush", short="Gale Rush", kind=K.CHARGE,
+        dict(id="GaleRush", cast_sfx="/Game/ParagonKwang/Characters/Heroes/Kwang/Sounds/SoundCues/Kwang_Effort_Ability_RMB", name="Gale Rush", short="Gale Rush", kind=K.CHARGE,
              desc="High-speed dash attack. Zephyr rides the storm straight at the enemy; the first one struck is "
                   "knocked away and shocked (takes 20% more damage for 3 s). Sidestep the line to avoid it.",
              damage=16, cooldown=8, cast=0.15, recovery=0.35, range=700, interval=0.3, magnitude=750,
@@ -157,7 +157,7 @@ HEROES = {
              ai=dict(priority=1.2, min=350, max=700)),
     ]),
     "Lysara": dict(health=1.0, gap=3.5, look=LOOK.VOID, abilities=[
-        dict(id="GravityWell", name="Gravity Well", short="Gravity Well", kind=K.PULL,
+        dict(id="GravityWell", cast_sfx="/Game/ParagonAurora/Audio/Cues/Aurora_Effort_Ability_E", name="Gravity Well", short="Gravity Well", kind=K.PULL,
              desc="Lysara bends gravity around a visible enemy and drags them to her through the cold of the void, "
                   "staggering and chilling them. Needs line of sight; breaking sight or leaving range during the cast "
                   "makes it fizzle.",
@@ -168,7 +168,7 @@ HEROES = {
              ai=dict(priority=1.3, min=380, max=840)),
     ]),
     "Kairos": dict(health=1.0, gap=3.5, look=LOOK.VOID, abilities=[
-        dict(id="TimeLash", name="Time Lash", short="Time Lash", kind=K.AURA,
+        dict(id="TimeLash", cast_sfx="/Game/ParagonGideon/Audio/Cues/Gideon_Effort_Ability_E", name="Time Lash", short="Time Lash", kind=K.AURA,
              desc="Area control. Kairos lashes time around him: enemies within 4.5 m take light damage and are "
                   "Slowed (40% movement speed) for 3 seconds. Their attacks and abilities are unaffected.",
              damage=6, cooldown=12, cast=0.5, recovery=0.4, radius=450, status=ST.SLOWED, status_duration=3.0,
@@ -179,7 +179,7 @@ HEROES = {
     # Gravity Slam: close-range, telegraphed area crush (not a second pull). Steel's GroundSmash_End lands at 0.16 s;
     # played at 0.229x the slam lands exactly at the end of the 0.7 s wind-up (the server's damage moment).
     "Orion": dict(health=1.1, gap=3.5, look=LOOK.TITAN, abilities=[
-        dict(id="GravitySlam", name="Gravity Slam", short="Gravity Slam", kind=K.AREA_BURST,
+        dict(id="GravitySlam", cast_sfx="/Game/ParagonSteel/Audio/Cues/Steel_Effort_Ability_Q_Charge", impact_sfx="/Game/Audio/ground-smash-explode", name="Gravity Slam", short="Gravity Slam", kind=K.AREA_BURST,
              desc="Orion charges gravity overhead, then crushes the ground around him: everything within 3.3 m is "
                   "staggered. Clearly telegraphed and unblockable - get out of range or dodge through the impact.",
              damage=20, cooldown=10, cast=0.7, recovery=0.6, radius=330, magnitude=0, blockable=False,

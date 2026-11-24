@@ -30,7 +30,11 @@
 #include "Materials/MaterialInterface.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Sound/SoundAttenuation.h"
+#include "Sound/SoundBase.h"
+#include "Sound/SoundConcurrency.h"
 #include "TimerManager.h"
+#include "UObject/StrongObjectPtr.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GOTAStatusEffects)
 
@@ -647,6 +651,8 @@ bool UGOTAGameplayCue_ShieldBroken::OnExecute_Implementation(AActor* MyTarget, c
 	if (MyTarget && MyTarget->GetNetMode() != NM_DedicatedServer)
 	{
 		SpawnBodyBurst(MyTarget, ShieldBreakFX, 1.f, TEXT("ShieldBroken"));
+		// F4: a sharp, higher clang than a block, heard by everyone near the body.
+		GOTAGAS::PlayWorldSound(MyTarget, GOTAGAS::LoadSound(TEXT("/Game/Audio/axe-block.axe-block")), MyTarget->GetActorLocation(), 0.85f, 1.45f);
 	}
 	GOTAGAS::OnShieldBroken.Broadcast(MyTarget);
 	return true;
@@ -657,6 +663,77 @@ bool UGOTAGameplayCue_ShieldBroken::OnExecute_Implementation(AActor* MyTarget, c
 namespace GOTAGAS
 {
 	FOnShieldBroken OnShieldBroken;
+
+	namespace
+	{
+		USoundAttenuation* CombatAttenuation()
+		{
+			static TStrongObjectPtr<USoundAttenuation> Settings;
+			if (!Settings.IsValid())
+			{
+				Settings.Reset(NewObject<USoundAttenuation>(GetTransientPackage(), TEXT("GOTA_CombatAttenuation")));
+				FSoundAttenuationSettings& A = Settings->Attenuation;
+				A.bAttenuate = true;
+				A.bSpatialize = true;
+				A.AttenuationShape = EAttenuationShape::Sphere;
+				A.AttenuationShapeExtents = FVector(900.f, 0.f, 0.f); // full volume within 9 m: anything in your fight
+				A.FalloffDistance = 3000.f;                           // fades to nothing 30 m further out
+				A.DistanceAlgorithm = EAttenuationDistanceModel::Linear;
+			}
+			return Settings.Get();
+		}
+
+		USoundConcurrency* CombatConcurrency()
+		{
+			static TStrongObjectPtr<USoundConcurrency> Settings;
+			if (!Settings.IsValid())
+			{
+				Settings.Reset(NewObject<USoundConcurrency>(GetTransientPackage(), TEXT("GOTA_CombatConcurrency")));
+				Settings->Concurrency.MaxCount = 3;
+				Settings->Concurrency.bLimitToOwner = false;
+				Settings->Concurrency.ResolutionRule = EMaxConcurrentResolutionRule::StopFarthestThenOldest;
+			}
+			return Settings.Get();
+		}
+	}
+
+	USoundBase* LoadSound(const TCHAR* Path)
+	{
+		static TMap<FString, TStrongObjectPtr<USoundBase>> Cache;
+		if (const TStrongObjectPtr<USoundBase>* Found = Cache.Find(Path))
+		{
+			return Found->Get();
+		}
+		USoundBase* Sound = LoadObject<USoundBase>(nullptr, Path, nullptr, LOAD_NoWarn);
+		if (!Sound)
+		{
+			UE_LOG(LogGOTAStatus, Warning, TEXT("SFX missing asset %s"), Path);
+		}
+		Cache.Add(Path, TStrongObjectPtr<USoundBase>(Sound));
+		return Sound;
+	}
+
+	void PlayWorldSound(const UObject* WorldContext, USoundBase* Sound, const FVector& Location, float Volume, float Pitch)
+	{
+		const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+		if (!Sound || !World || World->GetNetMode() == NM_DedicatedServer)
+		{
+			return;
+		}
+		UGameplayStatics::PlaySoundAtLocation(WorldContext, Sound, Location, FRotator::ZeroRotator, Volume, Pitch, 0.f, CombatAttenuation(), CombatConcurrency());
+		UE_LOG(LogGOTAStatus, Log, TEXT("SFX world %s"), *Sound->GetName());
+	}
+
+	void PlayLocalSound(const UObject* WorldContext, USoundBase* Sound, float Volume, float Pitch)
+	{
+		const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+		if (!Sound || !World || World->GetNetMode() == NM_DedicatedServer)
+		{
+			return;
+		}
+		UGameplayStatics::PlaySound2D(WorldContext, Sound, Volume, Pitch, 0.f, CombatConcurrency());
+		UE_LOG(LogGOTAStatus, Log, TEXT("SFX local %s"), *Sound->GetName());
+	}
 	FOnStatusResisted OnStatusResisted;
 	FOnStatusCue OnStatusCue;
 	FOnStatusDamage OnStatusDamage;

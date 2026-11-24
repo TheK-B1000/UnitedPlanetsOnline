@@ -245,7 +245,7 @@ CASES = {
         ("Boss immune to Stun and Freeze + feedback", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "control_boss.txt",
          [(r"BP_Boss\S*: status Stunned resisted \(whole control \)", 1), (r"BP_Boss\S*: status Frozen resisted \(whole control \)", 1),
           (r"FEEDBACK THE QUARRY BEHEMOTH RESISTS STUN", 1), (r"FEEDBACK THE QUARRY BEHEMOTH RESISTS FREEZE", 1),
-          (r"CONTROL lock on", False)]),
+          (r"CONTROL lock on", False), (r"SFX local S_GOTA_UI_Back", 2)]),  # F4: each resist also sounds, once
         ("Mind Spike's last strike stuns (Nyx)", "?Opponent=AI?Hero=Nyx?DevHeroes=1", "control_mindspike.txt",
          [(r"MindSpike hit \S+ for 9\.0 \(landed=1\)", 3), (r"status Stunned 0\.8s x0\.00", 1),
           (r"CONTROL lock on", 1), (r"CONTROL lock off", 1)]),
@@ -258,6 +258,7 @@ CASES = {
     "StatusFX": [],  # multiplayer only: one burst per status on every peer, shield break from damage only
     "HazardMarks": [],  # multiplayer only: projectile lane and zone ground, threat on the opponent's screen, calm on the caster's
     "HazardCoop": [],  # multiplayer only: an ally's zone is drawn calm in Horde
+    "Feedback": [],  # multiplayer only: own hard control, shield break and fade, silent on death
     "Defense": [
         ("Shielded: absorbs Blueprint and ability hits, breaks, refresh, stronger, expiry, survives a big hit",
          "?Opponent=AI?Hero=Drakon?DevHeroes=1", "defense_shield.txt",
@@ -344,7 +345,8 @@ CASES = {
          [(r"WorldBurn hit \S+ for 5\.0 \(landed=1\)", 1), (r"ZONE WorldBurn started by \S+: radius 500, 4\.0s, every 1\.00s, damage 0\.0", 1),
           (r"ZONE WorldBurn pulse: 1 target\(s\)", 4), (r"ZONE WorldBurn ended \(duration\)", 1),
           (r"BP_Player\S*: Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\)", (6, 7)),  # provisional: 14 burn damage at most, credited to the caster. The last tick can lose a same-frame race with expiry
-          (r"ZONE MARK WorldBurn threat=0 warning=0\.00s radius=500", 1), (r"ZONE MARK WorldBurn flames 7", 1)]),  # F3: the caster's own ground is calm
+          (r"ZONE MARK WorldBurn threat=0 warning=0\.00s radius=500", 1), (r"ZONE MARK WorldBurn flames 7", 1),
+          (r"SFX world Sevarog_Effort_Ability_E", 1), (r"SFX world ground-smash-cast", 1)]),  # F4: cast and impact sound  # F3: the caster's own ground is calm
         ("Overlapping zones do not stack; attribution; shield absorbs the burn", "?Opponent=AI?Hero=Drakon?DevHeroes=1", "delivery_overlap.txt",
          [(r"ZONE TestPower started", 2), (r"BP_Player\S*: Burning tick on BP_Enemy\S+ for 2\.0 \(landed=1\)", (4, 5)), (r"Burning tick on \S+ for (?!2\.0)", False),
           (r"shield absorbed 2\.0 of 2\.0", (4, 5))]),
@@ -417,6 +419,15 @@ MP_STATUS = {
                      (r"ZONE MARK TestPower burning \(", 1), (r"server arm (0\.[3-9]|[1-9])\d*s after the mark", False),
                      (r"ZONE MARK TestPower flames 4", 2),
                      (r"DELIVERY client impact", 2), (r"missing asset", False)]),
+    # F4: the remote player's own feedback. Each hard control sounds once on and once off (OnActive and WhileActive
+    # both report it); a death clears statuses silently. The break clangs on every screen through the shared falloff.
+    "Feedback": ("Drakon", "f_feedback_mp_host.txt",
+                 [(r"shield broken", (1, 2)), (r"SFX world axe-block", (1, 2)), (r"SFX missing", False)],
+                 [(r"FEEDBACK own Stunned landed", 2), (r"FEEDBACK own Stunned released", 1),
+                  (r"FEEDBACK own Frozen landed", 1), (r"FEEDBACK own Frozen released", 1),
+                  (r"SFX local Weapons_Rifle2_Punch_01", 3), (r"SFX local S_GOTA_UI_Focus", 2),
+                  (r"FEEDBACK SHIELD BROKEN", (1, 2)), (r"FEEDBACK SHIELD FADED", 1), (r"SFX world axe-block", (1, 2)),
+                  (r"SFX missing", False)]),
     "HazardCoop": ("Drakon", "f_hazard_coop_mp_host.txt",
                    [(r"ZONE TestPower armed", 1), (r"TestPower reached BP_Player", False), (r"ZONE MARK TestPower threat=0", 1),
                     (r"ZONE MARK TestPower threat=1", False)],

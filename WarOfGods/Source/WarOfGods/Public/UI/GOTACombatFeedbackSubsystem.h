@@ -102,9 +102,20 @@ public:
 	/** "QUARRY BEHEMOTH RESISTS SLOW" and friends. */
 	static FText DescribeResist(const AActor* Target, EGOTAStatus Status, int32 Aspects);
 
+	/**
+	 * F4: a perfect dodge avoided an attack. Duel's HUD already says so; in Horde and Story this screen's player is told
+	 * here. Fed by the fighter component's existing dodge cue, so nothing new crosses the network.
+	 */
+	static void NotifyPerfectDodge(const AActor* Dodger);
+
 protected:
 	void HandleStatusResisted(AActor* Target, EGOTAStatus Status, int32 Aspects, AActor* Instigator);
 	void HandleStatusCue(AActor* Target, EGOTAStatus Status, bool bActive);
+	/** F4: this screen's own shield broke ("SHIELD BROKEN"); everyone near already hears and sees the break. */
+	void HandleShieldBroken(AActor* Target);
+	/** F4: sounds for this screen's own pawn: hard control lands, hard control ends, shield fades. */
+	void PlayOwnStatusFeedback(AActor* Pawn, EGOTAStatus Status, bool bActive);
+	bool IsLocalPawn(const AActor* Actor) const;
 	/** A pawn destroyed while a status is up (respawn) never gets the cue's removal; this clears the indicators. */
 	UFUNCTION()
 	void HandleStatusPawnDestroyed(AActor* Destroyed);
@@ -118,6 +129,11 @@ protected:
 	TObjectPtr<UGOTACombatFeedbackWidget> Widget;
 	FDelegateHandle ResistedHandle;
 	FDelegateHandle StatusCueHandle;
+	FDelegateHandle ShieldBrokenHandle;
+	/** F4: which of the own pawn's statuses have already sounded (cues can report the same status twice). */
+	TWeakObjectPtr<AActor> SoundPawn;
+	TArray<EGOTAStatus> SoundedStatuses;
+	double LastOwnShieldBreak = -100.0;
 	/** The local pawn the indicators are showing for, and which statuses it has. */
 	TWeakObjectPtr<AActor> StatusPawn;
 	TArray<EGOTAStatus> LocalStatuses;

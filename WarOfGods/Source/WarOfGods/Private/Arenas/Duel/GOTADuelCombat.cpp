@@ -1,6 +1,7 @@
 // White Tiger Studios 2024
 
 #include "Arenas/Duel/GOTADuelCombat.h"
+#include "UI/GOTACombatFeedbackSubsystem.h"
 
 #include "AIController.h"
 #include "Animation/AnimInstance.h"
@@ -1157,6 +1158,10 @@ void UGOTADuelFighterComponent::PlayCueLocally(EGOTADuelCue Cue, AActor* Target,
 	if (ADuelGameState* GS = GetDuelGS())
 	{
 		GS->OnDuelCombatCue.Broadcast(Cue, GetOwner(), Target);
+	}
+	else if (Cue == EGOTADuelCue::PerfectDodge)
+	{
+		UGOTACombatFeedbackSubsystem::NotifyPerfectDodge(GetOwner()); // F4: Horde and Story have no Duel HUD to say so
 	}
 	if (GetNetMode() == NM_DedicatedServer)
 	{

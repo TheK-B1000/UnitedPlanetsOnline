@@ -29,6 +29,15 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOTAFeedback, Log, All);
 
+namespace FeedbackSounds
+{
+	// F4: the project's own short sounds, all under half a second, so personal cues never pile up.
+	const TCHAR* const ControlOn = TEXT("/Game/Audio/Weapons_Rifle2_Punch_01.Weapons_Rifle2_Punch_01");
+	const TCHAR* const ControlOff = TEXT("/Game/Audio/UI/S_GOTA_UI_Focus.S_GOTA_UI_Focus");
+	const TCHAR* const Faded = TEXT("/Game/Audio/UI/S_GOTA_UI_Back.S_GOTA_UI_Back");
+	const TCHAR* const Resisted = TEXT("/Game/Audio/UI/S_GOTA_UI_Back.S_GOTA_UI_Back");
+}
+
 namespace
 {
 	/** Chips per row. Statuses arrive most important first, so anything past this is the least urgent. */
@@ -372,12 +381,14 @@ void UGOTACombatFeedbackSubsystem::Initialize(FSubsystemCollectionBase& Collecti
 	Super::Initialize(Collection);
 	ResistedHandle = GOTAGAS::OnStatusResisted.AddUObject(this, &UGOTACombatFeedbackSubsystem::HandleStatusResisted);
 	StatusCueHandle = GOTAGAS::OnStatusCue.AddUObject(this, &UGOTACombatFeedbackSubsystem::HandleStatusCue);
+	ShieldBrokenHandle = GOTAGAS::OnShieldBroken.AddUObject(this, &UGOTACombatFeedbackSubsystem::HandleShieldBroken);
 }
 
 void UGOTACombatFeedbackSubsystem::Deinitialize()
 {
 	GOTAGAS::OnStatusResisted.Remove(ResistedHandle);
 	GOTAGAS::OnStatusCue.Remove(StatusCueHandle);
+	GOTAGAS::OnShieldBroken.Remove(ShieldBrokenHandle);
 	Super::Deinitialize();
 }
 
@@ -489,6 +500,10 @@ void UGOTACombatFeedbackSubsystem::HandleStatusCue(AActor* Target, EGOTAStatus S
 	{
 		return;
 	}
+	if (IsLocalPawn(Target))
+	{
+		PlayOwnStatusFeedback(Target, Status, bActive);
+	}
 	if (!bActive)
 	{
 		if (Target == StatusPawn.Get())
@@ -582,4 +597,106 @@ void UGOTACombatFeedbackSubsystem::HandleStatusResisted(AActor* Target, EGOTASta
 		return;
 	}
 	ShowMessage(DescribeResist(Target, Status, Aspects), FLinearColor(0.62f, 0.8f, 1.f, 1.f));
+	GOTAGAS::PlayLocalSound(World, GOTAGAS::LoadSound(FeedbackSounds::Resisted), 0.5f, 0.85f); // F4: a dull "no effect"
+}
+
+// ============================================================================ F4: own-pawn sounds, shield, dodge
+
+bool UGOTACombatFeedbackSubsystem::IsLocalPawn(const AActor* Actor) const
+{
+	const ULocalPlayer* LP = GetLocalPlayer();
+	const APlayerController* PC = LP ? LP->GetPlayerController(LP->GetWorld()) : nullptr;
+	return Actor && PC && PC->GetPawn() == Actor;
+}
+
+void UGOTACombatFeedbackSubsystem::PlayOwnStatusFeedback(AActor* Pawn, EGOTAStatus Status, bool bActive)
+{
+	if (Status != EGOTAStatus::Stunned && Status != EGOTAStatus::Frozen && Status != EGOTAStatus::Shielded)
+	{
+		return; // buffs, debuffs and Burning already have the body colour, chip and line
+	}
+	if (Pawn != SoundPawn.Get())
+	{
+		SoundPawn = Pawn; // a new pawn (respawn) starts with nothing sounded
+		SoundedStatuses.Reset();
+	}
+	const bool bHad = SoundedStatuses.Contains(Status);
+	if (bActive == bHad)
+	{
+		return; // OnActive and WhileActive both report a status; it sounds once
+	}
+	if (bActive)
+	{
+		SoundedStatuses.Add(Status);
+	}
+	else
+	{
+		SoundedStatuses.Remove(Status);
+	}
+	// A death clears every status at once: that is not a release or a fade, and the death has its own feedback.
+	if (!bActive && UGOTACombatantObserver::IsCombatantDefeated(Pawn))
+	{
+		return;
+	}
+	const UWorld* World = Pawn->GetWorld();
+	if (Status == EGOTAStatus::Shielded)
+	{
+		if (bActive || World->GetTimeSeconds() - LastOwnShieldBreak < 1.0)
+		{
+			return; // raising a shield has its burst; a broken one already said so
+		}
+		// Only call it a fade when the timer had really run out. If this screen cannot tell (the timer list and the cue
+		// arrive in either order), it says nothing rather than something wrong.
+		const UGOTAAbilitySystemComponent* ASC = UGOTAAbilitySystemComponent::Find(Pawn);
+		const FGOTAStatusTimer* Timer = ASC ? ASC->GetStatusTimers().FindByPredicate([](const FGOTAStatusTimer& T) { return T.Status == EGOTAStatus::Shielded; }) : nullptr;
+		if (!Timer || ASC->GetStatusTimeLeft(*Timer) > 0.6f)
+		{
+			UE_LOG(LogGOTAFeedback, Log, TEXT("FEEDBACK shield ended, cause unknown here (%s)"), Timer ? TEXT("time left") : TEXT("no timer"));
+			return;
+		}
+		ShowMessage(NSLOCTEXT("GOTA", "ShieldFaded", "SHIELD FADED"), FLinearColor(0.7f, 0.75f, 0.8f, 1.f), 1.2f);
+		GOTAGAS::PlayLocalSound(World, GOTAGAS::LoadSound(FeedbackSounds::Faded), 0.45f, 0.8f);
+		return;
+	}
+	// Hard control: a hit-like thud when it lands (lower for ice), a light tick when you can act again.
+	if (bActive)
+	{
+		GOTAGAS::PlayLocalSound(World, GOTAGAS::LoadSound(FeedbackSounds::ControlOn), 0.7f, Status == EGOTAStatus::Frozen ? 0.7f : 1.f);
+	}
+	else
+	{
+		GOTAGAS::PlayLocalSound(World, GOTAGAS::LoadSound(FeedbackSounds::ControlOff), 0.6f, 1.2f);
+	}
+	UE_LOG(LogGOTAFeedback, Log, TEXT("FEEDBACK own %s %s"), *StaticEnum<EGOTAStatus>()->GetNameStringByValue(static_cast<int64>(Status)),
+		bActive ? TEXT("landed") : TEXT("released"));
+}
+
+void UGOTACombatFeedbackSubsystem::HandleShieldBroken(AActor* Target)
+{
+	if (!IsLocalPawn(Target))
+	{
+		return;
+	}
+	LastOwnShieldBreak = Target->GetWorld()->GetTimeSeconds();
+	ShowMessage(NSLOCTEXT("GOTA", "ShieldBroken", "SHIELD BROKEN"), FLinearColor(1.f, 0.35f, 0.3f, 1.f), 1.4f);
+}
+
+void UGOTACombatFeedbackSubsystem::NotifyPerfectDodge(const AActor* Dodger)
+{
+	const UWorld* World = Dodger ? Dodger->GetWorld() : nullptr;
+	if (!World || World->GetNetMode() == NM_DedicatedServer || World->GetGameState<ADuelGameState>())
+	{
+		return; // Duel's own HUD shows PERFECT DODGE
+	}
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		const APlayerController* PC = It->Get();
+		if (PC && PC->IsLocalController() && PC->GetPawn() == Dodger)
+		{
+			if (UGOTACombatFeedbackSubsystem* Self = ULocalPlayer::GetSubsystem<UGOTACombatFeedbackSubsystem>(PC->GetLocalPlayer()))
+			{
+				Self->ShowMessage(NSLOCTEXT("GOTA", "PerfectDodgeAvoided", "PERFECT DODGE"), FLinearColor(0.45f, 0.8f, 1.f, 1.f), 1.1f);
+			}
+		}
+	}
 }

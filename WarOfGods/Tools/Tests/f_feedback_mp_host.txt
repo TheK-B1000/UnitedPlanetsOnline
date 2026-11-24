@@ -1,0 +1,27 @@
+waitplayers 2 120
+# GAS milestone F4 on a remote player: its own hard control thuds once when it lands and ticks once when it ends; its
+# shield breaking says SHIELD BROKEN (and clangs on every screen); a shield running out says SHIELD FADED; a death
+# that clears statuses is silent.
+r.MotionBlurQuality 0
+gota.GAS.ElementStatus 0
+wait 10
+gota.Ability.Place 400
+wait 0.3
+gota.Ability.Status 1 Stunned 1 1 0
+wait 3.2
+gota.Ability.Status 1 Frozen 1 1 0
+wait 3.2
+gota.Ability.Status 1 Shielded 6 30 0
+wait 0.7
+gota.Ability.ElementHit 1 Fire 40
+wait 2
+gota.Ability.Status 1 Shielded 1.5 10 0
+wait 3
+gota.Ability.Status 1 Shielded 20 30 0
+gota.Ability.Status 1 Stunned 20 1 0
+wait 1
+gota.Duel.Hurt 1 9999
+wait 6
+gota.Ability.Dump
+wait 60
+quit

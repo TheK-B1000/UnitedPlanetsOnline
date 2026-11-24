@@ -1695,10 +1695,7 @@ void UGOTAHeroAbilityComponent::PlayCastPresentation(int32 Slot)
 		}
 	}
 	SpawnTimedFX(GetWorld(), Def->CastFX.Get(), Char->GetActorLocation(), Char->GetActorRotation(), Def->FXScale, Def->FXLifetime, Char->GetRootComponent());
-	if (USoundBase* S = Def->CastSound.Get())
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, S, Char->GetActorLocation());
-	}
+	GOTAGAS::PlayWorldSound(this, Def->CastSound.Get(), Char->GetActorLocation()); // F4: shared falloff and limit
 }
 
 void UGOTAHeroAbilityComponent::PlayImpactPresentation(int32 Slot, const FVector& Location, AActor* Target)
@@ -1710,10 +1707,7 @@ void UGOTAHeroAbilityComponent::PlayImpactPresentation(int32 Slot, const FVector
 		return;
 	}
 	SpawnTimedFX(World, Def->ImpactFX.Get(), Location, GetOwner()->GetActorRotation(), Def->FXScale, Def->FXLifetime);
-	if (USoundBase* S = Def->ImpactSound.Get())
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, S, Location);
-	}
+	GOTAGAS::PlayWorldSound(this, Def->ImpactSound.Get(), Location, 0.8f);
 	if (Def->ImpactKick > 0.f && (Target || Def->Kind == EGOTAAbilityKind::AreaBurst || Def->Kind == EGOTAAbilityKind::Aura))
 	{
 		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)

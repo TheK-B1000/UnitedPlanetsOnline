@@ -16,6 +16,7 @@
 class AActor;
 class APawn;
 class UGOTAAbilitySystemComponent;
+class USoundBase;
 struct FGOTAStatusTimer;
 
 /**
@@ -417,6 +418,17 @@ namespace GOTAGAS
 		float GetHealthFraction() const { return MaxHealth > 0.f ? FMath::Clamp(Health / MaxHealth, 0.f, 1.f) : 0.f; }
 	};
 	WAROFGODS_API FDisplayVitals ReadDisplayVitals(const AActor* Actor);
+
+	/**
+	 * Milestone F4, drawing side only: a combat sound in the world. Every one goes through the same distance falloff
+	 * (full within 9 m, silent past 39 m) and the same limit of three of one sound at once, so four players' abilities
+	 * and statuses never stack into noise. The project's sound assets carry no attenuation of their own.
+	 */
+	WAROFGODS_API void PlayWorldSound(const UObject* WorldContext, USoundBase* Sound, const FVector& Location, float Volume = 1.f, float Pitch = 1.f);
+	/** F4: a personal cue for this screen only (your own stun, shield or resist), quieter and with the same limit. */
+	WAROFGODS_API void PlayLocalSound(const UObject* WorldContext, USoundBase* Sound, float Volume = 1.f, float Pitch = 1.f);
+	/** F4: a sound by object path, loaded once and kept. Null (with a warning) if the asset is missing. */
+	WAROFGODS_API USoundBase* LoadSound(const TCHAR* Path);
 
 	/**
 	 * Any peer: put the highest-priority overlay on the body, from GAS tags and the ability component's slot.
