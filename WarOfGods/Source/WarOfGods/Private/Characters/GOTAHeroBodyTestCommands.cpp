@@ -11,6 +11,8 @@
 #if !UE_BUILD_SHIPPING
 
 #include "Characters/GOTAHeroBodyComponent.h"
+#include "Characters/GOTARetargetAnimInstance.h"
+#include "Combat/GOTACombatantObserver.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
@@ -324,6 +326,119 @@ static void SceneWatch(const TArray<FString>& Args)
 	}), Interval);
 	UE_LOG(LogGOTABodyTest, Log, TEXT("SCENE watch every %.1fs"), Interval);
 }
+/**
+ * gota.Test.BodyDrift <seconds>: how far each living hero body's pelvis strays horizontally from its gameplay capsule.
+ * The capsule is what the server moves and hits; a body that drifts from it shows attacks and dodges where they are not.
+ * Logs, per character with a body: samples, largest and mean distance, and the montage playing at the largest.
+ */
+static void BodyDrift(const TArray<FString>& Args)
+{
+	struct FDrift { float Max = 0.f; double Sum = 0.0; int32 Samples = 0; FString AtMax; };
+	static TMap<TWeakObjectPtr<ACharacter>, FDrift> Drift;
+	static FTSTicker::FDelegateHandle Handle;
+	const float Seconds = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 10.f;
+	if (Handle.IsValid())
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(Handle);
+	}
+	Drift.Reset();
+	const double End = FPlatformTime::Seconds() + Seconds;
+	Handle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([End](float)
+	{
+		UWorld* World = GameWorld();
+		const bool bDone = !World || FPlatformTime::Seconds() >= End;
+		if (World && !bDone)
+		{
+			for (TActorIterator<ACharacter> It(World); It; ++It)
+			{
+				const UGOTAHeroBodyComponent* BodyComp = It->FindComponentByClass<UGOTAHeroBodyComponent>();
+				const USkeletalMeshComponent* Body = BodyComp ? BodyComp->GetBodyMesh() : nullptr;
+				// Living fighters only: once defeated the capsule no longer fights, and a death fall may travel.
+				if (!Body || Body->GetBoneIndex(TEXT("pelvis")) == INDEX_NONE || UGOTACombatantObserver::IsCombatantDefeated(*It))
+				{
+					continue;
+				}
+				const float D = FVector::Dist2D(Body->GetBoneLocation(TEXT("pelvis")), It->GetActorLocation());
+				FDrift& Entry = Drift.FindOrAdd(*It);
+				Entry.Sum += D;
+				++Entry.Samples;
+				if (D > Entry.Max)
+				{
+					Entry.Max = D;
+					const UAnimInstance* Source = It->GetMesh() ? It->GetMesh()->GetAnimInstance() : nullptr;
+					const UAnimMontage* M = Source ? Source->GetCurrentActiveMontage() : nullptr;
+					const UCharacterMovementComponent* Move = It->GetCharacterMovement();
+					Entry.AtMax = FString::Printf(TEXT("%s speed=%.0f%s"), *GetNameSafe(M), It->GetVelocity().Size2D(), Move && Move->IsFalling() ? TEXT(" air") : TEXT(""));
+				}
+			}
+			return true;
+		}
+		for (const TPair<TWeakObjectPtr<ACharacter>, FDrift>& P : Drift)
+		{
+			const UGOTAHeroBodyComponent* BodyComp = P.Key.IsValid() ? P.Key->FindComponentByClass<UGOTAHeroBodyComponent>() : nullptr;
+			UE_LOG(LogGOTABodyTest, Log, TEXT("BODYDRIFT %s hero=%s samples=%d max=%.1f mean=%.1f at %s"), *GetNameSafe(P.Key.Get()),
+				BodyComp ? *BodyComp->GetHeroId().ToString() : TEXT("?"), P.Value.Samples, P.Value.Max,
+				P.Value.Samples ? P.Value.Sum / P.Value.Samples : 0.0, *P.Value.AtMax);
+		}
+		Handle.Reset();
+		return false;
+	}));
+	UE_LOG(LogGOTABodyTest, Log, TEXT("BODYDRIFT watching %.0fs"), Seconds);
+}
+/**
+ * gota.Test.BodyWatch <seconds>: on this machine, log every change of what each hero body shows: the hidden combat
+ * frame's montage and, for a body with its own clips, the clip chosen for it (or the retargeted fallback).
+ */
+static void BodyWatch(const TArray<FString>& Args)
+{
+	static TMap<TWeakObjectPtr<ACharacter>, FString> Last;
+	static FTSTicker::FDelegateHandle Handle;
+	const float Seconds = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 10.f;
+	if (Handle.IsValid())
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(Handle);
+	}
+	Last.Reset();
+	const double End = FPlatformTime::Seconds() + Seconds;
+	Handle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([End](float)
+	{
+		UWorld* World = GameWorld();
+		if (!World || FPlatformTime::Seconds() >= End)
+		{
+			Handle.Reset();
+			return false;
+		}
+		for (TActorIterator<ACharacter> It(World); It; ++It)
+		{
+			const UGOTAHeroBodyComponent* BodyComp = It->FindComponentByClass<UGOTAHeroBodyComponent>();
+			const USkeletalMeshComponent* Body = BodyComp ? BodyComp->GetBodyMesh() : nullptr;
+			if (!Body)
+			{
+				continue;
+			}
+			const UAnimInstance* Source = It->GetMesh() ? It->GetMesh()->GetAnimInstance() : nullptr;
+			const UAnimMontage* M = Source ? Source->GetCurrentActiveMontage() : nullptr;
+			FString Shows = TEXT("-");
+			if (const UGOTARetargetAnimInstance* Layer = Cast<UGOTARetargetAnimInstance>(Body->GetAnimInstance()))
+			{
+				const FGOTABodyLayerFrame F = Layer->GetLayerFrame();
+				Shows = !F.bActive ? TEXT("retarget") : F.Action ? GetNameSafe(F.Action) : F.RetargetWeight > 0.5f ? TEXT("fallback") : TEXT("own locomotion");
+			}
+			const FString Now = FString::Printf(TEXT("montage=%s body=%s"), *GetNameSafe(M), *Shows);
+			FString& Prev = Last.FindOrAdd(*It);
+			if (Prev != Now)
+			{
+				Prev = Now;
+				UE_LOG(LogGOTABodyTest, Log, TEXT("BODYWATCH [%s] %s (%s) %s"), World->GetNetMode() == NM_Client ? TEXT("client") : TEXT("server"),
+					*It->GetName(), It->IsLocallyControlled() ? TEXT("local") : TEXT("remote"), *Now);
+			}
+		}
+		return true;
+	}));
+	UE_LOG(LogGOTABodyTest, Log, TEXT("BODYWATCH watching %.0fs"), Seconds);
+}
+FAutoConsoleCommand CmdBodyWatch(TEXT("gota.Test.BodyWatch"), TEXT("Log each change of what hero bodies show (frame montage, own clip): <seconds>."), FConsoleCommandWithArgsDelegate::CreateStatic(&BodyWatch));
+FAutoConsoleCommand CmdBodyDrift(TEXT("gota.Test.BodyDrift"), TEXT("Largest horizontal distance of each hero body's pelvis from its capsule: <seconds>."), FConsoleCommandWithArgsDelegate::CreateStatic(&BodyDrift));
 FAutoConsoleCommand CmdSceneWatch(TEXT("gota.Test.SceneWatch"), TEXT("Log visible skeletal meshes per character (cloth, destroyed, montage): <seconds> [interval]."), FConsoleCommandWithArgsDelegate::CreateStatic(&SceneWatch));
 FAutoConsoleCommand CmdRebuildBodies(TEXT("gota.Test.RebuildBodies"), TEXT("Rebuild every hero body repeatedly on this machine: <seconds> [interval]."), FConsoleCommandWithArgsDelegate::CreateStatic(&RebuildBodies));
 FAutoConsoleCommand CmdBody(TEXT("gota.Test.Body"), TEXT("Log hero bodies, hand gaps and kept weapons on this machine."), FConsoleCommandWithArgsDelegate::CreateStatic(&Body));

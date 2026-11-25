@@ -1,0 +1,47 @@
+waitplayers 2 120
+# Ayla checkpoint 2 on a remote player: host Ayla (slot 0) against client Ayla (slot 1). The host's combo and block and
+# the client's death are all decided by the server; every screen shows her own clips and keeps her body on the capsule.
+r.MotionBlurQuality 0
+# the client measures from its 18th second; give a slow client time to load before the action starts
+wait 25
+gota.Ability.Place 220
+wait 0.3
+gota.Duel.Face 0
+gota.Test.BodyWatch 40
+gota.Test.BodyDrift 14
+# through the Blueprint's SR_ events (what real input calls): they multicast, so remote screens play the montages too.`n# Three times over, so a slow client samples each
+gota.Duel.Call 0 SR_MeleeAttack
+wait 0.3
+gota.Duel.Call 0 SR_MeleeAttack
+wait 0.3
+gota.Duel.Call 0 SR_MeleeAttack
+wait 4
+gota.Duel.Call 0 SR_StartBlock
+wait 1.2
+gota.Duel.Call 0 SR_EndBlock
+wait 2
+gota.Duel.Call 0 SR_MeleeAttack
+wait 0.3
+gota.Duel.Call 0 SR_MeleeAttack
+wait 0.3
+gota.Duel.Call 0 SR_MeleeAttack
+wait 4
+gota.Duel.Call 0 SR_StartBlock
+wait 1.2
+gota.Duel.Call 0 SR_EndBlock
+wait 2
+gota.Duel.Call 0 SR_MeleeAttack
+wait 0.3
+gota.Duel.Call 0 SR_MeleeAttack
+wait 0.3
+gota.Duel.Call 0 SR_MeleeAttack
+wait 4
+gota.Duel.Call 0 SR_StartBlock
+wait 1.2
+gota.Duel.Call 0 SR_EndBlock
+wait 2
+gota.Duel.Hurt 1 9999
+wait 8
+gota.Ability.Dump
+wait 60
+quit

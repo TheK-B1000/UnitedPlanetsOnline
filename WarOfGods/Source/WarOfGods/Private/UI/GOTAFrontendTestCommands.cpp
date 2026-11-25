@@ -908,6 +908,13 @@ namespace GOTATest
 			return;
 		}
 		UE_LOG(LogGOTATest, Log, TEXT("NOTIFIES %s length=%.2f rate=%.2f"), *M->GetName(), M->GetPlayLength(), M->RateScale);
+		for (int32 i = 0; i < M->CompositeSections.Num(); ++i)
+		{
+			float Start = 0.f, End = 0.f;
+			M->GetSectionStartAndEndTime(i, Start, End);
+			UE_LOG(LogGOTATest, Log, TEXT("  section %s %.3f-%.3f next=%s"), *M->CompositeSections[i].SectionName.ToString(), Start, End,
+				*M->CompositeSections[i].NextSectionName.ToString());
+		}
 		for (const FAnimNotifyEvent& N : M->Notifies)
 		{
 			UE_LOG(LogGOTATest, Log, TEXT("  %s cls=%s state=%s t=%.3f dur=%.3f"), *N.NotifyName.ToString(),

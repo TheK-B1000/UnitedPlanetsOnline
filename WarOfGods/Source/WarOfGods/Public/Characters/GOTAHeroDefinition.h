@@ -182,6 +182,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
 	TSoftObjectPtr<class UMaterialInterface> BodyHiddenMaterial;
 
+	/**
+	 * The body's own clips (locomotion, death and mapped combat montages) on its own skeleton. Empty = the body only
+	 * follows the combat frame through BodyRetargeter, as before. Cosmetic: gameplay timing stays on the combat frame.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
+	TSoftObjectPtr<class UGOTAHeroBodyAnimSet> BodyAnimSet;
+
 	/** Where the body comes from, for credits/QA (e.g. "Paragon: Greystone (prototype)"). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Body")
 	FText BodySourceNote;

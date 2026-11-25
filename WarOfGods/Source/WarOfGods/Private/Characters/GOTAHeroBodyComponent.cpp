@@ -1,6 +1,7 @@
 // White Tiger Studios 2024
 
 #include "Characters/GOTAHeroBodyComponent.h"
+#include "Characters/GOTAHeroBodyAnimSet.h"
 #include "Characters/GOTAHeroDefinition.h"
 #include "Characters/GOTAHeroRegistry.h"
 #include "Characters/GOTAEnemyDefinition.h"
@@ -141,6 +142,8 @@ void UGOTAHeroBodyComponent::ApplyBody()
 	if (UGOTARetargetAnimInstance* Anim = Cast<UGOTARetargetAnimInstance>(Body->GetAnimInstance()))
 	{
 		Anim->Retargeter = Retargeter;
+		// A body with its own clips (Ayla) shows them; every other body stays the retargeted combat frame.
+		Anim->SetAnimSet(Hero->BodyAnimSet.LoadSynchronous());
 	}
 	// Hide body material slots that duplicate gameplay equipment (e.g. Echo's own sword).
 	if (UMaterialInterface* Hidden = Hero->BodyHiddenMaterial.LoadSynchronous())

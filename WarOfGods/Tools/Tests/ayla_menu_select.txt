@@ -1,0 +1,12 @@
+# Ayla checkpoint 2: hero selection through the frontend (no developer flag). The menu's own selection picks Ayla and
+# launches Trial of Champions; the server validates the request and spawns her body, or rejects her if she is not playable.
+wait 10
+gota.Menu.Dump
+gota.Menu.Session hero Ayla
+wait 1
+gota.Menu.Arena FightAI TitansQuarry
+wait 30
+gota.Duel.State 0
+gota.Test.Body
+wait 2
+quit

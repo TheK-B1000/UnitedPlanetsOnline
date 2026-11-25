@@ -1,0 +1,10 @@
+# Remote side of ayla_mp_host / ayla_horde_host: the client logs its bodies, what each body shows as it changes
+# (BODYWATCH, including the host's Ayla), and body drift on its own screen.
+wait 18
+gota.Test.Body
+gota.Test.BodyWatch 50
+gota.Test.BodyDrift 14
+wait 20
+gota.Test.Body
+wait 30
+quit

@@ -1,0 +1,15 @@
+﻿waitplayers 2 120
+# Ayla checkpoint 2 in Horde: host and client both Ayla. The remote Ayla is defeated, shows her death clip, and comes
+# back at the next wave with a fresh body that has her own clips again. Healing is test support, not balance evidence.
+gota.Net.Sustain 420 150
+r.MotionBlurQuality 0
+wait 8
+gota.Net.Hurt 1 9999
+wait 4
+gota.Horde.ForceClear
+wait 3
+gota.Horde.SkipPrep
+wait 8
+gota.Net.Players
+wait 60
+quit

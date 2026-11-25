@@ -28,8 +28,13 @@ LOGS = os.environ.get("GOTA_REGRESSION_LOGS", os.path.join(ROOT, "Saved", "Abili
 QUARRY = "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?BestOf=3"
 
 # (name, url-options, script, [(regex, expect)])  expect: True = must appear, False = must NOT appear, int = exact count, (lo, hi) = count in range.
+# Ayla's visible pelvis within 45 cm of her capsule while she is alive (in-place clips; the retargeted frame's own baseline is reported in
+# Docs/GOTA_AYLA_PLAYABLE.md). One line per character with a body, on the machine that ran the check.
+AYLA_DRIFT_OK = r"BODYDRIFT BP_Player\S+ hero=Ayla samples=\d{2,} max=([0-9]|[1-3][0-9]|4[0-4])\.\d"
+AYLA_DRIFT_BAD = r"BODYDRIFT \S+ hero=Ayla samples=\d+ max=(4[5-9]|[5-9]\d|\d{3,})\."
 # Multiplayer cases whose remote player is not the default UPA Warden: (client hero, client script).
-MP_CLIENT = {"CombatVis": ("UPAWarden", "mp_combatvis_client.txt")}
+MP_CLIENT = {"AylaMP": ("Ayla", "ayla_mp_client.txt"), "AylaHorde": ("Ayla", "ayla_mp_client.txt"),
+             "CombatVis": ("UPAWarden", "mp_combatvis_client.txt"), "CombatVisAyla": ("Ayla", "mp_combatvis_client.txt")}
 # Multiplayer combat animation visibility (2026-11-25 fix, Docs/GOTA_MULTIPLAYER_COMBAT_ANIMATION.md). MTRACE lines are
 # montage starts this machine actually played; "observer" = the other player's fighter, "owner" = this player's own.
 VIS_HOST = [(r"MTRACE #\d+ \[server\] start Montage_SwordCombo on \S+ \(authority, player\)", (4, 40)),
@@ -272,7 +277,36 @@ CASES = {
     "StatusHUDHorde": [],  # multiplayer only: a remote player's shared health bar, behind a shield
     "StatusHUDStory": [],  # the same in Story
     "StatusFX": [],  # multiplayer only: one burst per status on every peer, shield break from damage only
+    # Ayla checkpoint 2 (Docs/GOTA_AYLA_PLAYABLE.md): her own body and clips over the shared combat frame. Gameplay is
+    # the frame's own; these check what her body shows and that it stays on the capsule (BODYDRIFT, cm).
+    "Ayla": [
+        ("own clips for combo, block, hits, spell; body stays on the capsule", "?Opponent=AI?Hero=Ayla?DevHeroes=1", "ayla_combat.txt",
+         [(r"Hero Ayla: body SK_Ayla applied to BP_Player", 1), (r"BODY LAYER BP_Player\S+: own set DA_AylaBodyAnimSet", 1),
+          (r"BODY LAYER BP_Player\S+: Montage_SwordCombo -> own clip AS_Ayla_Triple_Combo_Attack_InPlace", True),
+          # Her guard: a quiet guard first (no incoming attack, so no race) must map the block exactly; a wrong mapping in
+          # either direction fails the case.
+          (r"BODY LAYER BP_Player\S+: Montage_Shield_Block -> own clip AS_Ayla_Block5 \(upper body\)", True),
+          (r"BODY LAYER BP_Player\S+: Montage_Shield_Block -> own clip AS_Ayla_(?!Block5)", False),
+          (r"BODY LAYER BP_Player\S+: Montage_Shield_Block_React\w* -> own clip AS_Ayla_(?!Sword_Parry)", False),
+          (r"BODY LAYER BP_Player\S+: Montage_(Sword_Hit|Shield_Block_React\w*) -> own clip", True),
+          (r"BODY LAYER BP_Player\S+: Montage_Hadouken -> own clip AS_Ayla_mage_soell_cast_3", True),
+          (AYLA_DRIFT_OK, True), (AYLA_DRIFT_BAD, False)]),
+        ("dodge through Earthshaker protected; death clip", "?Opponent=AI?Hero=Ayla?DevHeroes=1?Boss=QuarryBehemoth", "ayla_boss.txt",
+         [(r"BOT dodge vs boss", 1), (r"TELEM boss_attack_end \S+ attack=Earthshaker result=miss", 1), (r"STATE s0 t=\S+ hp=130 ", 1),
+          (r"BODY LAYER BP_Player\S+: death clip AS_Ayla_Dead", 1),
+          (AYLA_DRIFT_OK, True), (AYLA_DRIFT_BAD, False)]),
+        # Perfect dodge: the same Molten Boulder test as EnemyPower, as Ayla (protection is the shared frame's own).
+        ("perfect dodge: a timed dodge protected, an early one not", "?Opponent=AI?Hero=Ayla?DevHeroes=1?Boss=QuarryBehemoth", "power_dodge.txt",
+         [(r"PROJECTILE MoltenBoulder launched", 2), (r"Dodge arm \(\S+\): projectile lead=0\.\d+", 1),
+          (r"PROJECTILE MoltenBoulder hit BP_Player\S+ after \d+ \(landed=1\)", 1), (r"Hero Ayla: body SK_Ayla applied", 1)]),
+        ("a whole Duel as Ayla, start to result", "?Opponent=AI?Hero=Ayla?DevHeroes=1", "ayla_match.txt",
+         [(r"Duel round 1 ACTIVE", 1), (r"Duel round \d end winner=", True), (r"Duel match complete outcome=", 1),
+          (r"Ensure condition failed", False)]),
+    ],
     "CombatVis": [],  # multiplayer only: both players see each other's (and their own) attacks, guards and hits
+    "CombatVisAyla": [],  # multiplayer only: the same with UPA Warden hosting and Ayla as the remote player
+    "AylaMP": [],  # multiplayer only: Ayla against a remote Ayla in Duel
+    "AylaHorde": [],  # multiplayer only: a remote Ayla dies and comes back at the next wave
     "HazardMarks": [],  # multiplayer only: projectile lane and zone ground, threat on the opponent's screen, calm on the caster's
     "HazardCoop": [],  # multiplayer only: an ally's zone is drawn calm in Horde
     "Feedback": [],  # multiplayer only: own hard control, shield break and fade, silent on death
@@ -410,6 +444,7 @@ MP_URL = {
     "StatusHUDHorde": "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry",
     "StatusHUDStory": "/Game/Story/Maps/L_GOTA_Story_Prologue?game=/Script/WarOfGods.GOTAStoryGameMode?Mode=Story",
     "HazardCoop": "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry",
+    "AylaHorde": "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.HordeGameMode?Mode=Horde?Arena=Quarry",
 }
 # The remote player's shared health bar: present, and full while the shield takes the hit.
 # Enemies may land hits in Horde, so the bar is compared with this player's real health rather than a fixed value.
@@ -426,6 +461,27 @@ FX_BURST_CHECKS = [(r"FX BURST %s on " % s, 1) for s in ("Stunned", "Frozen", "C
 
 MP_STATUS = {
     "CombatVis": ("UPAWarden", "mp_combatvis_host.txt", VIS_HOST, VIS_CLIENT),
+    "CombatVisAyla": ("UPAWarden", "mp_combatvis_host.txt", VIS_HOST + [(r"BODY LAYER BP_Player\S+: Montage_SwordCombo -> own clip", True)],
+                      VIS_CLIENT + [(r"BODY LAYER BP_Player\S+: Montage_SwordCombo -> own clip AS_Ayla_Triple_Combo_Attack_InPlace", True),
+                                    (r"BODY LAYER BP_Player\S+: Montage_Shield_Block -> own clip AS_Ayla_Block5", True)]),
+    "AylaMP": ("Ayla", "ayla_mp_host.txt",
+               [(r"BODY LAYER BP_Player\S+: Montage_SwordCombo -> own clip", True), (r"BODY LAYER BP_Player\S+: Montage_Shield_Block -> own clip", True),
+                (r"BODYWATCH \[server\] BP_Player\S+ \(remote\) montage=Montage_Sword_Hit body=AS_Ayla_Hit_Reaction_InPlace", True),
+                (r"BODY LAYER BP_Player\S+: death clip AS_Ayla_Dead", 1),
+                (r"Duel round 1 end winner=0", 1), (AYLA_DRIFT_OK, True), (AYLA_DRIFT_BAD, False)],
+               # the client: the host's Ayla (remote to it) and its own, both with her clips
+               [(r"Hero Ayla: body SK_Ayla applied to BP_Player\S+ \(scale 1\.00, remote\)", True),   # both pawns, again each round
+                (r"BODY LAYER BP_Player\S+: own set DA_AylaBodyAnimSet", True),
+                (r"BODYWATCH \[client\] BP_Player\S+ \(remote\) montage=None body=own locomotion", True),
+                # the host's combo and guard, seen on the client with her own clips (multiplayer animation fix, 2026-11-25)
+                (r"BODY LAYER BP_Player\S+: Montage_SwordCombo -> own clip AS_Ayla_Triple_Combo_Attack_InPlace", True),
+                (r"BODY LAYER BP_Player\S+: Montage_Shield_Block -> own clip AS_Ayla_Block5", True),
+                (r"BODY LAYER BP_Player\S+: death clip AS_Ayla_Dead", 1), (AYLA_DRIFT_OK, True), (AYLA_DRIFT_BAD, False)]),
+    "AylaHorde": ("Ayla", "ayla_horde_host.txt",
+                  [(r"Horde: respawned", True), (r"BODY LAYER BP_Player\S+: death clip AS_Ayla_Dead", True)],
+                  [(r"BODY LAYER BP_Player\S+: death clip AS_Ayla_Dead", True),
+                   (r"BODY LAYER BP_Player\S+: own set DA_AylaBodyAnimSet", (3, 9)),   # both pawns, then the respawned one
+                   (AYLA_DRIFT_BAD, False)]),
     "StatusFX": ("Drakon", "f_status_fx_mp_host.txt", FX_BURST_CHECKS, FX_BURST_CHECKS),
     # F3: each screen draws the host's deliveries itself. The caster's screen: calm, no lane. The opponent's: lane, amber
     # warning counted down from arrival, red no more than 0.3 s before the server arms it (or on the server's arm

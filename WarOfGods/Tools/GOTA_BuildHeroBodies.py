@@ -39,7 +39,12 @@ def ensure_hidden_material():
 
 ensure_hidden_material()
 
+# GOTA_HEROES=Ayla applies only those heroes' bodies and leaves every other definition untouched.
+ONLY = [h.strip() for h in os.environ.get("GOTA_HEROES", "").split(",") if h.strip()]
+
 for hero_id, b in HC.BODIES.items():
+    if ONLY and hero_id not in ONLY:
+        continue
     path = "/Game/Heroes/Data/DA_Hero_" + hero_id
     da = EAL.load_asset(path)
     mesh = unreal.load_asset(b["mesh"])
@@ -53,6 +58,12 @@ for hero_id, b in HC.BODIES.items():
     da.set_editor_property("body_source_note", unreal.Text(b["note"]))
     da.set_editor_property("hide_attached_weapon_meshes", bool(b.get("hide_weapons", True)))
     da.set_editor_property("body_extra_meshes", [unreal.load_asset(x) for x in b.get("extras", [])])
+    if b.get("anim_set"):
+        anim_set = unreal.load_asset(b["anim_set"])
+        if not anim_set:
+            log.append("%s FAIL anim set %s" % (hero_id, b["anim_set"]))
+            continue
+        da.set_editor_property("body_anim_set", anim_set)
     da.set_editor_property("body_hidden_material_slots", list(b.get("hidden_slots", [])))
     if b.get("hidden_material"):
         da.set_editor_property("body_hidden_material", unreal.load_asset(b["hidden_material"]))

@@ -1,0 +1,50 @@
+# Ayla checkpoint 2, first look: Ayla (slot 0) against an AI Ayla. Montage sections for the combo mapping, then her
+# body's clips during locomotion (the AI moves), a combo, a block, a hit and the unarmed stance.
+r.MotionBlurQuality 0
+gota.Duel.Notifies /Game/Animations/Melee/Montage_SwordCombo.Montage_SwordCombo
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Shield_Block.Montage_Shield_Block
+gota.Duel.Notifies /Game/Animations/Melee/Montage_Sword_Hit.Montage_Sword_Hit
+wait 12
+gota.Test.Shot ayla_p_start
+wait 2
+gota.Ability.AI off
+gota.Ability.Place 300
+wait 0.5
+gota.Duel.Face 0
+gota.Test.Portrait 0 150 380 55 100
+wait 0.6
+gota.Test.Shot ayla_p_idle
+gota.Duel.Call 0 MeleeAttack
+wait 0.45
+gota.Test.Shot ayla_p_atk1
+gota.Duel.Call 0 MeleeAttack
+wait 0.45
+gota.Test.Shot ayla_p_atk2
+gota.Duel.Call 0 MeleeAttack
+wait 0.45
+gota.Test.Shot ayla_p_atk3
+wait 2
+gota.Duel.Call 0 StartBlock
+wait 0.6
+gota.Test.Shot ayla_p_block
+gota.Duel.Call 0 EndBlock
+wait 1
+gota.Duel.Call 1 MeleeAttack
+wait 0.5
+gota.Test.Shot ayla_p_hit
+wait 2
+gota.Duel.Call 0 UnarmedStance
+wait 1
+gota.Duel.Call 0 MeleeAttack
+wait 0.45
+gota.Test.Shot ayla_p_unarmed_atk
+wait 2
+gota.Duel.State 0
+gota.Ability.AI on
+gota.Test.Cam 0 0 0 0 0 0 0
+wait 4
+gota.Test.Shot ayla_p_fight_a
+wait 3
+gota.Test.Shot ayla_p_fight_b
+wait 2
+quit

@@ -1,0 +1,8 @@
+# Ayla checkpoint 2: a whole Duel (best of 3) with the test bot fighting as Ayla against the AI champion, start to result.
+r.MotionBlurQuality 0
+wait 5
+gota.Duel.Bot fight 0
+gota.Test.BodyDrift 60
+wait 280
+gota.Duel.Bot off
+quit

@@ -126,9 +126,17 @@ BODIES = {
                    retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Sevarog", scale=0.68,  # hands meet the gameplay hands (6-9 cm; 50+ at 1.0)
                    note="Paragon: Sevarog (prototype body)", status="IN_DEVELOPMENT"),
 }
-# Roster pass: prototype bodies for the remaining gods (Docs/GOTA_CHARACTER_ASSET_MATRIX.md). Ayla has no
-# matching asset and stays preview-only until a dedicated model exists.
+# Roster pass: prototype bodies for the remaining gods (Docs/GOTA_CHARACTER_ASSET_MATRIX.md).
 BODIES.update({
+    # Ayla: her own model (Meshy, Docs/GOTA_AYLA_IMPORT.md) over the shared combat frame, with her own clips for
+    # locomotion, death and the mapped combat montages (Docs/GOTA_AYLA_PLAYABLE.md). Card weapon: Dual Cybernetic
+    # Gauntlets, which are part of her model, so the frame's prototype sword stays hidden.
+    "Ayla": dict(mesh="/Game/Characters/Ayla/Mesh/SK_Ayla",
+                 retargeter="/Game/Characters/Ayla/Rigs/RTG_GOTA_Manny_Ayla", scale=1.0,
+                 anim_set="/Game/Characters/Ayla/Data/DA_AylaBodyAnimSet",
+                 # PLAYABLE: verified through full matches (Duel as Ayla start to result, Horde death and respawn,
+                 # listen-server Duel with a remote Ayla). The other roster bodies stay IN_DEVELOPMENT.
+                 note="Meshy: Ironfeather Valkyrie (GOTA model, 2026-11-24)", status="PLAYABLE"),
     "Zephyr": dict(mesh="/Game/ParagonKwang/Characters/Heroes/Kwang/Meshes/Kwang_GDC",
                    retargeter=PARAGON_RIGS + "/RTG_GOTA_Manny_Kwang", scale=1.0,
                    note="Paragon: Kwang (prototype body)", status="IN_DEVELOPMENT"),
