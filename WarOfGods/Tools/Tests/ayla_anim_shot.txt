@@ -1,0 +1,22 @@
+# Ayla import check (L_Ayla_AnimTest): the whole grid from above-front twice 0.5 s apart (a playing animation changes
+# pose between them), then close-ups of the bind pose and the front row. The first wait lets shaders and 4K textures settle.
+r.MotionBlurQuality 0
+r.Streaming.FullyLoadUsedTextures 1
+wait 25
+gota.Test.Cam -950 0 650 -28 0 62 1
+wait 1
+gota.Test.Shot ayla_grid_a
+wait 0.5
+gota.Test.Shot ayla_grid_b
+wait 0.5
+gota.Test.Cam -330 -425 115 -3 0 40 1
+wait 1
+gota.Test.Shot ayla_close_bind
+wait 0.5
+gota.Test.Cam -330 -170 115 -3 0 60 1
+wait 1
+gota.Test.Shot ayla_close_row0_a
+wait 0.35
+gota.Test.Shot ayla_close_row0_b
+wait 0.5
+quit
