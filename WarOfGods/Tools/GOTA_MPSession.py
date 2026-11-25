@@ -87,14 +87,23 @@ def main():
     ap.add_argument("--render-client-script", default="", help="script for rendered clients instead of --client-script")
     ap.add_argument("--render-client-args", default="", help="extra command-line switches for rendered clients only (e.g. \"-rhivalidation -gpucrashdebugging\")")
     ap.add_argument("--resources", choices=("defer", "warn", "off"), default=os.environ.get("GOTA_RESOURCES", "defer"),
-                    help="before launch: defer = wait for a quiet GPU (default), warn = report only, off = no check")
-    ap.add_argument("--resource-wait", type=float, default=1800, help="longest wait for a quiet machine (s)")
+                    help="before launch: defer = wait for a quiet machine (default), warn = report only, off = no check "
+                         "(CPU, GPU, video memory and RAM used by other programs; Tools/GOTA_ResourceHealth.py)")
+    ap.add_argument("--resource-wait", type=float, default=float(os.environ.get("GOTA_RESOURCE_WAIT", "10800")),
+                    help="longest wait for a quiet machine (s, default 3 h)")
+    ap.add_argument("--resource-timeout", choices=("skip", "run"), default=os.environ.get("GOTA_RESOURCE_TIMEOUT", "skip"),
+                    help="still busy at the limit: skip = launch nothing, exit 3 (DEFERRED; default); run = launch anyway")
     a = ap.parse_args()
     os.makedirs(LOGS, exist_ok=True)
-    # A competing GPU workload starves the game processes and invalidates timing results (GOTA_ResourceHealth.py).
-    snap = RH.wait_quiet(a.resources, a.resource_wait, "session %s" % a.tag, log=lambda m: (print(m), sys.stdout.flush()))
-    print("RESOURCES at launch: %s%s" % (snap["text"], " -- BUSY: timing results of this session are not valid" if snap["busy"] else ""))
-    sys.stdout.flush()
+    # Other workloads starve the game processes and invalidate timing results (GOTA_ResourceHealth.py).
+    say = lambda m: (print(m), sys.stdout.flush())  # noqa: E731
+    g = RH.gate(a.resources, a.resource_wait, "session " + a.tag, a.resource_timeout, log=say)
+    if not g["run"]:
+        RH.journal("session", tag=a.tag, verdict="DEFERRED", gate=g["outcome"])
+        say("DEFERRED: session %s not run (still busy after %.0f min: %s)" % (a.tag, g["waited"] / 60, ", ".join(g["reasons"])))
+        return 3
+    say("RESOURCES at launch (%s): %s%s" % (g["outcome"], g["text"], " -- BUSY START: timing results are not valid" if g["busy_start"] else ""))
+    monitor = RH.Monitor() if a.resources != "off" else None
     heroes = [h for h in a.client_heroes.split(",") if h]
     if a.menu:
         host_url = a.url
@@ -179,6 +188,12 @@ def main():
     with open(os.path.join(LOGS, a.tag + "_exits.txt"), "w") as f:
         f.write("\n".join(exits) + "\n")
     print("exits: " + "; ".join(exits))
+    if monitor:
+        m = monitor.stop()
+        valid = not g["busy_start"] and not m["contended"]
+        say("RESOURCES during session: %s -- %s" % (m["text"], "quiet: timing results valid" if valid else
+            "CONTENDED (%s): timing results are not valid" % ", ".join(m["reasons"] + (["busy at start"] if g["busy_start"] else []))))
+        RH.journal("session", tag=a.tag, verdict="ran", gate=g["outcome"], contended=not valid, during=m["text"])
     print("logs:", os.path.join(LOGS, a.tag + "_*.log"))
     return 0
 

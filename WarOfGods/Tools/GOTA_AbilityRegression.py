@@ -668,8 +668,12 @@ def main():
     ap.add_argument("--mp-only", action="store_true", help="only the multiplayer (listen server + client) cases")
     ap.add_argument("--repeat", type=int, default=1, help="run the selected cases N times in a row")
     ap.add_argument("--resources", choices=("defer", "warn", "off"), default=os.environ.get("GOTA_RESOURCES", "defer"),
-                    help="before each case: defer = wait for a quiet GPU (default), warn = report only, off = no check")
-    ap.add_argument("--resource-wait", type=float, default=1800, help="longest wait for a quiet machine per case (s)")
+                    help="before each case: defer = wait for a quiet machine (default), warn = report only, off = no check "
+                         "(CPU, GPU, video memory and RAM used by other programs; Tools/GOTA_ResourceHealth.py)")
+    ap.add_argument("--resource-wait", type=float, default=float(os.environ.get("GOTA_RESOURCE_WAIT", "10800")),
+                    help="longest wait for a quiet machine (s, default 3 h); after a timeout later cases are checked once")
+    ap.add_argument("--resource-timeout", choices=("skip", "run"), default=os.environ.get("GOTA_RESOURCE_TIMEOUT", "skip"),
+                    help="still busy at the limit: skip = do not run, report DEFERRED (default); run = run, busy start recorded")
     a = ap.parse_args()
     total_fails = 0
     for rep in range(max(1, a.repeat)):
@@ -688,43 +692,64 @@ def run_suite(a):
         for f in os.listdir(os.path.join(ROOT, "Tools", "Tests")):
             shutil.copy2(os.path.join(ROOT, "Tools", "Tests", f), dst)
     mode = "packaged" if a.packaged else "editor"
-    fails = inconclusive = busy_starts = 0
-    if not a.check_only and a.resources != "off":
-        print("RESOURCES at start: %s" % RH.snapshot()["text"])
+    fails = 0
+    tally = {"PASS": 0, "FAIL": 0, "INCONCLUSIVE": 0, "DEFERRED": 0}
+    checking = not a.check_only and a.resources != "off"
+    timed_out = [False]  # after one gate timeout, later cases are checked once (no second long wait)
+    say = lambda m: (print(m), sys.stdout.flush())  # noqa: E731
+    if checking:
+        snap = RH.snapshot()
+        say("RESOURCES at start: %s" % snap["text"])
+        RH.journal("suite-start", mode=mode, args=" ".join(sys.argv[1:]), **RH._ev(snap))
 
     def gate(label):
-        nonlocal busy_starts
-        if a.check_only:
-            return {"busy": False, "reasons": []}
-        snap = RH.wait_quiet(a.resources, a.resource_wait, label, log=lambda m: (print(m), sys.stdout.flush()))
-        busy_starts += 1 if snap["busy"] else 0
-        return snap
+        if not checking:
+            return {"run": True, "busy_start": False, "reasons": [], "outcome": "unchecked", "waited": 0}
+        g = RH.gate(a.resources, 0 if timed_out[0] else a.resource_wait, label, a.resource_timeout, log=say)
+        timed_out[0] = g["outcome"].startswith("timeout") or (timed_out[0] and g["busy_start"])
+        return g
 
-    def starved(snap, *texts):
-        """Why a failing case proves nothing: started on a busy machine, or a game ran below the frame-rate floor."""
-        if snap["busy"]:
-            return "(machine busy at start: %s) " % ", ".join(snap["reasons"])
-        rates = [r for r in (RH.log_fps(t) for t in texts) if r is not None]
-        if rates and min(rates) < RH.MIN_FPS:
-            return "(starved: %.1f fps) " % min(rates)
-        return ""
+    def deferred(ability, name, g):
+        tally["DEFERRED"] += 1
+        RH.journal("case", case="%s: %s" % (ability, name), mode=mode, raw="NOT RUN", verdict="DEFERRED", gate=g["outcome"])
+        say("%-5s %-12s %-42s (not run: still busy after %.0f min: %s)" % ("DEFERRED", ability, name, g["waited"] / 60,
+                                                                           ", ".join(g["reasons"])))
+
+    def verdict_of(ability, name, ok, g, mon, texts, note=""):
+        """PASS / FAIL / INCONCLUSIVE. INCONCLUSIVE needs measured contention; low fps alone stays FAIL (flagged)."""
+        fps = [RH.log_fps(t) for t in texts]
+        verdict, why = RH.classify(ok, g, mon, fps)
+        if note and verdict == "FAIL":
+            why = note + why
+        tally[verdict] += 1
+        RH.journal("case", case="%s: %s" % (ability, name), mode=mode, raw="PASS" if ok else "FAIL", verdict=verdict,
+                   reason=why.strip(), gate=g["outcome"], fps=[None if f is None else round(f, 1) for f in fps],
+                   during=(mon or {}).get("text", "not monitored"))
+        return verdict, why
     for ability, cases in CASES.items():
         if (a.only and ability not in a.only.split(",")) or (a.skip and ability in a.skip.split(",")):
             continue
         for name, opts, script, exp in ([] if a.mp_only else cases):
             log = os.path.join(LOGS, "%s_%s_%s.log" % (mode, ability, re.sub(r"\W+", "_", name)))
-            snap = gate("%s: %s" % (ability, name))
+            g = gate("%s: %s" % (ability, name))
+            if not g["run"]:
+                deferred(ability, name, g)
+                fails += 1
+                continue
+            mon = RH.Monitor() if checking else None
             if not a.check_only:
                 launch(a.packaged, QUARRY + opts, script, log)
+            mon = mon.stop() if mon else None
             text = read(log)
             results = check(text, exp) + [("no crash", True, "Fatal error" not in text)]
             ok = all(r[2] for r in results)
             fails += 0 if ok else 1
-            why = "" if ok else starved(snap, text)
-            inconclusive += 1 if why else 0
+            verdict, why = verdict_of(ability, name, ok, g, mon, [text])
             if not ok:
                 keep_failure(run_dir, log)
-            print("%-5s %-12s %-42s %s" % ("PASS" if ok else ("INCONCLUSIVE" if why else "FAIL"), ability, name, "" if ok else
+                if mon:
+                    why += "[%s] " % mon["text"]
+            print("%-5s %-12s %-42s %s" % (verdict, ability, name, "" if ok else
                   why + "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
             sys.stdout.flush()
         if ability not in MP_STATUS and ability not in MP:
@@ -737,7 +762,12 @@ def run_suite(a):
             client_checks = [(r"body plays " + anim + r" \(ok", True), (r"BODY \[client\].*hero=" + hero, True)]
         host_log = os.path.join(LOGS, "%s_%s_mp_host.log" % (mode, ability))
         client_log = os.path.join(LOGS, "%s_%s_mp_client.log" % (mode, ability))
-        snap = gate("%s: multiplayer" % ability)
+        g = gate("%s: multiplayer" % ability)
+        if not g["run"]:
+            deferred(ability, "multiplayer (listen server + client)", g)
+            fails += 1
+            continue
+        mon = RH.Monitor() if checking else None
         if not a.check_only:
             host = launch(a.packaged, MP_URL.get(ability, QUARRY) + "?Hero=%s?DevHeroes=1?listen" % hero, host_script, host_log, wait=False)
             # Start the client once the host is listening (a cold host start took 49 s; a fixed 15 s launched the
@@ -753,6 +783,7 @@ def run_suite(a):
                 host.wait(timeout=180)  # host scripts stay up 75 s after their action so a slow client can finish checking
             except subprocess.TimeoutExpired:
                 host.kill()
+        mon = mon.stop() if mon else None
         h, c = read(host_log), read(client_log)
         results = check(h, host_checks) + check(c, client_checks) + [("no crash", True, "Fatal error" not in h + c)]
         ok = all(r[2] for r in results)
@@ -781,17 +812,20 @@ def run_suite(a):
         host_stall = max(stalls) if stalls else 0.0
         if host_stall:
             timing += ", host's longest frame %.1fs" % host_stall
-        why = ""
         rates = [RH.log_fps(h), RH.log_fps(c)]
         timing += ", fps host %s client %s" % tuple("?" if r is None else "%.0f" % r for r in rates)
+        if mon:
+            timing += "; " + mon["text"]
+        # A client's frame rate is the measure (a host idles at waitplayers, so its average says little). A starved
+        # client or a host stall is excused only with measured contention; otherwise it is flagged, never hidden.
+        note = ""
         if not ok and starved_s is not None and starved_s > 36:
-            why = "(client starved) "
+            note = "(client 'wait 18' took %.0fs) " % starved_s
         elif not ok and host_stall >= 15:
-            why = "(host stalled %.0fs) " % host_stall
-        elif not ok:
-            why = starved(snap, c)  # the client's frame rate (a host idles at waitplayers, so its average says little)
-        inconclusive += 1 if why else 0
-        verdict = "PASS" if ok else ("INCONCLUSIVE" if why else "FAIL")
+            note = "(host stalled %.0fs) " % host_stall
+        verdict, why = verdict_of(ability, "multiplayer", ok, g, mon, [c], note)
+        if verdict == "INCONCLUSIVE" and note:
+            why = note + why
         if not ok:
             keep_failure(run_dir, host_log, client_log)
         print("%-5s %-12s %-42s %s" % (verdict, ability, "multiplayer (listen server + client)", "" if ok else
@@ -799,9 +833,11 @@ def run_suite(a):
               "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
         print("      %-12s timing: %s" % ("", timing))
         sys.stdout.flush()
-    print("\n%s: %s" % (mode, "ALL PASS" if fails == 0 else "%d FAILED (%d of them INCONCLUSIVE)" % (fails, inconclusive)))
-    if busy_starts:
-        print("RESOURCES: %d case(s) started on a busy machine; their failures are INCONCLUSIVE, not results" % busy_starts)
+    summary = "%d passed, %d failed, %d inconclusive (raw FAIL with measured contention), %d deferred (not run)" % (
+        tally["PASS"], tally["FAIL"], tally["INCONCLUSIVE"], tally["DEFERRED"])
+    print("\n%s: %s -- %s" % (mode, "ALL PASS" if fails == 0 else "NOT CLEAN", summary))
+    if checking:
+        RH.journal("suite-end", mode=mode, **tally)
     return fails
 
 
