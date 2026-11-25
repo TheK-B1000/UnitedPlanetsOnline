@@ -1,0 +1,34 @@
+waitplayers 2 120
+# Multiplayer combat animation visibility (host). The host attacks, blocks and attacks again through its own input
+# functions while the client (mp_combatvis_client) loops attack / block / release, so blocked hits and parries happen
+# too. Every machine traces montage starts (MTRACE) and the replicator logs each send and receipt (MREP, event ids).
+r.MotionBlurQuality 0
+wait 22
+gota.Net.Stance
+gota.Net.MontageTrace 60
+gota.Ability.Place 190
+wait 0.3
+gota.Duel.Face 0
+gota.Net.LocalCall MeleeAttack
+wait 0.3
+gota.Net.LocalCall MeleeAttack
+wait 4
+gota.Net.LocalCall StartBlock
+wait 3
+gota.Net.LocalCall EndBlock
+wait 1
+gota.Net.LocalCall MeleeAttack
+wait 0.3
+gota.Net.LocalCall MeleeAttack
+wait 4
+gota.Net.LocalCall MeleeAttack
+wait 4
+gota.Net.LocalCall StartBlock
+wait 3
+gota.Net.LocalCall EndBlock
+wait 1
+gota.Net.LocalCall MeleeAttack
+wait 6
+gota.Net.Stance
+wait 40
+quit

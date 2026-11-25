@@ -974,6 +974,153 @@ namespace GOTANetTest
 		}
 		UE_LOG(LogGOTANet, Log, TEXT("MONTAGES role=%s enemies=%d playing=%d %s"), W->GetNetMode() == NM_Client ? TEXT("client") : TEXT("server"), Seen, Playing, *List.Left(600));
 	}
+	/**
+	 * gota.Net.MontageTrace <seconds>: on this machine, log every montage start and stop on every character (polled each
+	 * frame), with the character's network role, so a missing animation can be told apart from one that never arrived.
+	 * Each line carries a per-machine sequence number for correlation between logs.
+	 */
+	static void MontageTrace(const TArray<FString>& Args)
+	{
+		static TMap<TWeakObjectPtr<ACharacter>, TArray<TWeakObjectPtr<UAnimMontage>>> Playing;
+		static FTSTicker::FDelegateHandle Handle;
+		static int32 Seq = 0;
+		const float Seconds = Args.Num() > 0 ? FCString::Atof(*Args[0]) : 30.f;
+		if (Handle.IsValid())
+		{
+			FTSTicker::GetCoreTicker().RemoveTicker(Handle);
+		}
+		Playing.Reset();
+		const double End = FPlatformTime::Seconds() + Seconds;
+		Handle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([End](float)
+		{
+			UWorld* W = GameWorld();
+			if (!W || FPlatformTime::Seconds() >= End)
+			{
+				UE_LOG(LogGOTANet, Log, TEXT("MTRACE done (%d events)"), Seq);
+				Handle.Reset();
+				return false;
+			}
+			const TCHAR* Machine = W->GetNetMode() == NM_Client ? TEXT("client") : TEXT("server");
+			for (TActorIterator<ACharacter> It(W); It; ++It)
+			{
+				UAnimInstance* Anim = It->GetMesh() ? It->GetMesh()->GetAnimInstance() : nullptr;
+				TArray<TWeakObjectPtr<UAnimMontage>> Now;
+				if (Anim)
+				{
+					for (const FAnimMontageInstance* Inst : Anim->MontageInstances)
+					{
+						if (Inst && Inst->Montage && Inst->IsActive())
+						{
+							Now.AddUnique(Inst->Montage.Get());
+						}
+					}
+				}
+				TArray<TWeakObjectPtr<UAnimMontage>>& Before = Playing.FindOrAdd(*It);
+				const TCHAR* Role = It->HasAuthority() ? TEXT("authority") : It->IsLocallyControlled() ? TEXT("owner") : TEXT("observer");
+				for (const TWeakObjectPtr<UAnimMontage>& M : Now)
+				{
+					if (!Before.Contains(M))
+					{
+						UE_LOG(LogGOTANet, Log, TEXT("MTRACE #%d [%s] start %s on %s (%s, %s)"), ++Seq, Machine, *GetNameSafe(M.Get()), *It->GetName(), Role,
+							It->IsPlayerControlled() ? TEXT("player") : TEXT("ai"));
+					}
+				}
+				for (const TWeakObjectPtr<UAnimMontage>& M : Before)
+				{
+					if (!Now.Contains(M))
+					{
+						UE_LOG(LogGOTANet, Log, TEXT("MTRACE #%d [%s] stop %s on %s (%s)"), ++Seq, Machine, *GetNameSafe(M.Get()), *It->GetName(), Role);
+					}
+				}
+				Before = MoveTemp(Now);
+			}
+			return true;
+		}));
+		UE_LOG(LogGOTANet, Log, TEXT("MTRACE watching %.0fs"), Seconds);
+	}
+	static FAutoConsoleCommand CmdMontageTrace(TEXT("gota.Net.MontageTrace"), TEXT("Log montage starts/stops on every character on this machine: <seconds>."), FConsoleCommandWithArgsDelegate::CreateStatic(&MontageTrace));
+
+	/** gota.Net.RpcFlags: the network flags of the first player pawn's and its components' SR_/MC_/Server/Multicast events. */
+	static void RpcFlags(const TArray<FString>&)
+	{
+		UWorld* W = GameWorld();
+		APawn* Pawn = nullptr;
+		for (TActorIterator<APawn> It(W); It && !Pawn; ++It)
+		{
+			if (It->IsPlayerControlled())
+			{
+				Pawn = *It;
+			}
+		}
+		if (!Pawn)
+		{
+			return;
+		}
+		TArray<UObject*> Owners = { Pawn };
+		TInlineComponentArray<UActorComponent*> Comps(Pawn);
+		for (UActorComponent* C : Comps)
+		{
+			Owners.Add(C);
+		}
+		for (UObject* O : Owners)
+		{
+			for (TFieldIterator<UFunction> F(O->GetClass(), EFieldIteratorFlags::ExcludeSuper); F; ++F)
+			{
+				const UFunction* Fn = *F;
+				if (!Fn->HasAnyFunctionFlags(FUNC_Net))
+				{
+					continue;
+				}
+				UE_LOG(LogGOTANet, Log, TEXT("RPC %s.%s %s%s%s%s"), *O->GetClass()->GetName(), *Fn->GetName(),
+					Fn->HasAnyFunctionFlags(FUNC_NetServer) ? TEXT("Server ") : TEXT(""), Fn->HasAnyFunctionFlags(FUNC_NetMulticast) ? TEXT("Multicast ") : TEXT(""),
+					Fn->HasAnyFunctionFlags(FUNC_NetClient) ? TEXT("Client ") : TEXT(""), Fn->HasAnyFunctionFlags(FUNC_NetReliable) ? TEXT("Reliable") : TEXT("Unreliable"));
+			}
+		}
+	}
+	/** gota.Net.LocalCall <Function>: call a combat function on this machine's own pawn, as its input would (e.g. MeleeAttack on a client). */
+	static void LocalCall(const TArray<FString>& Args)
+	{
+		UWorld* W = GameWorld();
+		APlayerController* PC = W ? W->GetFirstPlayerController() : nullptr;
+		APawn* Me = PC ? PC->GetPawn() : nullptr;
+		if (!Me || Args.Num() == 0)
+		{
+			return;
+		}
+		const bool bOk = FGOTABlueprintCombat::Call(Me, FName(*Args[0]));
+		UE_LOG(LogGOTANet, Log, TEXT("NET localcall %s on %s (%s) -> %d"), *Args[0], *Me->GetName(), W->GetNetMode() == NM_Client ? TEXT("client") : TEXT("server"), bOk ? 1 : 0);
+	}
+	/** gota.Net.Stance: each player pawn's Blueprint Stance on this machine, and whether the variable replicates. */
+	static void Stance(const TArray<FString>&)
+	{
+		UWorld* W = GameWorld();
+		for (TActorIterator<APawn> It(W); It; ++It)
+		{
+			const FProperty* P = It->GetClass()->FindPropertyByName(TEXT("Stance"));
+			if (!P)
+			{
+				continue;
+			}
+			int64 Value = -1;
+			if (const FByteProperty* B = CastField<FByteProperty>(P))
+			{
+				Value = B->GetPropertyValue_InContainer(*It);
+			}
+			else if (const FEnumProperty* E = CastField<FEnumProperty>(P))
+			{
+				Value = E->GetUnderlyingProperty()->GetSignedIntPropertyValue(E->ContainerPtrToValuePtr<void>(*It));
+			}
+			UE_LOG(LogGOTANet, Log, TEXT("NET stance [%s] %s (%s) = %lld replicated=%d"), W->GetNetMode() == NM_Client ? TEXT("client") : TEXT("server"),
+				*It->GetName(), It->HasAuthority() ? TEXT("authority") : It->IsLocallyControlled() ? TEXT("owner") : TEXT("observer"), Value,
+				P->HasAnyPropertyFlags(CPF_Net) ? 1 : 0);
+		}
+	}
+	static FAutoConsoleCommand CmdStance(TEXT("gota.Net.Stance"), TEXT("Log each pawn's Blueprint Stance on this machine and whether it replicates."), FConsoleCommandWithArgsDelegate::CreateStatic(&Stance));
+
+	static FAutoConsoleCommand CmdLocalCall(TEXT("gota.Net.LocalCall"), TEXT("Call a combat function on this machine's own pawn: <Function>."), FConsoleCommandWithArgsDelegate::CreateStatic(&LocalCall));
+
+	static FAutoConsoleCommand CmdRpcFlags(TEXT("gota.Net.RpcFlags"), TEXT("Log the player pawn's and components' RPC events and their flags."), FConsoleCommandWithArgsDelegate::CreateStatic(&RpcFlags));
+
 	static FAutoConsoleCommand CmdMontages(TEXT("gota.Net.Montages"), TEXT("Log the montage this process sees on each nearby enemy (client attack readability)."), FConsoleCommandWithArgsDelegate::CreateStatic(&Montages));
 
 	/** Provoke mode: one melee swing per enemy (Horde enemies only fight back once hurt), then no more attacks. */

@@ -53,7 +53,10 @@ def launch(packaged, url, script, log, extra_exec="", res=(960, 540), pos=(0, 0)
     if PORT and "listen" in url:
         args.append("-port=" + PORT)
     args += list(extra_args)
-    return subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            # its own process group: a console Ctrl+C/close event sent to the console this script runs in
+                            # (other commands run alongside a suite) must not end the game (logged "ConsoleCtrl RequestExit")
+                            creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))
 
 
 def main():

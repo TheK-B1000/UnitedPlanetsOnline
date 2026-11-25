@@ -11,6 +11,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Pawn.h"
+#include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GOTAMontageReplicator)
 
@@ -18,9 +19,10 @@ DEFINE_LOG_CATEGORY_STATIC(LogGOTAMontageRep, Log, All);
 
 UGOTAMontageReplicator::UGOTAMontageReplicator()
 {
-	// A slow tick only to follow the anim instance when the enemy's body (and anim class) is swapped after spawn.
+	// A slow tick: follow the anim instance when a body (and anim class) is swapped after spawn, and keep a player's
+	// stance mirror current.
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.TickInterval = 1.f;
+	PrimaryComponentTick.TickInterval = 0.25f;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -79,7 +81,79 @@ void UGOTAMontageReplicator::Rebind()
 void UGOTAMontageReplicator::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	Rebind();
+	if (GetOwner() && GetOwner()->HasAuthority())
+	{
+		Rebind();
+		const APawn* Pawn = Cast<APawn>(GetOwner());
+		if (Pawn && Pawn->IsPlayerControlled())
+		{
+			MirroredStance = ReadStance(Pawn); // replicates only when it changes
+		}
+	}
+	else if (MirroredStance >= 0 && StanceAttempts < 3 && ReadStance(GetOwner()) != MirroredStance)
+	{
+		SyncStanceLocally(); // e.g. the Blueprint reset its stance on this machine after the mirror arrived
+	}
+}
+
+void UGOTAMontageReplicator::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UGOTAMontageReplicator, MirroredStance);
+}
+
+int32 UGOTAMontageReplicator::ReadStance(const AActor* Actor)
+{
+	const FProperty* P = Actor ? Actor->GetClass()->FindPropertyByName(TEXT("Stance")) : nullptr;
+	if (const FByteProperty* B = CastField<FByteProperty>(P))
+	{
+		return B->GetPropertyValue_InContainer(Actor);
+	}
+	if (const FEnumProperty* E = CastField<FEnumProperty>(P))
+	{
+		return static_cast<int32>(E->GetUnderlyingProperty()->GetSignedIntPropertyValue(E->ContainerPtrToValuePtr<void>(Actor)));
+	}
+	return -1;
+}
+
+void UGOTAMontageReplicator::OnRep_MirroredStance()
+{
+	StanceAttempts = 0;
+	SyncStanceLocally();
+}
+
+void UGOTAMontageReplicator::SyncStanceLocally()
+{
+	AActor* Owner = GetOwner();
+	const int32 Local = ReadStance(Owner);
+	if (!Owner || Owner->HasAuthority() || MirroredStance < 0 || Local < 0 || Local == MirroredStance)
+	{
+		return;
+	}
+	++StanceAttempts;
+	// The stance enum's entry name ("Melee") names the Blueprint's own multicast handler (MC_MeleeStance).
+	const FProperty* P = Owner->GetClass()->FindPropertyByName(TEXT("Stance"));
+	const UEnum* Enum = nullptr;
+	if (const FByteProperty* B = CastField<FByteProperty>(P))
+	{
+		Enum = B->Enum;
+	}
+	else if (const FEnumProperty* E = CastField<FEnumProperty>(P))
+	{
+		Enum = E->GetEnum();
+	}
+	const FString Entry = Enum ? Enum->GetDisplayNameTextByValue(MirroredStance).ToString().Replace(TEXT(" "), TEXT("")) : FString();
+	UFunction* Fn = Entry.IsEmpty() ? nullptr : Owner->FindFunction(FName(*FString::Printf(TEXT("MC_%sStance"), *Entry)));
+	if (!Fn || Fn->ParmsSize != 0)
+	{
+		UE_LOG(LogGOTAMontageRep, Warning, TEXT("%s: stance %d (%s) has no MC_%sStance event; local stance stays %d"), *GetNameSafe(Owner), MirroredStance,
+			*Entry, *Entry, Local);
+		return;
+	}
+	// Calling a multicast on a client runs it here only: exactly what the lost multicast would have done.
+	Owner->ProcessEvent(Fn, nullptr);
+	UE_LOG(LogGOTAMontageRep, Log, TEXT("STANCE %s: local %d -> server %d via %s (now %d)"), *GetNameSafe(Owner), Local, MirroredStance, *Fn->GetName(),
+		ReadStance(Owner));
 }
 
 void UGOTAMontageReplicator::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -95,10 +169,16 @@ void UGOTAMontageReplicator::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 bool UGOTAMontageReplicator::ShouldReplicate(const UAnimMontage* Montage) const
 {
-	// Root-motion montages already reach simulated proxies through ACharacter::RepRootMotion; bosses multicast their own;
-	// players replicate theirs through the player Blueprint's own SR_/MC_ events (a player pawn is seen before possession).
+	// Bosses multicast their own. AI root-motion montages already reach simulated proxies through
+	// ACharacter::RepRootMotion. Players: every montage (see the class comment); a client already playing it skips it,
+	// which also covers root motion on simulated proxies. IsPlayerControlled is read per montage: a pawn is bootstrapped
+	// before it is possessed.
 	const APawn* Pawn = Cast<APawn>(GetOwner());
-	return Montage && !Montage->HasRootMotion() && Pawn && !Pawn->IsPlayerControlled() && !Pawn->FindComponentByClass<UGOTABossComponent>();
+	if (!Montage || !Pawn || Pawn->FindComponentByClass<UGOTABossComponent>())
+	{
+		return false;
+	}
+	return Pawn->IsPlayerControlled() || !Montage->HasRootMotion();
 }
 
 void UGOTAMontageReplicator::HandleMontageStarted(UAnimMontage* Montage)
@@ -124,7 +204,11 @@ void UGOTAMontageReplicator::HandleMontageStarted(UAnimMontage* Montage)
 		return;
 	}
 	++Sent;
-	Multicast_PlayMontage(Montage, Anim->Montage_GetPlayRate(Montage), Anim->Montage_GetPosition(Montage));
+	if (OwnerPawn && OwnerPawn->IsPlayerControlled())
+	{
+		UE_LOG(LogGOTAMontageRep, Log, TEXT("MREP send #%d %s on %s"), Sent, *Montage->GetName(), *GetNameSafe(GetOwner()));
+	}
+	Multicast_PlayMontage(Montage, Anim->Montage_GetPlayRate(Montage), Anim->Montage_GetPosition(Montage), Sent);
 }
 
 void UGOTAMontageReplicator::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -156,15 +240,31 @@ void UGOTAMontageReplicator::HandleNotifyBegin(FName NotifyName, const FBranchin
 	}
 }
 
-void UGOTAMontageReplicator::Multicast_PlayMontage_Implementation(UAnimMontage* Montage, float PlayRate, float StartPosition)
+void UGOTAMontageReplicator::Multicast_PlayMontage_Implementation(UAnimMontage* Montage, float PlayRate, float StartPosition, int32 EventId)
 {
 	if (!GetOwner() || GetOwner()->HasAuthority() || !Montage)
 	{
 		return; // the server already plays it
 	}
-	if (UAnimInstance* Anim = GetAnimInstance())
+	UAnimInstance* Anim = GetAnimInstance();
+	if (!Anim)
 	{
-		Anim->Montage_Play(Montage, PlayRate > 0.f ? PlayRate : 1.f, EMontagePlayReturnType::MontageLength, StartPosition);
+		return;
+	}
+	const APawn* Pawn = Cast<APawn>(GetOwner());
+	const bool bPlayer = Pawn && Pawn->IsPlayerControlled();
+	// Already playing: the player Blueprint's own multicast (or the engine's root-motion replication) got here first.
+	if (bPlayer && Anim->Montage_IsPlaying(Montage))
+	{
+		UE_LOG(LogGOTAMontageRep, Log, TEXT("MREP #%d %s on %s (%s): already playing, skipped"), EventId, *Montage->GetName(), *GetNameSafe(Pawn),
+			Pawn->IsLocallyControlled() ? TEXT("owner") : TEXT("observer"));
+		return;
+	}
+	Anim->Montage_Play(Montage, PlayRate > 0.f ? PlayRate : 1.f, EMontagePlayReturnType::MontageLength, StartPosition);
+	if (bPlayer)
+	{
+		UE_LOG(LogGOTAMontageRep, Log, TEXT("MREP #%d %s on %s (%s): played"), EventId, *Montage->GetName(), *GetNameSafe(Pawn),
+			Pawn->IsLocallyControlled() ? TEXT("owner") : TEXT("observer"));
 	}
 }
 

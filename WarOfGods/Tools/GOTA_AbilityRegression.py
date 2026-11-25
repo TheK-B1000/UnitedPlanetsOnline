@@ -28,6 +28,22 @@ LOGS = os.environ.get("GOTA_REGRESSION_LOGS", os.path.join(ROOT, "Saved", "Abili
 QUARRY = "/Game/Arenas/Maps/L_Arena_TitansQuarry?game=/Script/WarOfGods.DuelGameMode?Mode=Duel?Arena=Quarry?BestOf=3"
 
 # (name, url-options, script, [(regex, expect)])  expect: True = must appear, False = must NOT appear, int = exact count, (lo, hi) = count in range.
+# Multiplayer cases whose remote player is not the default UPA Warden: (client hero, client script).
+MP_CLIENT = {"CombatVis": ("UPAWarden", "mp_combatvis_client.txt")}
+# Multiplayer combat animation visibility (2026-11-25 fix, Docs/GOTA_MULTIPLAYER_COMBAT_ANIMATION.md). MTRACE lines are
+# montage starts this machine actually played; "observer" = the other player's fighter, "owner" = this player's own.
+VIS_HOST = [(r"MTRACE #\d+ \[server\] start Montage_SwordCombo on \S+ \(authority, player\)", (4, 40)),
+            (r"MTRACE #\d+ \[server\] start Montage_Shield_Block on \S+ \(authority, player\)", (3, 40)),
+            (r"MREP send #\d+ Montage_SwordCombo", True), (r"has no MC_\w*Stance event", False)]
+VIS_CLIENT = [(r"STANCE BP_Player\S+: local 0 -> server 2 via MC_MeleeStance \(now 2\)", True),
+              (r"MTRACE #\d+ \[client\] start Montage_SwordCombo on \S+ \(observer, player\)", True),   # the host's attack
+              (r"MTRACE #\d+ \[client\] start Montage_SwordCombo on \S+ \(owner, player\)", True),      # its own attack
+              (r"MTRACE #\d+ \[client\] start Montage_Shield_Block on \S+ \(observer, player\)", True), # the host's guard
+              (r"MTRACE #\d+ \[client\] start Montage_Shield_Block on \S+ \(owner, player\)", True),    # its own guard
+              (r"MTRACE #\d+ \[client\] start Montage_(Sword_Hit|Shield_Block_React\w*) on \S+", True),  # a hit or a blocked hit
+              (r"NET stance \[client\] BP_Player\S+ \(\w+\) = 2 ", (2, 9)), (r"NET stance \[client\] BP_Player\S+ \(\w+\) = 0 ", (0, 2)),
+              (r"has no MC_\w*Stance event", False)]
+
 CASES = {
     "GaleRush": [
         ("hit+cooldown", "?Opponent=AI?Hero=Zephyr?DevHeroes=1", "ability_galerush.txt",
@@ -256,6 +272,7 @@ CASES = {
     "StatusHUDHorde": [],  # multiplayer only: a remote player's shared health bar, behind a shield
     "StatusHUDStory": [],  # the same in Story
     "StatusFX": [],  # multiplayer only: one burst per status on every peer, shield break from damage only
+    "CombatVis": [],  # multiplayer only: both players see each other's (and their own) attacks, guards and hits
     "HazardMarks": [],  # multiplayer only: projectile lane and zone ground, threat on the opponent's screen, calm on the caster's
     "HazardCoop": [],  # multiplayer only: an ally's zone is drawn calm in Horde
     "Feedback": [],  # multiplayer only: own hard control, shield break and fade, silent on death
@@ -403,6 +420,7 @@ FX_BURST_CHECKS = [(r"FX BURST %s on " % s, 1) for s in ("Stunned", "Frozen", "C
     (r"FX BURST (Hasted|Empowered|Fortified|Unbreakable|Slowed|Weakened|Vulnerable) on ", False), (r"FX BURST \w+ missing", False)]
 
 MP_STATUS = {
+    "CombatVis": ("UPAWarden", "mp_combatvis_host.txt", VIS_HOST, VIS_CLIENT),
     "StatusFX": ("Drakon", "f_status_fx_mp_host.txt", FX_BURST_CHECKS, FX_BURST_CHECKS),
     # F3: each screen draws the host's deliveries itself. The caster's screen: calm, no lane. The opponent's: lane, amber
     # warning counted down from arrival, red no more than 0.3 s before the server arms it (or on the server's arm
@@ -521,7 +539,10 @@ def launch(packaged, url, script, log, extra=(), timeout=420, wait=True):
                                  "-abslog=" + log, '-ExecCmds=gota.Heroes.AllowInDevelopment 1,gota.Test.Run Tools/Tests/' + script] + list(extra)
     if os.path.exists(log):
         os.remove(log)
-    p = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    p = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            # its own process group: a console Ctrl+C/close event sent to the console this script runs in
+                            # (other commands run alongside a suite) must not end the game (logged "ConsoleCtrl RequestExit")
+                            creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))
     if not wait:
         return p
     try:
@@ -636,7 +657,8 @@ def run_suite(a):
             while time.time() < deadline and not re.search(r"(GameNetDriver.*listening|Listening on port|IpNetDriver listening)", read(host_log)):
                 time.sleep(1)
             time.sleep(2)
-            launch(a.packaged, "127.0.0.1?Hero=UPAWarden", "gale_mp_client.txt", client_log, extra=["-LogCmds=LogGOTAAbility Verbose"], timeout=300)
+            client_hero, client_script = MP_CLIENT.get(ability, ("UPAWarden", "gale_mp_client.txt"))
+            launch(a.packaged, "127.0.0.1?Hero=%s" % client_hero, client_script, client_log, extra=["-LogCmds=LogGOTAAbility Verbose"], timeout=300)
             try:
                 host.wait(timeout=180)  # host scripts stay up 75 s after their action so a slow client can finish checking
             except subprocess.TimeoutExpired:
@@ -650,7 +672,7 @@ def run_suite(a):
         timing = "host listen %s, client join %s, client map %s, client script %s, client body %s" % (
             first_time(h, r"(GameNetDriver.*listening|Listening on port|IpNetDriver listening)"),
             first_time(h, r"Join succeeded"), first_time(c, r"LoadMap: .*L_Arena_TitansQuarry"),
-            first_time(c, r"Running .*gale_mp_client"), first_time(c, r"BODY \[client\]"))
+            first_time(c, r"Running .*_client\.txt"), first_time(c, r"BODY \[client\]"))
         # A starved client stretches its script clock (frame time, capped per frame): report the real length of its
         # first 18 s wait. Far above 18 s means the client process was not getting frames.
         t0, t1 = first_time(c, r"\[script\] wait 18"), first_time(c, r"\[script\] > gota.Test.Body")

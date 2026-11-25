@@ -1,0 +1,34 @@
+# Client side of mp_combatvis_host: trace montages here and loop attack / block / release through this player's own
+# input functions, so its attacks, guards and blocked hits overlap the host's.
+wait 18
+gota.Test.Body
+# draw the weapon through this player's own input (Duel fighters are already armed; Story ones are not)
+gota.Net.LocalCall MeleeStance
+wait 1
+gota.Net.Stance
+gota.Net.MontageTrace 60
+gota.Net.LocalCall MeleeAttack
+wait 3
+gota.Net.LocalCall StartBlock
+wait 2.5
+gota.Net.LocalCall EndBlock
+wait 1.5
+gota.Net.LocalCall MeleeAttack
+wait 3
+gota.Net.LocalCall StartBlock
+wait 2.5
+gota.Net.LocalCall EndBlock
+wait 1.5
+gota.Net.LocalCall MeleeAttack
+wait 3
+gota.Net.LocalCall StartBlock
+wait 2.5
+gota.Net.LocalCall EndBlock
+wait 1.5
+gota.Net.LocalCall MeleeAttack
+wait 3
+gota.Net.LocalCall StartBlock
+wait 2.5
+gota.Net.LocalCall EndBlock
+wait 40
+quit

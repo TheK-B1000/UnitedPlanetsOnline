@@ -1,0 +1,18 @@
+# Multiplayer combat animation diagnosis (client side of mt_diag_host): trace montages here, attack the host, then hold
+# a block while the host attacks into it.
+wait 18
+gota.Test.Body
+gota.Net.Stance
+gota.Net.MontageTrace 75
+wait 14
+gota.Net.LocalCall MeleeAttack
+wait 0.3
+gota.Net.LocalCall MeleeAttack
+wait 4
+gota.Net.LocalCall StartBlock
+wait 3
+gota.Net.LocalCall EndBlock
+wait 14
+gota.Net.Stance
+wait 31
+quit

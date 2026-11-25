@@ -1,0 +1,34 @@
+waitplayers 2 120
+# Multiplayer combat animation diagnosis (host): every machine traces every montage start/stop (MTRACE) while the host
+# and the client take turns through their own input functions: host attack and block, client attack into the host,
+# host attack into the client's block, the client's death and the next round's respawn, a host attack after it.
+r.MotionBlurQuality 0
+wait 25
+gota.Net.RpcFlags
+gota.Net.Stance
+gota.Net.MontageTrace 75
+gota.Ability.Place 200
+wait 0.3
+gota.Duel.Face 0
+gota.Net.LocalCall MeleeAttack
+wait 0.3
+gota.Net.LocalCall MeleeAttack
+wait 4
+gota.Net.LocalCall StartBlock
+wait 2
+gota.Net.LocalCall EndBlock
+wait 6
+gota.Net.LocalCall MeleeAttack
+wait 0.3
+gota.Net.LocalCall MeleeAttack
+wait 5
+gota.Duel.Hurt 1 9999
+wait 9
+gota.Ability.Place 200
+wait 0.3
+gota.Net.LocalCall MeleeAttack
+wait 5
+gota.Net.Stance
+gota.Ability.Dump
+wait 40
+quit
