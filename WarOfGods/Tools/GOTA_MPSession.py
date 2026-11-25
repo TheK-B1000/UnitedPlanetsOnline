@@ -15,6 +15,9 @@ import subprocess
 import sys
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import GOTA_ResourceHealth as RH  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EDITOR = os.environ.get("GOTA_EDITOR", r"K:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe")
 PROJECT = os.path.join(ROOT, "WarOfGods.uproject")
@@ -83,8 +86,15 @@ def main():
     ap.add_argument("--kill-client", type=int, default=0, help="which client --kill-client-at kills (1-based; 0 = last)")
     ap.add_argument("--render-client-script", default="", help="script for rendered clients instead of --client-script")
     ap.add_argument("--render-client-args", default="", help="extra command-line switches for rendered clients only (e.g. \"-rhivalidation -gpucrashdebugging\")")
+    ap.add_argument("--resources", choices=("defer", "warn", "off"), default=os.environ.get("GOTA_RESOURCES", "defer"),
+                    help="before launch: defer = wait for a quiet GPU (default), warn = report only, off = no check")
+    ap.add_argument("--resource-wait", type=float, default=1800, help="longest wait for a quiet machine (s)")
     a = ap.parse_args()
     os.makedirs(LOGS, exist_ok=True)
+    # A competing GPU workload starves the game processes and invalidates timing results (GOTA_ResourceHealth.py).
+    snap = RH.wait_quiet(a.resources, a.resource_wait, "session %s" % a.tag, log=lambda m: (print(m), sys.stdout.flush()))
+    print("RESOURCES at launch: %s%s" % (snap["text"], " -- BUSY: timing results of this session are not valid" if snap["busy"] else ""))
+    sys.stdout.flush()
     heroes = [h for h in a.client_heroes.split(",") if h]
     if a.menu:
         host_url = a.url

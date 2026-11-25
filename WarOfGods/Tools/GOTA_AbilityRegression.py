@@ -20,6 +20,9 @@ import subprocess
 import sys
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import GOTA_ResourceHealth as RH  # noqa: E402  (a competing GPU workload invalidates timing checks)
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPROJECT = os.path.join(ROOT, "WarOfGods.uproject")
 EDITOR = os.environ.get("GOTA_EDITOR", r"K:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe")
@@ -664,6 +667,9 @@ def main():
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--mp-only", action="store_true", help="only the multiplayer (listen server + client) cases")
     ap.add_argument("--repeat", type=int, default=1, help="run the selected cases N times in a row")
+    ap.add_argument("--resources", choices=("defer", "warn", "off"), default=os.environ.get("GOTA_RESOURCES", "defer"),
+                    help="before each case: defer = wait for a quiet GPU (default), warn = report only, off = no check")
+    ap.add_argument("--resource-wait", type=float, default=1800, help="longest wait for a quiet machine per case (s)")
     a = ap.parse_args()
     total_fails = 0
     for rep in range(max(1, a.repeat)):
@@ -682,22 +688,44 @@ def run_suite(a):
         for f in os.listdir(os.path.join(ROOT, "Tools", "Tests")):
             shutil.copy2(os.path.join(ROOT, "Tools", "Tests", f), dst)
     mode = "packaged" if a.packaged else "editor"
-    fails = 0
+    fails = inconclusive = busy_starts = 0
+    if not a.check_only and a.resources != "off":
+        print("RESOURCES at start: %s" % RH.snapshot()["text"])
+
+    def gate(label):
+        nonlocal busy_starts
+        if a.check_only:
+            return {"busy": False, "reasons": []}
+        snap = RH.wait_quiet(a.resources, a.resource_wait, label, log=lambda m: (print(m), sys.stdout.flush()))
+        busy_starts += 1 if snap["busy"] else 0
+        return snap
+
+    def starved(snap, *texts):
+        """Why a failing case proves nothing: started on a busy machine, or a game ran below the frame-rate floor."""
+        if snap["busy"]:
+            return "(machine busy at start: %s) " % ", ".join(snap["reasons"])
+        rates = [r for r in (RH.log_fps(t) for t in texts) if r is not None]
+        if rates and min(rates) < RH.MIN_FPS:
+            return "(starved: %.1f fps) " % min(rates)
+        return ""
     for ability, cases in CASES.items():
         if (a.only and ability not in a.only.split(",")) or (a.skip and ability in a.skip.split(",")):
             continue
         for name, opts, script, exp in ([] if a.mp_only else cases):
             log = os.path.join(LOGS, "%s_%s_%s.log" % (mode, ability, re.sub(r"\W+", "_", name)))
+            snap = gate("%s: %s" % (ability, name))
             if not a.check_only:
                 launch(a.packaged, QUARRY + opts, script, log)
             text = read(log)
             results = check(text, exp) + [("no crash", True, "Fatal error" not in text)]
             ok = all(r[2] for r in results)
             fails += 0 if ok else 1
+            why = "" if ok else starved(snap, text)
+            inconclusive += 1 if why else 0
             if not ok:
                 keep_failure(run_dir, log)
-            print("%-5s %-12s %-42s %s" % ("PASS" if ok else "FAIL", ability, name, "" if ok else
-                  "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
+            print("%-5s %-12s %-42s %s" % ("PASS" if ok else ("INCONCLUSIVE" if why else "FAIL"), ability, name, "" if ok else
+                  why + "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
             sys.stdout.flush()
         if ability not in MP_STATUS and ability not in MP:
             continue
@@ -709,6 +737,7 @@ def run_suite(a):
             client_checks = [(r"body plays " + anim + r" \(ok", True), (r"BODY \[client\].*hero=" + hero, True)]
         host_log = os.path.join(LOGS, "%s_%s_mp_host.log" % (mode, ability))
         client_log = os.path.join(LOGS, "%s_%s_mp_client.log" % (mode, ability))
+        snap = gate("%s: multiplayer" % ability)
         if not a.check_only:
             host = launch(a.packaged, MP_URL.get(ability, QUARRY) + "?Hero=%s?DevHeroes=1?listen" % hero, host_script, host_log, wait=False)
             # Start the client once the host is listening (a cold host start took 49 s; a fixed 15 s launched the
@@ -753,10 +782,15 @@ def run_suite(a):
         if host_stall:
             timing += ", host's longest frame %.1fs" % host_stall
         why = ""
+        rates = [RH.log_fps(h), RH.log_fps(c)]
+        timing += ", fps host %s client %s" % tuple("?" if r is None else "%.0f" % r for r in rates)
         if not ok and starved_s is not None and starved_s > 36:
             why = "(client starved) "
         elif not ok and host_stall >= 15:
             why = "(host stalled %.0fs) " % host_stall
+        elif not ok:
+            why = starved(snap, c)  # the client's frame rate (a host idles at waitplayers, so its average says little)
+        inconclusive += 1 if why else 0
         verdict = "PASS" if ok else ("INCONCLUSIVE" if why else "FAIL")
         if not ok:
             keep_failure(run_dir, host_log, client_log)
@@ -765,7 +799,9 @@ def run_suite(a):
               "; ".join(("missing " if must else "unexpected ") + rx for rx, must, good in results if not good)))
         print("      %-12s timing: %s" % ("", timing))
         sys.stdout.flush()
-    print("\n%s: %s" % (mode, "ALL PASS" if fails == 0 else "%d FAILED" % fails))
+    print("\n%s: %s" % (mode, "ALL PASS" if fails == 0 else "%d FAILED (%d of them INCONCLUSIVE)" % (fails, inconclusive)))
+    if busy_starts:
+        print("RESOURCES: %d case(s) started on a busy machine; their failures are INCONCLUSIVE, not results" % busy_starts)
     return fails
 
 
