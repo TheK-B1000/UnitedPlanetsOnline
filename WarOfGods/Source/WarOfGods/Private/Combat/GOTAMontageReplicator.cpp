@@ -90,9 +90,31 @@ void UGOTAMontageReplicator::TickComponent(float DeltaTime, ELevelTick TickType,
 			MirroredStance = ReadStance(Pawn); // replicates only when it changes
 		}
 	}
-	else if (MirroredStance >= 0 && StanceAttempts < 3 && ReadStance(GetOwner()) != MirroredStance)
+	else
 	{
-		SyncStanceLocally(); // e.g. the Blueprint reset its stance on this machine after the mirror arrived
+		// A lasting difference only (e.g. the Blueprint reset its stance on this machine after the mirror arrived). A
+		// fresh one is a change in flight: the owner's own input switches its stance before the server has it, and the
+		// Blueprint's stance multicast can reach an observer before the mirror. Correcting those reverted a legitimate
+		// change for one tick under latency. A new server value still applies at once, through OnRep_MirroredStance.
+		const int32 Local = ReadStance(GetOwner());
+		const UWorld* World = GetWorld();
+		if (MirroredStance >= 0 && Local >= 0 && Local != MirroredStance && World)
+		{
+			const double Now = World->GetRealTimeSeconds();
+			if (StanceMismatchSince < 0.0)
+			{
+				StanceMismatchSince = Now;
+			}
+			else if (Now - StanceMismatchSince >= StanceSettleSeconds && StanceAttempts < 3)
+			{
+				StanceMismatchSince = -1.0;
+				SyncStanceLocally();
+			}
+		}
+		else
+		{
+			StanceMismatchSince = -1.0;
+		}
 	}
 }
 

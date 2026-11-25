@@ -88,4 +88,8 @@ private:
 	/** Client: bring the local Blueprint Stance to the server's through the Blueprint's own MC_<stance> event. */
 	void SyncStanceLocally();
 	int32 StanceAttempts = 0;
+	/** Client: when the local stance first differed from the mirror (-1 = it matches). */
+	double StanceMismatchSince = -1.0;
+	/** Client: a difference must last this long before the tick corrects it (longer than any round trip). */
+	static constexpr double StanceSettleSeconds = 1.0;
 };

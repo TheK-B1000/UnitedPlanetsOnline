@@ -50,7 +50,10 @@ VIS_CLIENT = [(r"STANCE BP_Player\S+: local 0 -> server 2 via MC_MeleeStance \(n
               (r"MTRACE #\d+ \[client\] start Montage_Shield_Block on \S+ \(owner, player\)", True),    # its own guard
               (r"MTRACE #\d+ \[client\] start Montage_(Sword_Hit|Shield_Block_React\w*) on \S+", True),  # a hit or a blocked hit
               (r"NET stance \[client\] BP_Player\S+ \(\w+\) = 2 ", (2, 9)), (r"NET stance \[client\] BP_Player\S+ \(\w+\) = 0 ", (0, 2)),
-              (r"has no MC_\w*Stance event", False)]
+              (r"has no MC_\w*Stance event", False),
+              # a stance change in flight (own input before the server has it, or the Blueprint's multicast before
+              # the mirror) must never be reverted (2026-11-25: one-tick melee -> unarmed flicker under latency)
+              (r"STANCE BP_Player\S+: local [1-9]\d* -> server 0 via MC_UnarmedStance", False)]
 
 CASES = {
     "GaleRush": [
