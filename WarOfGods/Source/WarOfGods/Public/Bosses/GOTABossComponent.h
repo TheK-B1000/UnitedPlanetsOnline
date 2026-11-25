@@ -197,6 +197,9 @@ protected:
 	double NextSequenceAt = 0.0;
 	int32 ChainRemaining = 0;
 	TSet<int32> ResolvedWindows;
+	/** The attack clock on the previous attack tick (-1 before the first): a window the clock jumped over in one frame
+	 *  (a stall) was never observed, so it is resolved once, late, instead of written off as a miss. */
+	float PrevAttackClock = -1.f;
 	bool bAttackLanded = false;
 	// Charge movement stays on the server. bCharging is replicated above.
 	FVector ChargeDir = FVector::ForwardVector;

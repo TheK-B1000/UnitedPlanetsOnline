@@ -1,0 +1,23 @@
+# Boss attack windows and frame stalls: a 0.4 s stall just before Molten Boulder's release (window 0.95-1.00 s) and just
+# before Scorched Earth's (0.80-0.86 s) jumps the attack clock over the window in one frame. Each attack must still be
+# delivered, exactly once, late by the stall; before the fix the window was written off as a miss and nothing came.
+r.MotionBlurQuality 0
+wait 4
+gota.Boss.Skip
+gota.Boss.AI 2
+wait 3
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 800 0
+gota.Boss.Attack MoltenBoulder
+wait 0.82
+gota.Test.Stall 0.4
+wait 3
+gota.Ability.ResetCooldowns 0
+gota.Test.Heal 0 200
+gota.Boss.PlaceTarget 500 0
+gota.Boss.Attack ScorchedEarth
+wait 0.68
+gota.Test.Stall 0.4
+wait 7
+gota.Boss.Dump
+quit

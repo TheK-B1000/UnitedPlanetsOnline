@@ -515,6 +515,7 @@ void UGOTABossComponent::BeginAttack(int32 Index, APawn* Target)
 	AttackStart = Now;
 	CooldownUntil[Index] = Now + A.Cooldown;
 	ResolvedWindows.Reset();
+	PrevAttackClock = -1.f;
 	bAttackLanded = false;
 	bCharging = false;
 	SequenceCursor = 0;
@@ -629,11 +630,22 @@ void UGOTABossComponent::TickAttack(APawn* Target, double Now)
 		return;
 	}
 
-	// Animation-timed hit windows.
+	// Animation-timed hit windows. A frame that jumps from before a window's start to past its end (a stall) never saw
+	// the window: it is resolved once, now, rather than counted as a miss, so a stall can delay an attack but never
+	// erase it. A window the clock was inside and that found no contact is still a clean miss below.
+	const float ClockBefore = PrevAttackClock;
+	PrevAttackClock = Clock;
 	for (int32 w = 0; w < A.HitWindows.Num(); ++w)
 	{
 		const FGOTABossHitWindow& Win = A.HitWindows[w];
-		if (Clock >= Win.Start && Clock <= Win.End + 0.05f && !ResolvedWindows.Contains(w))
+		const bool bInWindow = Clock >= Win.Start && Clock <= Win.End + 0.05f;
+		const bool bJumpedOver = Clock > Win.End + 0.05f && ClockBefore < Win.Start;
+		if (bJumpedOver && !ResolvedWindows.Contains(w))
+		{
+			UE_LOG(LogGOTABoss, Log, TEXT("Boss %s window %d crossed in one frame (%.2f -> %.2f s): resolved late"), *A.AttackId.ToString(), w,
+				FMath::Max(ClockBefore, 0.f), Clock);
+		}
+		if ((bInWindow || bJumpedOver) && !ResolvedWindows.Contains(w))
 		{
 			ResolveWindow(A, Win, w, Target);
 			if (State != EGOTABossState::Attacking)
@@ -666,6 +678,7 @@ void UGOTABossComponent::TickAttack(APawn* Target, double Now)
 			SequenceCursor = 0;
 			NextSequenceAt = Now;
 			ResolvedWindows.Reset();
+			PrevAttackClock = -1.f;
 			if (Target)
 			{
 				FaceTowards(Target->GetActorLocation(), 0.f, true);

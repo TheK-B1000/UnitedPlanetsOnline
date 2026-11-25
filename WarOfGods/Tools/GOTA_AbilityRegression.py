@@ -381,6 +381,11 @@ CASES = {
         ("Molten Boulder: a timed dodge is protected, an early dodge is not", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "power_dodge.txt",
          [(r"PROJECTILE MoltenBoulder launched", 2), (r"Dodge arm \(\S+\): projectile lead=0\.\d+", 1),
           (r"PROJECTILE MoltenBoulder hit BP_Player\S+ after \d+ \(landed=1\)", 1)]),
+        # A frame stall that jumps the attack clock over a release window delays the attack but never erases it.
+        ("frame stall across a release: boulder and zone still delivered once", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "boss_stall.txt",
+         [(r"Boss MoltenBoulder window 0 crossed in one frame", 1), (r"PROJECTILE MoltenBoulder launched by BP_Boss\S+", 1),
+          (r"Boss ScorchedEarth window 0 crossed in one frame", 1), (r"ZONE ScorchedEarth started by BP_Boss\S+", 1),
+          (r"ZONE ScorchedEarth armed", 1)]),
         ("Scorched Earth: warned, burns who stays, avoidable, cleared on boss death", "?Opponent=AI?Hero=Drakon?DevHeroes=1?Boss=QuarryBehemoth", "power_zone.txt",
          [(r"ZONE ScorchedEarth started by BP_Boss\S+: radius 300, 5\.0s, every 1\.00s, damage 0\.0, arms in 1\.0s", 3), (r"ZONE ScorchedEarth armed", 2),
           (r"ZONE ScorchedEarth pulse: 1 target\(s\)", True), (r"ZONE ScorchedEarth pulse: 0 target\(s\)", True), (r"ZONE ScorchedEarth ended \(duration\)", 2),
