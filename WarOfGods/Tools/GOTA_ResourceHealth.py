@@ -1,4 +1,4 @@
-﻿"""Resource health for timing-sensitive test runs (GOTA_AbilityRegression.py, GOTA_MPSession.py).
+"""Resource health for timing-sensitive test runs (GOTA_AbilityRegression.py, GOTA_MPSession.py).
 
 Other workloads on the same PC (a local LLM server holding most of the video memory at 100% GPU, another project's test
 corpus, builds) starve the game processes: on 2026-11-25 single-player cases fell from about 50 fps to 2-5 fps and hosted
@@ -21,8 +21,9 @@ Classification rule (in the callers): a FAIL becomes INCONCLUSIVE only with cont
 no external load is NOT excused: it stays FAIL and is flagged as a possible performance regression.
 
 Every gate decision and every case's evidence is appended to Saved/AbilityRegression/resource_gate.jsonl.
-Thresholds (environment): GOTA_FOREIGN_GPU_PCT 30 (one other process; an animated desktop wallpaper alone draws about 20%),
-GOTA_VRAM_BUSY_MB 6000 (with no game of ours running), GOTA_FOREIGN_CPU_PCT 40 (all other processes together), GOTA_MIN_FREE_RAM_GB 6, GOTA_MIN_FPS 15. Nothing here stops or changes another process.
+Thresholds (environment): GOTA_FOREIGN_GPU_PCT 30 (any one other process; an animated desktop wallpaper alone draws
+about 20%), GOTA_FOREIGN_GPU_TOTAL_PCT 40 (all other processes together), GOTA_MIN_FREE_VRAM_MB 6000 (free video
+memory, judged with no game of ours running), GOTA_FOREIGN_CPU_PCT 40 (all other processes together), GOTA_MIN_FREE_RAM_GB 6, GOTA_MIN_FPS 15. Nothing here stops or changes another process.
 """
 import datetime
 import json
@@ -38,7 +39,8 @@ except ImportError:  # the gate still works from GPU figures alone
     psutil = None
 
 FOREIGN_GPU_PCT = float(os.environ.get("GOTA_FOREIGN_GPU_PCT", "30"))
-VRAM_BUSY_MB = float(os.environ.get("GOTA_VRAM_BUSY_MB", "6000"))
+FOREIGN_GPU_TOTAL_PCT = float(os.environ.get("GOTA_FOREIGN_GPU_TOTAL_PCT", "40"))
+MIN_FREE_VRAM_MB = float(os.environ.get("GOTA_MIN_FREE_VRAM_MB", "6000"))
 FOREIGN_CPU_PCT = float(os.environ.get("GOTA_FOREIGN_CPU_PCT", "40"))
 MIN_FREE_RAM_GB = float(os.environ.get("GOTA_MIN_FREE_RAM_GB", "6"))
 MIN_FPS = float(os.environ.get("GOTA_MIN_FPS", "15"))
@@ -59,6 +61,11 @@ def _run(args, timeout=15):
                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout
     except (OSError, subprocess.SubprocessError):
         return ""
+
+
+def dur(seconds):
+    """Readable duration: seconds under two minutes, else minutes."""
+    return "%.0f s" % seconds if seconds < 120 else "%.0f min" % (seconds / 60)
 
 
 def journal(event, **fields):
@@ -104,8 +111,9 @@ def _gpu_by_pid():
 
 
 def _vram_mb():
-    m = re.match(r"\s*(\d+)", _run(["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"]))
-    return float(m.group(1)) if m else None
+    """(used MB, total MB) or (None, None)."""
+    m = re.match(r"\s*(\d+)\s*,\s*(\d+)", _run(["nvidia-smi", "--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits"]))
+    return (float(m.group(1)), float(m.group(2))) if m else (None, None)
 
 
 class _CpuSampler:
@@ -143,10 +151,11 @@ def snapshot(cpu=None):
     table = _proc_table()
     cpu_use = cpu.sample()
     gpu_use = _gpu_by_pid()
-    vram = _vram_mb()
+    vram, vram_total = _vram_mb()
     free_ram = psutil.virtual_memory().available / 2 ** 30 if psutil else None
     foreign = lambda pid: pid in table and not table[pid][1] and not SYSTEM.match(table[pid][0])  # noqa: E731
     f_gpu = max([v for pid, v in gpu_use.items() if foreign(pid)] or [0.0])
+    f_gpu_total = sum(v for pid, v in gpu_use.items() if foreign(pid))  # several moderate users add up
     f_cpu = sum(v for pid, v in cpu_use.items() if foreign(pid))
     ours = sum(1 for pid, (n, o, _) in table.items() if o and re.match(r"^(UnrealEditor|WarOfGods)", n, re.I))
     load = {}
@@ -159,17 +168,19 @@ def snapshot(cpu=None):
     top_txt = ", ".join("%s gpu %d%% cpu %d%%" % (k, g, c) for k, (g, c) in top if g >= 2 or c >= 2) or "none"
     reasons = []
     if f_gpu >= FOREIGN_GPU_PCT:
-        reasons.append("other GPU work %d%%" % f_gpu)
-    if vram is not None and vram >= VRAM_BUSY_MB and ours == 0:
-        reasons.append("video memory %.1f GB in use" % (vram / 1024))
+        reasons.append("other GPU work %d%% (one process)" % f_gpu)
+    elif f_gpu_total >= FOREIGN_GPU_TOTAL_PCT:
+        reasons.append("other GPU work %d%% (combined)" % f_gpu_total)
+    if vram is not None and vram_total and vram_total - vram < MIN_FREE_VRAM_MB and ours == 0:
+        reasons.append("video memory free %.1f GB" % ((vram_total - vram) / 1024))
     if f_cpu >= FOREIGN_CPU_PCT:
         reasons.append("other CPU work %d%%" % f_cpu)
     if free_ram is not None and free_ram < MIN_FREE_RAM_GB:
         reasons.append("free RAM %.1f GB" % free_ram)
-    text = "other GPU %d%%, other CPU %d%%, video memory %s, free RAM %s; top other load: %s%s" % (
-        f_gpu, f_cpu, "?" if vram is None else "%.1f GB" % (vram / 1024), "?" if free_ram is None else "%.1f GB" % free_ram,
+    text = "other GPU %d%% (combined %d%%), other CPU %d%%, video memory %s, free RAM %s; top other load: %s%s" % (
+        f_gpu, f_gpu_total, f_cpu, "?" if vram is None else "%.1f of %.1f GB used" % (vram / 1024, vram_total / 1024), "?" if free_ram is None else "%.1f GB" % free_ram,
         top_txt, "; %d game process(es) of ours running" % ours if ours else "")
-    return {"foreign_gpu": f_gpu, "foreign_cpu": f_cpu, "vram_mb": vram, "free_ram_gb": free_ram, "ours": ours,
+    return {"foreign_gpu": f_gpu, "foreign_gpu_total": f_gpu_total, "foreign_cpu": f_cpu, "vram_mb": vram, "free_ram_gb": free_ram, "ours": ours,
             "top": top_txt, "busy": bool(reasons), "reasons": reasons, "text": text}
 
 
@@ -195,20 +206,20 @@ def gate(policy="defer", max_wait=10800.0, label="", timeout_action="skip", log=
         if snap["busy"]:
             quiet_since = None
             if time.time() - last_note >= 600:
-                log("RESOURCES still busy after %.0f min: %s" % ((time.time() - start) / 60, snap["text"]))
+                log("RESOURCES still busy after %s: %s" % (dur(time.time() - start), snap["text"]))
                 journal("still-busy", case=label, waited=round(time.time() - start), **_ev(snap))
                 last_note = time.time()
             continue
         quiet_since = quiet_since or time.time()
         if time.time() - quiet_since >= QUIET_SECONDS:  # quiet for a while, not a lull between another tool's jobs
             waited = time.time() - start
-            log("RESOURCES quiet for %.0f s after a %.0f min wait: %s" % (QUIET_SECONDS, waited / 60, snap["text"]))
+            log("RESOURCES quiet for %.0f s after a %s wait: %s" % (QUIET_SECONDS, dur(waited), snap["text"]))
             journal("gate", case=label, outcome="quiet-after-wait", waited=round(waited), **_ev(snap))
             return {"run": True, "busy_start": False, "waited": waited, "outcome": "quiet-after-wait", "reasons": [], "text": snap["text"]}
     waited = time.time() - start
     run = timeout_action == "run"
-    log("RESOURCES still busy after the %.0f min limit (%s): %s" % (
-        waited / 60, "running anyway, busy start recorded" if run else "NOT RUN, reported DEFERRED", snap["text"]))
+    log("RESOURCES still busy after the %s limit (%s): %s" % (
+        dur(max_wait), "running anyway, busy start recorded" if run else "NOT RUN, reported DEFERRED", snap["text"]))
     journal("gate", case=label, outcome="timeout-run" if run else "timeout-deferred", waited=round(waited), **_ev(snap))
     return {"run": run, "busy_start": True, "waited": waited, "outcome": "timeout-run" if run else "timeout-deferred",
             "reasons": snap["reasons"], "text": snap["text"]}
@@ -216,14 +227,14 @@ def gate(policy="defer", max_wait=10800.0, label="", timeout_action="skip", log=
 
 def _ev(snap):
     return {k: (round(v, 1) if isinstance(v, float) else v) for k, v in snap.items() if k in
-            ("foreign_gpu", "foreign_cpu", "vram_mb", "free_ram_gb", "ours", "top", "reasons")}
+            ("foreign_gpu", "foreign_gpu_total", "foreign_cpu", "vram_mb", "free_ram_gb", "ours", "top", "reasons")}
 
 
 class Monitor:
     """Samples other workloads while a case runs; .stop() returns the worst figures and whether they were contention."""
 
     def __init__(self):
-        self.worst = {"foreign_gpu": 0.0, "foreign_cpu": 0.0, "free_ram_gb": None, "top": "none", "samples": 0}
+        self.worst = {"foreign_gpu": 0.0, "foreign_gpu_total": 0.0, "foreign_cpu": 0.0, "free_ram_gb": None, "top": "none", "samples": 0}
         self.reasons = set()
         self._stop = threading.Event()
         self._cpu = None
@@ -232,13 +243,16 @@ class Monitor:
 
     def _loop(self):
         self._cpu = _CpuSampler()
-        while not self._stop.wait(MONITOR_SECONDS):
+        wait = 10.0  # a short case still gets a sample
+        while not self._stop.wait(wait):
+            wait = MONITOR_SECONDS
             s = snapshot(self._cpu)
             w = self.worst
             w["samples"] += 1
             if s["foreign_gpu"] + s["foreign_cpu"] > w["foreign_gpu"] + w["foreign_cpu"]:
                 w["top"] = s["top"]
             w["foreign_gpu"] = max(w["foreign_gpu"], s["foreign_gpu"])
+            w["foreign_gpu_total"] = max(w["foreign_gpu_total"], s["foreign_gpu_total"])
             w["foreign_cpu"] = max(w["foreign_cpu"], s["foreign_cpu"])
             if s["free_ram_gb"] is not None:
                 w["free_ram_gb"] = s["free_ram_gb"] if w["free_ram_gb"] is None else min(w["free_ram_gb"], s["free_ram_gb"])
@@ -249,9 +263,9 @@ class Monitor:
         self._stop.set()
         self._t.join(timeout=60)
         w = self.worst
-        text = "worst other load while running: GPU %d%%, CPU %d%%, free RAM %s (%d samples; top: %s)" % (
-            w["foreign_gpu"], w["foreign_cpu"], "?" if w["free_ram_gb"] is None else "%.1f GB" % w["free_ram_gb"], w["samples"], w["top"])
-        return {"contended": bool(self.reasons), "reasons": sorted(self.reasons), "text": text,
+        text = "worst other load while running: GPU %d%% (combined %d%%), CPU %d%%, free RAM %s (%d samples; top: %s)" % (
+            w["foreign_gpu"], w["foreign_gpu_total"], w["foreign_cpu"], "?" if w["free_ram_gb"] is None else "%.1f GB" % w["free_ram_gb"], w["samples"], w["top"])
+        return {"contended": bool(self.reasons), "reasons": sorted(self.reasons), "text": text, "samples": w["samples"],
                 **{k: (round(v, 1) if isinstance(v, float) else v) for k, v in w.items()}}
 
 
@@ -267,6 +281,10 @@ def classify(ok, gate_result, monitor_result, fps_values):
     if monitor_result and monitor_result.get("contended"):
         evidence.append("during run: " + ", ".join(monitor_result["reasons"]))
     fps_txt = "" if fps is None else "%.1f fps" % fps
+    measured = gate_result.get("outcome") not in (None, "unchecked") and bool(monitor_result)
+    if not evidence and not measured:
+        # No contemporaneous measurement (e.g. a run from before this gate, or --resources off): unknown, not quiet.
+        return "FAIL", "(resource conditions unknown: not measured%s) " % ("; " + fps_txt if fps_txt else "")
     if evidence:
         return "INCONCLUSIVE", "(raw FAIL; resource contention: %s%s) " % ("; ".join(evidence), "; " + fps_txt if fps_txt else "")
     if fps is not None and fps < MIN_FPS:

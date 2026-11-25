@@ -670,8 +670,11 @@ def main():
     ap.add_argument("--resources", choices=("defer", "warn", "off"), default=os.environ.get("GOTA_RESOURCES", "defer"),
                     help="before each case: defer = wait for a quiet machine (default), warn = report only, off = no check "
                          "(CPU, GPU, video memory and RAM used by other programs; Tools/GOTA_ResourceHealth.py)")
-    ap.add_argument("--resource-wait", type=float, default=float(os.environ.get("GOTA_RESOURCE_WAIT", "10800")),
-                    help="longest wait for a quiet machine (s, default 3 h); after a timeout later cases are checked once")
+    ap.add_argument("--resource-budget", type=float, default=float(os.environ.get("GOTA_RESOURCE_BUDGET", "10800")),
+                    help="total waiting for a quiet machine across the whole run (s, default 3 h); once spent, each "
+                         "remaining case is checked once and DEFERRED if the machine is busy")
+    ap.add_argument("--resource-wait", type=float, default=float(os.environ.get("GOTA_RESOURCE_WAIT", "3600")),
+                    help="longest wait before any one case (s, default 1 h), within the budget")
     ap.add_argument("--resource-timeout", choices=("skip", "run"), default=os.environ.get("GOTA_RESOURCE_TIMEOUT", "skip"),
                     help="still busy at the limit: skip = do not run, report DEFERRED (default); run = run, busy start recorded")
     a = ap.parse_args()
@@ -695,24 +698,28 @@ def run_suite(a):
     fails = 0
     tally = {"PASS": 0, "FAIL": 0, "INCONCLUSIVE": 0, "DEFERRED": 0}
     checking = not a.check_only and a.resources != "off"
-    timed_out = [False]  # after one gate timeout, later cases are checked once (no second long wait)
+    spent = [0.0]  # waiting so far; the budget caps the whole run, not each case
     say = lambda m: (print(m), sys.stdout.flush())  # noqa: E731
     if checking:
         snap = RH.snapshot()
-        say("RESOURCES at start: %s" % snap["text"])
+        say("RESOURCES at start: %s (waiting budget %s, at most %s per case)" % (
+            snap["text"], RH.dur(a.resource_budget), RH.dur(a.resource_wait)))
         RH.journal("suite-start", mode=mode, args=" ".join(sys.argv[1:]), **RH._ev(snap))
 
     def gate(label):
         if not checking:
             return {"run": True, "busy_start": False, "reasons": [], "outcome": "unchecked", "waited": 0}
-        g = RH.gate(a.resources, 0 if timed_out[0] else a.resource_wait, label, a.resource_timeout, log=say)
-        timed_out[0] = g["outcome"].startswith("timeout") or (timed_out[0] and g["busy_start"])
+        allowed = max(0.0, min(a.resource_wait, a.resource_budget - spent[0]))
+        g = RH.gate(a.resources, allowed, label, a.resource_timeout, log=say)
+        spent[0] += g["waited"]
+        if g["outcome"].startswith("timeout") and allowed <= 0:
+            g["reasons"] = g["reasons"] + ["waiting budget of %s spent" % RH.dur(a.resource_budget)]
         return g
 
     def deferred(ability, name, g):
         tally["DEFERRED"] += 1
         RH.journal("case", case="%s: %s" % (ability, name), mode=mode, raw="NOT RUN", verdict="DEFERRED", gate=g["outcome"])
-        say("%-5s %-12s %-42s (not run: still busy after %.0f min: %s)" % ("DEFERRED", ability, name, g["waited"] / 60,
+        say("%-5s %-12s %-42s (not run: still busy after %s: %s)" % ("DEFERRED", ability, name, RH.dur(g["waited"]),
                                                                            ", ".join(g["reasons"])))
 
     def verdict_of(ability, name, ok, g, mon, texts, note=""):
@@ -837,7 +844,8 @@ def run_suite(a):
         tally["PASS"], tally["FAIL"], tally["INCONCLUSIVE"], tally["DEFERRED"])
     print("\n%s: %s -- %s" % (mode, "ALL PASS" if fails == 0 else "NOT CLEAN", summary))
     if checking:
-        RH.journal("suite-end", mode=mode, **tally)
+        print("RESOURCES: waited %s of the %s budget" % (RH.dur(spent[0]), RH.dur(a.resource_budget)))
+        RH.journal("suite-end", mode=mode, waited=round(spent[0]), **tally)
     return fails
 
 

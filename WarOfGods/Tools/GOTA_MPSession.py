@@ -100,7 +100,7 @@ def main():
     g = RH.gate(a.resources, a.resource_wait, "session " + a.tag, a.resource_timeout, log=say)
     if not g["run"]:
         RH.journal("session", tag=a.tag, verdict="DEFERRED", gate=g["outcome"])
-        say("DEFERRED: session %s not run (still busy after %.0f min: %s)" % (a.tag, g["waited"] / 60, ", ".join(g["reasons"])))
+        say("DEFERRED: session %s not run (still busy after %s: %s)" % (a.tag, RH.dur(g["waited"]), ", ".join(g["reasons"])))
         return 3
     say("RESOURCES at launch (%s): %s%s" % (g["outcome"], g["text"], " -- BUSY START: timing results are not valid" if g["busy_start"] else ""))
     monitor = RH.Monitor() if a.resources != "off" else None
