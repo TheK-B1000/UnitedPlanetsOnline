@@ -1,7 +1,10 @@
-﻿waitplayers 2 120
-# Ayla checkpoint 2 in Horde: host and client both Ayla. The remote Ayla is defeated, shows her death clip, and comes
+﻿# Ayla checkpoint 2 in Horde: host and client both Ayla. The remote Ayla is defeated, shows her death clip, and comes
 # back at the next wave with a fresh body that has her own clips again. Healing is test support, not balance evidence.
+# Sustain starts before waiting for the client: wave 1 begins while the host is alone, and a slow client join (27 s on
+# 2026-11-25) let the enemies defeat the host first, so the match ended in Defeat and nobody could respawn. It heals every
+# living player each second, so the client is covered from the moment it joins.
 gota.Net.Sustain 420 150
+waitplayers 2 120
 r.MotionBlurQuality 0
 wait 8
 gota.Net.Hurt 1 9999
